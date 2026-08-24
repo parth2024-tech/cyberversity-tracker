@@ -20,7 +20,14 @@ def cmd_analyze(args):
     """Run AI analysis on unanalyzed entries."""
     print(f"Running AI analysis on recent entries...")
     monitor = AISecurityMonitor(args.config)
-    results = monitor.run_analysis(since=args.since, limit=args.limit)
+    since_dt = None
+    if args.since:
+        try:
+            since_dt = datetime.fromisoformat(args.since)
+        except ValueError:
+            print(f"Invalid date format: {args.since}. Use ISO format (YYYY-MM-DD).")
+            sys.exit(1)
+    results = monitor.run_analysis(since=since_dt, limit=args.limit)
     print(f"\nResults:")
     print(f"  Analyzed: {results['analyzed']}")
     print(f"  Failed:   {results['failed']}")
@@ -32,13 +39,22 @@ def cmd_enriched_digest(args):
     print(f"Generating {args.schedule} enriched digest via {args.method}...")
 
     monitor = AISecurityMonitor(args.config)
+    
+    # Parse since date if provided
+    since_dt = None
+    if args.since:
+        try:
+            since_dt = datetime.fromisoformat(args.since)
+        except ValueError:
+            print(f"Invalid date format: {args.since}. Use ISO format (YYYY-MM-DD).")
+            sys.exit(1)
 
     # First run analysis to enrich entries
     print("Running AI analysis to enrich digest...")
-    monitor.run_analysis(since=args.since, limit=args.limit)
+    monitor.run_analysis(since=since_dt, limit=args.limit)
 
     # Then generate enriched digest
-    digest = monitor.generate_enriched_digest(since=args.since, max_per_category=args.max_items)
+    digest = monitor.generate_enriched_digest(since=since_dt, max_per_category=args.max_items)
 
     # Build delivery config from CLI args, fall back to config file
     delivery_config = {}
