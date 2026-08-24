@@ -16,6 +16,7 @@ from ai_security_monitor.domain.entities import (
     FetchLog,
     FetchStatus,
     Source,
+    SourceType,
 )
 from ai_security_monitor.domain.exceptions import DuplicateEntryError
 from ai_security_monitor.domain.repositories import EntryFilters
@@ -50,8 +51,8 @@ class MonitorService:
                 if not existing:
                     new_source = Source(
                         name=s_cfg.name,
-                        category=s_cfg.category,
-                        type=s_cfg.type,
+                        category=Category(s_cfg.category) if isinstance(s_cfg.category, str) else s_cfg.category,
+                        type=SourceType(s_cfg.type) if isinstance(s_cfg.type, str) else s_cfg.type,
                         url=s_cfg.url or "",
                         query=s_cfg.query,
                         rate_limit_seconds=s_cfg.rate_limit_seconds,

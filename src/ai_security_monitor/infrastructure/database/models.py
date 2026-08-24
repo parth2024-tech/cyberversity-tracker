@@ -75,7 +75,6 @@ class EntryModel(Base):
     __table_args__ = (
         Index("ix_entries_category_published", "category", "published_at"),
         Index("ix_entries_source_published", "source_id", "published_at"),
-        Index("ix_entries_content_hash", "content_hash"),
     )
 
 

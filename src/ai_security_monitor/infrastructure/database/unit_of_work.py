@@ -54,6 +54,10 @@ class UnitOfWork:
         return self._analysis
 
     @property
+    def analyses(self) -> SQLAlchemyAnalysisRepository:
+        return self.analysis
+
+    @property
     def sources(self) -> SQLAlchemySourceRepository:
         if self._sources is None:
             self._sources = SQLAlchemySourceRepository(self.session)
