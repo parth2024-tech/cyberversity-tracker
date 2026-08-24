@@ -2,28 +2,48 @@
 Repository implementations using SQLAlchemy async.
 Implements the domain repository interfaces.
 """
+from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
-from sqlalchemy import select, func, desc, and_, or_
+
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ai_security_monitor.domain.entities import (
-    Entry, Analysis, Source, FetchLog, Digest,
-    Category, SourceType, FetchStatus, AnalysisModel
+    Analysis,
+    AnalysisModel,
+    Category,
+    Digest,
+    Entry,
+    FetchLog,
+    FetchStatus,
+    Source,
+    SourceType,
+)
+from ai_security_monitor.domain.exceptions import (
+    DuplicateEntryError,
+    EntityNotFoundError,
 )
 from ai_security_monitor.domain.repositories import (
-    EntryRepository, AnalysisRepository, SourceRepository,
-    FetchLogRepository, DigestRepository, PaginationParams, EntryFilters
+    AnalysisRepository,
+    DigestRepository,
+    EntryFilters,
+    EntryRepository,
+    FetchLogRepository,
+    PaginationParams,
+    SourceRepository,
 )
-from ai_security_monitor.domain.exceptions import EntityNotFoundError, DuplicateEntryError
 from ai_security_monitor.infrastructure.database.models import (
-    SourceModel, EntryModel, AnalysisModel as AnalysisModelDB,
-    FetchLogModel, DigestModel
+    AnalysisModel as AnalysisModelDB,
 )
-from ai_security_monitor.infrastructure.database.connection import get_db_session
+from ai_security_monitor.infrastructure.database.models import (
+    DigestModel,
+    EntryModel,
+    FetchLogModel,
+    SourceModel,
+)
 
 
 def _uuid_to_str(uuid_val: UUID) -> str:
@@ -57,7 +77,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             fetched_at=entry.fetched_at,
             category=entry.category.value,
             tags=entry.tags,
-            metadata=entry.metadata,
+            extra_metadata=entry.metadata,
             created_at=entry.created_at,
             updated_at=entry.updated_at,
         )
@@ -65,13 +85,13 @@ class SQLAlchemyEntryRepository(EntryRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
-    async def get(self, entry_id: UUID) -> Optional[Entry]:
+    async def get(self, entry_id: UUID) -> Entry | None:
         stmt = select(EntryModel).where(EntryModel.id == _uuid_to_str(entry_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
-    async def get_by_content_hash(self, content_hash: str) -> Optional[Entry]:
+    async def get_by_content_hash(self, content_hash: str) -> Entry | None:
         stmt = select(EntryModel).where(EntryModel.content_hash == content_hash)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -79,8 +99,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
     async def list(
         self,
-        filters: Optional[EntryFilters] = None,
-        pagination: Optional[PaginationParams] = None,
+        filters: EntryFilters | None = None,
+        pagination: PaginationParams | None = None,
     ) -> list[Entry]:
         stmt = select(EntryModel).options(selectinload(EntryModel.analysis))
 
@@ -96,7 +116,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 
-    async def count(self, filters: Optional[EntryFilters] = None) -> int:
+    async def count(self, filters: EntryFilters | None = None) -> int:
         stmt = select(func.count(EntryModel.id))
 
         if filters:
@@ -117,7 +137,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         model.url = entry.url
         model.summary = entry.summary
         model.tags = entry.tags
-        model.metadata = entry.metadata
+        model.extra_metadata = entry.metadata
         model.updated_at = datetime.utcnow()
 
         await self._session.flush()
@@ -136,7 +156,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
     async def get_unanalyzed(
         self,
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
         limit: int = 50,
     ) -> list[Entry]:
         stmt = (
@@ -157,7 +177,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
     async def get_by_category(
         self,
         category: Category,
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
         limit: int = 50,
     ) -> list[Entry]:
         stmt = (
@@ -244,7 +264,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             fetched_at=model.fetched_at,
             category=Category(model.category),
             tags=model.tags or [],
-            metadata=model.metadata or {},
+            metadata=model.extra_metadata or {},
             created_at=model.created_at,
             updated_at=model.updated_at,
             analysis=analysis,
@@ -280,13 +300,13 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
-    async def get(self, entry_id: UUID) -> Optional[Analysis]:
+    async def get(self, entry_id: UUID) -> Analysis | None:
         stmt = select(AnalysisModelDB).where(AnalysisModelDB.entry_id == _uuid_to_str(entry_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
-    async def get_by_id(self, analysis_id: UUID) -> Optional[Analysis]:
+    async def get_by_id(self, analysis_id: UUID) -> Analysis | None:
         stmt = select(AnalysisModelDB).where(AnalysisModelDB.id == _uuid_to_str(analysis_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -386,13 +406,13 @@ class SQLAlchemySourceRepository(SourceRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
-    async def get(self, source_id: UUID) -> Optional[Source]:
+    async def get(self, source_id: UUID) -> Source | None:
         stmt = select(SourceModel).where(SourceModel.id == _uuid_to_str(source_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
-    async def get_by_name(self, name: str) -> Optional[Source]:
+    async def get_by_name(self, name: str) -> Source | None:
         stmt = select(SourceModel).where(SourceModel.name == name)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -542,13 +562,13 @@ class SQLAlchemyDigestRepository(DigestRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
-    async def get(self, digest_id: UUID) -> Optional[Digest]:
+    async def get(self, digest_id: UUID) -> Digest | None:
         stmt = select(DigestModel).where(DigestModel.id == _uuid_to_str(digest_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
-    async def get_latest(self, schedule: str) -> Optional[Digest]:
+    async def get_latest(self, schedule: str) -> Digest | None:
         stmt = (
             select(DigestModel)
             .where(DigestModel.schedule == schedule)

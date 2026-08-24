@@ -5,12 +5,11 @@ Maps to database tables for persistent storage.
 
 from datetime import datetime
 from typing import Optional
-from uuid import UUID, uuid4
-from sqlalchemy import (
-    String, Text, Integer, DateTime, Boolean, ForeignKey, Index, JSON
-)
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
+from uuid import uuid4
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.sqlite import JSON
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -32,13 +31,13 @@ class SourceModel(Base):
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     url: Mapped[str] = mapped_column(Text, default="")
-    query: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    query: Mapped[str | None] = mapped_column(Text, nullable=True)
     rate_limit_seconds: Mapped[int] = mapped_column(Integer, default=3600)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
-    last_fetched_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    last_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    last_fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     last_entries_new: Mapped[int] = mapped_column(Integer, default=0)
-    config: Mapped[dict] = mapped_column(SQLiteJSON, default=dict)
+    config: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -64,8 +63,8 @@ class EntryModel(Base):
     published_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    tags: Mapped[list[str]] = mapped_column(SQLiteJSON, default=list)
-    metadata: Mapped[dict] = mapped_column(SQLiteJSON, default=dict)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    extra_metadata: Mapped[dict] = mapped_column("metadata_json", JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -92,7 +91,7 @@ class AnalysisModel(Base):
     threat_velocity: Mapped[int] = mapped_column(Integer, nullable=False)  # 1-100
     severity_index: Mapped[int] = mapped_column(Integer, nullable=False)  # 1-100
     blast_radius_score: Mapped[int] = mapped_column(Integer, default=0)  # 1-100
-    affected_ecosystem: Mapped[list[str]] = mapped_column(SQLiteJSON, default=list)
+    affected_ecosystem: Mapped[list[str]] = mapped_column(JSON, default=list)
     is_pre_cve_warning: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     attack_archetype: Mapped[str] = mapped_column(String(100), default="")
     weaponization_potential: Mapped[str] = mapped_column(String(50), default="Theoretical")
@@ -121,7 +120,7 @@ class FetchLogModel(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     entries_new: Mapped[int] = mapped_column(Integer, default=0)
     entries_total: Mapped[int] = mapped_column(Integer, default=0)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
@@ -140,12 +139,12 @@ class DigestModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     schedule: Mapped[str] = mapped_column(String(20), nullable=False, index=True)  # daily, weekly
-    entries_by_category: Mapped[dict] = mapped_column(SQLiteJSON, default=dict)
+    entries_by_category: Mapped[dict] = mapped_column(JSON, default=dict)
     total_entries: Mapped[int] = mapped_column(Integer, default=0)
     period_start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     delivered: Mapped[bool] = mapped_column(Boolean, default=False)
-    delivery_channels: Mapped[list[str]] = mapped_column(SQLiteJSON, default=list)
+    delivery_channels: Mapped[list[str]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
     __table_args__ = (

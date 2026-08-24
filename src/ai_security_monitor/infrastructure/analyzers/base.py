@@ -2,11 +2,9 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Analysis, AnalysisModel
-from ai_security_monitor.domain.value_objects import ThreatScore, WeaponizationLevel, AttackArchetype
+from ai_security_monitor.domain.entities import Analysis, AnalysisModel, Entry
 from ai_security_monitor.domain.events import EntryAnalyzedEvent, event_bus
 
 
@@ -35,7 +33,7 @@ class AnalysisResult:
 class BaseAnalyzer(ABC):
     """Abstract base class for all analyzers."""
 
-    def __init__(self, config: Optional[dict] = None):
+    def __init__(self, config: dict | None = None):
         self.config = config or {}
 
     @property
@@ -105,7 +103,7 @@ class AnalyzerRegistry:
             raise ValueError(f"No analyzer registered for type: {analyzer_type}")
         return self._analyzers[analyzer_type]
 
-    def create(self, analyzer_type: str, config: Optional[dict] = None) -> BaseAnalyzer:
+    def create(self, analyzer_type: str, config: dict | None = None) -> BaseAnalyzer:
         analyzer_class = self.get(analyzer_type)
         return analyzer_class(config)
 

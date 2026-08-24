@@ -12,6 +12,12 @@ data/*.db-shm
 data/*.db-wal
 logs/*.log
 
+# Testing & Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
 # IDE & OS
 .vscode/
 .idea/

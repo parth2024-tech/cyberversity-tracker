@@ -8,13 +8,10 @@ Features:
 5. Zero-Day Pre-CVE Early Warning Signal (arXiv Academic Threat & Weaponization Scanner)
 """
 
-import json
 import logging
-import os
 import re
-from datetime import datetime
-from typing import Dict, List, Optional, Any, Set
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -29,7 +26,7 @@ class AnalysisResult:
     threat_velocity: int          # 1-100
     severity_index: int           # 1-100
     blast_radius_score: int       # 1-100 (Feature 1: Impact on AI ecosystem)
-    affected_ecosystem: List[str] # (Feature 1: Affected AI libraries/frameworks)
+    affected_ecosystem: list[str] # (Feature 1: Affected AI libraries/frameworks)
     is_pre_cve_warning: bool      # (Feature 5: Academic / Research Zero-Day)
     attack_archetype: str         # (Feature 5: E.g., 'Jailbreak', 'RAG Poisoning', 'Model Inversion', 'RCE')
     weaponization_potential: str  # (Feature 5: 'Theoretical', 'PoC Verified', 'Active Weaponization')
@@ -87,10 +84,10 @@ class BlastRadiusEngine:
     }
 
     @classmethod
-    def calculate_blast_radius(cls, text: str, metadata: Dict, category: str) -> tuple[int, List[str]]:
+    def calculate_blast_radius(cls, text: str, metadata: dict, category: str) -> tuple[int, list[str]]:
         """Calculate Blast Radius score (1-100) and identify affected AI ecosystem."""
         text_lower = text.lower()
-        affected: Set[str] = set()
+        affected: set[str] = set()
         score = 15  # Base baseline
 
         # Detect affected AI ecosystem components
@@ -134,7 +131,7 @@ class BlastRadiusEngine:
             score += 15
 
         final_score = min(100, max(1, score))
-        ecosystem_list = sorted(list(affected)) if affected else (['General AI Stack'] if category in ['ai_tech', 'ai_research'] else ['Enterprise Infrastructure'])
+        ecosystem_list = sorted(affected) if affected else (['General AI Stack'] if category in ['ai_tech', 'ai_research'] else ['Enterprise Infrastructure'])
         return final_score, ecosystem_list
 
 
@@ -228,10 +225,10 @@ class HeuristicAnalyzer:
         'open redirect', 'weak encryption', 'hardcoded secret'
     }
 
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: dict = None):
         self.config = config or {}
 
-    def _score_velocity(self, text: str, metadata: Dict, is_pre_cve: bool, weaponization: str) -> int:
+    def _score_velocity(self, text: str, metadata: dict, is_pre_cve: bool, weaponization: str) -> int:
         """Calculate threat velocity 1-100."""
         text_lower = text.lower()
         score = 25
@@ -266,7 +263,7 @@ class HeuristicAnalyzer:
 
         return min(100, max(1, score))
 
-    def _score_severity(self, text: str, metadata: Dict, blast_radius: int) -> int:
+    def _score_severity(self, text: str, metadata: dict, blast_radius: int) -> int:
         """Calculate severity index 1-100."""
         text_lower = text.lower()
         score = 25
@@ -302,7 +299,7 @@ class HeuristicAnalyzer:
 
         return min(100, max(1, score))
 
-    def _extract_attack_vector(self, text: str, metadata: Dict, archetype: str) -> str:
+    def _extract_attack_vector(self, text: str, metadata: dict, archetype: str) -> str:
         text_lower = text.lower()
         if 'remote code execution' in text_lower or 'rce' in text_lower:
             return "Remote code execution via malicious payload deserialization or unauthenticated command injection."
@@ -320,13 +317,13 @@ class HeuristicAnalyzer:
             return "Insecure deserialization of arbitrary model weights executing untrusted host bytecode."
         if 'model inversion' in text_lower or 'extraction' in text_lower:
             return "Model inversion technique reconstructing private training samples from inference confidence scores."
-        
+
         cve_id = metadata.get('cve_id') or metadata.get('ghsa_id')
         if cve_id:
             return f"Security vulnerability identified under {cve_id}; weaponizes unvalidated input parameters."
         return f"Exploitation vector: {archetype} - leverages architectural gaps in runtime execution."
 
-    def _extract_risk(self, text: str, metadata: Dict, blast_radius: int, ecosystem: List[str]) -> str:
+    def _extract_risk(self, text: str, metadata: dict, blast_radius: int, ecosystem: list[str]) -> str:
         text_lower = text.lower()
         eco_str = ", ".join(ecosystem[:3])
         if 'remote code execution' in text_lower or 'rce' in text_lower:
@@ -334,14 +331,14 @@ class HeuristicAnalyzer:
         if 'prompt injection' in text_lower or 'jailbreak' in text_lower:
             return f"High Risk: Complete bypass of safety policies; potential data exfiltration and autonomous agent hijacking in {eco_str}."
         if 'rag' in text_lower and 'poison' in text_lower:
-            return f"High Risk: Silent corruption of RAG knowledge bases, leading to malicious output hallucination and data leakage."
+            return "High Risk: Silent corruption of RAG knowledge bases, leading to malicious output hallucination and data leakage."
         if 'data exfiltration' in text_lower or 'model theft' in text_lower:
-            return f"High Risk: Proprietary model architecture and sensitive enterprise embeddings exposed to unauthorized actors."
+            return "High Risk: Proprietary model architecture and sensitive enterprise embeddings exposed to unauthorized actors."
         if blast_radius >= 70:
             return f"Critical Ecosystem Risk: Wide blast radius directly affecting {eco_str} production stacks."
         return f"Operational Risk: Threat affecting {eco_str}; potential service disruption or unauthorized telemetry disclosure."
 
-    def _extract_mitigation(self, text: str, metadata: Dict, ecosystem: List[str]) -> str:
+    def _extract_mitigation(self, text: str, metadata: dict, ecosystem: list[str]) -> str:
         text_lower = text.lower()
         if metadata.get('cve_id'):
             return f"Apply official vendor patch for {metadata['cve_id']}; restrict network ingress and isolate model worker nodes."
@@ -355,7 +352,7 @@ class HeuristicAnalyzer:
             return "Deploy dual-perimeter guardrails (NeMo Guardrails / Llama Guard) and sanitize raw context retrieval payloads."
         return f"Isolate {ecosystem[0] if ecosystem else 'runtime'} containers, apply upstream security updates, and monitor execution logs."
 
-    def analyze(self, entry: Dict) -> AnalysisResult:
+    def analyze(self, entry: dict) -> AnalysisResult:
         """Analyze entry using full intelligence heuristics."""
         title = entry.get('title', '')
         summary = entry.get('summary', '')
@@ -391,7 +388,7 @@ class HeuristicAnalyzer:
             ai_model="AetherGuard-NeuralHeuristics:v2"
         )
 
-    def analyze_batch(self, entries: List[Dict]) -> List[tuple[int, AnalysisResult]]:
+    def analyze_batch(self, entries: list[dict]) -> list[tuple[int, AnalysisResult]]:
         results = []
         for entry in entries:
             analysis = self.analyze(entry)
@@ -403,13 +400,13 @@ class AITriageAnalyzer:
     """
     LLM-powered AI Security Analyst with automatic fallback to HeuristicAnalyzer.
     """
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: dict = None):
         self.config = config or {}
         self.ollama_host = self.config.get('ollama_host', 'http://localhost:11434')
         self.model = self.config.get('model', 'llama3.2:3b')
         self.fallback = HeuristicAnalyzer(self.config)
 
-    def analyze(self, entry: Dict) -> AnalysisResult:
+    def analyze(self, entry: dict) -> AnalysisResult:
         """Analyze entry using LLM if available, otherwise fast heuristics."""
         try:
             # Quick check if Ollama is responsive
@@ -424,7 +421,7 @@ class AITriageAnalyzer:
         # Reliable instantaneous fallback
         return self.fallback.analyze(entry)
 
-    def analyze_batch(self, entries: List[Dict]) -> List[tuple[int, AnalysisResult]]:
+    def analyze_batch(self, entries: list[dict]) -> list[tuple[int, AnalysisResult]]:
         results = []
         for entry in entries:
             analysis = self.analyze(entry)
@@ -432,9 +429,9 @@ class AITriageAnalyzer:
         return results
 
 
-def create_analyzer(config: Dict = None) -> AITriageAnalyzer:
+def create_analyzer(config: dict = None) -> AITriageAnalyzer:
     return AITriageAnalyzer(config or {})
 
 
-def create_heuristic_analyzer(config: Dict = None) -> HeuristicAnalyzer:
+def create_heuristic_analyzer(config: dict = None) -> HeuristicAnalyzer:
     return HeuristicAnalyzer(config or {})

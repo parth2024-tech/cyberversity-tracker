@@ -2,16 +2,20 @@
 Repository interfaces (Abstract Base Classes).
 Define contracts for data access - implementations in infrastructure layer.
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from ai_security_monitor.domain.entities import (
-    Entry, Analysis, Source, FetchLog, Digest,
-    Category, FetchStatus
+    Analysis,
+    Category,
+    Digest,
+    Entry,
+    FetchLog,
+    Source,
 )
 
 
@@ -29,11 +33,11 @@ class PaginationParams:
 @dataclass
 class EntryFilters:
     """Filters for entry queries."""
-    category: Optional[Category] = None
-    source_id: Optional[UUID] = None
-    since: Optional[datetime] = None
-    until: Optional[datetime] = None
-    search: Optional[str] = None
+    category: Category | None = None
+    source_id: UUID | None = None
+    since: datetime | None = None
+    until: datetime | None = None
+    search: str | None = None
     pre_cve_only: bool = False
     high_velocity_only: bool = False
     analyzed_only: bool = False
@@ -49,26 +53,26 @@ class EntryRepository(ABC):
         ...
 
     @abstractmethod
-    async def get(self, entry_id: UUID) -> Optional[Entry]:
+    async def get(self, entry_id: UUID) -> Entry | None:
         """Get entry by ID."""
         ...
 
     @abstractmethod
-    async def get_by_content_hash(self, content_hash: str) -> Optional[Entry]:
+    async def get_by_content_hash(self, content_hash: str) -> Entry | None:
         """Get entry by content hash (for deduplication)."""
         ...
 
     @abstractmethod
     async def list(
         self,
-        filters: Optional[EntryFilters] = None,
-        pagination: Optional[PaginationParams] = None,
+        filters: EntryFilters | None = None,
+        pagination: PaginationParams | None = None,
     ) -> list[Entry]:
         """List entries with optional filters and pagination."""
         ...
 
     @abstractmethod
-    async def count(self, filters: Optional[EntryFilters] = None) -> int:
+    async def count(self, filters: EntryFilters | None = None) -> int:
         """Count entries matching filters."""
         ...
 
@@ -85,7 +89,7 @@ class EntryRepository(ABC):
     @abstractmethod
     async def get_unanalyzed(
         self,
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
         limit: int = 50,
     ) -> list[Entry]:
         """Get entries that haven't been analyzed yet."""
@@ -95,7 +99,7 @@ class EntryRepository(ABC):
     async def get_by_category(
         self,
         category: Category,
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
         limit: int = 50,
     ) -> list[Entry]:
         """Get entries by category."""
@@ -111,12 +115,12 @@ class AnalysisRepository(ABC):
         ...
 
     @abstractmethod
-    async def get(self, entry_id: UUID) -> Optional[Analysis]:
+    async def get(self, entry_id: UUID) -> Analysis | None:
         """Get analysis by entry ID."""
         ...
 
     @abstractmethod
-    async def get_by_id(self, analysis_id: UUID) -> Optional[Analysis]:
+    async def get_by_id(self, analysis_id: UUID) -> Analysis | None:
         """Get analysis by its own ID."""
         ...
 
@@ -150,12 +154,12 @@ class SourceRepository(ABC):
         ...
 
     @abstractmethod
-    async def get(self, source_id: UUID) -> Optional[Source]:
+    async def get(self, source_id: UUID) -> Source | None:
         """Get source by ID."""
         ...
 
     @abstractmethod
-    async def get_by_name(self, name: str) -> Optional[Source]:
+    async def get_by_name(self, name: str) -> Source | None:
         """Get source by name."""
         ...
 
@@ -203,12 +207,12 @@ class DigestRepository(ABC):
         ...
 
     @abstractmethod
-    async def get(self, digest_id: UUID) -> Optional[Digest]:
+    async def get(self, digest_id: UUID) -> Digest | None:
         """Get digest by ID."""
         ...
 
     @abstractmethod
-    async def get_latest(self, schedule: str) -> Optional[Digest]:
+    async def get_latest(self, schedule: str) -> Digest | None:
         """Get latest digest for a schedule."""
         ...
 

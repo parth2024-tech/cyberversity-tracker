@@ -2,10 +2,12 @@
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
 from uuid import UUID
 
+from pydantic import BaseModel, Field
+
 from ai_security_monitor.domain.entities import Category
+from ai_security_monitor.presentation.api.schemas.analysis import AnalysisRead
 
 
 class EntryBase(BaseModel):

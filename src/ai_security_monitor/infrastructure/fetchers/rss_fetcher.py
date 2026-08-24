@@ -1,15 +1,17 @@
 # RSS/Atom feed fetcher implementation.
 
-from typing import Optional
+from datetime import datetime
+
 import feedparser
 import httpx
-from datetime import datetime
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Source, Category, SourceType
-from ai_security_monitor.domain.value_objects import ContentHash
-from ai_security_monitor.infrastructure.fetchers.base import BaseFetcher, fetcher_registry
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import Entry
+from ai_security_monitor.domain.value_objects import ContentHash
+from ai_security_monitor.infrastructure.fetchers.base import (
+    BaseFetcher,
+    fetcher_registry,
+)
 
 
 class RSSFetcher(BaseFetcher):

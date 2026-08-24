@@ -3,19 +3,23 @@ Abstract base fetcher and fetcher registry.
 Plugin architecture for extensible feed fetching.
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
-from uuid import UUID
-import asyncio
 
-from ai_security_monitor.domain.entities import Entry, Source, Category, FetchStatus
-from ai_security_monitor.domain.exceptions import (
-    FetchError, FetchTimeoutError, FetchRateLimitedError, FetchParseError
-)
-from ai_security_monitor.domain.events import EntryFetchedEvent, FetchCompletedEvent, FetchFailedEvent, event_bus
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import Entry, FetchStatus, Source
+from ai_security_monitor.domain.events import (
+    EntryFetchedEvent,
+    FetchFailedEvent,
+    event_bus,
+)
+from ai_security_monitor.domain.exceptions import (
+    FetchError,
+    FetchRateLimitedError,
+    FetchTimeoutError,
+)
 
 
 @dataclass
@@ -25,7 +29,7 @@ class FetchResult:
     entries_new: int
     entries_total: int
     status: FetchStatus
-    error_message: Optional[str] = None
+    error_message: str | None = None
     duration_ms: int = 0
 
 
@@ -35,14 +39,14 @@ class BaseFetcher(ABC):
     def __init__(
         self,
         source: Source,
-        timeout: Optional[int] = None,
-        max_retries: Optional[int] = None,
+        timeout: int | None = None,
+        max_retries: int | None = None,
     ):
         self.source = source
         self.timeout = timeout or settings.fetch.timeout
         self.max_retries = max_retries or settings.fetch.max_retries
         self._rate_limit_seconds = source.rate_limit_seconds or settings.fetch.rate_limit_default
-        self._last_fetch_time: Optional[datetime] = None
+        self._last_fetch_time: datetime | None = None
 
     @property
     @abstractmethod
@@ -106,7 +110,7 @@ class BaseFetcher(ABC):
                     duration_ms=duration_ms,
                 )
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 last_error = FetchTimeoutError(self.source.name, self.timeout)
             except FetchRateLimitedError:
                 raise  # Don't retry rate limiting

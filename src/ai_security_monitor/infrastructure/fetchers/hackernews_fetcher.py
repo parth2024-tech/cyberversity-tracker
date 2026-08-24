@@ -1,14 +1,16 @@
 # HackerNews fetcher for AI/ML tagged stories.
 
-import httpx
 from datetime import datetime
-from typing import Optional
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Source, Category
-from ai_security_monitor.domain.value_objects import ContentHash
-from ai_security_monitor.infrastructure.fetchers.base import BaseFetcher, fetcher_registry
+import httpx
+
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import Entry
+from ai_security_monitor.domain.value_objects import ContentHash
+from ai_security_monitor.infrastructure.fetchers.base import (
+    BaseFetcher,
+    fetcher_registry,
+)
 
 
 class HackerNewsFetcher(BaseFetcher):

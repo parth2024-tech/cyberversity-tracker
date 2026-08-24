@@ -1,12 +1,15 @@
 # Slack delivery adapter.
 
-import httpx
-from typing import Optional
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Analysis, Digest
-from ai_security_monitor.infrastructure.delivery.base import BaseDelivery, DeliveryResult, delivery_registry
+import httpx
+
+from ai_security_monitor.domain.entities import Analysis, Digest, Entry
 from ai_security_monitor.domain.exceptions import DeliveryConfigError
+from ai_security_monitor.infrastructure.delivery.base import (
+    BaseDelivery,
+    DeliveryResult,
+    delivery_registry,
+)
 
 
 class SlackDelivery(BaseDelivery):
@@ -20,7 +23,7 @@ class SlackDelivery(BaseDelivery):
         if not self.config.get("webhook_url"):
             raise DeliveryConfigError(self.channel_name, ["webhook_url"])
 
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> DeliveryResult:
+    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
         """Send digest to Slack."""
         try:
             blocks = self._build_blocks(digest, entries_with_analysis)
@@ -63,7 +66,7 @@ class SlackDelivery(BaseDelivery):
         except Exception as e:
             return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
 
-    def _build_blocks(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> list:
+    def _build_blocks(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> list:
         blocks = [
             {"type": "header", "text": {"type": "plain_text", "text": f"📋 {digest.schedule.title()} Digest"}},
             {"type": "context", "elements": [

@@ -1,15 +1,17 @@
 # arXiv API fetcher implementation.
 
-import httpx
-import feedparser
 from datetime import datetime
-from typing import Optional
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Source, Category
-from ai_security_monitor.domain.value_objects import ContentHash
-from ai_security_monitor.infrastructure.fetchers.base import BaseFetcher, fetcher_registry
+import feedparser
+import httpx
+
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import Entry
+from ai_security_monitor.domain.value_objects import ContentHash
+from ai_security_monitor.infrastructure.fetchers.base import (
+    BaseFetcher,
+    fetcher_registry,
+)
 
 
 class ArxivFetcher(BaseFetcher):

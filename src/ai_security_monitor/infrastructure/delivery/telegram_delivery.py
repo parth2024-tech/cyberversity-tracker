@@ -1,12 +1,15 @@
 # Telegram delivery adapter.
 
-import httpx
-from typing import Optional
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Analysis, Digest
-from ai_security_monitor.infrastructure.delivery.base import BaseDelivery, DeliveryResult, delivery_registry
+import httpx
+
+from ai_security_monitor.domain.entities import Analysis, Digest, Entry
 from ai_security_monitor.domain.exceptions import DeliveryConfigError
+from ai_security_monitor.infrastructure.delivery.base import (
+    BaseDelivery,
+    DeliveryResult,
+    delivery_registry,
+)
 
 
 class TelegramDelivery(BaseDelivery):
@@ -22,7 +25,7 @@ class TelegramDelivery(BaseDelivery):
         if missing:
             raise DeliveryConfigError(self.channel_name, missing)
 
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> DeliveryResult:
+    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
         """Send digest to Telegram."""
         try:
             message = self._build_message(digest, entries_with_analysis)
@@ -67,7 +70,7 @@ class TelegramDelivery(BaseDelivery):
             response = await client.post(url, json=payload)
             response.raise_for_status()
 
-    def _build_message(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> str:
+    def _build_message(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> str:
         """Build digest message (Telegram has 4096 char limit)."""
         header = (
             f"📋 <b>{digest.schedule.title()} Digest</b>\n"

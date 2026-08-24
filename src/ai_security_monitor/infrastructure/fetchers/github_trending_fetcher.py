@@ -1,15 +1,17 @@
 # GitHub Trending Security repos fetcher.
 
-import httpx
 from datetime import datetime
-from typing import Optional
-from uuid import UUID
+
+import httpx
 from bs4 import BeautifulSoup
 
-from ai_security_monitor.domain.entities import Entry, Source, Category
-from ai_security_monitor.domain.value_objects import ContentHash
-from ai_security_monitor.infrastructure.fetchers.base import BaseFetcher, fetcher_registry
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import Entry, Source
+from ai_security_monitor.domain.value_objects import ContentHash
+from ai_security_monitor.infrastructure.fetchers.base import (
+    BaseFetcher,
+    fetcher_registry,
+)
 
 
 class GitHubTrendingFetcher(BaseFetcher):
@@ -19,7 +21,7 @@ class GitHubTrendingFetcher(BaseFetcher):
     def fetcher_type(self) -> str:
         return "github_trending"
 
-    def __init__(self, source: Source, timeout: Optional[int] = None, max_retries: Optional[int] = None):
+    def __init__(self, source: Source, timeout: int | None = None, max_retries: int | None = None):
         super().__init__(source, timeout, max_retries)
         # Parse frequency from config (daily/weekly)
         self.frequency = source.config.get("frequency", "daily")

@@ -10,12 +10,11 @@ from ai_security_monitor.infrastructure.delivery import (
     slack_delivery,
     telegram_delivery,
 )
-
 from ai_security_monitor.infrastructure.delivery.base import (
     BaseDelivery,
+    DeliveryRegistry,
     DeliveryResult,
     delivery_registry,
-    DeliveryRegistry,
 )
 
 __all__ = [

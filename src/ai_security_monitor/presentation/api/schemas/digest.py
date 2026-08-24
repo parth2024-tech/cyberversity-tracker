@@ -1,9 +1,9 @@
 # Pydantic schemas for Digest API.
 
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class DigestBase(BaseModel):

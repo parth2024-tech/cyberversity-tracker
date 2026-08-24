@@ -4,11 +4,10 @@ Domain events - for event-driven architecture.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
-from uuid import UUID, uuid4
 from enum import Enum
+from uuid import UUID, uuid4
 
-from ai_security_monitor.domain.entities import Entry, Analysis, Source, FetchStatus
+from ai_security_monitor.domain.entities import Analysis, Entry, FetchStatus
 
 
 class EventType(str, Enum):
@@ -86,11 +85,12 @@ class DigestDeliveredEvent(DomainEvent):
     digest_id: UUID
     channel: str
     success: bool
-    error: Optional[str] = None
+    error: str | None = None
 
 
 # Event handler type
-from typing import Callable, Awaitable, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 T = TypeVar("T", bound=DomainEvent)
 EventHandler = Callable[[T], Awaitable[None]]

@@ -3,13 +3,12 @@ Delivery modules for sending digests via various channels.
 Supports Email, Slack, Telegram, and Console output.
 """
 
-import smtplib
-import json
 import logging
+import smtplib
 from datetime import datetime
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Dict, List, Optional, Any
+from email.mime.text import MIMEText
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -18,10 +17,10 @@ logger = logging.getLogger(__name__)
 class BaseDelivery:
     """Base class for delivery methods."""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: dict):
         self.config = config
 
-    def send(self, subject: str, content: str, entries_by_category: Dict) -> bool:
+    def send(self, subject: str, content: str, entries_by_category: dict) -> bool:
         """Send the digest. Returns True on success."""
         raise NotImplementedError
 
@@ -29,7 +28,7 @@ class BaseDelivery:
 class ConsoleDelivery(BaseDelivery):
     """Print digest to console (always available as fallback)."""
 
-    def send(self, subject: str, content: str, entries_by_category: Dict) -> bool:
+    def send(self, subject: str, content: str, entries_by_category: dict) -> bool:
         print("\n" + "=" * 80)
         print(f" {subject}")
         print("=" * 80)
@@ -41,7 +40,7 @@ class ConsoleDelivery(BaseDelivery):
 class EmailDelivery(BaseDelivery):
     """Send digest via email using SMTP."""
 
-    def send(self, subject: str, content: str, entries_by_category: Dict) -> bool:
+    def send(self, subject: str, content: str, entries_by_category: dict) -> bool:
         smtp_server = self.config.get('smtp_server', 'smtp.gmail.com')
         smtp_port = self.config.get('smtp_port', 587)
         username = self.config.get('username')
@@ -82,7 +81,7 @@ class EmailDelivery(BaseDelivery):
             logger.error(f"Failed to send email: {e}")
             return False
 
-    def _to_html(self, subject: str, content: str, entries_by_category: Dict) -> str:
+    def _to_html(self, subject: str, content: str, entries_by_category: dict) -> str:
         """Convert digest to HTML."""
         category_labels = {
             'ai_tech': '🤖 AI Technology Launches',
@@ -158,7 +157,7 @@ class EmailDelivery(BaseDelivery):
 class SlackDelivery(BaseDelivery):
     """Send digest via Slack webhook."""
 
-    def send(self, subject: str, content: str, entries_by_category: Dict) -> bool:
+    def send(self, subject: str, content: str, entries_by_category: dict) -> bool:
         webhook_url = self.config.get('webhook_url')
         channel = self.config.get('channel', '#general')
 
@@ -230,7 +229,7 @@ class SlackDelivery(BaseDelivery):
 class TelegramDelivery(BaseDelivery):
     """Send digest via Telegram Bot API."""
 
-    def send(self, subject: str, content: str, entries_by_category: Dict) -> bool:
+    def send(self, subject: str, content: str, entries_by_category: dict) -> bool:
         bot_token = self.config.get('bot_token')
         chat_id = self.config.get('chat_id')
 
@@ -293,7 +292,7 @@ class TelegramDelivery(BaseDelivery):
         return True
 
 
-def get_delivery(method: str, config: Dict) -> BaseDelivery:
+def get_delivery(method: str, config: dict) -> BaseDelivery:
     """Get delivery instance by method name."""
     deliveries = {
         'console': ConsoleDelivery,

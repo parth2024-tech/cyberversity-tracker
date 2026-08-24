@@ -2,9 +2,9 @@
 Value objects - immutable domain objects with value equality.
 """
 
+import hashlib
 from dataclasses import dataclass
 from typing import Self
-import hashlib
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,38 +54,32 @@ class ThreatScore:
         return f"V:{self.velocity} S:{self.severity} B:{self.blast_radius}"
 
 
-@dataclass(frozen=True, slots=True)
-class WeaponizationLevel:
+from enum import Enum
+
+
+class WeaponizationLevel(str, Enum):
     """Weaponization potential level."""
     THEORETICAL = "Theoretical"
     POC_VERIFIED = "PoC Verified"
     ACTIVE_WEAPONIZATION = "Active Weaponization"
 
-    value: str
-
-    def __post_init__(self):
-        valid = {self.THEORETICAL, self.POC_VERIFIED, self.ACTIVE_WEAPONIZATION}
-        if self.value not in valid:
-            raise ValueError(f"Invalid weaponization level: {self.value}")
+    @classmethod
+    def theoretical(cls) -> "WeaponizationLevel":
+        return cls.THEORETICAL
 
     @classmethod
-    def theoretical(cls) -> Self:
-        return cls(cls.THEORETICAL)
+    def poc_verified(cls) -> "WeaponizationLevel":
+        return cls.POC_VERIFIED
 
     @classmethod
-    def poc_verified(cls) -> Self:
-        return cls(cls.POC_VERIFIED)
-
-    @classmethod
-    def active_weaponization(cls) -> Self:
-        return cls(cls.ACTIVE_WEAPONIZATION)
+    def active_weaponization(cls) -> "WeaponizationLevel":
+        return cls.ACTIVE_WEAPONIZATION
 
     def __str__(self) -> str:
         return self.value
 
 
-@dataclass(frozen=True, slots=True)
-class AttackArchetype:
+class AttackArchetype(str, Enum):
     """Known attack archetypes for classification."""
     JAILBREAK = "Jailbreak"
     RAG_POISONING = "RAG Poisoning"
@@ -100,25 +94,12 @@ class AttackArchetype:
     STANDARD_VULN = "Standard Vulnerability"
     UNKNOWN = "Unknown"
 
-    value: str
-
-    def __post_init__(self):
-        valid = {
-            self.JAILBREAK, self.RAG_POISONING, self.MODEL_INVERSION,
-            self.PROMPT_INJECTION, self.DATA_POISONING, self.MODEL_EXTRACTION,
-            self.SUPPLY_CHAIN, self.RCE, self.PRIVILEGE_ESCALATION,
-            self.NOVEL_ACADEMIC, self.STANDARD_VULN, self.UNKNOWN
-        }
-        if self.value not in valid:
-            raise ValueError(f"Invalid attack archetype: {self.value}")
-
     @classmethod
-    def from_string(cls, value: str) -> Self:
-        """Create from string, defaulting to UNKNOWN."""
+    def from_string(cls, value: str) -> "AttackArchetype":
         try:
             return cls(value)
         except ValueError:
-            return cls(cls.UNKNOWN)
+            return cls.UNKNOWN
 
     def __str__(self) -> str:
         return self.value

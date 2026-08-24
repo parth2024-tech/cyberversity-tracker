@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  aether-guard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aether-guard-monitor
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - SCHEDULER_ENABLED=true
+      - SCHEDULER_FETCH_INTERVAL_MINUTES=15
+      - ANALYZER_DEFAULT_MODEL=heuristic
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

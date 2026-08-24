@@ -3,14 +3,12 @@ Database models and operations for the AI Security Monitor.
 Uses SQLite for zero-cost, zero-dependency storage with WAL mode.
 """
 
-import sqlite3
-import hashlib
 import json
+import sqlite3
+import threading
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Dict, Optional, Any
-from contextlib import contextmanager
-import threading
 
 
 class Database:
@@ -135,7 +133,7 @@ class Database:
             # Safe column migrations for existing databases
             cursor = conn.execute("PRAGMA table_info(entry_analysis)")
             existing_cols = {row['name'] for row in cursor.fetchall()}
-            
+
             new_columns = [
                 ("blast_radius_score", "INTEGER DEFAULT 20"),
                 ("affected_ecosystem", "TEXT"),
@@ -169,7 +167,7 @@ class Database:
             """, (name, category, type_, url, config_json, rate_limit, enabled))
             return cursor.fetchone()[0]
 
-    def get_sources(self, enabled_only: bool = True) -> List[Dict]:
+    def get_sources(self, enabled_only: bool = True) -> list[dict]:
         """Get all sources."""
         query = "SELECT * FROM sources"
         if enabled_only:
@@ -205,7 +203,7 @@ class Database:
     def add_entry(self, source_id: int, source_name: str, category: str,
                   title: str, url: str, content_hash: str,
                   summary: str = None, published_at: datetime = None,
-                  tags: List[str] = None, metadata: dict = None) -> Optional[int]:
+                  tags: list[str] = None, metadata: dict = None) -> int | None:
         """Add an entry if not duplicate (by content_hash). Returns inserted entry ID or None."""
         tags_json = json.dumps(tags) if tags else None
         metadata_json = json.dumps(metadata) if metadata else None
@@ -227,7 +225,7 @@ class Database:
 
     def save_analysis(self, entry_id: int, attack_vector: str, risk_assessment: str,
                       mitigation: str, threat_velocity: int, severity_index: int,
-                      blast_radius_score: int = 20, affected_ecosystem: List[str] = None,
+                      blast_radius_score: int = 20, affected_ecosystem: list[str] = None,
                       is_pre_cve_warning: bool = False, attack_archetype: str = None,
                       weaponization_potential: str = None, ai_model: str = "AetherGuard:v2"):
         """Save AI analysis for an entry."""
@@ -243,7 +241,7 @@ class Database:
                   blast_radius_score, affected_json, 1 if is_pre_cve_warning else 0,
                   attack_archetype, weaponization_potential, ai_model))
 
-    def get_analysis(self, entry_id: int) -> Optional[Dict]:
+    def get_analysis(self, entry_id: int) -> dict | None:
         """Get analysis for an entry."""
         with self.transaction() as conn:
             row = conn.execute("SELECT * FROM entry_analysis WHERE entry_id = ?", (entry_id,)).fetchone()
@@ -259,7 +257,7 @@ class Database:
 
     def get_entries(self, since: datetime = None, category: str = None,
                     limit: int = None, offset: int = 0,
-                    pre_cve_only: bool = False, high_velocity_only: bool = False) -> List[Dict]:
+                    pre_cve_only: bool = False, high_velocity_only: bool = False) -> list[dict]:
         """Get entries joined with AI analysis, Blast Radius, and Pre-CVE intelligence."""
         query = """
             SELECT 
@@ -343,7 +341,7 @@ class Database:
                 result.append(d)
             return result
 
-    def get_entries_for_digest(self, since: datetime, max_per_category: int = 10) -> Dict[str, List[Dict]]:
+    def get_entries_for_digest(self, since: datetime, max_per_category: int = 10) -> dict[str, list[dict]]:
         """Get entries grouped by category for digest."""
         categories = ['ai_tech', 'ai_research', 'cybersecurity', 'vulnerabilities', 'github_trending']
         result = {}
@@ -355,7 +353,7 @@ class Database:
 
         return result
 
-    def get_unanalyzed_entries(self, since: datetime = None, limit: int = 200) -> List[Dict]:
+    def get_unanalyzed_entries(self, since: datetime = None, limit: int = 200) -> list[dict]:
         """Get entries that haven't been analyzed yet."""
         query = """
             SELECT e.* FROM entries e
@@ -387,7 +385,7 @@ class Database:
                 result.append(d)
             return result
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get database statistics."""
         with self.transaction() as conn:
             stats = {}

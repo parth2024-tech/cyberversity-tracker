@@ -1,11 +1,13 @@
 # Console delivery adapter.
 
-from typing import Optional
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Analysis, Digest
-from ai_security_monitor.infrastructure.delivery.base import BaseDelivery, DeliveryResult, delivery_registry
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import Analysis, Digest, Entry
+from ai_security_monitor.infrastructure.delivery.base import (
+    BaseDelivery,
+    DeliveryResult,
+    delivery_registry,
+)
 
 
 class ConsoleDelivery(BaseDelivery):
@@ -19,7 +21,7 @@ class ConsoleDelivery(BaseDelivery):
         # No config required for console
         pass
 
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> DeliveryResult:
+    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
         """Print digest to console."""
         try:
             print("\n" + "=" * 80)
@@ -51,7 +53,7 @@ class ConsoleDelivery(BaseDelivery):
                         print(f"     📝 Vector: {analysis.attack_vector}")
                         print(f"     🛡️  Mitigation: {analysis.mitigation}")
                     else:
-                        print(f"     ⚠️  Not yet analyzed")
+                        print("     ⚠️  Not yet analyzed")
 
             print("\n" + "=" * 80)
             print("End of digest\n")
@@ -67,7 +69,7 @@ class ConsoleDelivery(BaseDelivery):
         """Print alert to console."""
         try:
             print("\n" + "🚨" + "=" * 78)
-            print(f"ALERT: High-velocity threat detected!")
+            print("ALERT: High-velocity threat detected!")
             print(f"Title: {entry.title}")
             print(f"URL: {entry.url}")
             print(f"Velocity: {analysis.threat_velocity}/100 | Severity: {analysis.severity_index}/100")

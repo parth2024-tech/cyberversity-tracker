@@ -4,13 +4,16 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ai_security_monitor.infrastructure.database.connection import db_manager, get_db_session
 from ai_security_monitor.core.metrics import update_business_metrics
+from ai_security_monitor.infrastructure.database.connection import (
+    get_db_session,
+)
 
-router = APIRouter(prefix="/health", tags=["Health"])
+router = APIRouter(tags=["Health"])
 
 
-@router.get("/")
+@router.get("/health")
+@router.get("/health/")
 async def health_check():
     """Basic health check."""
     return {
@@ -19,7 +22,7 @@ async def health_check():
     }
 
 
-@router.get("/ready")
+@router.get("/health/ready")
 async def readiness_check(session: AsyncSession = Depends(get_db_session)):
     """Readiness check - verifies database connectivity."""
     try:
@@ -36,17 +39,17 @@ async def readiness_check(session: AsyncSession = Depends(get_db_session)):
     }
 
 
-@router.get("/live")
+@router.get("/health/live")
 async def liveness_check():
     """Liveness check - always returns healthy if process is running."""
     return {"status": "alive"}
 
 
-@router.get("/metrics")
+@router.get("/health/metrics")
 async def metrics():
     """Prometheus metrics endpoint - delegates to core.metrics."""
+
     from ai_security_monitor.core.metrics import metrics_endpoint
-    from starlette.requests import Request
     # Create a mock request
     class MockRequest:
         pass

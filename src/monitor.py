@@ -2,20 +2,20 @@
 Main monitor orchestration - coordinates fetching, storing, analyzing, and delivering.
 """
 
-import yaml
 import logging
-import time
-import os
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from pathlib import Path
 import sys
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import yaml
+
 sys.path.insert(0, str(Path(__file__).parent))
 
-from database import Database, get_db
-from fetchers import get_fetcher
+from analyzer import create_analyzer
+from database import get_db
 from delivery import get_delivery
-from analyzer import create_analyzer, create_heuristic_analyzer, AnalysisResult
+from fetchers import get_fetcher
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,9 @@ class AISecurityMonitor:
         self._setup_logging()
         self._init_sources()
 
-    def _load_config(self) -> Dict:
+    def _load_config(self) -> dict:
         """Load configuration from YAML."""
-        with open(self.config_path, 'r') as f:
+        with open(self.config_path) as f:
             return yaml.safe_load(f)
 
     def _setup_logging(self):
@@ -69,7 +69,7 @@ class AISecurityMonitor:
                 enabled=source_config.get('enabled', True)
             )
 
-    def _should_fetch(self, source: Dict) -> bool:
+    def _should_fetch(self, source: dict) -> bool:
         """Check if source should be fetched based on rate limit."""
         if not source.get('last_fetched'):
             return True
@@ -78,7 +78,7 @@ class AISecurityMonitor:
         rate_limit = timedelta(seconds=source.get('rate_limit_seconds', 3600))
         return datetime.now() - last_fetch >= rate_limit
 
-    def fetch_source(self, source: Dict, on_entry_found: callable = None) -> Dict:
+    def fetch_source(self, source: dict, on_entry_found: callable = None) -> dict:
         """Fetch entries from a single source."""
         source_id = source['id']
         source_name = source['name']
@@ -232,7 +232,7 @@ class AISecurityMonitor:
             logger.error(f"Error fetching {source_name}: {e}")
             return {'status': 'error', 'entries_found': entries_found, 'entries_new': entries_new, 'error': error}
 
-    def fetch_all(self, on_entry_found: callable = None, ignore_rate_limit: bool = False) -> Dict:
+    def fetch_all(self, on_entry_found: callable = None, ignore_rate_limit: bool = False) -> dict:
         """Fetch from all enabled sources."""
         sources = self.db.get_sources(enabled_only=True)
         results = {'success': 0, 'error': 0, 'skipped': 0, 'total_new': 0}
@@ -246,7 +246,7 @@ class AISecurityMonitor:
 
         return results
 
-    def generate_digest(self, since: datetime = None, max_per_category: int = 10) -> Dict:
+    def generate_digest(self, since: datetime = None, max_per_category: int = 10) -> dict:
         """Generate digest content grouped by category."""
         if since is None:
             # Default to last 24 hours for daily, 7 days for weekly
@@ -269,7 +269,7 @@ class AISecurityMonitor:
         lines = []
         total_entries = sum(len(e) for e in entries_by_category.values())
 
-        lines.append(f"AI & Security Monitor Digest")
+        lines.append("AI & Security Monitor Digest")
         lines.append(f"Period: {since.strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}")
         lines.append(f"Total new items: {total_entries}")
         lines.append("=" * 60)
@@ -313,7 +313,7 @@ class AISecurityMonitor:
             'period_end': datetime.now()
         }
 
-    def send_digest(self, method: str = 'console', custom_config: Dict = None) -> bool:
+    def send_digest(self, method: str = 'console', custom_config: dict = None) -> bool:
         """Generate and send digest via specified method."""
         digest = self.generate_digest()
 
@@ -355,7 +355,7 @@ class AISecurityMonitor:
                 return self.send_digest('console')
             return False
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get monitor statistics."""
         return self.db.get_stats()
 
@@ -363,7 +363,7 @@ class AISecurityMonitor:
         """Clean up old entries."""
         return self.db.cleanup_old_entries(days)
 
-    def run_analysis(self, since: datetime = None, limit: int = 50) -> Dict:
+    def run_analysis(self, since: datetime = None, limit: int = 50) -> dict:
         """Run AI analysis on unanalyzed entries."""
         if since is None:
             schedule = self.config.get('digest', {}).get('schedule', 'daily')
@@ -409,7 +409,7 @@ class AISecurityMonitor:
         logger.info(f"AI Analysis complete: {analyzed} analyzed, {high_velocity} high velocity")
         return {'analyzed': analyzed, 'failed': len(unanalyzed) - analyzed, 'high_velocity': high_velocity}
 
-    def generate_enriched_digest(self, since: datetime = None, max_per_category: int = 10) -> Dict:
+    def generate_enriched_digest(self, since: datetime = None, max_per_category: int = 10) -> dict:
         """Generate digest with AI analysis enrichment."""
         if since is None:
             schedule = self.config.get('digest', {}).get('schedule', 'daily')
@@ -438,7 +438,7 @@ class AISecurityMonitor:
         lines = []
         total_entries = sum(len(e) for e in entries_by_category.values())
 
-        lines.append(f"AI & Security Monitor Digest (AI-Enriched)")
+        lines.append("AI & Security Monitor Digest (AI-Enriched)")
         lines.append(f"Period: {since.strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}")
         lines.append(f"Total new items: {total_entries}")
         lines.append("=" * 60)
@@ -497,7 +497,7 @@ def run_fetch_job(config_path: str = "config/sources.yaml"):
     return monitor.fetch_all()
 
 
-def run_digest_job(config_path: str = "config/sources.yaml", method: str = 'console', delivery_config: Dict = None):
+def run_digest_job(config_path: str = "config/sources.yaml", method: str = 'console', delivery_config: dict = None):
     """Standalone function for cron job - generate and send digest."""
     monitor = AISecurityMonitor(config_path)
     return monitor.send_digest(method, delivery_config)

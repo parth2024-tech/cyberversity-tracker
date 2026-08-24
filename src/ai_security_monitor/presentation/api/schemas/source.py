@@ -1,11 +1,11 @@
 # Pydantic schemas for Source API.
 
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
 from uuid import UUID
 
-from ai_security_monitor.domain.entities import Category, SourceType, FetchStatus
+from pydantic import BaseModel, Field
+
+from ai_security_monitor.domain.entities import Category, FetchStatus, SourceType
 
 
 class SourceBase(BaseModel):
@@ -14,7 +14,7 @@ class SourceBase(BaseModel):
     category: Category = Field(..., description="Source category")
     type: SourceType = Field(..., description="Source type")
     url: str = Field(default="", description="Source URL")
-    query: Optional[str] = Field(default=None, description="Query parameter")
+    query: str | None = Field(default=None, description="Query parameter")
     rate_limit_seconds: int = Field(default=3600, description="Rate limit in seconds")
     enabled: bool = Field(default=True, description="Whether source is enabled")
     config: dict = Field(default_factory=dict, description="Type-specific config")
@@ -27,21 +27,21 @@ class SourceCreate(SourceBase):
 
 class SourceUpdate(BaseModel):
     """Schema for updating a source."""
-    name: Optional[str] = None
-    category: Optional[Category] = None
-    type: Optional[SourceType] = None
-    url: Optional[str] = None
-    query: Optional[str] = None
-    rate_limit_seconds: Optional[int] = None
-    enabled: Optional[bool] = None
-    config: Optional[dict] = None
+    name: str | None = None
+    category: Category | None = None
+    type: SourceType | None = None
+    url: str | None = None
+    query: str | None = None
+    rate_limit_seconds: int | None = None
+    enabled: bool | None = None
+    config: dict | None = None
 
 
 class SourceRead(SourceBase):
     """Schema for reading a source."""
     id: UUID
-    last_fetched_at: Optional[datetime] = None
-    last_status: Optional[FetchStatus] = None
+    last_fetched_at: datetime | None = None
+    last_status: FetchStatus | None = None
     last_entries_new: int = 0
     created_at: datetime
     updated_at: datetime
@@ -58,7 +58,7 @@ class FetchLogRead(BaseModel):
     status: FetchStatus
     entries_new: int
     entries_total: int
-    error_message: Optional[str] = None
+    error_message: str | None = None
     duration_ms: int
     fetched_at: datetime
 

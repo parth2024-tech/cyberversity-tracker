@@ -3,17 +3,18 @@ Unit of Work pattern for transaction management.
 Ensures atomic operations across multiple repositories.
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Optional, AsyncGenerator
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.infrastructure.database.repositories import (
-    SQLAlchemyEntryRepository,
     SQLAlchemyAnalysisRepository,
-    SQLAlchemySourceRepository,
-    SQLAlchemyFetchLogRepository,
     SQLAlchemyDigestRepository,
+    SQLAlchemyEntryRepository,
+    SQLAlchemyFetchLogRepository,
+    SQLAlchemySourceRepository,
 )
 
 
@@ -23,16 +24,16 @@ class UnitOfWork:
     All repositories share the same session for atomic operations.
     """
 
-    def __init__(self, session: Optional[AsyncSession] = None):
+    def __init__(self, session: AsyncSession | None = None):
         self._session = session
         self._owns_session = session is None
 
         # Repositories (lazy initialized)
-        self._entries: Optional[SQLAlchemyEntryRepository] = None
-        self._analysis: Optional[SQLAlchemyAnalysisRepository] = None
-        self._sources: Optional[SQLAlchemySourceRepository] = None
-        self._fetch_logs: Optional[SQLAlchemyFetchLogRepository] = None
-        self._digests: Optional[SQLAlchemyDigestRepository] = None
+        self._entries: SQLAlchemyEntryRepository | None = None
+        self._analysis: SQLAlchemyAnalysisRepository | None = None
+        self._sources: SQLAlchemySourceRepository | None = None
+        self._fetch_logs: SQLAlchemyFetchLogRepository | None = None
+        self._digests: SQLAlchemyDigestRepository | None = None
 
     @property
     def session(self) -> AsyncSession:
@@ -110,3 +111,6 @@ async def get_unit_of_work() -> AsyncGenerator[UnitOfWork, None]:
     """FastAPI dependency for UnitOfWork."""
     async with unit_of_work() as uow:
         yield uow
+
+
+SqlAlchemyUnitOfWork = UnitOfWork

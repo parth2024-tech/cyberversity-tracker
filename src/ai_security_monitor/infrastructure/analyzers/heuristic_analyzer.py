@@ -1,13 +1,17 @@
 # Heuristic analyzer - fast, zero-cost, no LLM required.
 
 import re
-from typing import Optional
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Category, AnalysisModel
-from ai_security_monitor.domain.value_objects import ThreatScore, WeaponizationLevel, AttackArchetype
-from ai_security_monitor.infrastructure.analyzers.base import BaseAnalyzer, AnalysisResult, analyzer_registry
-from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import AnalysisModel, Category, Entry
+from ai_security_monitor.domain.value_objects import (
+    AttackArchetype,
+    WeaponizationLevel,
+)
+from ai_security_monitor.infrastructure.analyzers.base import (
+    AnalysisResult,
+    BaseAnalyzer,
+    analyzer_registry,
+)
 
 
 class HeuristicAnalyzer(BaseAnalyzer):

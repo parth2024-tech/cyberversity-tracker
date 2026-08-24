@@ -4,7 +4,8 @@ Async SQLAlchemy with SQLite (aiosqlite) for zero-cost deployment.
 """
 
 from contextlib import asynccontextmanager
-from typing import Optional
+
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -12,7 +13,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import NullPool
-from sqlalchemy import event, text
 
 from ai_security_monitor.config.settings import settings
 
@@ -20,11 +20,11 @@ from ai_security_monitor.config.settings import settings
 class DatabaseManager:
     """Manages database engine and sessions."""
 
-    def __init__(self, url: Optional[str] = None, echo: Optional[bool] = None):
+    def __init__(self, url: str | None = None, echo: bool | None = None):
         self._url = url or settings.database.url
         self._echo = echo if echo is not None else settings.database.echo
-        self._engine: Optional[AsyncEngine] = None
-        self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
+        self._engine: AsyncEngine | None = None
+        self._session_factory: async_sessionmaker[AsyncSession] | None = None
 
     @property
     def engine(self) -> AsyncEngine:

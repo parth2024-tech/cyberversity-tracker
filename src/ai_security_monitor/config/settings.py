@@ -4,7 +4,7 @@ All settings loaded from environment variables and config files.
 """
 
 from pathlib import Path
-from typing import Optional
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,7 +26,7 @@ class LoggingSettings(BaseSettings):
     """Logging configuration."""
     level: str = Field(default="INFO", description="Log level")
     format: str = Field(default="json", description="Log format: json or console")
-    file: Optional[Path] = Field(default=None, description="Log file path")
+    file: Path | None = Field(default=None, description="Log file path")
 
     model_config = SettingsConfigDict(env_prefix="LOG_")
 
@@ -72,7 +72,7 @@ class AnalyzerSettings(BaseSettings):
     default_model: str = Field(default="heuristic", description="Default analyzer: heuristic, ollama, groq")
     ollama_host: str = Field(default="http://localhost:11434", description="Ollama API host")
     ollama_model: str = Field(default="llama3.1:8b", description="Ollama model name")
-    groq_api_key: Optional[str] = Field(default=None, description="Groq API key")
+    groq_api_key: str | None = Field(default=None, description="Groq API key")
     groq_model: str = Field(default="llama-3.1-70b-versatile", description="Groq model name")
     max_tokens: int = Field(default=2000, description="Max tokens for LLM response")
     temperature: float = Field(default=0.1, description="LLM temperature")
@@ -89,20 +89,20 @@ class DeliverySettings(BaseSettings):
     email_enabled: bool = Field(default=False, description="Enable email delivery")
     email_smtp_server: str = Field(default="smtp.gmail.com", description="SMTP server")
     email_smtp_port: int = Field(default=587, description="SMTP port")
-    email_username: Optional[str] = Field(default=None, description="SMTP username")
-    email_password: Optional[str] = Field(default=None, description="SMTP password (app password)")
-    email_from: Optional[str] = Field(default=None, description="From email address")
-    email_to: Optional[str] = Field(default=None, description="To email address")
+    email_username: str | None = Field(default=None, description="SMTP username")
+    email_password: str | None = Field(default=None, description="SMTP password (app password)")
+    email_from: str | None = Field(default=None, description="From email address")
+    email_to: str | None = Field(default=None, description="To email address")
 
     # Slack
     slack_enabled: bool = Field(default=False, description="Enable Slack delivery")
-    slack_webhook_url: Optional[str] = Field(default=None, description="Slack webhook URL")
-    slack_channel: Optional[str] = Field(default=None, description="Slack channel")
+    slack_webhook_url: str | None = Field(default=None, description="Slack webhook URL")
+    slack_channel: str | None = Field(default=None, description="Slack channel")
 
     # Telegram
     telegram_enabled: bool = Field(default=False, description="Enable Telegram delivery")
-    telegram_bot_token: Optional[str] = Field(default=None, description="Telegram bot token")
-    telegram_chat_id: Optional[str] = Field(default=None, description="Telegram chat ID")
+    telegram_bot_token: str | None = Field(default=None, description="Telegram bot token")
+    telegram_chat_id: str | None = Field(default=None, description="Telegram chat ID")
 
     model_config = SettingsConfigDict(env_prefix="DELIVERY_")
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 from uuid import UUID, uuid4
 
 
@@ -57,11 +56,11 @@ class Source(Entity):
     category: Category
     type: SourceType
     url: str = ""
-    query: Optional[str] = None
+    query: str | None = None
     rate_limit_seconds: int = 3600
     enabled: bool = True
-    last_fetched_at: Optional[datetime] = None
-    last_status: Optional[FetchStatus] = None
+    last_fetched_at: datetime | None = None
+    last_status: FetchStatus | None = None
     last_entries_new: int = 0
     config: dict = field(default_factory=dict)
 
@@ -79,7 +78,7 @@ class Entry(Entity):
     category: Category
     tags: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
-    analysis: Optional[Analysis] = None
+    analysis: Analysis | None = None
 
 
 @dataclass(kw_only=True)
@@ -108,7 +107,7 @@ class FetchLog(Entity):
     status: FetchStatus
     entries_new: int = 0
     entries_total: int = 0
-    error_message: Optional[str] = None
+    error_message: str | None = None
     duration_ms: int = 0
     fetched_at: datetime = field(default_factory=datetime.utcnow)
 

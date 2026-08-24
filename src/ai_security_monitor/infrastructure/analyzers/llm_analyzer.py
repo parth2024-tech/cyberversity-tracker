@@ -2,19 +2,20 @@
 
 import json
 import os
-from typing import Optional
-from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, AnalysisModel
-from ai_security_monitor.domain.value_objects import ThreatScore, WeaponizationLevel, AttackArchetype
-from ai_security_monitor.infrastructure.analyzers.base import BaseAnalyzer, AnalysisResult, analyzer_registry
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import AnalysisModel, Entry
+from ai_security_monitor.infrastructure.analyzers.base import (
+    AnalysisResult,
+    BaseAnalyzer,
+    analyzer_registry,
+)
 
 
 class LLMAnalyzer(BaseAnalyzer):
     """LLM-based analyzer supporting Ollama and Groq."""
 
-    def __init__(self, config: Optional[dict] = None):
+    def __init__(self, config: dict | None = None):
         super().__init__(config)
         self.provider = config.get("provider", "ollama") if config else "ollama"
         self.model_name = config.get("model", settings.analyzer.ollama_model) if config else settings.analyzer.ollama_model
@@ -136,7 +137,9 @@ JSON only, no extra text."""
         except Exception as e:
             # Fallback to heuristic on LLM failure
             print(f"LLM analysis failed, falling back to heuristic: {e}")
-            from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import HeuristicAnalyzer
+            from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
+                HeuristicAnalyzer,
+            )
             fallback = HeuristicAnalyzer()
             return await fallback.analyze(entry)
 

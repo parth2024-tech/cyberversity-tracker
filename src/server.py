@@ -6,15 +6,21 @@ Provides live streaming of threat intel, AI launches, CVEs, and interactive cont
 import asyncio
 import json
 import logging
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Dict, Optional, Any, Set
-import sys
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, BackgroundTasks, Query, HTTPException
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Add project root and src to path
@@ -46,7 +52,7 @@ monitor = AISecurityMonitor(str(ROOT_DIR / "config" / "sources.yaml"))
 class ConnectionManager:
     """Manages active WebSocket connections and broadcasts live updates."""
     def __init__(self):
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -214,13 +220,13 @@ async def api_stats():
 
 @app.get("/api/entries")
 async def api_entries(
-    category: Optional[str] = None,
-    search: Optional[str] = None,
+    category: str | None = None,
+    search: str | None = None,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    hours: Optional[int] = None,
-    pre_cve: Optional[bool] = Query(False),
-    high_velocity: Optional[bool] = Query(False)
+    hours: int | None = None,
+    pre_cve: bool | None = Query(False),
+    high_velocity: bool | None = Query(False)
 ):
     """Query intelligence entries with filtering, search, and pagination."""
     since = None
@@ -289,8 +295,8 @@ async def api_trigger_fetch(background_tasks: BackgroundTasks, force: bool = Tru
 
 class TelegramDigestRequest(BaseModel):
     schedule: str = "daily"
-    bot_token: Optional[str] = None
-    chat_id: Optional[str] = None
+    bot_token: str | None = None
+    chat_id: str | None = None
 
 
 @app.post("/api/telegram/digest")
@@ -319,6 +325,6 @@ if (web_dir / "static").exists():
 async def serve_index():
     index_file = ROOT_DIR / "web" / "index.html"
     if index_file.exists():
-        with open(index_file, "r", encoding="utf-8") as f:
+        with open(index_file, encoding="utf-8") as f:
             return f.read()
     return HTMLResponse("<h1>AI Security Monitor - Web UI not found.</h1>", status_code=404)

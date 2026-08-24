@@ -2,24 +2,26 @@
 FastAPI application factory with lifespan management.
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from ai_security_monitor.config.settings import settings
-from ai_security_monitor.core.logging import setup_logging, get_logger
-from ai_security_monitor.core.metrics import metrics_middleware
 from ai_security_monitor.core.health import router as health_router
+from ai_security_monitor.core.logging import get_logger, setup_logging
+from ai_security_monitor.core.metrics import metrics_middleware
 from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.presentation.api.routers import (
-    stats_router, entries_router, sources_router,
-    analysis_router, digest_router,
+    analysis_router,
+    digest_router,
+    entries_router,
+    sources_router,
+    stats_router,
 )
 from ai_security_monitor.presentation.api.websocket.manager import websocket_router
-
 
 logger = get_logger(__name__)
 
@@ -43,7 +45,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Start background scheduler (if enabled)
     if settings.scheduler.enabled:
-        from ai_security_monitor.application.services.scheduler_service import SchedulerService
+        from ai_security_monitor.application.services.scheduler_service import (
+            SchedulerService,
+        )
         scheduler = SchedulerService()
         await scheduler.start()
         app.state.scheduler = scheduler

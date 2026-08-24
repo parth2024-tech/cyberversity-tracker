@@ -1,10 +1,10 @@
 # Structured logging configuration.
 
 import sys
+
 import structlog
-from structlog.stdlib import ProcessorFormatter
-from structlog.processors import JSONRenderer, TimeStamper, add_log_level
 from structlog.dev import ConsoleRenderer
+from structlog.processors import JSONRenderer, TimeStamper
 
 from ai_security_monitor.config.settings import settings
 

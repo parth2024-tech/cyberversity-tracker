@@ -3,16 +3,15 @@ Feed fetchers for various source types.
 Each fetcher handles a specific type of source (RSS, arXiv, Hacker News, NVD, GitHub, etc.)
 """
 
+import hashlib
+import logging
+import re
+import time
+from datetime import datetime
+from urllib.parse import urljoin
+
 import feedparser
 import requests
-import hashlib
-import json
-import re
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Any
-from urllib.parse import urljoin, urlparse
-import time
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class RSSFetcher(BaseFetcher):
     """Fetch entries from RSS/Atom feeds."""
 
     def fetch(self, url: str, source_name: str, category: str,
-              max_entries: int = 50) -> List[Dict]:
+              max_entries: int = 50) -> list[dict]:
         """Fetch and parse RSS feed."""
         entries = []
         try:
@@ -142,7 +141,7 @@ class ArxivFetcher(BaseFetcher):
         self.default_max_results = max_results
 
     def fetch(self, query: str = "", max_results: int = 50,
-              source_name: str = "arXiv", category: str = "ai_research") -> List[Dict]:
+              source_name: str = "arXiv", category: str = "ai_research") -> list[dict]:
         """Fetch papers from arXiv."""
         # Use defaults if not provided
         query = query or self.default_query
@@ -227,11 +226,11 @@ class HackerNewsFetcher(BaseFetcher):
 
     BASE_URL = "https://hacker-news.firebaseio.com/v0"
 
-    def __init__(self, rate_limit_seconds: int = 600, tags: List[str] = None):
+    def __init__(self, rate_limit_seconds: int = 600, tags: list[str] = None):
         super().__init__(rate_limit_seconds)
         self.tags = [t.lower() for t in (tags or [])]
 
-    def _get_item(self, item_id: int) -> Optional[Dict]:
+    def _get_item(self, item_id: int) -> dict | None:
         """Fetch a single item by ID."""
         try:
             response = self.session.get(f"{self.BASE_URL}/item/{item_id}.json", timeout=10)
@@ -249,7 +248,7 @@ class HackerNewsFetcher(BaseFetcher):
         return any(tag in combined for tag in self.tags)
 
     def fetch(self, source_name: str = "Hacker News", category: str = "ai_tech",
-              max_stories: int = 30) -> List[Dict]:
+              max_stories: int = 30) -> list[dict]:
         """Fetch top/new stories from Hacker News."""
         entries = []
         try:
@@ -318,7 +317,7 @@ class HackerNewsFetcher(BaseFetcher):
 class NVDFetcher(BaseFetcher):
     """Fetch CVE data from NVD feeds."""
 
-    def fetch(self, url: str, source_name: str = "NVD", category: str = "vulnerabilities") -> List[Dict]:
+    def fetch(self, url: str, source_name: str = "NVD", category: str = "vulnerabilities") -> list[dict]:
         """Fetch and parse NVD CVE feed (XML)."""
         entries = []
         try:
@@ -386,13 +385,13 @@ class NVDAPIFetcher(BaseFetcher):
         super().__init__(rate_limit_seconds)
 
     def fetch(self, source_name: str = "NVD API", category: str = "vulnerabilities",
-              results_per_page: int = 50) -> List[Dict]:
+              results_per_page: int = 50) -> list[dict]:
         """Fetch recent CVEs from NVD API."""
         entries = []
         try:
             # Get CVEs modified in last 7 days (NVD API requires both lastModStartDate and lastModEndDate)
             import datetime as dt
-            now = dt.datetime.now(dt.timezone.utc)
+            now = dt.datetime.now(dt.UTC)
             mod_start = (now - dt.timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
             mod_end = now.strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
@@ -484,7 +483,7 @@ class GitHubTrendingFetcher(BaseFetcher):
         self.default_since = since
 
     def fetch(self, language: str = "", since: str = "daily",
-              source_name: str = "GitHub Trending", category: str = "github_trending") -> List[Dict]:
+              source_name: str = "GitHub Trending", category: str = "github_trending") -> list[dict]:
         """Fetch trending repos."""
         # Use defaults if not provided
         language = language or self.default_language
@@ -576,7 +575,7 @@ class GitHubAdvisoriesFetcher(BaseFetcher):
     BASE_URL = "https://api.github.com/advisories"
 
     def fetch(self, source_name: str = "GitHub Advisories", category: str = "vulnerabilities",
-              per_page: int = 50) -> List[Dict]:
+              per_page: int = 50) -> list[dict]:
         """Fetch recent security advisories."""
         entries = []
         try:
@@ -649,7 +648,7 @@ class GitHubAdvisoriesFetcher(BaseFetcher):
 class CISAKEVFetcher(BaseFetcher):
     """Fetch CISA Known Exploited Vulnerabilities from JSON feed."""
 
-    def fetch(self, url: str, source_name: str = "CISA KEV", category: str = "vulnerabilities") -> List[Dict]:
+    def fetch(self, url: str, source_name: str = "CISA KEV", category: str = "vulnerabilities") -> list[dict]:
         """Fetch and parse CISA KEV JSON feed."""
         entries = []
         try:

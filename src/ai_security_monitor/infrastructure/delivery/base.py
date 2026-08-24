@@ -2,12 +2,10 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
-from ai_security_monitor.domain.entities import Entry, Analysis, Digest
+from ai_security_monitor.domain.entities import Analysis, Digest, Entry
 from ai_security_monitor.domain.events import DigestDeliveredEvent, event_bus
-from ai_security_monitor.domain.exceptions import DeliveryConfigError, DeliveryChannelError
 
 
 @dataclass
@@ -16,7 +14,7 @@ class DeliveryResult:
     success: bool
     channel: str
     message: str = ""
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class BaseDelivery(ABC):
@@ -38,7 +36,7 @@ class BaseDelivery(ABC):
         ...
 
     @abstractmethod
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> DeliveryResult:
+    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
         """Send a digest with analyzed entries."""
         ...
 
@@ -47,7 +45,7 @@ class BaseDelivery(ABC):
         """Send an immediate alert for a high-priority entry."""
         ...
 
-    async def _publish_delivery_event(self, digest_id: UUID, success: bool, error: Optional[str] = None) -> None:
+    async def _publish_delivery_event(self, digest_id: UUID, success: bool, error: str | None = None) -> None:
         """Publish delivery event."""
         await event_bus.publish(DigestDeliveredEvent(
             aggregate_id=digest_id,

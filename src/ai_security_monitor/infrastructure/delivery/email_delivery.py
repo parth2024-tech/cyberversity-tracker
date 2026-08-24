@@ -1,15 +1,17 @@
 # Email delivery adapter.
 
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional
-from uuid import UUID
+from email.mime.text import MIMEText
 
-from ai_security_monitor.domain.entities import Entry, Analysis, Digest
-from ai_security_monitor.infrastructure.delivery.base import BaseDelivery, DeliveryResult, delivery_registry
-from ai_security_monitor.domain.exceptions import DeliveryConfigError
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.domain.entities import Analysis, Digest, Entry
+from ai_security_monitor.domain.exceptions import DeliveryConfigError
+from ai_security_monitor.infrastructure.delivery.base import (
+    BaseDelivery,
+    DeliveryResult,
+    delivery_registry,
+)
 
 
 class EmailDelivery(BaseDelivery):
@@ -25,7 +27,7 @@ class EmailDelivery(BaseDelivery):
         if missing:
             raise DeliveryConfigError(self.channel_name, missing)
 
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> DeliveryResult:
+    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
         """Send digest via email."""
         try:
             msg = MIMEMultipart()
@@ -81,7 +83,7 @@ class EmailDelivery(BaseDelivery):
         except Exception as e:
             return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
 
-    def _build_html_body(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Optional[Analysis]]]) -> str:
+    def _build_html_body(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> str:
         html = f"""
         <html><body style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
         <h1>{settings.app_name} - {digest.schedule.title()} Digest</h1>
