@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AETHER-GUARD // Autonomous AI Security & Threat Radar</title>
+  
+  <!-- Tailwind CSS & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              black: '#0a0d14',
+              card: 'rgba(16, 22, 36, 0.75)',
+              border: 'rgba(38, 56, 89, 0.6)',
+              cyan: '#00f0ff',
+              cyanGlow: 'rgba(0, 240, 255, 0.3)',
+              purple: '#9d4edd',
+              red: '#ff0055',
+              green: '#00ff88',
+              yellow: '#ffb703',
+              amber: '#f59e0b',
+              muted: '#64748b'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'radar-spin': 'spin 8s linear infinite',
+            'slide-in': 'slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'glow-pulse': 'glowPulse 2s infinite'
+          },
+          keyframes: {
+            slideIn: {
+              '0%': { transform: 'translateX(100%) scale(0.9)', opacity: '0' },
+              '100%': { transform: 'translateX(0) scale(1)', opacity: '1' }
+            },
+            glowPulse: {
+              '0%, 100%': { opacity: '1', boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)' },
+              '50%': { opacity: '0.6', boxShadow: '0 0 5px rgba(245, 158, 11, 0.2)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons & Chart.js -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    
+    body {
+      background-color: #06090e;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(157, 78, 221, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
+        linear-gradient(to bottom, rgba(10, 13, 20, 0.8), rgba(6, 9, 14, 0.95));
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    
+    .glass-panel {
+      background: rgba(13, 19, 32, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(40, 60, 95, 0.45);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    }
+    
+    .glass-panel:hover {
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+
+    .neon-border-cyan {
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2), inset 0 0 15px rgba(0, 240, 255, 0.05);
+    }
+
+    .neon-border-red {
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.3), inset 0 0 15px rgba(255, 0, 85, 0.05);
+    }
+
+    .neon-border-amber {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.35), inset 0 0 15px rgba(245, 158, 11, 0.05);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(10, 13, 20, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(45, 65, 100, 0.6);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00f0ff;
+    }
+
+    .toast-enter {
+      animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .toast-exit {
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateX(100%) scale(0.9);
+    }
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-cyber-cyan selection:text-black">
+
+  <!-- TOP TOAST CONTAINER (Floating Live Alerts) -->
+  <div id="toast-container" class="fixed top-20 right-5 z-50 flex flex-col gap-3 max-w-md w-full pointer-events-none">
+    <!-- Dynamic Toasts Injected Here -->
+  </div>
+
+  <!-- MODAL: Full Article & AI Blast Radius Inspection -->
+  <div id="inspect-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-cyber-cyan/40">
+      <button onclick="closeInspectModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white bg-gray-800/60 hover:bg-gray-700/80 p-2 rounded-xl transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      
+      <div id="modal-content" class="overflow-y-auto pr-2 flex-1 space-y-5">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Sources Management -->
+  <div id="sources-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-cyber-border">
+      <div class="flex items-center justify-between pb-4 border-b border-cyber-border">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-cyber-purple/20 text-cyber-purple flex items-center justify-center">
+            <i data-lucide="radio" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold tracking-wide">Intelligence Feeds & Sources</h2>
+            <p class="text-xs text-cyber-muted">Manage active RSS streams, research channels, and CVE APIs</p>
+          </div>
+        </div>
+        <button onclick="closeSourcesModal()" class="text-gray-400 hover:text-white bg-gray-800/60 hover:bg-gray-700/80 p-2 rounded-xl transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="sources-list" class="overflow-y-auto mt-4 pr-1 space-y-3 flex-1">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Telegram Broadcast -->
+  <div id="telegram-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-cyber-cyan/40">
+      <div class="flex items-center justify-between pb-4 border-b border-cyber-border">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <i data-lucide="send" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold">Dispatch Telegram Digest</h2>
+            <p class="text-xs text-cyber-muted">Send compiled intelligence to your channel</p>
+          </div>
+        </div>
+        <button onclick="closeTelegramModal()" class="text-gray-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-mono text-gray-400 mb-1">SCHEDULE SCOPE</label>
+          <select id="tg-schedule" class="w-full bg-cyber-black/80 border border-cyber-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyber-cyan font-mono">
+            <option value="daily">Daily Digest (Last 24 Hours)</option>
+            <option value="weekly">Weekly Digest (Last 7 Days)</option>
+          </select>
+        </div>
+
+        <div id="tg-status-box" class="hidden p-3 rounded-xl text-xs font-mono"></div>
+
+        <button id="tg-send-btn" onclick="sendTelegramDigest()" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition">
+          <i data-lucide="send" class="w-4 h-4"></i> Send Digest Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MAIN CONTAINER -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- HEADER / COMMAND BAR -->
+    <header class="glass-panel rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border border-cyber-border/80">
+      <!-- Title & Live Radar Status -->
+      <div class="flex items-center gap-4">
+        <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-cyber-black border border-cyber-cyan/40 shadow-lg shadow-cyan-500/10">
+          <i data-lucide="shield-alert" class="w-6 h-6 text-cyber-cyan"></i>
+          <span id="radar-pulse" class="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyber-green"></span>
+          </span>
+        </div>
+
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-xl sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-cyber-cyan">
+              AETHER-GUARD
+            </h1>
+            <span class="text-[10px] font-mono uppercase bg-cyber-cyan/10 border border-cyber-cyan/30 text-cyber-cyan px-2 py-0.5 rounded-md font-semibold">
+              Autonomous AI Threat Radar
+            </span>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-mono text-cyber-muted mt-0.5">
+            <span class="flex items-center gap-1.5" id="connection-status">
+              <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span>
+              WS: STREAMING
+            </span>
+            <span>•</span>
+            <span id="clock" class="text-slate-400">00:00:00 UTC</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Controls -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <!-- Audio Notification Toggle -->
+        <button id="audio-toggle" onclick="toggleAudio()" class="p-2.5 rounded-xl bg-cyber-black/60 border border-cyber-border hover:border-cyber-cyan/50 text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono" title="Toggle audio alerts">
+          <i id="audio-icon" data-lucide="volume-2" class="w-4 h-4 text-cyber-cyan"></i>
+          <span class="hidden sm:inline">SOUND: ON</span>
+        </button>
+
+        <!-- Sources Modal Trigger -->
+        <button onclick="openSourcesModal()" class="px-3.5 py-2.5 rounded-xl bg-cyber-black/60 border border-cyber-border hover:border-cyber-purple/50 text-gray-300 hover:text-white transition flex items-center gap-2 text-xs font-medium">
+          <i data-lucide="radio" class="w-4 h-4 text-cyber-purple"></i>
+          <span>Sources (<span id="active-sources-count">0</span>)</span>
+        </button>
+
+        <!-- Telegram Trigger -->
+        <button onclick="openTelegramModal()" class="px-3.5 py-2.5 rounded-xl bg-cyber-black/60 border border-cyber-border hover:border-blue-400/50 text-gray-300 hover:text-white transition flex items-center gap-2 text-xs font-medium">
+          <i data-lucide="send" class="w-4 h-4 text-blue-400"></i>
+          <span class="hidden sm:inline">Telegram</span>
+        </button>
+
+        <!-- Trigger Scan Button -->
+        <button id="scan-btn" onclick="triggerScan()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
+          <i id="scan-icon" data-lucide="refresh-cw" class="w-4 h-4 text-black"></i>
+          <span>Trigger Scan</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- METRICS & VELOCITY / PRE-CVE KPI ROW -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <!-- Total Intelligence Ingested -->
+      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-cyan">
+        <div>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-muted">Total Intel Tracked</p>
+          <h3 id="stat-total" class="text-2xl font-bold font-mono text-white mt-1">0</h3>
+          <p class="text-[10px] text-cyber-green flex items-center gap-1 mt-1 font-mono">
+            <i data-lucide="database" class="w-3 h-3"></i> SQLite WAL Engine
+          </p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-cyber-cyan/10 flex items-center justify-center text-cyber-cyan">
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Feature 5: Pre-CVE Zero-Day Warnings -->
+      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-amber neon-border-amber">
+        <div>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-amber font-bold flex items-center gap-1">
+            <i data-lucide="zap" class="w-3 h-3"></i> Pre-CVE Warnings
+          </p>
+          <h3 id="stat-precve" class="text-2xl font-bold font-mono text-cyber-amber mt-1">0</h3>
+          <p class="text-[10px] text-cyber-amber/80 font-mono mt-1">arXiv Academic Exploits</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-cyber-amber/10 flex items-center justify-center text-cyber-amber">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Feature 3: High Velocity Threats -->
+      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-red">
+        <div>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-red font-bold flex items-center gap-1">
+            <i data-lucide="flame" class="w-3 h-3"></i> High Velocity
+          </p>
+          <h3 id="stat-highvel" class="text-2xl font-bold font-mono text-cyber-red mt-1">0</h3>
+          <p class="text-[10px] text-cyber-red/80 font-mono mt-1">Velocity Score ≥ 70</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-cyber-red/10 flex items-center justify-center text-cyber-red">
+          <i data-lucide="activity" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- AI Releases & Research -->
+      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-purple">
+        <div>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-muted">AI Tech & Papers</p>
+          <h3 id="stat-ai" class="text-2xl font-bold font-mono text-cyber-purple mt-1">0</h3>
+          <p class="text-[10px] text-cyber-purple/80 font-mono mt-1">Frontier Models / arXiv</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-cyber-purple/10 flex items-center justify-center text-cyber-purple">
+          <i data-lucide="bot" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Threat Intel & CVEs -->
+      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-yellow">
+        <div>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-muted">CVEs & Security</p>
+          <h3 id="stat-sec" class="text-2xl font-bold font-mono text-cyber-yellow mt-1">0</h3>
+          <p class="text-[10px] text-cyber-yellow/80 font-mono mt-1">NVD / CISA KEV / GHSA</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-cyber-yellow/10 flex items-center justify-center text-cyber-yellow">
+          <i data-lucide="shield" class="w-5 h-5"></i>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- MAIN CONTENT AREA: Radar Stream + Analytics Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT 8 COLS: Live Intelligence Feed Stream -->
+      <div class="lg:col-span-8 space-y-4">
+        
+        <!-- Filter Bar & Search -->
+        <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <!-- Category Tabs with Pre-CVE and High Velocity Filters -->
+            <div class="flex items-center gap-1.5 overflow-x-auto w-full pb-1 text-xs font-mono">
+              <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-cyan text-black font-semibold transition whitespace-nowrap">ALL</button>
+              <button onclick="setCategory('pre_cve')" id="tab-pre_cve" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-black text-cyber-amber hover:text-white border border-cyber-amber/50 font-bold transition whitespace-nowrap flex items-center gap-1">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i> PRE-CVE ZERO DAYS
+              </button>
+              <button onclick="setCategory('high_velocity')" id="tab-high_velocity" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-black text-cyber-red hover:text-white border border-cyber-red/50 font-bold transition whitespace-nowrap flex items-center gap-1">
+                <i data-lucide="flame" class="w-3.5 h-3.5"></i> HIGH VELOCITY
+              </button>
+              <button onclick="setCategory('vulnerabilities')" id="tab-vulnerabilities" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">⚠️ CVEs</button>
+              <button onclick="setCategory('ai_tech')" id="tab-ai_tech" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">🤖 AI TECH</button>
+              <button onclick="setCategory('ai_research')" id="tab-ai_research" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">📚 RESEARCH</button>
+              <button onclick="setCategory('cybersecurity')" id="tab-cybersecurity" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">🔒 THREATS</button>
+              <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">⭐ REPOS</button>
+            </div>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative w-full">
+            <i data-lucide="search" class="w-4 h-4 text-cyber-muted absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input id="search-input" oninput="debounceSearch()" type="text" placeholder="Search CVEs, attack vectors, AI frameworks (PyTorch, LangChain, Ollama, DeepSeek)..." class="w-full bg-cyber-black/80 border border-cyber-border rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-cyber-cyan font-mono placeholder:text-gray-600 transition">
+          </div>
+        </div>
+
+        <!-- Live Scan Status Banner (Shows when scan is running) -->
+        <div id="scan-progress-banner" class="hidden glass-panel rounded-2xl p-3 border-cyber-cyan/40 bg-cyber-cyan/5 flex items-center justify-between animate-pulse">
+          <div class="flex items-center gap-3">
+            <div class="w-2.5 h-2.5 rounded-full bg-cyber-cyan animate-ping"></div>
+            <p id="scan-banner-text" class="text-xs font-mono text-cyber-cyan font-semibold">Active intelligence sweep & AI correlation in progress...</p>
+          </div>
+          <span class="text-[10px] font-mono text-gray-400">STREAMING</span>
+        </div>
+
+        <!-- Feed Cards Container -->
+        <div id="feed-container" class="space-y-4">
+          <!-- Dynamic Feed Items Injected Here -->
+          <div class="glass-panel rounded-2xl p-12 text-center text-cyber-muted space-y-3">
+            <i data-lucide="radar" class="w-10 h-10 mx-auto text-cyber-cyan animate-spin"></i>
+            <p class="font-mono text-sm">Synchronizing Intelligence Stream...</p>
+          </div>
+        </div>
+
+        <!-- Pagination Load More -->
+        <div class="text-center pt-2">
+          <button id="load-more-btn" onclick="loadMore()" class="px-6 py-2.5 rounded-xl bg-cyber-black/80 hover:bg-cyber-black border border-cyber-border hover:border-cyber-cyan text-xs font-mono text-gray-300 transition">
+            Load More Intel
+          </button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT 4 COLS: Radar Velocity, Blast Radius & Charts -->
+      <div class="lg:col-span-4 space-y-4">
+        
+        <!-- Category Breakdown Chart -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold tracking-wide flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-cyber-cyan"></i>
+              Intel Distribution
+            </h3>
+            <span class="text-[10px] font-mono text-cyber-muted uppercase">REAL-TIME</span>
+          </div>
+
+          <div class="relative h-56 flex items-center justify-center">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Autonomous Engine Capabilities Overview -->
+        <div class="glass-panel rounded-2xl p-5 space-y-3 border-t-2 border-t-cyber-cyan/50">
+          <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="cpu" class="w-4 h-4 text-cyber-cyan"></i>
+            Autonomous Intelligence Core
+          </h3>
+          <div class="space-y-2 text-[11px] font-mono">
+            <div class="p-2.5 rounded-lg bg-cyber-black/60 border border-cyber-border/80">
+              <div class="text-cyber-amber font-bold flex items-center gap-1">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i> Pre-CVE Early Warning Engine
+              </div>
+              <p class="text-gray-400 mt-0.5">Scans arXiv research for novel zero-day prompt injections, jailbreaks & RAG poisoning.</p>
+            </div>
+            <div class="p-2.5 rounded-lg bg-cyber-black/60 border border-cyber-border/80">
+              <div class="text-cyber-cyan font-bold flex items-center gap-1">
+                <i data-lucide="target" class="w-3.5 h-3.5"></i> AI Blast Radius Calculator
+              </div>
+              <p class="text-gray-400 mt-0.5">Cross-correlates CVEs with open-source AI stacks (PyTorch, LangChain, Ollama, vLLM).</p>
+            </div>
+            <div class="p-2.5 rounded-lg bg-cyber-black/60 border border-cyber-border/80">
+              <div class="text-cyber-purple font-bold flex items-center gap-1">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Autonomous AI Triage & Fixes
+              </div>
+              <p class="text-gray-400 mt-0.5">Extracts exact attack techniques, risk assessments, and code mitigations in real-time.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Scanner Activity Log -->
+        <div class="glass-panel rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold tracking-wide flex items-center gap-2">
+              <i data-lucide="list-tree" class="w-4 h-4 text-cyber-purple"></i>
+              Sweep Telemetry
+            </h3>
+            <span class="text-[10px] font-mono text-cyber-muted">LAST 24H</span>
+          </div>
+
+          <div id="recent-fetches-list" class="space-y-2 max-h-72 overflow-y-auto pr-1 text-xs font-mono">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- JAVASCRIPT: Radar Engine, WebSockets & Interactive UI -->
+  <script>
+    // Global State
+    let currentCategory = 'all';
+    let searchQuery = '';
+    let offset = 0;
+    const limit = 25;
+    let ws = null;
+    let audioEnabled = true;
+    let categoryChart = null;
+    let allFeedItems = [];
+
+    // Audio synthesizer for alert sound
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(isHighAlert = false) {
+      if (!audioEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (isHighAlert) {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.15);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.2);
+        }
+      } catch (e) {
+        console.warn("Audio play blocked: ", e);
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const icon = document.getElementById('audio-icon');
+      const toggleBtn = document.getElementById('audio-toggle');
+      if (audioEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        toggleBtn.querySelector('span').innerText = 'SOUND: ON';
+        toggleBtn.classList.remove('opacity-60');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        toggleBtn.querySelector('span').innerText = 'SOUND: OFF';
+        toggleBtn.classList.add('opacity-60');
+      }
+      lucide.createIcons();
+    }
+
+    // UTC Clock
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('clock').innerText = now.toUTCString().slice(17, 25) + ' UTC';
+    }, 1000);
+
+    // Initialize WebSockets
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log("WebSocket connected to Radar");
+        const statusEl = document.getElementById('connection-status');
+        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span> WS: STREAMING`;
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          handleWebSocketMessage(msg);
+        } catch (e) {
+          console.error("WS Parse error: ", e);
+        }
+      };
+
+      ws.onclose = () => {
+        const statusEl = document.getElementById('connection-status');
+        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyber-red animate-pulse"></span> WS: RECONNECTING...`;
+        setTimeout(initWebSocket, 3000);
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket error: ", err);
+      };
+    }
+
+    // Handle WebSocket messages
+    function handleWebSocketMessage(msg) {
+      if (msg.type === 'connected') {
+        renderStats(msg.stats);
+      } else if (msg.type === 'new_entry') {
+        const entry = msg.data;
+        showToastNotification(entry);
+        prependFeedItem(entry);
+        const isCritical = entry.category === 'vulnerabilities' || (entry.analysis && entry.analysis.is_pre_cve_warning);
+        playBeep(isCritical);
+        refreshStats();
+      } else if (msg.type === 'scan_status') {
+        const banner = document.getElementById('scan-progress-banner');
+        const icon = document.getElementById('scan-icon');
+        if (msg.status === 'started') {
+          banner.classList.remove('hidden');
+          document.getElementById('scan-banner-text').innerText = msg.message || "Active intelligence sweep & AI correlation in progress...";
+          icon.classList.add('animate-spin');
+        } else {
+          banner.classList.add('hidden');
+          icon.classList.remove('animate-spin');
+          if (msg.results) {
+            refreshStats();
+            loadFeed(true);
+          }
+        }
+      }
+    }
+
+    // Toast Pop-up Notification Engine
+    function showToastNotification(entry) {
+      const container = document.getElementById('toast-container');
+      const isPreCve = entry.analysis && entry.analysis.is_pre_cve_warning;
+      const isCritical = entry.category === 'vulnerabilities' || (entry.analysis && entry.analysis.threat_velocity >= 70);
+      
+      const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
+      const toast = document.createElement('div');
+      toast.id = toastId;
+      
+      let borderClass = 'border-cyber-cyan/60 neon-border-cyan bg-cyber-black/90';
+      if (isPreCve) {
+        borderClass = 'border-cyber-amber/90 neon-border-amber bg-cyber-black/95';
+      } else if (isCritical) {
+        borderClass = 'border-cyber-red/80 neon-border-red bg-cyber-red/10';
+      }
+
+      const icon = isPreCve ? 'zap' : (isCritical ? 'flame' : (entry.category === 'ai_tech' ? 'bot' : 'shield-alert'));
+      const color = isPreCve ? 'text-cyber-amber' : (isCritical ? 'text-cyber-red' : (entry.category === 'ai_tech' ? 'text-cyber-purple' : 'text-cyber-cyan'));
+
+      toast.className = `glass-panel pointer-events-auto rounded-xl p-4 shadow-2xl transition-all duration-300 toast-enter flex gap-3 border ${borderClass}`;
+
+      toast.innerHTML = `
+        <div class="mt-0.5">
+          <div class="w-8 h-8 rounded-lg bg-black/40 ${color} flex items-center justify-center">
+            <i data-lucide="${icon}" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[10px] font-mono uppercase font-bold px-1.5 py-0.5 rounded bg-black/50 ${color}">
+              ${isPreCve ? '⚠️ PRE-CVE ZERO-DAY' : entry.category.replace('_', ' ')}
+            </span>
+            <span class="text-[10px] font-mono text-gray-400">JUST NOW</span>
+          </div>
+          <h4 class="text-xs font-bold text-white mt-1 line-clamp-1 hover:text-cyber-cyan cursor-pointer" onclick='openInspectModal(${JSON.stringify(entry).replace(/'/g, "&apos;")})'>
+            ${entry.title}
+          </h4>
+          <p class="text-[11px] text-gray-300 line-clamp-2 mt-0.5">
+            ${(entry.analysis && entry.analysis.risk_assessment) || entry.summary || 'New security event detected.'}
+          </p>
+          <div class="mt-2 flex items-center justify-between">
+            <span class="text-[10px] font-mono text-cyber-muted">${entry.source_name}</span>
+            <button onclick='openInspectModal(${JSON.stringify(entry).replace(/'/g, "&apos;")})' class="text-[11px] text-cyber-cyan hover:underline flex items-center gap-1 font-mono">
+              Inspect AI Blast <i data-lucide="arrow-right" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+        <button onclick="dismissToast('${toastId}')" class="text-gray-400 hover:text-white self-start">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+
+      container.prepend(toast);
+      lucide.createIcons();
+
+      setTimeout(() => dismissToast(toastId), 7000);
+    }
+
+    function dismissToast(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('toast-exit');
+        setTimeout(() => el.remove(), 300);
+      }
+    }
+
+    // Fetch and render Stats
+    async function refreshStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        renderStats(data);
+      } catch (e) {
+        console.error("Stats refresh error: ", e);
+      }
+    }
+
+    function renderStats(stats) {
+      if (!stats) return;
+      document.getElementById('stat-total').innerText = (stats.total_entries || 0).toLocaleString();
+      document.getElementById('active-sources-count').innerText = stats.total_sources || 0;
+      document.getElementById('stat-precve').innerText = (stats.pre_cve_warnings || 0).toLocaleString();
+      document.getElementById('stat-highvel').innerText = (stats.high_velocity_entries || 0).toLocaleString();
+
+      const cats = stats.by_category || {};
+      document.getElementById('stat-ai').innerText = ((cats.ai_tech || 0) + (cats.ai_research || 0)).toLocaleString();
+      document.getElementById('stat-sec').innerText = ((cats.cybersecurity || 0) + (cats.vulnerabilities || 0)).toLocaleString();
+
+      renderCategoryChart(cats);
+
+      const fetchList = document.getElementById('recent-fetches-list');
+      if (stats.recent_fetches && stats.recent_fetches.length > 0) {
+        fetchList.innerHTML = stats.recent_fetches.map(f => `
+          <div class="flex items-center justify-between p-2 rounded-lg bg-cyber-black/50 border border-cyber-border/60">
+            <div class="flex items-center gap-2 truncate">
+              <span class="w-2 h-2 rounded-full ${f.status === 'success' ? 'bg-cyber-green' : (f.status === 'error' ? 'bg-cyber-red' : 'bg-cyber-yellow')}"></span>
+              <span class="truncate text-gray-300 font-medium">${f.source_name}</span>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-[10px] text-cyber-cyan">+${f.entries_new} new</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        fetchList.innerHTML = `<p class="text-cyber-muted text-center py-4">No recent fetch activity.</p>`;
+      }
+    }
+
+    // Render Chart.js Donut
+    function renderCategoryChart(cats) {
+      const ctx = document.getElementById('categoryChart').getContext('2d');
+      const labels = ['Vulnerabilities', 'AI Tech', 'AI Research', 'Cybersecurity', 'Trending Repos'];
+      const dataValues = [
+        cats.vulnerabilities || 0,
+        cats.ai_tech || 0,
+        cats.ai_research || 0,
+        cats.cybersecurity || 0,
+        cats.github_trending || 0
+      ];
+
+      if (categoryChart) {
+        categoryChart.data.datasets[0].data = dataValues;
+        categoryChart.update();
+        return;
+      }
+
+      categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: dataValues,
+            backgroundColor: [
+              '#ff0055',
+              '#00f0ff',
+              '#9d4edd',
+              '#ffb703',
+              '#00ff88'
+            ],
+            borderColor: '#0a0d14',
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#94a3b8',
+                font: { size: 10, family: 'JetBrains Mono' },
+                boxWidth: 10,
+                padding: 12
+              }
+            }
+          },
+          cutout: '68%'
+        }
+      });
+    }
+
+    // Load Feed from API
+    async function loadFeed(reset = false) {
+      if (reset) {
+        offset = 0;
+        allFeedItems = [];
+      }
+
+      const container = document.getElementById('feed-container');
+      if (reset) {
+        container.innerHTML = `
+          <div class="glass-panel rounded-2xl p-12 text-center text-cyber-muted space-y-3">
+            <i data-lucide="radar" class="w-8 h-8 mx-auto text-cyber-cyan animate-spin"></i>
+            <p class="font-mono text-xs">Computing AI blast radius & threat intelligence...</p>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+
+      try {
+        let url = `/api/entries?limit=${limit}&offset=${offset}`;
+        if (currentCategory === 'pre_cve') {
+          url += `&pre_cve=true`;
+        } else if (currentCategory === 'high_velocity') {
+          url += `&high_velocity=true`;
+        } else if (currentCategory !== 'all') {
+          url += `&category=${currentCategory}`;
+        }
+        
+        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (reset) container.innerHTML = '';
+
+        if (!data.entries || data.entries.length === 0) {
+          if (reset) {
+            container.innerHTML = `
+              <div class="glass-panel rounded-2xl p-12 text-center text-cyber-muted space-y-2">
+                <i data-lucide="inbox" class="w-8 h-8 mx-auto text-gray-500"></i>
+                <p class="font-mono text-sm">No intelligence items found for selected filter.</p>
+              </div>
+            `;
+            lucide.createIcons();
+          }
+          document.getElementById('load-more-btn').style.display = 'none';
+          return;
+        }
+
+        allFeedItems = reset ? data.entries : [...allFeedItems, ...data.entries];
+        data.entries.forEach(entry => appendFeedCard(entry));
+        lucide.createIcons();
+
+        document.getElementById('load-more-btn').style.display = data.entries.length < limit ? 'none' : 'inline-block';
+      } catch (e) {
+        console.error("Load feed error: ", e);
+      }
+    }
+
+    function appendFeedCard(entry) {
+      const container = document.getElementById('feed-container');
+      const card = createCardElement(entry);
+      container.appendChild(card);
+    }
+
+    function prependFeedItem(entry) {
+      const container = document.getElementById('feed-container');
+      const card = createCardElement(entry);
+      card.classList.add('toast-enter', 'neon-border-cyan');
+      container.prepend(card);
+      lucide.createIcons();
+    }
+
+    function createCardElement(entry) {
+      const card = document.createElement('div');
+      
+      const analysis = entry.analysis || {};
+      const isPreCve = Boolean(analysis.is_pre_cve_warning || entry.is_pre_cve_warning);
+      const velocity = analysis.threat_velocity !== undefined ? analysis.threat_velocity : (entry.threat_velocity || 25);
+      const severity = analysis.severity_index !== undefined ? analysis.severity_index : (entry.severity_index || 25);
+      const blastRadius = analysis.blast_radius_score !== undefined ? analysis.blast_radius_score : (entry.blast_radius_score || 20);
+      const ecosystem = analysis.affected_ecosystem || entry.affected_ecosystem || [];
+      const archetype = analysis.attack_archetype || entry.attack_archetype || '';
+      const attackVector = analysis.attack_vector || entry.attack_vector || '';
+      const risk = analysis.risk_assessment || entry.risk_assessment || '';
+      const mitigation = analysis.mitigation || entry.mitigation || '';
+
+      let borderStyle = 'border-cyber-border/70 hover:border-cyber-cyan/50';
+      if (isPreCve) {
+        borderStyle = 'border-cyber-amber/80 neon-border-amber bg-cyber-amber/5';
+      } else if (velocity >= 70) {
+        borderStyle = 'border-cyber-red/80 neon-border-red bg-cyber-red/5';
+      }
+
+      card.className = `glass-panel rounded-2xl p-5 transition hover:translate-y-[-2px] border ${borderStyle} space-y-4 cursor-pointer`;
+
+      const categoryBadgeColors = {
+        vulnerabilities: 'text-cyber-red border-cyber-red/30 bg-cyber-red/10',
+        ai_tech: 'text-cyber-cyan border-cyber-cyan/30 bg-cyber-cyan/10',
+        ai_research: 'text-cyber-purple border-cyber-purple/30 bg-cyber-purple/10',
+        cybersecurity: 'text-cyber-yellow border-cyber-yellow/30 bg-cyber-yellow/10',
+        github_trending: 'text-cyber-green border-cyber-green/30 bg-cyber-green/10'
+      };
+
+      const badgeStyle = categoryBadgeColors[entry.category] || 'text-gray-300 border-gray-700 bg-gray-800';
+      const pubDate = entry.published_at ? entry.published_at.slice(0, 16).replace('T', ' ') : 'Recent';
+
+      // Feature 1: Ecosystem Pills
+      const ecoPills = ecosystem.slice(0, 3).map(e => `
+        <span class="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-800/60 text-[10px] font-mono">
+          <i data-lucide="cpu" class="w-2.5 h-2.5 inline mr-0.5"></i>${e}
+        </span>
+      `).join(' ');
+
+      card.innerHTML = `
+        <!-- Header Row -->
+        <div class="flex items-center justify-between gap-2 flex-wrap text-xs font-mono">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2.5 py-0.5 rounded-md border text-[11px] font-semibold uppercase ${badgeStyle}">
+              ${entry.category.replace('_', ' ')}
+            </span>
+
+            ${isPreCve ? `
+              <span class="px-2.5 py-0.5 rounded-md bg-cyber-amber/20 border border-cyber-amber/60 text-cyber-amber text-[10px] font-bold tracking-wide animate-pulse flex items-center gap-1">
+                <i data-lucide="zap" class="w-3 h-3"></i> PRE-CVE ZERO-DAY
+              </span>
+            ` : ''}
+
+            <span class="text-slate-400 font-semibold text-xs">${entry.source_name}</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Feature 3: Threat Velocity -->
+            <span class="px-2 py-0.5 rounded bg-black/60 border ${velocity >= 70 ? 'border-cyber-red text-cyber-red' : 'border-cyber-cyan/40 text-cyber-cyan'} text-[10px] font-bold font-mono">
+              VELOCITY: ${velocity}/100
+            </span>
+            <!-- Feature 1: Blast Radius -->
+            <span class="px-2 py-0.5 rounded bg-black/60 border ${blastRadius >= 60 ? 'border-cyber-purple text-cyber-purple' : 'border-gray-700 text-gray-400'} text-[10px] font-bold font-mono">
+              BLAST: ${blastRadius}/100
+            </span>
+          </div>
+        </div>
+
+        <!-- Title & Brief -->
+        <div>
+          <h3 class="text-base font-bold text-white hover:text-cyber-cyan transition line-clamp-2 leading-snug">
+            ${entry.title}
+          </h3>
+          <p class="text-xs text-gray-300 mt-1.5 line-clamp-2 leading-relaxed">
+            ${entry.summary || 'No summary available.'}
+          </p>
+        </div>
+
+        <!-- Feature 1, 3, 5: Autonomous AI Triage & Impact Box -->
+        ${attackVector || risk ? `
+          <div class="p-3 rounded-xl bg-cyber-black/70 border border-cyber-border/80 space-y-2 text-xs font-mono">
+            ${attackVector ? `
+              <div class="flex items-start gap-1.5 text-slate-300">
+                <span class="text-cyber-cyan font-bold flex-shrink-0">🎯 VECTOR:</span>
+                <span class="line-clamp-1 text-gray-300">${attackVector}</span>
+              </div>
+            ` : ''}
+            ${risk ? `
+              <div class="flex items-start gap-1.5 text-slate-300">
+                <span class="text-cyber-red font-bold flex-shrink-0">⚠️ RISK:</span>
+                <span class="line-clamp-1 text-gray-300">${risk}</span>
+              </div>
+            ` : ''}
+            ${mitigation ? `
+              <div class="flex items-start gap-1.5 text-slate-300">
+                <span class="text-cyber-green font-bold flex-shrink-0">🛡️ FIX:</span>
+                <span class="line-clamp-1 text-gray-300">${mitigation}</span>
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        <!-- Footer Row -->
+        <div class="flex items-center justify-between gap-3 pt-1 border-t border-cyber-border/40 text-xs font-mono flex-wrap">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            ${ecoPills}
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-cyber-muted text-[11px]">${pubDate}</span>
+            <button class="text-cyber-cyan hover:underline flex items-center gap-1 text-xs font-bold">
+              Deep Inspect <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      card.onclick = (e) => {
+        if (e.target.tagName !== 'A') {
+          openInspectModal(entry);
+        }
+      };
+
+      return card;
+    }
+
+    // Modal Inspection
+    function openInspectModal(entry) {
+      const modal = document.getElementById('inspect-modal');
+      const content = document.getElementById('modal-content');
+      
+      const analysis = entry.analysis || {};
+      const isPreCve = Boolean(analysis.is_pre_cve_warning || entry.is_pre_cve_warning);
+      const velocity = analysis.threat_velocity !== undefined ? analysis.threat_velocity : (entry.threat_velocity || 25);
+      const severity = analysis.severity_index !== undefined ? analysis.severity_index : (entry.severity_index || 25);
+      const blastRadius = analysis.blast_radius_score !== undefined ? analysis.blast_radius_score : (entry.blast_radius_score || 20);
+      const ecosystem = analysis.affected_ecosystem || entry.affected_ecosystem || [];
+      const archetype = analysis.attack_archetype || entry.attack_archetype || 'Standard Threat Vector';
+      const weaponization = analysis.weaponization_potential || entry.weaponization_potential || 'Theoretical';
+      const attackVector = analysis.attack_vector || entry.attack_vector || 'Refer to threat advisory for exact technique specifications.';
+      const risk = analysis.risk_assessment || entry.risk_assessment || 'Evaluate exposure within your specific deployment environment.';
+      const mitigation = analysis.mitigation || entry.mitigation || 'Apply upstream vendor updates and audit boundary access.';
+
+      const pubDate = entry.published_at ? entry.published_at.replace('T', ' ') : 'Unknown';
+      const tags = (entry.tags || []).map(t => `<span class="px-2 py-1 rounded bg-cyber-black text-cyber-cyan border border-cyber-border text-xs font-mono">#${t}</span>`).join(' ');
+      const ecoBadges = ecosystem.map(e => `<span class="px-2.5 py-1 rounded-lg bg-blue-950/80 text-blue-300 border border-blue-700/60 text-xs font-mono font-bold flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i>${e}</span>`).join(' ');
+
+      content.innerHTML = `
+        <div class="space-y-5">
+          <!-- Top Badges -->
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-md text-xs font-mono uppercase bg-cyber-cyan/10 border border-cyber-cyan/40 text-cyber-cyan font-bold">
+                ${entry.category.replace('_', ' ')}
+              </span>
+              ${isPreCve ? `
+                <span class="px-3 py-1 rounded-md text-xs font-mono uppercase bg-cyber-amber/20 border border-cyber-amber text-cyber-amber font-bold animate-pulse">
+                  ⚠️ PRE-CVE ZERO-DAY WARNING
+                </span>
+              ` : ''}
+              <span class="text-xs font-mono text-gray-400">${entry.source_name} • ${pubDate}</span>
+            </div>
+
+            <!-- Score Gauges -->
+            <div class="flex items-center gap-2 font-mono text-xs">
+              <span class="px-2.5 py-1 rounded-lg bg-black/60 border ${velocity >= 70 ? 'border-cyber-red text-cyber-red' : 'border-cyber-cyan text-cyber-cyan'} font-bold">
+                ⚡ VELOCITY: ${velocity}/100
+              </span>
+              <span class="px-2.5 py-1 rounded-lg bg-black/60 border ${severity >= 70 ? 'border-cyber-red text-cyber-red' : 'border-cyber-yellow text-cyber-yellow'} font-bold">
+                🛡️ SEVERITY: ${severity}/100
+              </span>
+              <span class="px-2.5 py-1 rounded-lg bg-black/60 border ${blastRadius >= 60 ? 'border-cyber-purple text-cyber-purple' : 'border-gray-700 text-gray-300'} font-bold">
+                💥 BLAST: ${blastRadius}/100
+              </span>
+            </div>
+          </div>
+
+          <!-- Title -->
+          <h2 class="text-xl sm:text-2xl font-bold text-white leading-snug">
+            ${entry.title}
+          </h2>
+
+          <!-- Feature 1: Affected AI Ecosystem Section -->
+          ${ecosystem.length > 0 ? `
+            <div class="p-4 rounded-xl bg-blue-950/20 border border-blue-800/40 space-y-2">
+              <h4 class="text-xs font-mono uppercase text-blue-400 font-bold flex items-center gap-1.5">
+                <i data-lucide="target" class="w-4 h-4"></i> Affected AI Ecosystem & Software Stack (Blast Radius: ${blastRadius}/100)
+              </h4>
+              <div class="flex flex-wrap gap-2 pt-1">
+                ${ecoBadges}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Feature 5: Pre-CVE Archetype & Weaponization -->
+          ${isPreCve ? `
+            <div class="p-4 rounded-xl bg-cyber-amber/10 border border-cyber-amber/40 space-y-2 text-xs font-mono">
+              <h4 class="uppercase text-cyber-amber font-bold flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-4 h-4"></i> Academic Zero-Day Attack Archetype
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
+                <div><span class="text-gray-500">ATTACK PATTERN:</span> <span class="text-white font-bold">${archetype}</span></div>
+                <div><span class="text-gray-500">WEAPONIZATION:</span> <span class="text-cyber-amber font-bold">${weaponization}</span></div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Feature 3: Autonomous AI Security Triage -->
+          <div class="p-5 rounded-xl bg-cyber-black/80 border border-cyber-border space-y-4 font-mono text-xs">
+            <h4 class="uppercase text-cyber-cyan font-bold tracking-wider flex items-center gap-2 border-b border-cyber-border pb-2">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-cyber-cyan"></i>
+              Autonomous Security Triage & De-Noise Assessment
+            </h4>
+            
+            <div class="space-y-1.5">
+              <span class="text-cyber-cyan font-bold flex items-center gap-1.5 text-xs">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> EXACT ATTACK VECTOR / TECHNIQUE:
+              </span>
+              <p class="text-gray-200 leading-relaxed pl-5">${attackVector}</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <span class="text-cyber-red font-bold flex items-center gap-1.5 text-xs">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> TANGIBLE RISK TO DEVELOPERS / INFRASTRUCTURE:
+              </span>
+              <p class="text-gray-200 leading-relaxed pl-5">${risk}</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <span class="text-cyber-green font-bold flex items-center gap-1.5 text-xs">
+                <i data-lucide="wrench" class="w-3.5 h-3.5"></i> IMMEDIATE MITIGATION & HARDENING PATCH:
+              </span>
+              <p class="text-gray-200 leading-relaxed pl-5">${mitigation}</p>
+            </div>
+          </div>
+
+          <!-- Raw Summary -->
+          <div class="p-4 rounded-xl bg-cyber-black/40 border border-cyber-border/60 space-y-2">
+            <h4 class="text-xs font-mono uppercase text-cyber-muted font-bold">Source Intelligence Briefing</h4>
+            <p class="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
+              ${entry.summary || 'No additional source description provided.'}
+            </p>
+          </div>
+
+          <!-- Tags -->
+          ${tags ? `
+            <div>
+              <h4 class="text-xs font-mono uppercase text-cyber-muted font-bold mb-2">Metadata Tags</h4>
+              <div class="flex flex-wrap gap-2">${tags}</div>
+            </div>
+          ` : ''}
+
+          <!-- Footer Actions -->
+          <div class="pt-4 flex items-center justify-between border-t border-cyber-border flex-wrap gap-3">
+            <a href="${entry.url}" target="_blank" class="px-5 py-2.5 rounded-xl bg-cyber-cyan text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-cyan-300 transition">
+              Open Original Source <i data-lucide="external-link" class="w-4 h-4"></i>
+            </a>
+            <button onclick="closeInspectModal()" class="px-5 py-2.5 rounded-xl bg-cyber-black border border-cyber-border text-xs font-mono text-gray-300 hover:text-white transition">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeInspectModal() {
+      document.getElementById('inspect-modal').classList.add('hidden');
+    }
+
+    // Category Tabs Switching
+    function setCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-tab').forEach(b => {
+        b.classList.remove('bg-cyber-cyan', 'text-black', 'font-semibold');
+        b.classList.add('bg-cyber-black', 'text-gray-300');
+      });
+      const activeBtn = document.getElementById(`tab-${cat}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-cyber-black', 'text-gray-300');
+        activeBtn.classList.add('bg-cyber-cyan', 'text-black', 'font-semibold');
+      }
+      loadFeed(true);
+    }
+
+    // Debounced Search
+    let searchTimeout = null;
+    function debounceSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchQuery = document.getElementById('search-input').value.trim();
+        loadFeed(true);
+      }, 300);
+    }
+
+    function loadMore() {
+      offset += limit;
+      loadFeed(false);
+    }
+
+    // Trigger On-Demand Scan
+    async function triggerScan() {
+      const btn = document.getElementById('scan-btn');
+      const icon = document.getElementById('scan-icon');
+      btn.disabled = true;
+      icon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch('/api/fetch', { method: 'POST' });
+        const data = await res.json();
+        console.log("Scan initiated:", data);
+      } catch (e) {
+        console.error("Scan error: ", e);
+      } finally {
+        setTimeout(() => {
+          btn.disabled = false;
+        }, 1500);
+      }
+    }
+
+    // Sources Modal Management
+    async function openSourcesModal() {
+      const modal = document.getElementById('sources-modal');
+      const list = document.getElementById('sources-list');
+      modal.classList.remove('hidden');
+      list.innerHTML = `<p class="text-center font-mono text-xs text-cyber-muted py-6">Loading configured sources...</p>`;
+
+      try {
+        const res = await fetch('/api/sources');
+        const data = await res.json();
+        
+        list.innerHTML = (data.sources || []).map(s => `
+          <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between border border-cyber-border">
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-white">${s.name}</h4>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-cyber-black border border-cyber-border text-gray-400">${s.type}</span>
+              </div>
+              <p class="text-xs text-cyber-muted font-mono mt-0.5">Category: <span class="text-gray-300">${s.category}</span> • Rate: ${s.rate_limit_seconds}s</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" onchange="toggleSource(${s.id}, this.checked)" class="sr-only peer" ${s.enabled ? 'checked' : ''}>
+              <div class="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyber-cyan"></div>
+            </label>
+          </div>
+        `).join('');
+      } catch (e) {
+        list.innerHTML = `<p class="text-center text-cyber-red text-xs py-4">Failed to load sources.</p>`;
+      }
+    }
+
+    async function toggleSource(id, enabled) {
+      try {
+        await fetch(`/api/sources/${id}/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled })
+        });
+        refreshStats();
+      } catch (e) {
+        console.error("Toggle source error: ", e);
+      }
+    }
+
+    function closeSourcesModal() {
+      document.getElementById('sources-modal').classList.add('hidden');
+    }
+
+    // Telegram Modal Management
+    function openTelegramModal() {
+      document.getElementById('telegram-modal').classList.remove('hidden');
+    }
+
+    function closeTelegramModal() {
+      document.getElementById('telegram-modal').classList.add('hidden');
+      document.getElementById('tg-status-box').classList.add('hidden');
+    }
+
+    async function sendTelegramDigest() {
+      const schedule = document.getElementById('tg-schedule').value;
+      const statusBox = document.getElementById('tg-status-box');
+      const sendBtn = document.getElementById('tg-send-btn');
+      
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Dispatching...`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/telegram/digest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schedule })
+        });
+        const data = await res.json();
+        
+        statusBox.classList.remove('hidden', 'bg-cyber-red/20', 'text-cyber-red');
+        statusBox.classList.add('bg-cyber-green/20', 'text-cyber-green');
+        statusBox.innerText = data.message || "Digest successfully sent to Telegram!";
+      } catch (e) {
+        statusBox.classList.remove('hidden', 'bg-cyber-green/20', 'text-cyber-green');
+        statusBox.classList.add('bg-cyber-red/20', 'text-cyber-red');
+        statusBox.innerText = "Error: Ensure Telegram Bot Token & Chat ID are configured in config/sources.yaml.";
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Send Digest Now`;
+        lucide.createIcons();
+      }
+    }
+
+    // Initial load
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initWebSocket();
+      refreshStats();
+      loadFeed(true);
+    });
+  </script>
+</body>
+</html>

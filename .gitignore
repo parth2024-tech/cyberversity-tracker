@@ -1,0 +1,19 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database and logs
+data/*.db
+data/*.db-shm
+data/*.db-wal
+logs/*.log
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+*.swp

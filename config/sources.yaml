@@ -1,0 +1,245 @@
+# AI Technology & Cybersecurity Monitoring Sources
+# All sources are publicly accessible via RSS/Atom feeds or public APIs
+# Respects robots.txt and ToS with polite rate limits
+
+sources:
+  # ==========================================
+  # AI TECHNOLOGY LAUNCHES & RESEARCH
+  # ==========================================
+  - name: "OpenAI Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://openai.com/blog/rss.xml"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "Anthropic News"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.anthropic.com/news/feed.xml"
+    rate_limit_seconds: 3600
+    enabled: false  # No official RSS feed available
+
+  - name: "Google AI Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://blog.google/technology/ai/rss/"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "Google DeepMind Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://deepmind.google/blog/rss.xml"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "Microsoft AI Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.microsoft.com/en-us/research/blog/feed/"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "Meta AI Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://ai.meta.com/blog/rss/"
+    rate_limit_seconds: 3600
+    enabled: false  # No official RSS feed available
+
+  - name: "Hugging Face Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://huggingface.co/blog/feed.xml"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "arXiv AI Papers (cs.AI, cs.LG, cs.CL, cs.CV)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI OR cat:cs.LG OR cat:cs.CL OR cat:cs.CV OR cat:cs.RO OR cat:stat.ML"
+    max_results: 50
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "Hacker News (AI/ML tagged)"
+    category: "ai_tech"
+    type: "hackernews"
+    tags: ["AI", "ML", "LLM", "GPT", "transformer", "neural", "deep learning"]
+    rate_limit_seconds: 600
+    enabled: true
+
+  # ==========================================
+  # CYBERSECURITY NEWS & THREAT INTEL
+  # ==========================================
+  - name: "Krebs on Security"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://krebsonsecurity.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "The Hacker News"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://thehackernews.com/feeds/posts/default"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "Schneier on Security"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.schneier.com/feed/atom/"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "Dark Reading"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.darkreading.com/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "BleepingComputer"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.bleepingcomputer.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "SecurityWeek"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.securityweek.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: false  # 403 Forbidden
+
+  - name: "The Verge AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+    rate_limit_seconds: 3600
+    enabled: false  # 403 Forbidden
+
+  - name: "TechCrunch AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://techcrunch.com/tag/artificial-intelligence/feed/"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "Wired Security"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.wired.com/feed/category/security/latest/rss"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "Ars Technica Security"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://arstechnica.com/security/feed/"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  # ==========================================
+  # CVE & VULNERABILITY FEEDS
+  # ==========================================
+  # NVD API v2.0 - Using REST API instead of deprecated XML feeds
+  - name: "NVD Recent CVEs (API)"
+    category: "vulnerabilities"
+    type: "nvd_api"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "CISA Known Exploited Vulnerabilities"
+    category: "vulnerabilities"
+    type: "cisa_kev_json"
+    url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "GitHub Security Advisories"
+    category: "vulnerabilities"
+    type: "github_advisories"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  # ==========================================
+  # GITHUB TRENDING SECURITY REPOS
+  # ==========================================
+  - name: "GitHub Trending Security (Daily)"
+    category: "github_trending"
+    type: "github_trending"
+    since: "daily"
+    rate_limit_seconds: 3600
+    enabled: true
+
+  - name: "GitHub Trending Security (Weekly)"
+    category: "github_trending"
+    type: "github_trending"
+    since: "weekly"
+    rate_limit_seconds: 86400
+    enabled: true
+
+
+# Delivery Configuration (user picks one at runtime)
+delivery:
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    username: ""
+    password: ""
+    from_email: ""
+    to_email: ""
+
+  slack:
+    enabled: false
+    webhook_url: ""
+    channel: "#general"
+
+  telegram:
+    enabled: true
+    bot_token: "8426550330:AAG_pnhsbIyzb2HI15nZBnTveIX_RN1NSow"
+    chat_id: "1650972026"
+
+  console:
+    enabled: true  # Always available as fallback
+
+
+# Digest Settings
+digest:
+  schedule: "daily"  # "daily" or "weekly"
+  time: "08:00"  # Local time
+  max_items_per_category: 10
+  include_summary: true
+  summary_max_length: 300
+  timezone: "Asia/Kolkata"
+
+
+# Database
+database:
+  path: "data/monitor.db"
+
+
+# Logging
+logging:
+  level: "INFO"
+  file: "logs/monitor.log"
+  max_size_mb: 10
+  backup_count: 5
+
+
+# AI Analyzer Configuration
+analyzer:
+  ollama_host: "http://localhost:11434"
+  model: "llama3.2:3b"
+  # Fallback API (optional - set GROQ_API_KEY or OPENROUTER_API_KEY env var)
+  fallback_api_key: ""
+  fallback_base_url: "https://api.groq.com/openai/v1"
+  fallback_model: "llama-3.1-8b-instant"
+  timeout: 60
+  max_tokens: 1000
+  temperature: 0.1
