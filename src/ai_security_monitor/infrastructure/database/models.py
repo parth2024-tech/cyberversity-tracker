@@ -94,6 +94,8 @@ class AnalysisModel(Base):
     is_pre_cve_warning: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     attack_archetype: Mapped[str] = mapped_column(String(100), default="")
     weaponization_potential: Mapped[str] = mapped_column(String(50), default="Theoretical")
+    mitre_attack_id: Mapped[str | None] = mapped_column(String(50), nullable=True, default=None, index=True)
+    mitre_technique: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
     model: Mapped[str] = mapped_column(String(50), default="heuristic")
     confidence: Mapped[float] = mapped_column(default=1.0)
     overall_confidence: Mapped[float] = mapped_column(default=0.7)

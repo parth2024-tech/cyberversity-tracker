@@ -281,6 +281,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 is_pre_cve_warning=model.analysis.is_pre_cve_warning,
                 attack_archetype=model.analysis.attack_archetype,
                 weaponization_potential=model.analysis.weaponization_potential,
+                mitre_attack_id=getattr(model.analysis, "mitre_attack_id", None),
+                mitre_technique=getattr(model.analysis, "mitre_technique", None),
                 model=AnalysisModel(model.analysis.model) if model.analysis.model in [m.value for m in AnalysisModel] else AnalysisModel.HEURISTIC,
                 confidence=model.analysis.confidence,
                 created_at=model.analysis.created_at,
@@ -325,6 +327,8 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             is_pre_cve_warning=analysis.is_pre_cve_warning,
             attack_archetype=analysis.attack_archetype,
             weaponization_potential=analysis.weaponization_potential,
+            mitre_attack_id=analysis.mitre_attack_id,
+            mitre_technique=analysis.mitre_technique,
             model=analysis.model.value,
             confidence=analysis.confidence,
             created_at=analysis.created_at,
@@ -367,6 +371,8 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         model.is_pre_cve_warning = analysis.is_pre_cve_warning
         model.attack_archetype = analysis.attack_archetype
         model.weaponization_potential = analysis.weaponization_potential
+        model.mitre_attack_id = analysis.mitre_attack_id
+        model.mitre_technique = analysis.mitre_technique
         model.model = analysis.model.value
         model.confidence = analysis.confidence
         model.updated_at = datetime.utcnow()
@@ -409,6 +415,8 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             is_pre_cve_warning=model.is_pre_cve_warning,
             attack_archetype=model.attack_archetype,
             weaponization_potential=model.weaponization_potential,
+            mitre_attack_id=getattr(model, "mitre_attack_id", None),
+            mitre_technique=getattr(model, "mitre_technique", None),
             model=AnalysisModel(model.model),
             confidence=model.confidence,
             created_at=model.created_at,

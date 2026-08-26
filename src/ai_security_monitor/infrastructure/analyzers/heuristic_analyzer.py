@@ -206,14 +206,56 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
         return False
 
-    def _detect_weaponization(self, text: str) -> str:
+    MITRE_ATTACK_MAPPINGS = {
+        AttackArchetype.JAILBREAK.value: ("AML.T0054", "LLM Jailbreak / Safety Filter Bypass"),
+        AttackArchetype.PROMPT_INJECTION.value: ("AML.T0051", "LLM Direct Prompt Injection"),
+        AttackArchetype.RAG_POISONING.value: ("AML.T0043", "RAG Knowledge Base & Context Poisoning"),
+        AttackArchetype.DATA_POISONING.value: ("AML.T0018", "Adversarial Data Poisoning"),
+        AttackArchetype.MODEL_INVERSION.value: ("AML.T0024", "Model Inversion & Weight Reconstruction"),
+        AttackArchetype.MODEL_EXTRACTION.value: ("AML.T0044", "Model Theft & Parameter Extraction"),
+        AttackArchetype.SUPPLY_CHAIN.value: ("T1195", "Supply Chain Compromise (PyPI/HuggingFace)"),
+        AttackArchetype.RCE.value: ("T1190", "Exploit Public-Facing Application (RCE)"),
+        AttackArchetype.PRIVILEGE_ESCALATION.value: ("T1068", "Exploitation for Privilege Escalation"),
+    }
+
+    def _map_mitre_attack(self, text: str, archetype: str, category: Category) -> tuple[str, str]:
+        """Map detected indicators to MITRE ATT&CK / ATLAS techniques."""
+        if archetype in self.MITRE_ATTACK_MAPPINGS:
+            return self.MITRE_ATTACK_MAPPINGS[archetype]
+
+        text_lower = text.lower()
+        if "phish" in text_lower or "credential" in text_lower or "harvest" in text_lower:
+            return ("T1566", "Phishing / Credential Harvesting")
+        if "brute" in text_lower or "spray" in text_lower or "sniff" in text_lower or "wpa" in text_lower:
+            return ("T1110", "Brute Force / Password Sniffing")
+        if "command injection" in text_lower or "powershell" in text_lower or "script" in text_lower:
+            return ("T1059", "Command and Scripting Interpreter")
+        if "traversal" in text_lower or "lfi" in text_lower or "rfi" in text_lower:
+            return ("T1083", "File and Directory Discovery / Path Traversal")
+        if "ssrf" in text_lower or "deserial" in text_lower or "sqli" in text_lower or "sql injection" in text_lower:
+            return ("T1190", "Exploit Public-Facing Application")
+        if "dos" in text_lower or "denial of service" in text_lower or "exhaust" in text_lower:
+            return ("T1499", "Endpoint Denial of Service")
+        if category in (Category.AI_TECH, Category.AI_MODELS):
+            return ("AML.T0015", "Evade ML Model / AI Manipulation")
+        if category == Category.EXPLOITS_TRICKS:
+            return ("T1190", "Exploitation of Vulnerability (PoC)")
+        if category == Category.CYBER_TOOLS:
+            return ("T1588", "Obtain Capabilities / Security Tools")
+
+        return ("T1190", "Exploit Public-Facing Application")
+
+    def _detect_weaponization(self, text: str, category: Category | None = None) -> str:
         """Detect weaponization potential."""
         text_lower = text.lower()
 
-        if re.search(r"\b(poc|proof.of.concept|exploit.code|weaponized)\b", text_lower):
-            return WeaponizationLevel.POC_VERIFIED.value
-        elif re.search(r"\b(active|in.the.wild|exploited|ransomware)\b", text_lower):
+        if re.search(r"\b(active|in.the.wild|exploited|ransomware|zero.day.active|actively.exploited)\b", text_lower):
             return WeaponizationLevel.ACTIVE_WEAPONIZATION.value
+        elif (re.search(r"\b(poc|proof.of.concept|exploit.code|weaponized|metasploit|exploit.db|packetstorm|github.com/.*/exploit)\b", text_lower)
+              or "exploit-db" in text_lower
+              or "metasploit" in text_lower
+              or category == Category.EXPLOITS_TRICKS):
+            return WeaponizationLevel.POC_VERIFIED.value
         return WeaponizationLevel.THEORETICAL.value
 
     def _generate_attack_vector(self, text: str, archetype: str) -> str:
@@ -268,7 +310,8 @@ class HeuristicAnalyzer(BaseAnalyzer):
         blast_radius, ecosystems = self._calculate_blast_radius(full_text, entry.category)
         archetype = self._detect_attack_archetype(full_text)
         is_pre_cve = self._detect_pre_cve(full_text, entry.category)
-        weaponization = self._detect_weaponization(full_text)
+        weaponization = self._detect_weaponization(full_text, entry.category)
+        mitre_id, mitre_technique = self._map_mitre_attack(full_text, archetype, entry.category)
 
         return AnalysisResult(
             entry_id=entry.id,
@@ -282,6 +325,8 @@ class HeuristicAnalyzer(BaseAnalyzer):
             is_pre_cve_warning=is_pre_cve,
             attack_archetype=archetype,
             weaponization_potential=weaponization,
+            mitre_attack_id=mitre_id,
+            mitre_technique=mitre_technique,
             model=AnalysisModel.HEURISTIC,
             confidence=0.85,
         )

@@ -1507,6 +1507,22 @@
               </span>
             ` : ''}
 
+            ${(analysis.mitre_attack_id || entry.mitre_attack_id) ? `
+              <span class="px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/35 text-purple-300 text-[10px] font-medium font-mono flex items-center gap-1" title="${analysis.mitre_technique || entry.mitre_technique || 'MITRE ATT&CK'}">
+                <i data-lucide="target" class="w-3 h-3 text-purple-400"></i> ${analysis.mitre_attack_id || entry.mitre_attack_id}
+              </span>
+            ` : ''}
+
+            ${(analysis.weaponization_potential === 'PoC Verified' || entry.weaponization_potential === 'PoC Verified') ? `
+              <span class="px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-semibold font-mono flex items-center gap-1">
+                <i data-lucide="crosshair" class="w-3 h-3 text-rose-400"></i> PoC
+              </span>
+            ` : (analysis.weaponization_potential === 'Active Weaponization' || entry.weaponization_potential === 'Active Weaponization') ? `
+              <span class="px-2 py-0.5 rounded-md bg-red-600/25 border border-red-500/50 text-red-300 text-[10px] font-bold font-mono flex items-center gap-1 animate-pulse">
+                <i data-lucide="flame" class="w-3 h-3 text-red-400"></i> EXPLOITED
+              </span>
+            ` : ''}
+
             ${(entry.matched_watchlist_rules || []).map(w => `
               <span class="px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/35 text-sky-300 text-[10px] font-medium font-mono flex items-center gap-1">
                 <i data-lucide="target" class="w-3 h-3 text-sky-400"></i> ${w}
@@ -1627,6 +1643,8 @@
       const attackVector = analysis.attack_vector || entry.attack_vector || 'Refer to threat advisory for exact technique specifications.';
       const risk = analysis.risk_assessment || entry.risk_assessment || 'Evaluate exposure within your specific deployment environment.';
       const mitigation = analysis.mitigation || entry.mitigation || 'Apply upstream vendor updates and audit boundary access.';
+      const mitreId = analysis.mitre_attack_id || entry.mitre_attack_id || (entry.category === 'vulnerabilities' ? 'T1190' : null);
+      const mitreTech = analysis.mitre_technique || entry.mitre_technique || (entry.category === 'vulnerabilities' ? 'Exploitation of Known Vulnerability' : null);
 
       const srcName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Intelligence Feed');
       const pubDate = entry.published_at ? entry.published_at.replace('T', ' ') : 'Unknown';
@@ -1757,6 +1775,22 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
                 <div><span class="text-slate-500">ATTACK PATTERN:</span> <span class="text-white font-medium">${archetype}</span></div>
                 <div><span class="text-slate-500">WEAPONIZATION:</span> <span class="text-amber-300 font-medium">${weaponization}</span></div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- MITRE ATT&CK / Enterprise Taxonomy Box -->
+          ${mitreId ? `
+            <div class="p-4 rounded-xl bg-purple-500/[0.05] border border-purple-500/25 space-y-2 text-xs font-mono">
+              <div class="flex items-center justify-between">
+                <h4 class="uppercase text-purple-300 font-semibold flex items-center gap-1.5">
+                  <i data-lucide="target" class="w-4 h-4 text-purple-400"></i> MITRE ATT&CK / ATLAS Enterprise Taxonomy
+                </h4>
+                <span class="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-200 border border-purple-500/35 font-bold">${mitreId}</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
+                <div><span class="text-slate-500">TECHNIQUE:</span> <span class="text-white font-medium">${mitreTech || 'Enterprise Attack Technique'}</span></div>
+                <div><span class="text-slate-500">WEAPONIZATION:</span> <span class="${weaponization === 'PoC Verified' ? 'text-rose-400 font-semibold' : weaponization === 'Active Weaponization' ? 'text-red-400 font-bold' : 'text-slate-300'} font-medium">${weaponization}</span></div>
               </div>
             </div>
           ` : ''}

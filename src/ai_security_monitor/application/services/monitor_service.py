@@ -138,7 +138,9 @@ class MonitorService:
                             affected_ecosystem=blast_res.affected_ecosystem,
                             is_pre_cve_warning=blast_res.is_pre_cve_warning,
                             attack_archetype=blast_res.attack_archetype,
-                            weaponization_potential=blast_res.weaponization_potential,
+                            weaponization_potential=analysis_res.weaponization_potential or blast_res.weaponization_potential,
+                            mitre_attack_id=analysis_res.mitre_attack_id,
+                            mitre_technique=analysis_res.mitre_technique,
                             model=AnalysisModel.HEURISTIC
                         )
 
@@ -167,6 +169,10 @@ class MonitorService:
                                             "blast_radius_score": analysis.blast_radius_score,
                                             "affected_ecosystem": analysis.affected_ecosystem,
                                             "is_pre_cve_warning": analysis.is_pre_cve_warning,
+                                            "attack_archetype": analysis.attack_archetype,
+                                            "weaponization_potential": analysis.weaponization_potential,
+                                            "mitre_attack_id": analysis.mitre_attack_id,
+                                            "mitre_technique": analysis.mitre_technique,
                                             "attack_vector": analysis.attack_vector,
                                             "risk_assessment": analysis.risk_assessment,
                                             "mitigation": analysis.mitigation,

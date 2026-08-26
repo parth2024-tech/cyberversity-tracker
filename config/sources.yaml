@@ -171,19 +171,29 @@ sources:
     region: "europe"
     country: "GB"
 
-  - name: "MarkTechPost AI"
-    category: "ai_tech"
-    type: "rss"
-    url: "https://www.marktechpost.com/feed/"
+  - name: "Anthropic & Claude Safety Radar"
+    category: "ai_research"
+    type: "arxiv"
+    query: "(cat:cs.AI OR cat:cs.CL OR cat:cs.CR) AND (ti:Claude OR ti:Anthropic OR abs:Anthropic)"
+    max_results: 30
     rate_limit_seconds: 1800
     enabled: true
-    region: "global"
-    country: "GLOBAL"
+    region: "north_america"
+    country: "US"
 
-  - name: "KDnuggets AI/ML"
+  - name: "Cohere AI Frontier Research"
     category: "ai_tech"
     type: "rss"
-    url: "https://www.kdnuggets.com/feed"
+    url: "https://cohere.com/blog/rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "CA"
+
+  - name: "xAI Grok Architecture Releases"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://github.com/xai-org/grok-1/releases.atom"
     rate_limit_seconds: 1800
     enabled: true
     region: "north_america"
@@ -198,14 +208,14 @@ sources:
     region: "europe"
     country: "GB"
 
-  - name: "Towards Data Science"
+  - name: "EU AI Office (European Commission AI Act)"
     category: "ai_tech"
     type: "rss"
-    url: "https://towardsdatascience.com/feed"
+    url: "https://digital-strategy.ec.europa.eu/en/rss.xml"
     rate_limit_seconds: 1800
     enabled: true
-    region: "global"
-    country: "GLOBAL"
+    region: "europe"
+    country: "EU"
 
   - name: "SiliconANGLE AI"
     category: "ai_tech"
@@ -220,15 +230,6 @@ sources:
     category: "ai_tech"
     type: "rss"
     url: "https://theaiedge.substack.com/feed"
-    rate_limit_seconds: 1800
-    enabled: true
-    region: "global"
-    country: "GLOBAL"
-
-  - name: "InfoQ AI & ML"
-    category: "ai_tech"
-    type: "rss"
-    url: "https://feed.infoq.com/ai-ml-data-eng/news"
     rate_limit_seconds: 1800
     enabled: true
     region: "global"
@@ -451,6 +452,45 @@ sources:
     country: "GLOBAL"
 
   # ==========================================
+  # CVE VENDOR PSIRTS (FIRST-DISCLOSURE RADAR)
+  # ==========================================
+  - name: "Microsoft MSRC (Security Response Center)"
+    category: "vulnerabilities"
+    type: "rss"
+    url: "https://msrc.microsoft.com/blog/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Cisco PSIRT (Security Advisories)"
+    category: "vulnerabilities"
+    type: "rss"
+    url: "https://tools.cisco.com/security/center/psirtrss20/CiscoSecurityAdvisories.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Fortinet PSIRT (FortiGuard Advisories)"
+    category: "vulnerabilities"
+    type: "rss"
+    url: "https://www.fortiguard.com/rss/ir.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Ivanti Security Advisories"
+    category: "vulnerabilities"
+    type: "rss"
+    url: "https://www.ivanti.com/blog/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  # ==========================================
   # GITHUB TRENDING REPOSITORIES (WORLDWIDE)
   # ==========================================
   - name: "GitHub Trending Security (Daily)"
@@ -560,6 +600,63 @@ sources:
     enabled: true
     region: "north_america"
     country: "US"
+
+  - name: "Exploit-DB (Verified 0-Day PoCs)"
+    category: "exploits_tricks"
+    type: "rss"
+    url: "https://www.exploit-db.com/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Rapid7 Metasploit Framework Modules"
+    category: "exploits_tricks"
+    type: "rss"
+    url: "https://www.rapid7.com/blog/rss/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  # ==========================================
+  # EXPOSURE & BREACH TELEMETRY (SHODAN/CENSYS/HIBP/MITRE)
+  # ==========================================
+  - name: "Shodan Trends & Exposure Radar"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://blog.shodan.io/rss/"
+    rate_limit_seconds: 3600
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Censys Threat Research & Exposure"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://censys.com/feed/"
+    rate_limit_seconds: 3600
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "MITRE ATT&CK Framework Releases"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://github.com/mitre-attack/attack-stix-data/releases.atom"
+    rate_limit_seconds: 3600
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Have I Been Pwned (HIBP Breach Feed)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.troyhunt.com/rss/"
+    rate_limit_seconds: 3600
+    enabled: true
+    region: "apac"
+    country: "AU"
 
 
 # Delivery Configuration (user picks one at runtime)

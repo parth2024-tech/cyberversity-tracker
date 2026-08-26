@@ -22,6 +22,8 @@ class AnalysisResult:
     is_pre_cve_warning: bool = False
     attack_archetype: str = ""
     weaponization_potential: str = "Theoretical"
+    mitre_attack_id: str | None = None
+    mitre_technique: str | None = None
     model: AnalysisModel = AnalysisModel.HEURISTIC
     confidence: float = 1.0
 

@@ -99,6 +99,8 @@ class Analysis(Entity):
     is_pre_cve_warning: bool = False
     attack_archetype: str = ""
     weaponization_potential: str = "Theoretical"  # Theoretical, PoC Verified, Active Weaponization
+    mitre_attack_id: str | None = None  # e.g., "T1190", "AML.T0054"
+    mitre_technique: str | None = None  # e.g., "Exploit Public-Facing Application"
     model: AnalysisModel = AnalysisModel.HEURISTIC
     confidence: float = 1.0
 

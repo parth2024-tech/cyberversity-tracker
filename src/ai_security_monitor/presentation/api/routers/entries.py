@@ -92,6 +92,8 @@ async def list_entries(
                     "is_pre_cve_warning": e.analysis.is_pre_cve_warning,
                     "attack_archetype": e.analysis.attack_archetype,
                     "weaponization_potential": e.analysis.weaponization_potential,
+                    "mitre_attack_id": getattr(e.analysis, "mitre_attack_id", None),
+                    "mitre_technique": getattr(e.analysis, "mitre_technique", None),
                     "model": e.analysis.model.value
                 }
 
