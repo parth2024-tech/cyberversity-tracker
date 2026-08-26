@@ -18,52 +18,30 @@
         extend: {
           colors: {
             cyber: {
-              black: '#030712',
-              card: 'rgba(11, 17, 33, 0.78)',
-              panel: 'rgba(15, 23, 42, 0.65)',
-              border: 'rgba(38, 56, 89, 0.55)',
-              cyan: '#00f0ff',
-              cyanGlow: 'rgba(0, 240, 255, 0.35)',
-              purple: '#a855f7',
-              purpleGlow: 'rgba(168, 85, 247, 0.35)',
-              red: '#ff0055',
-              redGlow: 'rgba(255, 0, 85, 0.35)',
-              green: '#10b981',
-              greenGlow: 'rgba(16, 185, 129, 0.35)',
-              amber: '#f59e0b',
-              amberGlow: 'rgba(245, 158, 11, 0.35)',
-              muted: '#94a3b8'
+              black: '#08090C',
+              surface: '#0D111A',
+              card: 'rgba(14, 18, 28, 0.72)',
+              panel: 'rgba(17, 22, 34, 0.68)',
+              border: 'rgba(255, 255, 255, 0.07)',
+              borderHover: 'rgba(255, 255, 255, 0.14)',
+              cyan: '#38BDF8',       /* Celestial Azure */
+              cyanGlow: 'rgba(56, 189, 248, 0.14)',
+              purple: '#A78BFA',     /* Royal Amethyst */
+              purpleGlow: 'rgba(167, 139, 250, 0.14)',
+              red: '#FB7185',        /* Damask Rose Ruby */
+              redGlow: 'rgba(251, 113, 133, 0.14)',
+              green: '#34D399',      /* Nordic Mint Jade */
+              greenGlow: 'rgba(52, 211, 153, 0.14)',
+              amber: '#FBBF24',      /* Champagne Gold */
+              amberGlow: 'rgba(251, 191, 36, 0.14)',
+              muted: '#94A3B8',
+              slate: '#64748B'
             }
           },
           fontFamily: {
-            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
-            display: ['Space Grotesk', 'Inter', 'sans-serif']
-          },
-          animation: {
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'radar-spin': 'radarSpin 10s linear infinite',
-            'glow-pulse-amber': 'glowPulseAmber 2.5s infinite',
-            'glow-pulse-cyan': 'glowPulseCyan 3s infinite',
-            'scanline': 'scanline 8s linear infinite'
-          },
-          keyframes: {
-            radarSpin: {
-              '0%': { transform: 'rotate(0deg)' },
-              '100%': { transform: 'rotate(360deg)' }
-            },
-            glowPulseAmber: {
-              '0%, 100%': { boxShadow: '0 0 20px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.1)' },
-              '50%': { boxShadow: '0 0 8px rgba(245, 158, 11, 0.2), inset 0 0 4px rgba(245, 158, 11, 0.05)' }
-            },
-            glowPulseCyan: {
-              '0%, 100%': { boxShadow: '0 0 20px rgba(0, 240, 255, 0.35), inset 0 0 10px rgba(0, 240, 255, 0.1)' },
-              '50%': { boxShadow: '0 0 8px rgba(0, 240, 255, 0.15), inset 0 0 4px rgba(0, 240, 255, 0.05)' }
-            },
-            scanline: {
-              '0%': { transform: 'translateY(-100%)' },
-              '100%': { transform: 'translateY(1000%)' }
-            }
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+            display: ['Inter', '-apple-system', 'sans-serif']
           }
         }
       }
@@ -76,14 +54,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   
   <style>
+    :root {
+      color-scheme: dark;
+    }
+
     body {
-      background-color: #030712;
-      color: #f1f5f9;
+      background-color: #08090C;
+      color: #F8FAFC;
       min-height: 100vh;
       overflow-x: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     
-    /* Background Gradient Canvas */
+    /* Cosmic Background Canvas */
     #bg-canvas {
       position: fixed;
       top: 0;
@@ -94,89 +79,78 @@
       pointer-events: none;
     }
 
+    /* Precision Frosted Glass Panels */
     .glass-panel {
-      background: rgba(11, 17, 33, 0.78);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(45, 65, 105, 0.45);
-      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(14, 18, 27, 0.72);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.065);
+      box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
     .glass-panel:hover {
-      border-color: rgba(0, 240, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 8px 32px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
     }
 
     .glass-panel-amber {
-      background: rgba(22, 17, 10, 0.85);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(245, 158, 11, 0.45);
-      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.15);
+      background: linear-gradient(180deg, rgba(30, 23, 14, 0.75) 0%, rgba(18, 14, 10, 0.75) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(251, 191, 36, 0.08);
+      border-radius: 16px;
     }
 
     .glass-panel-red {
-      background: rgba(26, 10, 18, 0.85);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 0, 85, 0.45);
-      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 0, 85, 0.15);
+      background: linear-gradient(180deg, rgba(34, 16, 22, 0.75) 0%, rgba(20, 11, 15, 0.75) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(251, 113, 133, 0.22);
+      box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(251, 113, 133, 0.08);
+      border-radius: 16px;
     }
 
     .glass-input {
-      background: rgba(3, 7, 18, 0.85);
-      border: 1px solid rgba(45, 65, 105, 0.6);
-      color: #fff;
+      background: rgba(10, 13, 20, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      color: #F8FAFC;
       transition: all 0.2s ease;
     }
     .glass-input:focus {
-      border-color: #00f0ff;
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
       outline: none;
     }
 
-    .neon-text-cyan {
-      text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
-    }
-    .neon-text-amber {
-      text-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
-    }
-    .neon-text-red {
-      text-shadow: 0 0 12px rgba(255, 0, 85, 0.6);
-    }
-
-    /* Custom Scrollbars */
+    /* Minimalist Technical Scrollbars */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(3, 7, 18, 0.8);
+      background: rgba(8, 9, 12, 0.6);
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(45, 65, 105, 0.6);
+      background: rgba(255, 255, 255, 0.12);
       border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #00f0ff;
+      background: rgba(255, 255, 255, 0.25);
     }
 
-    /* Animations */
-    @keyframes slideInRight {
-      from { transform: translateX(100%) scale(0.9); opacity: 0; }
-      to { transform: translateX(0) scale(1); opacity: 1; }
-    }
-    .toast-animate-in {
-      animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    /* Gradient Text */
-    .gradient-heading {
-      background: linear-gradient(135deg, #ffffff 20%, #cbd5e1 50%, #00f0ff 100%);
+    /* Sophisticated Metallic Typography */
+    .metallic-heading {
+      background: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 70%, #94A3B8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
   </style>
 </head>
-<body class="selection:bg-cyber-cyan selection:text-black">
+<body class="selection:bg-sky-500/30 selection:text-white">
 
   <!-- Interactive Matrix / Particle Canvas Background -->
   <canvas id="bg-canvas"></canvas>
@@ -238,14 +212,14 @@
             <button onclick="fillTriageSample()" class="text-xs font-mono text-cyber-purple hover:underline flex items-center gap-1">
               <i data-lucide="file-code" class="w-3.5 h-3.5"></i> Sample Zero-Day
             </button>
-            <button id="run-triage-btn" onclick="runSandboxTriage()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-purple-500/25 transition">
-              <i data-lucide="zap" class="w-4 h-4"></i> Run AI Triage Engine
+            <button id="run-triage-btn" onclick="runSandboxTriage()" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-medium text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-sm transition">
+              <i data-lucide="zap" class="w-4 h-4 text-white"></i> Run AI Triage
             </button>
           </div>
         </div>
 
         <!-- Sandbox Results Box -->
-        <div id="triage-results" class="hidden p-5 rounded-xl bg-cyber-black/90 border border-cyber-purple/50 space-y-3 font-mono text-xs">
+        <div id="triage-results" class="hidden p-5 rounded-xl bg-black/40 border border-white/[0.08] space-y-3 font-mono text-xs">
           <!-- Injected via JS -->
         </div>
       </div>
@@ -254,51 +228,51 @@
 
   <!-- MODAL: Custom Framework Watchlist Manager -->
   <div id="watchlist-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-cyber-cyan/50 shadow-2xl space-y-5">
-      <div class="flex items-center justify-between pb-4 border-b border-cyber-border">
+    <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-white/[0.1] shadow-2xl space-y-5">
+      <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-cyber-cyan/20 text-cyber-cyan flex items-center justify-center border border-cyber-cyan/40">
+          <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sky-400 flex items-center justify-center">
             <i data-lucide="target" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-xl font-display font-bold tracking-wide">Custom Threat Hunting Watchlists</h2>
-            <p class="text-xs text-cyber-muted font-mono">Track custom framework keywords, enterprise assets, or specific threat actors</p>
+            <h2 class="text-xl font-bold tracking-tight text-white">Threat Hunting Watchlists</h2>
+            <p class="text-xs text-slate-400 font-sans">Track custom framework keywords, enterprise models, and critical assets</p>
           </div>
         </div>
-        <button onclick="closeWatchlistModal()" class="text-gray-400 hover:text-white bg-gray-900/80 hover:bg-gray-800 p-2 rounded-xl border border-gray-700 transition">
+        <button onclick="closeWatchlistModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="p-4 rounded-xl bg-cyber-black/80 border border-cyber-border space-y-3">
-        <h3 class="text-xs font-mono font-bold uppercase text-cyber-cyan flex items-center gap-1.5">
+      <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-3">
+        <h3 class="text-xs font-mono font-semibold uppercase text-sky-400 flex items-center gap-1.5">
           <i data-lucide="plus-circle" class="w-4 h-4"></i> Create New Hunting Rule
         </h3>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-mono text-gray-400 mb-1">RULE NAME</label>
-            <input id="new-wl-name" type="text" placeholder="e.g. Frontier LLMs & MoE Exploit Radar" class="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono">
+            <label class="block text-[11px] font-mono text-slate-400 mb-1">RULE NAME</label>
+            <input id="new-wl-name" type="text" placeholder="e.g. Frontier LLMs & MoE Exploit Radar" class="w-full glass-input px-3 py-2 text-xs font-mono">
           </div>
           <div>
-            <label class="block text-[11px] font-mono text-gray-400 mb-1">KEYWORDS (COMMA SEPARATED)</label>
-            <input id="new-wl-keywords" type="text" placeholder="e.g. deepseek, vllm, langchain, qwen, llama" class="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono">
+            <label class="block text-[11px] font-mono text-slate-400 mb-1">KEYWORDS (COMMA SEPARATED)</label>
+            <input id="new-wl-keywords" type="text" placeholder="e.g. deepseek, vllm, langchain, qwen, llama" class="w-full glass-input px-3 py-2 text-xs font-mono">
           </div>
         </div>
 
         <div class="flex items-center justify-between gap-3 pt-1 flex-wrap">
           <div class="flex items-center gap-2">
-            <label class="text-[11px] font-mono text-gray-400">MIN VELOCITY:</label>
-            <input id="new-wl-velocity" type="number" min="0" max="100" value="0" class="w-20 glass-input rounded-lg px-2 py-1 text-xs font-mono text-center">
+            <label class="text-[11px] font-mono text-slate-400">MIN VELOCITY:</label>
+            <input id="new-wl-velocity" type="number" min="0" max="100" value="0" class="w-20 glass-input px-2 py-1 text-xs font-mono text-center">
           </div>
-          <button onclick="createNewWatchlistRule()" class="px-4 py-2 rounded-xl bg-cyber-cyan text-black font-bold text-xs font-mono uppercase flex items-center gap-1.5 hover:bg-cyan-300 transition">
+          <button onclick="createNewWatchlistRule()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs font-mono uppercase flex items-center gap-1.5 transition shadow-sm">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i> Save Hunting Rule
           </button>
         </div>
       </div>
 
       <div class="flex-1 overflow-y-auto space-y-2 pr-1">
-        <h3 class="text-xs font-mono font-bold uppercase text-gray-400 mb-2">Configured Rules</h3>
+        <h3 class="text-xs font-mono font-semibold uppercase text-slate-400 mb-2">Configured Rules</h3>
         <div id="watchlist-rules-list" class="space-y-2.5">
           <!-- Injected via JS -->
         </div>
@@ -308,23 +282,23 @@
 
   <!-- MODAL: Sources Management Switchboard -->
   <div id="sources-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-cyber-border">
-      <div class="flex items-center justify-between pb-4 border-b border-cyber-border">
+    <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-white/[0.1] shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-cyber-purple/20 text-cyber-purple flex items-center justify-center border border-cyber-purple/40">
-            <i data-lucide="radio" class="w-5 h-5"></i>
+          <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-slate-300 flex items-center justify-center">
+            <i data-lucide="radio" class="w-5 h-5 text-sky-400"></i>
           </div>
           <div>
-            <h2 class="text-xl font-display font-bold tracking-wide">Threat Feeds & Intelligence Matrix</h2>
-            <p class="text-xs text-cyber-muted font-mono">24 active zero-cost feeds across arXiv, CISA, GitHub Advisories, NVD & Frontier AI Labs</p>
+            <h2 class="text-xl font-bold tracking-tight text-white">Global Threat Feeds & Beacons</h2>
+            <p class="text-xs text-slate-400 font-sans">38 active verified channels across Frontier AI Labs, Global Journalism, arXiv Pre-CVE & Vuln Radars</p>
           </div>
         </div>
-        <button onclick="closeSourcesModal()" class="text-gray-400 hover:text-white bg-gray-900/80 hover:bg-gray-800 p-2 rounded-xl border border-gray-700 transition">
+        <button onclick="closeSourcesModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div id="sources-list" class="overflow-y-auto mt-4 pr-1 space-y-3 flex-1">
+      <div id="sources-list" class="overflow-y-auto mt-4 pr-1 space-y-2.5 flex-1">
         <!-- Injected via JS -->
       </div>
     </div>
@@ -332,26 +306,26 @@
 
   <!-- MODAL: Telegram Dispatcher -->
   <div id="telegram-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-cyber-cyan/40 shadow-2xl">
-      <div class="flex items-center justify-between pb-4 border-b border-cyber-border">
+    <div class="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-white/[0.1] shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/40">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
             <i data-lucide="send" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-lg font-display font-bold">Telegram Broadcast Hub</h2>
-            <p class="text-xs text-cyber-muted font-mono">Dispatch curated threat digest instantly</p>
+            <h2 class="text-lg font-bold text-white">Telegram Dispatch Hub</h2>
+            <p class="text-xs text-slate-400 font-sans">Dispatch curated threat digest instantly</p>
           </div>
         </div>
-        <button onclick="closeTelegramModal()" class="text-gray-400 hover:text-white p-1 rounded-lg">
+        <button onclick="closeTelegramModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
       <div class="space-y-4 mt-4">
         <div>
-          <label class="block text-xs font-mono text-gray-400 mb-1.5 font-semibold">SCHEDULE SCOPE</label>
-          <select id="tg-schedule" class="w-full glass-input rounded-xl px-3 py-2.5 text-xs font-mono">
+          <label class="block text-xs font-mono text-slate-400 mb-1.5 font-medium">SCHEDULE SCOPE</label>
+          <select id="tg-schedule" class="w-full glass-input px-3 py-2 text-xs font-mono text-slate-300">
             <option value="daily">Daily Intelligence Brief (Last 24 Hours)</option>
             <option value="weekly">Weekly Threat Summary (Last 7 Days)</option>
           </select>
@@ -359,7 +333,7 @@
 
         <div id="tg-status-box" class="hidden p-3 rounded-xl text-xs font-mono"></div>
 
-        <button id="tg-send-btn" onclick="sendTelegramDigest()" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/25 transition">
+        <button id="tg-send-btn" onclick="sendTelegramDigest()" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition">
           <i data-lucide="send" class="w-4 h-4"></i> Dispatch Digest to Telegram
         </button>
       </div>
@@ -368,12 +342,12 @@
 
   <!-- MODAL: Spotlight Command Palette (Cmd+K) -->
   <div id="command-palette-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-xl flex items-start justify-center p-4 pt-16 sm:pt-24" onclick="handlePaletteBackdrop(event)">
-    <div class="glass-panel w-full max-w-2xl rounded-2xl p-0 relative border border-cyber-cyan/50 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
+    <div class="glass-panel w-full max-w-2xl rounded-2xl p-0 relative border border-white/[0.12] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
       <!-- Search Input Bar -->
-      <div class="flex items-center px-4 py-3.5 border-b border-cyber-border gap-3 bg-cyber-black/70">
-        <i data-lucide="search" class="w-5 h-5 text-cyber-cyan"></i>
-        <input id="palette-search" type="text" placeholder="Type a command or search 4,250+ threats (PyTorch, RCE, DeepSeek, LangChain)..." class="w-full bg-transparent text-sm font-mono text-white placeholder:text-gray-500 focus:outline-none" oninput="handlePaletteSearch()">
-        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">ESC</span>
+      <div class="flex items-center px-4 py-3.5 border-b border-white/[0.08] gap-3 bg-black/50">
+        <i data-lucide="search" class="w-4 h-4 text-sky-400"></i>
+        <input id="palette-search" type="text" placeholder="Type a command or search 4,330+ threats (PyTorch, DeepSeek, LangChain)..." class="w-full bg-transparent text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none" oninput="handlePaletteSearch()">
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.06] text-slate-400 border border-white/[0.08]">ESC</span>
       </div>
 
       <!-- Quick Actions & Results Container -->
@@ -382,12 +356,12 @@
       </div>
 
       <!-- Palette Footer -->
-      <div class="px-4 py-2 border-t border-cyber-border/60 bg-cyber-black/60 flex items-center justify-between text-[11px] font-mono text-gray-400">
+      <div class="px-4 py-2.5 border-t border-white/[0.06] bg-black/40 flex items-center justify-between text-[11px] font-mono text-slate-400">
         <div class="flex items-center gap-3">
-          <span><kbd class="px-1.5 py-0.5 rounded bg-gray-800 text-cyber-cyan text-[10px]">↑↓</kbd> Navigate</span>
-          <span><kbd class="px-1.5 py-0.5 rounded bg-gray-800 text-cyber-cyan text-[10px]">↵</kbd> Select</span>
+          <span><kbd class="px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-300 text-[10px] border border-white/[0.08]">↑↓</kbd> Navigate</span>
+          <span><kbd class="px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-300 text-[10px] border border-white/[0.08]">↵</kbd> Select</span>
         </div>
-        <span class="text-cyber-cyan font-bold">AETHER-GUARD SPOTLIGHT</span>
+        <span class="text-sky-400 font-medium">AETHER-GUARD SPOTLIGHT</span>
       </div>
     </div>
   </div>
@@ -397,39 +371,39 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <!-- COMMAND HUD BAR -->
-    <header class="glass-panel rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border border-cyber-border/80">
+    <header class="glass-panel p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border border-white/[0.08]">
       <!-- Title & Live Radar Status -->
-      <div class="flex items-center gap-4">
-        <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-cyber-black border border-cyber-cyan/50 shadow-lg shadow-cyan-500/10">
-          <i data-lucide="shield-alert" class="w-6 h-6 text-cyber-cyan"></i>
-          <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyber-green"></span>
+      <div class="flex items-center gap-3.5">
+        <div class="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.12] shadow-sm">
+          <i data-lucide="shield" class="w-5 h-5 text-sky-400"></i>
+          <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
           </span>
         </div>
 
         <div>
           <div class="flex items-center gap-2.5 flex-wrap">
-            <h1 class="text-2xl font-display font-extrabold tracking-wider gradient-heading">
-              AETHER-GUARD
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-1">
+              AETHER<span class="text-sky-400 font-normal">GUARD</span>
             </h1>
-            <span class="text-[10px] font-mono uppercase bg-cyber-cyan/10 border border-cyber-cyan/30 text-cyber-cyan px-2 py-0.5 rounded-md font-bold">
+            <span class="text-[10px] font-mono uppercase bg-white/[0.05] border border-white/[0.1] text-slate-300 px-2 py-0.5 rounded-full font-medium">
               v2.0 // AI THREAT RADAR
             </span>
-            <span class="hidden md:inline-flex items-center gap-1 text-[10px] font-mono uppercase bg-cyber-amber/10 border border-cyber-amber/30 text-cyber-amber px-2 py-0.5 rounded-md font-bold">
-              <i data-lucide="shield-check" class="w-3 h-3"></i> DEFCON 3: ELEVATED
+            <span class="hidden md:inline-flex items-center gap-1 text-[10px] font-mono uppercase bg-amber-500/10 border border-amber-500/25 text-amber-300 px-2 py-0.5 rounded-full font-medium">
+              <i data-lucide="shield-alert" class="w-3 h-3 text-amber-400"></i> DEFCON 3: ELEVATED
             </span>
           </div>
-          <div class="flex items-center gap-3 text-xs font-mono text-cyber-muted mt-1 flex-wrap">
+          <div class="flex items-center gap-3 text-xs font-mono text-slate-400 mt-1 flex-wrap">
             <span class="flex items-center gap-1.5" id="connection-status">
-              <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span>
-              WS: STREAMING (<span id="ping-time">14ms</span>)
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              WS: STREAMING (<span id="ping-time" class="text-emerald-300 font-semibold">2ms</span>)
             </span>
-            <span>•</span>
-            <span id="clock" class="text-slate-300 font-semibold">00:00:00 UTC</span>
-            <span>•</span>
-            <span id="triage-status-badge" class="flex items-center gap-1.5 text-cyber-purple font-semibold cursor-pointer" onclick="triggerTriageBackfill()" title="Autonomous LLM Triage Queue (Local Ollama llama3.1:8b)">
-              <span id="triage-dot" class="w-2 h-2 rounded-full bg-cyber-purple animate-pulse"></span>
+            <span class="text-slate-600">•</span>
+            <span id="clock" class="text-slate-300 font-medium">00:00:00 UTC</span>
+            <span class="text-slate-600">•</span>
+            <span id="triage-status-badge" class="flex items-center gap-1.5 text-indigo-300 font-medium cursor-pointer hover:text-indigo-200 transition" onclick="triggerTriageBackfill()" title="Autonomous LLM Triage Queue (Local Ollama)">
+              <span id="triage-dot" class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
               <span id="triage-status-text">AI QUEUE: READY (0)</span>
             </span>
           </div>
@@ -437,179 +411,183 @@
       </div>
 
       <!-- Action Hub Controls -->
-      <div class="flex items-center flex-wrap gap-2.5">
+      <div class="flex items-center flex-wrap gap-2">
         <!-- Spotlight Command Palette Trigger -->
-        <button onclick="openCommandPalette()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-cyber-cyan hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold" title="Press Ctrl+K or Cmd+K">
-          <i data-lucide="command" class="w-4 h-4 text-cyber-cyan"></i>
-          <span>Spotlight <kbd class="px-1.5 py-0.5 rounded bg-black/80 border border-cyber-cyan/40 text-[10px] text-cyber-cyan">⌘K</kbd></span>
+        <button onclick="openCommandPalette()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-2 text-xs font-medium" title="Press Ctrl+K or Cmd+K">
+          <i data-lucide="command" class="w-3.5 h-3.5 text-sky-400"></i>
+          <span>Spotlight <kbd class="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.1] text-[10px] text-slate-300">⌘K</kbd></span>
         </button>
 
         <!-- 3D Globe Radar Toggle -->
-        <button onclick="toggle3DGlobe()" id="globe-toggle-btn" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono font-semibold" title="Toggle 3D WebGL Holographic Threat Globe">
-          <i data-lucide="globe" class="w-4 h-4 text-cyber-cyan"></i>
+        <button onclick="toggle3DGlobe()" id="globe-toggle-btn" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium" title="Toggle 3D WebGL Threat Globe">
+          <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i>
           <span>3D Radar</span>
         </button>
 
         <!-- Audio Synth Toggle -->
-        <button id="audio-toggle" onclick="toggleAudio()" class="p-2.5 rounded-xl glass-panel text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono" title="Toggle audio feedback">
-          <i id="audio-icon" data-lucide="volume-2" class="w-4 h-4 text-cyber-cyan"></i>
+        <button id="audio-toggle" onclick="toggleAudio()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium" title="Toggle audio telemetry feedback">
+          <i id="audio-icon" data-lucide="volume-2" class="w-3.5 h-3.5 text-slate-400"></i>
           <span class="hidden sm:inline">AUDIO: ON</span>
         </button>
 
         <!-- Auto-LLM Triage Queue Trigger -->
-        <button onclick="triggerTriageBackfill()" id="auto-triage-btn" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-purple/60 text-purple-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold" title="Queue top high-velocity threats for autonomous local Ollama triage">
-          <i data-lucide="sparkles" class="w-4 h-4 text-cyber-purple"></i>
-          <span>Auto-LLM Triage</span>
+        <button onclick="triggerTriageBackfill()" id="auto-triage-btn" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-indigo-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium" title="Queue top high-velocity threats for autonomous local Ollama triage">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Auto-LLM</span>
         </button>
 
         <!-- Watchlist Trigger -->
-        <button onclick="openWatchlistModal()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-cyan-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold">
-          <i data-lucide="target" class="w-4 h-4 text-cyber-cyan"></i>
-          <span>Watchlist (<span id="active-watchlist-count" class="text-cyber-cyan">0</span>)</span>
+        <button onclick="openWatchlistModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
+          <i data-lucide="target" class="w-3.5 h-3.5 text-sky-400"></i>
+          <span>Watchlist (<span id="active-watchlist-count" class="text-sky-300">0</span>)</span>
         </button>
 
         <!-- AI Sandbox Trigger -->
-        <button onclick="openTriageModal()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-purple/60 text-purple-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold">
-          <i data-lucide="flask-conical" class="w-4 h-4 text-cyber-purple"></i>
-          <span>AI Triage Sandbox</span>
+        <button onclick="openTriageModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
+          <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-purple-400"></i>
+          <span>Sandbox</span>
         </button>
 
         <!-- Sources Modal Trigger -->
-        <button onclick="openSourcesModal()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-gray-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold">
-          <i data-lucide="radio" class="w-4 h-4 text-cyber-cyan"></i>
-          <span>Feeds (<span id="active-sources-count" class="text-cyber-cyan">38</span>)</span>
+        <button onclick="openSourcesModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
+          <i data-lucide="radio" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Feeds (<span id="active-sources-count" class="text-sky-300">38</span>)</span>
         </button>
 
         <!-- Telegram Trigger -->
-        <button onclick="openTelegramModal()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-blue-400/60 text-gray-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold">
-          <i data-lucide="send" class="w-4 h-4 text-blue-400"></i>
+        <button onclick="openTelegramModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
+          <i data-lucide="send" class="w-3.5 h-3.5 text-blue-400"></i>
           <span class="hidden sm:inline">Telegram</span>
         </button>
 
         <!-- Trigger Scan Button -->
-        <button id="scan-btn" onclick="triggerScan()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-cyan-500/25 transition transform active:scale-95">
-          <i id="scan-icon" data-lucide="refresh-cw" class="w-4 h-4 text-black"></i>
-          <span>Trigger Scan</span>
+        <button id="scan-btn" onclick="triggerScan()" class="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-sm shadow-sky-500/25 transition active:scale-98">
+          <i id="scan-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-950"></i>
+          <span>Scan Feeds</span>
         </button>
+      </div>
     </header>
 
     <!-- 3D WEBGL HOLOGRAPHIC THREAT RADAR GLOBE -->
-    <div id="globe-panel" class="glass-panel rounded-2xl p-4 relative overflow-hidden border border-cyber-cyan/40 shadow-2xl transition-all duration-500">
-      <div class="flex items-center justify-between pb-3 border-b border-cyber-border/60">
-        <div class="flex items-center gap-2.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-cyber-cyan animate-ping"></span>
-          <h2 class="text-sm font-mono font-bold tracking-wider uppercase text-cyber-cyan flex items-center gap-2">
-            <i data-lucide="globe" class="w-4 h-4"></i> Global 3D Threat Telemetry Matrix // Three.js WebGL
+    <div id="globe-panel" class="glass-panel p-4 relative overflow-hidden transition-all duration-500 border border-white/[0.08]">
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+          <h2 class="text-xs font-mono font-semibold tracking-wider uppercase text-slate-200 flex items-center gap-2">
+            <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> Global Threat Telemetry Matrix
           </h2>
         </div>
         <div class="flex items-center gap-3 text-xs font-mono">
-          <span class="text-gray-400 hidden sm:inline"><span class="text-cyber-green">●</span> <span id="globe-beacons-count">38</span> GLOBAL BEACONS ACTIVE</span>
-          <button onclick="toggle3DGlobe()" class="text-gray-400 hover:text-white px-2 py-1 rounded bg-black/60 border border-gray-700">Minimize</button>
+          <span class="text-slate-400 hidden sm:inline flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span id="globe-beacons-count" class="text-slate-200 font-semibold">38</span> GLOBAL BEACONS ACTIVE
+          </span>
+          <button onclick="toggle3DGlobe()" class="text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.16] transition text-[11px]">Minimize</button>
         </div>
       </div>
 
       <div class="relative w-full h-64 sm:h-80 flex items-center justify-center cursor-grab active:cursor-grabbing" id="three-globe-viewport">
         <!-- Three.js Canvas mounts here -->
-        <div class="absolute top-3 left-3 z-10 pointer-events-none space-y-1 font-mono text-[10px] text-gray-400 bg-black/60 p-2.5 rounded-lg border border-gray-800 backdrop-blur-md">
-          <p class="text-cyber-cyan font-bold">SPATIAL RADAR: 360° ACTIVE</p>
-          <p>FPS: <span id="globe-fps" class="text-cyber-green">60</span> | ORBIT: <span class="text-cyber-purple">0.2 rad/s</span></p>
+        <div class="absolute top-3 left-3 z-10 pointer-events-none space-y-1 font-mono text-[10px] text-slate-400 bg-slate-950/70 p-2.5 rounded-xl border border-white/[0.08] backdrop-blur-md">
+          <p class="text-sky-300 font-semibold tracking-wide">SPATIAL RADAR: 360° ACTIVE</p>
+          <p>FPS: <span id="globe-fps" class="text-emerald-300">60</span> | ORBIT: <span class="text-indigo-300">0.2 rad/s</span></p>
         </div>
 
-        <div class="absolute bottom-3 right-3 z-10 pointer-events-none font-mono text-[10px] text-gray-400 bg-black/60 px-3 py-1.5 rounded-lg border border-gray-800 backdrop-blur-md flex items-center gap-2">
-          <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-cyber-cyan"></i>
-          <span>Drag to rotate globe • Hover to pause</span>
+        <div class="absolute bottom-3 right-3 z-10 pointer-events-none font-mono text-[10px] text-slate-400 bg-slate-950/70 px-3 py-1.5 rounded-xl border border-white/[0.08] backdrop-blur-md flex items-center gap-2">
+          <i data-lucide="mouse-pointer" class="w-3 h-3 text-sky-400"></i>
+          <span>Drag to rotate • Hover to pause</span>
         </div>
       </div>
     </div>
 
     <!-- METRICS TELEMETRY ROW -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
       <!-- Total Intelligence Ingested -->
-      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-cyan">
+      <div class="glass-panel p-4 flex items-center justify-between border border-white/[0.08] hover:border-white/[0.16] transition">
         <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-muted font-bold">Total Intel Ingested</p>
-          <h3 id="stat-total" class="text-2xl font-black font-mono text-white mt-1">4,137</h3>
-          <p class="text-[10px] text-cyber-green flex items-center gap-1 mt-1 font-mono">
-            <i data-lucide="database" class="w-3 h-3"></i> SQLite WAL Live
+          <p class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-medium">Total Intel Ingested</p>
+          <h3 id="stat-total" class="text-2xl font-bold font-mono tracking-tight text-white mt-1">4,336</h3>
+          <p class="text-[10px] text-emerald-400 flex items-center gap-1.5 mt-1 font-mono font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> SQLite WAL Live
           </p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-cyber-cyan/10 flex items-center justify-center text-cyber-cyan border border-cyber-cyan/30">
-          <i data-lucide="layers" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-300">
+          <i data-lucide="layers" class="w-4 h-4 text-sky-400"></i>
         </div>
       </div>
 
       <!-- Pre-CVE Zero-Day Warnings -->
-      <div class="glass-panel-amber rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-amber animate-glow-pulse-amber">
+      <div class="glass-panel p-4 flex items-center justify-between border border-amber-500/25 bg-amber-500/[0.03] hover:border-amber-500/40 transition">
         <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-amber font-bold flex items-center gap-1">
-            <i data-lucide="zap" class="w-3 h-3 animate-bounce"></i> Pre-CVE Warnings
+          <p class="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-medium flex items-center gap-1.5">
+            <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> Pre-CVE Warnings
           </p>
-          <h3 id="stat-precve" class="text-2xl font-black font-mono text-cyber-amber mt-1 neon-text-amber">2</h3>
-          <p class="text-[10px] text-cyber-amber/90 font-mono mt-1 font-semibold">arXiv Academic Exploits</p>
+          <h3 id="stat-precve" class="text-2xl font-bold font-mono tracking-tight text-amber-200 mt-1">2</h3>
+          <p class="text-[10px] text-amber-400/80 font-mono mt-1">arXiv Academic Exploits</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-cyber-amber/20 flex items-center justify-center text-cyber-amber border border-cyber-amber/40">
-          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-300">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
         </div>
       </div>
 
       <!-- High Velocity Threats -->
-      <div class="glass-panel-red rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-red">
+      <div class="glass-panel p-4 flex items-center justify-between border border-rose-500/25 bg-rose-500/[0.03] hover:border-rose-500/40 transition">
         <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-red font-bold flex items-center gap-1">
-            <i data-lucide="flame" class="w-3 h-3"></i> High Velocity
+          <p class="text-[10px] font-mono uppercase tracking-wider text-rose-300 font-medium flex items-center gap-1.5">
+            <i data-lucide="flame" class="w-3 h-3 text-rose-400"></i> High Velocity
           </p>
-          <h3 id="stat-highvel" class="text-2xl font-black font-mono text-cyber-red mt-1 neon-text-red">10</h3>
-          <p class="text-[10px] text-cyber-red/90 font-mono mt-1 font-semibold">Velocity Score ≥ 70</p>
+          <h3 id="stat-highvel" class="text-2xl font-bold font-mono tracking-tight text-rose-200 mt-1">10</h3>
+          <p class="text-[10px] text-rose-400/80 font-mono mt-1">Velocity Score ≥ 70</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-cyber-red/20 flex items-center justify-center text-cyber-red border border-cyber-red/40">
-          <i data-lucide="activity" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-300">
+          <i data-lucide="activity" class="w-4 h-4 text-rose-400"></i>
         </div>
       </div>
 
       <!-- AI Tech & Papers -->
-      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-purple">
+      <div class="glass-panel p-4 flex items-center justify-between border border-indigo-500/20 bg-indigo-500/[0.03] hover:border-indigo-500/35 transition">
         <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-muted font-bold">Frontier AI Releases</p>
-          <h3 id="stat-ai" class="text-2xl font-black font-mono text-cyber-purple mt-1">2,252</h3>
-          <p class="text-[10px] text-cyber-purple/90 font-mono mt-1">LLMs & arXiv Papers</p>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-indigo-300 font-medium">Frontier AI Releases</p>
+          <h3 id="stat-ai" class="text-2xl font-bold font-mono tracking-tight text-indigo-200 mt-1">2,252</h3>
+          <p class="text-[10px] text-indigo-400/80 font-mono mt-1">LLMs & arXiv Papers</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-cyber-purple/10 flex items-center justify-center text-cyber-purple border border-cyber-purple/30">
-          <i data-lucide="bot" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300">
+          <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
         </div>
       </div>
 
       <!-- Security Advisories & CVEs -->
-      <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyber-green">
+      <div class="glass-panel p-4 flex items-center justify-between border border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/35 transition">
         <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-cyber-muted font-bold">Cyber Threats</p>
-          <h3 id="stat-sec" class="text-2xl font-black font-mono text-cyber-green mt-1">1,885</h3>
-          <p class="text-[10px] text-cyber-green/90 font-mono mt-1">CISA, GHSA, NVD</p>
+          <p class="text-[10px] font-mono uppercase tracking-wider text-emerald-300 font-medium">Cyber Threats</p>
+          <h3 id="stat-sec" class="text-2xl font-bold font-mono tracking-tight text-emerald-200 mt-1">1,885</h3>
+          <p class="text-[10px] text-emerald-400/80 font-mono mt-1">CISA, GHSA, NVD</p>
         </div>
-        <div class="w-11 h-11 rounded-xl bg-cyber-green/10 flex items-center justify-center text-cyber-green border border-cyber-green/30">
-          <i data-lucide="shield" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-300">
+          <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
         </div>
       </div>
     </div>
 
 
     <!-- PRE-CVE ZERO-DAY HIGHLIGHT RADAR BANNER -->
-    <div id="precve-radar-banner" class="glass-panel-amber rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-cyber-amber">
-      <div class="flex items-center gap-3 w-full sm:w-auto">
-        <div class="w-8 h-8 rounded-lg bg-cyber-amber/20 text-cyber-amber flex items-center justify-center flex-shrink-0 animate-pulse">
-          <i data-lucide="zap" class="w-5 h-5"></i>
+    <div id="precve-radar-banner" class="glass-panel p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border border-amber-500/25 bg-gradient-to-r from-amber-500/[0.06] via-transparent to-transparent">
+      <div class="flex items-center gap-3.5 w-full sm:w-auto">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="text-xs font-mono font-bold text-cyber-amber uppercase tracking-wider">⚡ PRE-CVE ZERO-DAY WARNING ACTIVE:</span>
-            <span class="text-[10px] font-mono bg-cyber-amber/20 text-cyber-amber px-2 py-0.5 rounded font-bold">EARLY DETECTION</span>
+            <span class="text-xs font-mono font-semibold text-amber-300 uppercase tracking-wider">PRE-CVE ZERO-DAY RADAR ACTIVE</span>
+            <span class="text-[10px] font-mono bg-amber-500/20 text-amber-200 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">EARLY DETECTION</span>
           </div>
-          <p class="text-xs text-gray-200 mt-0.5 line-clamp-1 font-mono">
+          <p class="text-xs text-slate-300 mt-0.5 line-clamp-1 font-sans">
             Autonomous radar identified novel LLM jailbreak / agent hijacking exploits in arXiv research before official CVE publishing.
           </p>
         </div>
       </div>
-      <button onclick="setCategory('pre_cve')" class="px-4 py-2 rounded-xl bg-cyber-amber text-black font-mono font-bold text-xs uppercase hover:bg-amber-400 transition whitespace-nowrap flex-shrink-0 shadow-lg shadow-amber-500/20">
-        Filter Pre-CVE Advisories →
+      <button onclick="setCategory('pre_cve')" class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 font-mono font-medium text-xs uppercase transition whitespace-nowrap flex-shrink-0">
+        Filter Advisories →
       </button>
     </div>
 
@@ -621,48 +599,48 @@
       <div class="lg:col-span-8 space-y-4">
         
         <!-- Filter Bar & Search -->
-        <div class="glass-panel rounded-2xl p-4 space-y-3">
+        <div class="glass-panel p-4 space-y-3.5 border border-white/[0.08]">
           <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
             <!-- Category Navigation -->
             <div class="flex items-center gap-1.5 overflow-x-auto w-full pb-1 text-xs font-mono">
-              <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-cyan text-black font-bold transition whitespace-nowrap">ALL</button>
-              <button onclick="setCategory('pinned')" id="tab-pinned" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyber-purple hover:text-white border border-cyber-purple/50 font-bold transition whitespace-nowrap flex items-center gap-1">
-                <i data-lucide="star" class="w-3.5 h-3.5 text-cyber-purple"></i> PINNED (<span id="pinned-count">0</span>)
+              <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.12] text-white border border-white/20 font-medium transition whitespace-nowrap">ALL</button>
+              <button onclick="setCategory('pinned')" id="tab-pinned" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i> PINNED (<span id="pinned-count">0</span>)
               </button>
-              <button onclick="setCategory('watchlist')" id="tab-watchlist" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyan-400 hover:text-white border border-cyber-cyan/50 font-bold transition whitespace-nowrap flex items-center gap-1">
-                <i data-lucide="target" class="w-3.5 h-3.5"></i> WATCHLIST
+              <button onclick="setCategory('watchlist')" id="tab-watchlist" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-sky-400"></i> WATCHLIST
               </button>
-              <button onclick="setCategory('pre_cve')" id="tab-pre_cve" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyber-amber hover:text-white border border-cyber-amber/50 font-bold transition whitespace-nowrap flex items-center gap-1">
-                <i data-lucide="zap" class="w-3.5 h-3.5"></i> PRE-CVE
+              <button onclick="setCategory('pre_cve')" id="tab-pre_cve" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> PRE-CVE
               </button>
-              <button onclick="setCategory('high_velocity')" id="tab-high_velocity" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyber-red hover:text-white border border-cyber-red/50 font-bold transition whitespace-nowrap flex items-center gap-1">
-                <i data-lucide="flame" class="w-3.5 h-3.5"></i> HIGH VELOCITY
+              <button onclick="setCategory('high_velocity')" id="tab-high_velocity" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="flame" class="w-3.5 h-3.5 text-rose-400"></i> HIGH VELOCITY
               </button>
-              <button onclick="setCategory('vulnerabilities')" id="tab-vulnerabilities" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">⚠️ CVEs</button>
-              <button onclick="setCategory('ai_tech')" id="tab-ai_tech" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">🤖 AI TECH</button>
-              <button onclick="setCategory('ai_research')" id="tab-ai_research" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">📚 RESEARCH</button>
-              <button onclick="setCategory('cybersecurity')" id="tab-cybersecurity" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">🔒 THREATS</button>
-              <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">⭐ REPOS</button>
+              <button onclick="setCategory('vulnerabilities')" id="tab-vulnerabilities" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">CVEs</button>
+              <button onclick="setCategory('ai_tech')" id="tab-ai_tech" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">AI TECH</button>
+              <button onclick="setCategory('ai_research')" id="tab-ai_research" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">RESEARCH</button>
+              <button onclick="setCategory('cybersecurity')" id="tab-cybersecurity" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">THREATS</button>
+              <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">REPOS</button>
             </div>
           </div>
 
           <!-- Temporal Horizon Filter & Export Controls -->
-          <div class="flex items-center justify-between gap-3 pt-2 border-t border-cyber-border/40 flex-wrap text-xs font-mono">
+          <div class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.06] flex-wrap text-xs font-mono">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[10px] text-cyber-muted font-bold uppercase mr-1">HORIZON:</span>
-              <button onclick="setTimeHorizon(0)" id="horizon-all" class="horizon-pill px-2.5 py-1 rounded-md bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan font-bold transition">ALL TIME</button>
-              <button onclick="setTimeHorizon(24)" id="horizon-24" class="horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition">⚡ 24 HOURS</button>
-              <button onclick="setTimeHorizon(168)" id="horizon-168" class="horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition">📅 7 DAYS</button>
-              <button onclick="setTimeHorizon(720)" id="horizon-720" class="horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition">🗓️ 30 DAYS</button>
+              <span class="text-[10px] text-slate-500 font-medium uppercase mr-1">HORIZON:</span>
+              <button onclick="setTimeHorizon(0)" id="horizon-all" class="horizon-pill px-2.5 py-1 rounded-md bg-white/[0.1] text-white border border-white/20 font-medium transition">ALL TIME</button>
+              <button onclick="setTimeHorizon(24)" id="horizon-24" class="horizon-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">24 HOURS</button>
+              <button onclick="setTimeHorizon(168)" id="horizon-168" class="horizon-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">7 DAYS</button>
+              <button onclick="setTimeHorizon(720)" id="horizon-720" class="horizon-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">30 DAYS</button>
             </div>
 
             <!-- Export Hub -->
             <div class="flex items-center gap-2">
-              <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-md bg-black/70 border border-gray-700 hover:border-cyber-cyan text-gray-300 hover:text-white text-[11px] flex items-center gap-1 transition" title="Export current/pinned threats to Markdown Brief">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 text-cyber-cyan"></i> Export MD
+              <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current/pinned threats to Markdown Brief">
+                <i data-lucide="file-text" class="w-3 h-3 text-sky-400"></i> Export MD
               </button>
-              <button onclick="exportStixJson()" class="px-2.5 py-1 rounded-md bg-black/70 border border-gray-700 hover:border-cyber-purple text-gray-300 hover:text-white text-[11px] flex items-center gap-1 transition" title="Export to STIX 2.1 Threat Intel format">
-                <i data-lucide="shield" class="w-3.5 h-3.5 text-cyber-purple"></i> Export STIX
+              <button onclick="exportStixJson()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export to STIX 2.1 Threat Intel format">
+                <i data-lucide="shield" class="w-3 h-3 text-indigo-400"></i> Export STIX
               </button>
             </div>
           </div>
@@ -670,13 +648,13 @@
           <!-- Search & Sort Row -->
           <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             <div class="relative flex-1 w-full">
-              <i data-lucide="search" class="w-4 h-4 text-cyber-muted absolute left-3 top-1/2 -translate-y-1/2"></i>
-              <input id="search-input" oninput="debounceSearch()" type="text" placeholder="Search CVEs, attack vectors, AI frameworks (PyTorch, LangChain, DeepSeek, Ollama)..." class="w-full glass-input rounded-xl pl-9 pr-3 py-2 text-xs font-mono placeholder:text-gray-600 transition">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input id="search-input" oninput="debounceSearch()" type="text" placeholder="Search CVEs, research papers, AI models, attack vectors..." class="w-full glass-input pl-9 pr-3 py-2 text-xs font-mono placeholder:text-slate-500 transition">
             </div>
             
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-[10px] font-mono text-cyber-muted uppercase">SORT:</span>
-              <select id="sort-select" onchange="loadFeed(true)" class="glass-input rounded-xl px-2.5 py-2 text-xs font-mono">
+              <span class="text-[10px] font-mono text-slate-500 uppercase">SORT:</span>
+              <select id="sort-select" onchange="loadFeed(true)" class="glass-input px-3 py-2 text-xs font-mono text-slate-300 cursor-pointer">
                 <option value="newest">Newest First</option>
                 <option value="velocity">Threat Velocity</option>
                 <option value="blast">Blast Radius</option>
@@ -686,12 +664,12 @@
         </div>
 
         <!-- Live Scan Progress Bar (Shown during scan) -->
-        <div id="scan-progress-banner" class="hidden glass-panel rounded-2xl p-3.5 border-cyber-cyan bg-cyber-cyan/10 flex items-center justify-between animate-pulse">
+        <div id="scan-progress-banner" class="hidden glass-panel p-3.5 border border-sky-500/30 bg-sky-500/[0.04] flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-3 h-3 rounded-full bg-cyber-cyan animate-ping"></div>
-            <p id="scan-banner-text" class="text-xs font-mono text-cyber-cyan font-bold">Scanning arXiv, CISA, GitHub Advisories & AI lab feeds...</p>
+            <div class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></div>
+            <p id="scan-banner-text" class="text-xs font-mono text-sky-300 font-medium">Scanning 38 global intelligence feeds...</p>
           </div>
-          <span class="text-[10px] font-mono bg-cyber-cyan text-black px-2 py-0.5 rounded font-bold">LIVE INGEST</span>
+          <span class="text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-medium">SWEEP ACTIVE</span>
         </div>
 
         <!-- Feed Cards Container -->
@@ -701,7 +679,7 @@
 
         <!-- Pagination Load More -->
         <div class="text-center pt-2">
-          <button id="load-more-btn" onclick="loadMore()" class="px-8 py-3 rounded-xl glass-panel hover:border-cyber-cyan text-xs font-mono font-bold text-gray-300 hover:text-white transition">
+          <button id="load-more-btn" onclick="loadMore()" class="px-6 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.16] text-xs font-mono font-medium text-slate-300 hover:text-white transition">
             Load More Intel (+25)
           </button>
         </div>
@@ -712,13 +690,13 @@
       <div class="lg:col-span-4 space-y-4">
         
         <!-- Category Distribution Chart -->
-        <div class="glass-panel rounded-2xl p-5 space-y-3">
+        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-display font-bold tracking-wide flex items-center gap-2">
-              <i data-lucide="pie-chart" class="w-4 h-4 text-cyber-cyan"></i>
+            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-sky-400"></i>
               Intel Category Spectrum
             </h3>
-            <span class="text-[10px] font-mono text-cyber-muted uppercase">REAL-TIME</span>
+            <span class="text-[10px] font-mono text-slate-500 uppercase">REAL-TIME</span>
           </div>
 
           <div class="relative h-56 flex items-center justify-center">
@@ -727,57 +705,57 @@
         </div>
 
         <!-- AI Framework Blast Radius Exposure -->
-        <div class="glass-panel rounded-2xl p-5 space-y-3">
+        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-display font-bold tracking-wide flex items-center gap-2">
-              <i data-lucide="target" class="w-4 h-4 text-cyber-purple"></i>
+            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <i data-lucide="target" class="w-3.5 h-3.5 text-indigo-400"></i>
               AI Framework Exposure
             </h3>
-            <span class="text-[10px] font-mono text-cyber-muted uppercase">BLAST MATRIX</span>
+            <span class="text-[10px] font-mono text-slate-500 uppercase">BLAST MATRIX</span>
           </div>
 
           <div id="framework-exposure-list" class="space-y-2.5 text-xs font-mono">
             <!-- Dynamically populated from live SQLite analysis -->
-            <p class="text-cyber-muted text-center py-4 text-[11px]">Computing framework blast exposure...</p>
+            <p class="text-slate-500 text-center py-4 text-[11px]">Computing framework blast exposure...</p>
           </div>
         </div>
 
         <!-- Autonomous Engine Capabilities -->
-        <div class="glass-panel rounded-2xl p-5 space-y-3 border-t-2 border-t-cyber-cyan/50">
-          <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-            <i data-lucide="cpu" class="w-4 h-4 text-cyber-cyan"></i>
+        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
+          <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+            <i data-lucide="cpu" class="w-3.5 h-3.5 text-sky-400"></i>
             Autonomous Detection Engine
           </h3>
           <div class="space-y-2 text-[11px] font-mono">
-            <div class="p-2.5 rounded-lg bg-cyber-black/70 border border-cyber-border/80">
-              <div class="text-cyber-amber font-bold flex items-center gap-1">
-                <i data-lucide="zap" class="w-3.5 h-3.5"></i> Pre-CVE Early Warning System
+            <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
+              <div class="text-amber-300 font-medium flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Pre-CVE Early Warning System
               </div>
-              <p class="text-gray-400 mt-0.5">Scans arXiv research to detect novel LLM jailbreaks, RAG poisoning, and agent hijack prior to CVE filing.</p>
+              <p class="text-slate-400 mt-1 font-sans text-xs">Scans arXiv research to detect novel LLM jailbreaks, RAG poisoning, and agent hijack prior to CVE filing.</p>
             </div>
-            <div class="p-2.5 rounded-lg bg-cyber-black/70 border border-cyber-border/80">
-              <div class="text-cyber-cyan font-bold flex items-center gap-1">
-                <i data-lucide="target" class="w-3.5 h-3.5"></i> AI Blast Radius Calculator
+            <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
+              <div class="text-sky-300 font-medium flex items-center gap-1.5">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-sky-400"></i> AI Blast Radius Calculator
               </div>
-              <p class="text-gray-400 mt-0.5">Cross-correlates vulnerabilities against open-source AI stacks (PyTorch, LangChain, Ollama, Transformers).</p>
+              <p class="text-slate-400 mt-1 font-sans text-xs">Cross-correlates vulnerabilities against open-source AI stacks (PyTorch, LangChain, Ollama, Transformers).</p>
             </div>
-            <div class="p-2.5 rounded-lg bg-cyber-black/70 border border-cyber-border/80">
-              <div class="text-cyber-purple font-bold flex items-center gap-1">
-                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Zero-Cost Autonomous Triage
+            <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
+              <div class="text-indigo-300 font-medium flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-indigo-400"></i> Zero-Cost Autonomous Triage
               </div>
-              <p class="text-gray-400 mt-0.5">Generates exact attack vectors, tangible risk assessments, and mitigation patches locally.</p>
+              <p class="text-slate-400 mt-1 font-sans text-xs">Generates exact attack vectors, tangible risk assessments, and mitigation patches locally.</p>
             </div>
           </div>
         </div>
 
         <!-- Recent Sweep Activity Log -->
-        <div class="glass-panel rounded-2xl p-5 space-y-3">
+        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-display font-bold tracking-wide flex items-center gap-2">
-              <i data-lucide="list-tree" class="w-4 h-4 text-cyber-purple"></i>
+            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <i data-lucide="list-tree" class="w-3.5 h-3.5 text-slate-400"></i>
               Feed Sweep Telemetry
             </h3>
-            <span class="text-[10px] font-mono text-cyber-muted">LAST 24H</span>
+            <span class="text-[10px] font-mono text-slate-500">LAST 24H</span>
           </div>
 
           <div id="recent-fetches-list" class="space-y-2 max-h-72 overflow-y-auto pr-1 text-xs font-mono">
@@ -875,36 +853,36 @@
       });
 
       const particles = [];
-      const count = Math.min(Math.floor(w / 25), 65);
+      const count = Math.min(Math.floor(w / 30), 45);
 
       for (let i = 0; i < count; i++) {
         particles.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: (Math.random() - 0.5) * 0.4,
-          radius: Math.random() * 1.5 + 0.5,
-          color: Math.random() > 0.6 ? '#00f0ff' : (Math.random() > 0.5 ? '#a855f7' : '#263859')
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          radius: Math.random() * 0.9 + 0.35,
+          color: Math.random() > 0.6 ? 'rgba(255, 255, 255, 0.3)' : (Math.random() > 0.4 ? 'rgba(56, 189, 248, 0.25)' : 'rgba(167, 139, 250, 0.2)')
         });
       }
 
       function draw() {
         ctx.clearRect(0, 0, w, h);
 
-        // Draw radial gradient lights
-        const g1 = ctx.createRadialGradient(w * 0.15, h * 0.15, 0, w * 0.15, h * 0.15, 450);
-        g1.addColorStop(0, 'rgba(0, 240, 255, 0.04)');
+        // Ambient celestial lighting
+        const g1 = ctx.createRadialGradient(w * 0.2, h * 0.1, 0, w * 0.2, h * 0.1, 550);
+        g1.addColorStop(0, 'rgba(56, 189, 248, 0.025)');
         g1.addColorStop(1, 'transparent');
         ctx.fillStyle = g1;
         ctx.fillRect(0, 0, w, h);
 
-        const g2 = ctx.createRadialGradient(w * 0.85, h * 0.8, 0, w * 0.85, h * 0.8, 500);
-        g2.addColorStop(0, 'rgba(168, 85, 247, 0.04)');
+        const g2 = ctx.createRadialGradient(w * 0.8, h * 0.7, 0, w * 0.8, h * 0.7, 600);
+        g2.addColorStop(0, 'rgba(99, 102, 241, 0.02)');
         g2.addColorStop(1, 'transparent');
         ctx.fillStyle = g2;
         ctx.fillRect(0, 0, w, h);
 
-        // Update and draw particles
+        // Update and draw stardust particles
         for (let i = 0; i < count; i++) {
           const p = particles[i];
           p.x += p.vx;
@@ -920,15 +898,15 @@
           ctx.fillStyle = p.color;
           ctx.fill();
 
-          // Connect nearby particles
+          // Connect nearby stars with faint hair lines
           for (let j = i + 1; j < count; j++) {
             const p2 = particles[j];
             const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-            if (dist < 120) {
+            if (dist < 110) {
               ctx.beginPath();
               ctx.moveTo(p.x, p.y);
               ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = `rgba(38, 56, 89, ${0.35 * (1 - dist / 120)})`;
+              ctx.strokeStyle = `rgba(255, 255, 255, ${0.04 * (1 - dist / 110)})`;
               ctx.lineWidth = 0.5;
               ctx.stroke();
             }
@@ -1137,23 +1115,23 @@
       const fwList = document.getElementById('framework-exposure-list');
       if (fwList && stats.framework_exposure && stats.framework_exposure.length > 0) {
         const riskColors = {
-          'HIGH RISK': { text: 'text-cyber-red', bar: 'from-orange-500 to-red-500' },
-          'ELEVATED': { text: 'text-cyber-amber', bar: 'from-yellow-500 to-amber-500' },
-          'MODERATE': { text: 'text-cyber-cyan', bar: 'from-blue-500 to-cyan-500' },
-          'MONITORED': { text: 'text-cyber-purple', bar: 'from-indigo-500 to-purple-500' }
+          'HIGH RISK': { text: 'text-rose-400', bar: 'from-rose-500/80 to-rose-400' },
+          'ELEVATED': { text: 'text-amber-400', bar: 'from-amber-500/80 to-amber-400' },
+          'MODERATE': { text: 'text-sky-400', bar: 'from-sky-500/80 to-sky-400' },
+          'MONITORED': { text: 'text-indigo-400', bar: 'from-indigo-500/80 to-indigo-400' }
         };
 
         fwList.innerHTML = stats.framework_exposure.map(fw => {
           const cfg = riskColors[fw.risk_level] || riskColors['MONITORED'];
           const pct = Math.min(100, Math.max(15, Math.round(fw.avg_blast || 50)));
           return `
-            <div onclick="quickFilterFramework('${fw.name}')" class="cursor-pointer hover:bg-white/5 p-1.5 rounded-lg transition" title="Click to filter intelligence for ${fw.name}">
+            <div onclick="quickFilterFramework('${fw.name}')" class="cursor-pointer hover:bg-white/[0.04] p-1.5 rounded-lg transition" title="Click to filter intelligence for ${fw.name}">
               <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-gray-300 font-bold flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3 text-cyber-cyan"></i>${fw.name} (${fw.count})</span>
-                <span class="${cfg.text} font-bold text-[10px]">${fw.risk_level}</span>
+                <span class="text-slate-300 font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3 text-sky-400"></i>${fw.name} (${fw.count})</span>
+                <span class="${cfg.text} font-semibold text-[10px]">${fw.risk_level}</span>
               </div>
-              <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
-                <div class="bg-gradient-to-r ${cfg.bar} h-1.5 rounded-full" style="width: ${pct}%"></div>
+              <div class="w-full bg-white/[0.06] rounded-full h-1 overflow-hidden">
+                <div class="bg-gradient-to-r ${cfg.bar} h-1 rounded-full" style="width: ${pct}%"></div>
               </div>
             </div>
           `;
@@ -1164,18 +1142,18 @@
       const fetchList = document.getElementById('recent-fetches-list');
       if (stats.recent_fetches && stats.recent_fetches.length > 0) {
         fetchList.innerHTML = stats.recent_fetches.map(f => `
-          <div class="flex items-center justify-between p-2 rounded-lg bg-cyber-black/60 border border-cyber-border/70">
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
             <div class="flex items-center gap-2 truncate">
-              <span class="w-2 h-2 rounded-full ${f.status === 'success' ? 'bg-cyber-green' : (f.status === 'error' ? 'bg-cyber-red' : 'bg-cyber-yellow')}"></span>
-              <span class="truncate text-gray-300 font-medium">${f.source_name}</span>
+              <span class="w-1.5 h-1.5 rounded-full ${f.status === 'success' ? 'bg-emerald-400' : (f.status === 'error' ? 'bg-rose-400' : 'bg-amber-400')}"></span>
+              <span class="truncate text-slate-300 font-medium">${f.source_name}</span>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-[10px] text-cyber-cyan font-bold">+${f.entries_new} new</span>
+              <span class="text-[10px] text-sky-400 font-medium">+${f.entries_new} new</span>
             </div>
           </div>
         `).join('');
       } else {
-        fetchList.innerHTML = `<p class="text-cyber-muted text-center py-4">No recent sweep logs.</p>`;
+        fetchList.innerHTML = `<p class="text-slate-500 text-center py-4 text-xs">No recent sweep logs.</p>`;
       }
     }
 
@@ -1212,15 +1190,15 @@
           datasets: [{
             data: dataValues,
             backgroundColor: [
-              '#00f0ff',
-              '#a855f7',
-              '#10b981',
-              '#ff0055',
-              '#f59e0b'
+              '#38BDF8', // Celestial Azure (Frontier AI)
+              '#818CF8', // Indigo Iris (Research)
+              '#34D399', // Mint Jade (Cybersecurity)
+              '#FB7185', // Rose Damask (Vulnerabilities)
+              '#FBBF24'  // Champagne Gold (Trending)
             ],
-            borderColor: '#030712',
-            borderWidth: 3,
-            hoverOffset: 8
+            borderColor: 'rgba(14, 18, 27, 0.95)',
+            borderWidth: 2,
+            hoverOffset: 6
           }]
         },
         options: {
@@ -1231,13 +1209,13 @@
               position: 'bottom',
               labels: {
                 color: '#94a3b8',
-                font: { size: 10, family: 'JetBrains Mono' },
-                boxWidth: 10,
-                padding: 10
+                font: { size: 10, family: 'Inter' },
+                boxWidth: 8,
+                padding: 12
               }
             }
           },
-          cutout: '70%'
+          cutout: '75%'
         }
       });
     }
@@ -1353,30 +1331,30 @@
       const risk = analysis.risk_assessment || entry.risk_assessment || '';
       const mitigation = analysis.mitigation || entry.mitigation || '';
 
-      let borderStyle = 'border-cyber-border/70 hover:border-cyber-cyan/50';
+      let borderStyle = 'border-white/[0.07] hover:border-white/[0.16]';
       if (isPreCve) {
-        borderStyle = 'border-cyber-amber/80 glass-panel-amber';
+        borderStyle = 'border-amber-500/30 bg-gradient-to-b from-amber-500/[0.04] to-transparent';
       } else if (velocity >= 70) {
-        borderStyle = 'border-cyber-red/80 glass-panel-red';
+        borderStyle = 'border-rose-500/30 bg-gradient-to-b from-rose-500/[0.04] to-transparent';
       }
 
-      card.className = `glass-panel rounded-2xl p-5 transition hover:translate-y-[-2px] border ${borderStyle} space-y-4 cursor-pointer`;
+      card.className = `glass-panel p-5 transition-all duration-200 hover:-translate-y-0.5 border ${borderStyle} space-y-3.5 cursor-pointer`;
 
       const categoryBadgeColors = {
-        vulnerabilities: 'text-cyber-red border-cyber-red/30 bg-cyber-red/10',
-        ai_tech: 'text-cyber-cyan border-cyber-cyan/30 bg-cyber-cyan/10',
-        ai_research: 'text-cyber-purple border-cyber-purple/30 bg-cyber-purple/10',
-        cybersecurity: 'text-cyber-green border-cyber-green/30 bg-cyber-green/10',
-        github_trending: 'text-cyber-amber border-cyber-amber/30 bg-cyber-amber/10'
+        vulnerabilities: 'text-rose-300 border-rose-500/25 bg-rose-500/10',
+        ai_tech: 'text-sky-300 border-sky-500/25 bg-sky-500/10',
+        ai_research: 'text-indigo-300 border-indigo-500/25 bg-indigo-500/10',
+        cybersecurity: 'text-emerald-300 border-emerald-500/25 bg-emerald-500/10',
+        github_trending: 'text-amber-300 border-amber-500/25 bg-amber-500/10'
       };
 
-      const badgeStyle = categoryBadgeColors[entry.category] || 'text-gray-300 border-gray-700 bg-gray-800';
+      const badgeStyle = categoryBadgeColors[entry.category] || 'text-slate-300 border-white/10 bg-white/[0.04]';
       const pubDate = entry.published_at ? entry.published_at.slice(0, 16).replace('T', ' ') : 'Recent';
 
       // Framework Ecosystem Badges
       const ecoPills = ecosystem.slice(0, 3).map(e => `
-        <span class="px-2 py-0.5 rounded-md bg-blue-950/70 text-blue-300 border border-blue-700/60 text-[10px] font-mono">
-          <i data-lucide="cpu" class="w-2.5 h-2.5 inline mr-0.5"></i>${e}
+        <span class="px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.08] text-[10px] font-mono">
+          <i data-lucide="cpu" class="w-2.5 h-2.5 inline mr-1 text-sky-400"></i>${e}
         </span>
       `).join(' ');
 
@@ -1384,90 +1362,92 @@
         <!-- Header Row -->
         <div class="flex items-center justify-between gap-2 flex-wrap text-xs font-mono">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="px-2.5 py-0.5 rounded-md border text-[11px] font-bold uppercase ${badgeStyle}">
+            <span class="px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase ${badgeStyle}">
               ${entry.category.replace('_', ' ')}
             </span>
 
             ${isPreCve ? `
-              <span class="px-2.5 py-0.5 rounded-md bg-cyber-amber/20 border border-cyber-amber/70 text-cyber-amber text-[10px] font-bold tracking-wide animate-pulse flex items-center gap-1">
-                <i data-lucide="zap" class="w-3 h-3"></i> PRE-CVE ZERO-DAY
+              <span class="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/35 text-amber-300 text-[10px] font-medium tracking-wide flex items-center gap-1">
+                <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> PRE-CVE
               </span>
             ` : ''}
 
             ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `
-              <span class="px-2.5 py-0.5 rounded-md bg-purple-950/90 border border-cyber-purple text-purple-300 text-[10px] font-bold font-mono shadow-md shadow-purple-500/20 flex items-center gap-1">
-                <i data-lucide="cpu" class="w-3 h-3 text-cyber-purple"></i> DEEP LLM TRIAGED
+              <span class="px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/35 text-indigo-300 text-[10px] font-medium font-mono flex items-center gap-1">
+                <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i> AI TRIAGED
               </span>
             ` : ''}
 
             ${(entry.matched_watchlist_rules || []).map(w => `
-              <span class="px-2.5 py-0.5 rounded-md bg-cyan-950/80 border border-cyber-cyan text-cyber-cyan text-[10px] font-bold font-mono animate-pulse flex items-center gap-1">
-                <i data-lucide="target" class="w-3 h-3"></i> ${w}
+              <span class="px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/35 text-sky-300 text-[10px] font-medium font-mono flex items-center gap-1">
+                <i data-lucide="target" class="w-3 h-3 text-sky-400"></i> ${w}
               </span>
             `).join('')}
 
-            <span class="text-slate-400 font-semibold text-xs">${entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Intelligence Feed')}</span>
+            <span class="text-slate-400 text-xs font-medium">${entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Intelligence Feed')}</span>
           </div>
 
           <div class="flex items-center gap-2">
-            <!-- Threat Velocity -->
-            <span class="px-2 py-0.5 rounded bg-black/70 border ${velocity >= 70 ? 'border-cyber-red text-cyber-red font-extrabold' : 'border-cyber-cyan/40 text-cyber-cyan'} text-[10px] font-mono">
-              VELOCITY: ${velocity}/100
+            <!-- Threat Velocity Pill -->
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${velocity >= 70 ? 'bg-rose-500/15 border border-rose-500/30 text-rose-300' : 'bg-white/[0.04] border border-white/[0.08] text-slate-300'}">
+              <span class="w-1.5 h-1.5 rounded-full ${velocity >= 70 ? 'bg-rose-400' : 'bg-sky-400'}"></span>
+              VEL ${velocity}
             </span>
-            <!-- Blast Radius -->
-            <span class="px-2 py-0.5 rounded bg-black/70 border ${blastRadius >= 60 ? 'border-cyber-purple text-cyber-purple font-bold' : 'border-gray-700 text-gray-400'} text-[10px] font-mono">
-              BLAST: ${blastRadius}/100
+            <!-- Blast Radius Pill -->
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${blastRadius >= 60 ? 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-300' : 'bg-white/[0.04] border border-white/[0.08] text-slate-400'}">
+              <span class="w-1.5 h-1.5 rounded-full ${blastRadius >= 60 ? 'bg-indigo-400' : 'bg-slate-500'}"></span>
+              BLAST ${blastRadius}
             </span>
-            <!-- Pin ⭐ Button -->
-            <button onclick="togglePinThreat('${entry.id}', event)" class="p-1 rounded hover:bg-white/10 transition" title="Pin to active investigation board">
-              <i data-lucide="star" class="w-4 h-4 ${isThreatPinned(entry.id) ? 'text-amber-400 fill-amber-400' : 'text-gray-500 hover:text-amber-300'}"></i>
+            <!-- Pin Button -->
+            <button onclick="togglePinThreat('${entry.id}', event)" class="p-1 rounded-lg hover:bg-white/[0.08] transition" title="Pin to active investigation board">
+              <i data-lucide="star" class="w-3.5 h-3.5 ${isThreatPinned(entry.id) ? 'text-amber-400 fill-amber-400' : 'text-slate-500 hover:text-amber-300'}"></i>
             </button>
           </div>
         </div>
 
         <!-- Title & Summary -->
         <div>
-          <h3 class="text-base font-bold text-white hover:text-cyber-cyan transition line-clamp-2 leading-snug">
+          <h3 class="text-base font-semibold text-white hover:text-sky-300 transition line-clamp-2 leading-snug">
             ${entry.title}
           </h3>
-          <p class="text-xs text-gray-300 mt-1.5 line-clamp-2 leading-relaxed">
+          <p class="text-xs text-slate-300 mt-1.5 line-clamp-2 leading-relaxed font-sans">
             ${entry.summary || 'No detailed abstract available.'}
           </p>
         </div>
 
         <!-- Autonomous AI Triage & Impact Box -->
         ${attackVector || risk ? `
-          <div class="p-3 rounded-xl bg-cyber-black/80 border border-cyber-border/80 space-y-1.5 text-xs font-mono">
+          <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5 text-xs font-mono">
             ${attackVector ? `
               <div class="flex items-start gap-1.5">
-                <span class="text-cyber-cyan font-bold flex-shrink-0">🎯 VECTOR:</span>
-                <span class="line-clamp-1 text-gray-300">${attackVector}</span>
+                <span class="text-sky-400 font-semibold flex-shrink-0 text-[11px]">VECTOR:</span>
+                <span class="line-clamp-1 text-slate-300 text-[11px] font-sans">${attackVector}</span>
               </div>
             ` : ''}
             ${risk ? `
               <div class="flex items-start gap-1.5">
-                <span class="text-cyber-red font-bold flex-shrink-0">⚠️ RISK:</span>
-                <span class="line-clamp-1 text-gray-300">${risk}</span>
+                <span class="text-rose-400 font-semibold flex-shrink-0 text-[11px]">RISK:</span>
+                <span class="line-clamp-1 text-slate-300 text-[11px] font-sans">${risk}</span>
               </div>
             ` : ''}
             ${mitigation ? `
               <div class="flex items-start gap-1.5">
-                <span class="text-cyber-green font-bold flex-shrink-0">🛡️ FIX:</span>
-                <span class="line-clamp-1 text-gray-300">${mitigation}</span>
+                <span class="text-emerald-400 font-semibold flex-shrink-0 text-[11px]">PATCH:</span>
+                <span class="line-clamp-1 text-slate-300 text-[11px] font-sans">${mitigation}</span>
               </div>
             ` : ''}
           </div>
         ` : ''}
 
         <!-- Footer Row -->
-        <div class="flex items-center justify-between gap-3 pt-1 border-t border-cyber-border/40 text-xs font-mono flex-wrap">
+        <div class="flex items-center justify-between gap-3 pt-2 border-t border-white/[0.05] text-xs font-mono flex-wrap">
           <div class="flex items-center gap-1.5 flex-wrap">
             ${ecoPills}
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-cyber-muted text-[11px]">${pubDate}</span>
-            <button class="text-cyber-cyan hover:underline flex items-center gap-1 text-xs font-bold">
-              Deep Inspect <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            <span class="text-slate-400 text-[11px]">${pubDate}</span>
+            <button class="text-sky-400 hover:text-sky-300 flex items-center gap-1 text-xs font-medium transition">
+              Inspect Intel <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </button>
           </div>
         </div>
@@ -1518,81 +1498,81 @@
                   ⚠️ PRE-CVE ZERO-DAY WARNING
                 </span>
               ` : ''}
-              <span class="text-xs font-mono text-gray-400">${srcName} • ${pubDate}</span>
+              <span class="text-xs font-mono text-slate-400">${srcName} • ${pubDate}</span>
             </div>
 
             <!-- Score Gauges -->
             <div class="flex items-center gap-2 font-mono text-xs">
-              <span class="px-2.5 py-1 rounded-lg bg-black/70 border ${velocity >= 70 ? 'border-cyber-red text-cyber-red font-bold' : 'border-cyber-cyan text-cyber-cyan font-bold'}">
-                ⚡ VELOCITY: ${velocity}/100
+              <span class="px-2.5 py-1 rounded-lg border ${velocity >= 70 ? 'border-rose-500/30 text-rose-300 bg-rose-500/10' : 'border-sky-500/30 text-sky-300 bg-sky-500/10'} font-medium">
+                VELOCITY: ${velocity}/100
               </span>
-              <span class="px-2.5 py-1 rounded-lg bg-black/70 border ${severity >= 70 ? 'border-cyber-red text-cyber-red font-bold' : 'border-cyber-yellow text-cyber-yellow font-bold'}">
-                🛡️ SEVERITY: ${severity}/100
+              <span class="px-2.5 py-1 rounded-lg border ${severity >= 70 ? 'border-rose-500/30 text-rose-300 bg-rose-500/10' : 'border-amber-500/30 text-amber-300 bg-amber-500/10'} font-medium">
+                SEVERITY: ${severity}/100
               </span>
-              <span class="px-2.5 py-1 rounded-lg bg-black/70 border ${blastRadius >= 60 ? 'border-cyber-purple text-cyber-purple font-bold' : 'border-gray-700 text-gray-300 font-bold'}">
-                💥 BLAST: ${blastRadius}/100
+              <span class="px-2.5 py-1 rounded-lg border ${blastRadius >= 60 ? 'border-indigo-500/30 text-indigo-300 bg-indigo-500/10' : 'border-white/10 text-slate-300 bg-white/[0.04]'} font-medium">
+                BLAST: ${blastRadius}/100
               </span>
             </div>
           </div>
 
           <!-- Title -->
-          <h2 class="text-xl sm:text-2xl font-bold font-display text-white leading-snug">
+          <h2 class="text-xl sm:text-2xl font-bold text-white leading-snug">
             ${entry.title}
           </h2>
 
           <!-- Visual Attack Topology & Propagation Path -->
-          <div class="p-4 rounded-xl bg-cyber-black/70 border border-cyber-cyan/30 space-y-3">
+          <div class="p-4 rounded-xl bg-black/40 border border-white/[0.08] space-y-3">
             <div class="flex items-center justify-between">
-              <h4 class="text-xs font-mono uppercase text-cyber-cyan font-bold flex items-center gap-1.5">
-                <i data-lucide="git-commit" class="w-3.5 h-3.5 text-cyber-cyan"></i> Visual Attack Propagation Flow
+              <h4 class="text-xs font-mono uppercase text-sky-400 font-semibold flex items-center gap-1.5">
+                <i data-lucide="git-commit" class="w-3.5 h-3.5 text-sky-400"></i> Visual Attack Propagation Flow
               </h4>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyber-purple/20 border border-cyber-purple/40 text-purple-300">BLAST RADIUS: ${blastRadius}/100</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300">BLAST RADIUS: ${blastRadius}/100</span>
             </div>
 
             <div class="w-full overflow-x-auto py-1">
               <svg class="w-full min-w-[560px] h-24" viewBox="0 0 580 90" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="flowGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#00f0ff" />
-                    <stop offset="100%" stop-color="#a855f7" />
+                    <stop offset="0%" stop-color="#38bdf8" />
+                    <stop offset="100%" stop-color="#818cf8" />
                   </linearGradient>
                   <linearGradient id="flowGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#a855f7" />
-                    <stop offset="100%" stop-color="#ff0055" />
+                    <stop offset="0%" stop-color="#818cf8" />
+                    <stop offset="100%" stop-color="#fb7185" />
                   </linearGradient>
                 </defs>
 
                 <!-- Flow Line 1 -->
-                <line x1="130" y1="45" x2="220" y2="45" stroke="url(#flowGrad1)" stroke-width="2.5" stroke-dasharray="6,4">
-                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1s" repeatCount="indefinite" />
+                <line x1="130" y1="45" x2="220" y2="45" stroke="url(#flowGrad1)" stroke-width="2" stroke-dasharray="5,4">
+                  <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.2s" repeatCount="indefinite" />
                 </line>
-                <polygon points="220,40 228,45 220,50" fill="#a855f7" />
+                <polygon points="220,41 227,45 220,49" fill="#818cf8" />
 
                 <!-- Flow Line 2 -->
-                <line x1="340" y1="45" x2="430" y2="45" stroke="url(#flowGrad2)" stroke-width="2.5" stroke-dasharray="6,4">
-                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1s" repeatCount="indefinite" />
+                <line x1="340" y1="45" x2="430" y2="45" stroke="url(#flowGrad2)" stroke-width="2" stroke-dasharray="5,4">
+                  <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.2s" repeatCount="indefinite" />
                 </line>
-                <polygon points="430,40 438,45 430,50" fill="#ff0055" />
+                <polygon points="430,41 437,45 430,49" fill="#fb7185" />
 
                 <!-- Node 1: Intelligence Origin -->
                 <g transform="translate(15, 15)">
-                  <rect width="115" height="60" rx="10" fill="#0b1121" stroke="#00f0ff" stroke-width="1.5"/>
-                  <text x="57" y="25" fill="#00f0ff" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle">SOURCE ORIGIN</text>
-                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${srcName.slice(0, 12)}</text>
+                  <rect width="115" height="60" rx="12" fill="#0d111a" stroke="#38bdf8" stroke-width="1.2"/>
+                  <text x="57" y="25" fill="#38bdf8" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle">SOURCE ORIGIN</text>
+                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="600" text-anchor="middle">${srcName.slice(0, 12)}</text>
                 </g>
 
                 <!-- Node 2: Attack Technique -->
                 <g transform="translate(225, 15)">
-                  <rect width="115" height="60" rx="10" fill="#0b1121" stroke="#a855f7" stroke-width="1.5"/>
-                  <text x="57" y="25" fill="#a855f7" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle">EXPLOIT VECTOR</text>
-                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${archetype.slice(0, 11)}</text>
+                  <rect width="115" height="60" rx="12" fill="#0d111a" stroke="#818cf8" stroke-width="1.2"/>
+                  <text x="57" y="25" fill="#818cf8" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle">EXPLOIT VECTOR</text>
+                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="600" text-anchor="middle">${archetype.slice(0, 11)}</text>
                 </g>
 
                 <!-- Node 3: Target Impact -->
                 <g transform="translate(435, 15)">
-                  <rect width="130" height="60" rx="10" fill="#0b1121" stroke="${blastRadius >= 60 ? '#ff0055' : '#10b981'}" stroke-width="1.5"/>
-                  <text x="65" y="25" fill="${blastRadius >= 60 ? '#ff0055' : '#10b981'}" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle">TARGET ECOSYSTEM</text>
-                  <text x="65" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${(ecosystem[0] || 'INFRASTRUCTURE').slice(0, 14)}</text>
+                  <rect width="130" height="60" rx="12" fill="#0d111a" stroke="${blastRadius >= 60 ? '#fb7185' : '#34d399'}" stroke-width="1.2"/>
+                  <text x="65" y="25" fill="${blastRadius >= 60 ? '#fb7185' : '#34d399'}" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle">TARGET ECOSYSTEM</text>
+                  <text x="65" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="600" text-anchor="middle">${(ecosystem[0] || 'INFRASTRUCTURE').slice(0, 14)}</text>
                 </g>
               </svg>
             </div>
@@ -1600,9 +1580,9 @@
 
           <!-- Affected AI Ecosystem -->
           ${ecosystem.length > 0 ? `
-            <div class="p-4 rounded-xl bg-blue-950/30 border border-blue-700/50 space-y-2">
-              <h4 class="text-xs font-mono uppercase text-blue-400 font-bold flex items-center gap-1.5">
-                <i data-lucide="target" class="w-4 h-4"></i> Affected AI Ecosystem & Software Stack (Blast Radius: ${blastRadius}/100)
+            <div class="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2">
+              <h4 class="text-xs font-mono uppercase text-sky-400 font-semibold flex items-center gap-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-sky-400"></i> Affected AI Ecosystem & Software Stack (Blast Radius: ${blastRadius}/100)
               </h4>
               <div class="flex flex-wrap gap-2 pt-1">
                 ${ecoBadges}
@@ -1612,43 +1592,43 @@
 
           <!-- Pre-CVE Attack Pattern -->
           ${isPreCve ? `
-            <div class="p-4 rounded-xl bg-cyber-amber/10 border border-cyber-amber/40 space-y-2 text-xs font-mono">
-              <h4 class="uppercase text-cyber-amber font-bold flex items-center gap-1.5">
-                <i data-lucide="zap" class="w-4 h-4"></i> Academic Zero-Day Attack Archetype
+            <div class="p-4 rounded-xl bg-amber-500/[0.04] border border-amber-500/25 space-y-2 text-xs font-mono">
+              <h4 class="uppercase text-amber-300 font-semibold flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i> Academic Zero-Day Attack Archetype
               </h4>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 pt-1">
-                <div><span class="text-gray-500">ATTACK PATTERN:</span> <span class="text-white font-bold">${archetype}</span></div>
-                <div><span class="text-gray-500">WEAPONIZATION:</span> <span class="text-cyber-amber font-bold">${weaponization}</span></div>
+                <div><span class="text-slate-500">ATTACK PATTERN:</span> <span class="text-white font-medium">${archetype}</span></div>
+                <div><span class="text-slate-500">WEAPONIZATION:</span> <span class="text-amber-300 font-medium">${weaponization}</span></div>
               </div>
             </div>
           ` : ''}
 
           <!-- Autonomous AI Security Triage -->
-          <div class="p-5 rounded-xl bg-cyber-black/90 border border-cyber-border space-y-4 font-mono text-xs">
-            <h4 class="uppercase text-cyber-cyan font-bold tracking-wider flex items-center gap-2 border-b border-cyber-border pb-2">
-              <i data-lucide="shield-alert" class="w-4 h-4 text-cyber-cyan"></i>
+          <div class="p-5 rounded-xl bg-black/40 border border-white/[0.08] space-y-4 font-sans text-xs">
+            <h4 class="uppercase text-sky-400 font-mono font-semibold tracking-wider flex items-center gap-2 border-b border-white/[0.06] pb-2.5">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-sky-400"></i>
               Autonomous Security Triage & Threat De-Noising
             </h4>
             
             <div class="space-y-1.5">
-              <span class="text-cyber-cyan font-bold flex items-center gap-1.5 text-xs">
-                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> EXACT ATTACK VECTOR / TECHNIQUE:
+              <span class="text-sky-300 font-mono font-semibold flex items-center gap-1.5 text-xs">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5 text-sky-400"></i> EXACT ATTACK VECTOR / TECHNIQUE:
               </span>
-              <p class="text-gray-200 leading-relaxed pl-5">${attackVector}</p>
+              <p class="text-slate-300 leading-relaxed pl-5">${attackVector}</p>
             </div>
 
             <div class="space-y-1.5">
-              <span class="text-cyber-red font-bold flex items-center gap-1.5 text-xs">
-                <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> TANGIBLE RISK TO INFRASTRUCTURE:
+              <span class="text-rose-300 font-mono font-semibold flex items-center gap-1.5 text-xs">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-400"></i> BUSINESS & ARCHITECTURAL RISK:
               </span>
-              <p class="text-gray-200 leading-relaxed pl-5">${risk}</p>
+              <p class="text-slate-300 leading-relaxed pl-5">${risk}</p>
             </div>
 
             <div class="space-y-1.5">
-              <span class="text-cyber-green font-bold flex items-center gap-1.5 text-xs">
-                <i data-lucide="wrench" class="w-3.5 h-3.5"></i> IMMEDIATE MITIGATION & HARDENING PATCH:
+              <span class="text-emerald-300 font-mono font-semibold flex items-center gap-1.5 text-xs">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> ACTIONABLE MITIGATION PATCH:
               </span>
-              <p class="text-gray-200 leading-relaxed pl-5">${mitigation}</p>
+              <p class="text-slate-300 leading-relaxed pl-5">${mitigation}</p>
             </div>
           </div>
 
@@ -1669,16 +1649,16 @@
           ` : ''}
 
           <!-- Footer Actions -->
-          <div class="pt-4 flex items-center justify-between border-t border-cyber-border flex-wrap gap-3">
+          <div class="pt-4 flex items-center justify-between border-t border-white/[0.06] flex-wrap gap-3">
             <div class="flex items-center gap-2">
-              <button onclick="enqueueEntryForTriage('${entry.id}')" class="px-4 py-2.5 rounded-xl bg-purple-950/80 border border-cyber-purple text-purple-300 hover:text-white font-bold text-xs uppercase font-mono tracking-wider flex items-center gap-1.5 transition">
-                <i data-lucide="sparkles" class="w-4 h-4 text-cyber-purple"></i> Deep LLM Triage (Ollama)
+              <button onclick="enqueueEntryForTriage('${entry.id}')" class="px-4 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-200 font-medium text-xs font-mono tracking-wider flex items-center gap-1.5 transition">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i> Deep LLM Triage
               </button>
-              <a href="${entry.url}" target="_blank" class="px-5 py-2.5 rounded-xl bg-cyber-cyan text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-cyan-300 transition">
-                Open Original Source <i data-lucide="external-link" class="w-4 h-4"></i>
+              <a href="${entry.url}" target="_blank" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs font-mono uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
+                Open Source <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
               </a>
             </div>
-            <button onclick="closeInspectModal()" class="px-5 py-2.5 rounded-xl bg-cyber-black border border-cyber-border text-xs font-mono text-gray-300 hover:text-white transition">
+            <button onclick="closeInspectModal()" class="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.16] text-xs font-mono text-slate-300 hover:text-white transition">
               Dismiss
             </button>
           </div>
@@ -1697,13 +1677,13 @@
     function setCategory(cat) {
       currentCategory = cat;
       document.querySelectorAll('.cat-tab').forEach(b => {
-        b.classList.remove('bg-cyber-cyan', 'text-black', 'font-bold');
-        b.classList.add('bg-cyber-black', 'text-gray-300');
+        b.classList.remove('bg-white/[0.12]', 'text-white', 'border-white/20');
+        b.classList.add('bg-white/[0.03]', 'text-slate-400', 'border-white/[0.06]');
       });
       const activeBtn = document.getElementById(`tab-${cat}`);
       if (activeBtn) {
-        activeBtn.classList.remove('bg-cyber-black', 'text-gray-300');
-        activeBtn.classList.add('bg-cyber-cyan', 'text-black', 'font-bold');
+        activeBtn.classList.remove('bg-white/[0.03]', 'text-slate-400', 'border-white/[0.06]');
+        activeBtn.classList.add('bg-white/[0.12]', 'text-white', 'border-white/20');
       }
       playBeep('click');
       loadFeed(true);
@@ -1779,24 +1759,24 @@
         }
 
         listEl.innerHTML = data.rules.map(r => `
-          <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between gap-3 border border-cyber-border">
+          <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between gap-3 border border-white/[0.06]">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
-                <h4 class="text-xs font-bold text-white font-mono truncate">${r.name}</h4>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${r.enabled ? 'bg-cyber-green/20 text-cyber-green' : 'bg-gray-800 text-gray-400'} font-bold">
+                <h4 class="text-xs font-semibold text-white font-mono truncate">${r.name}</h4>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${r.enabled ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25' : 'bg-white/[0.04] text-slate-500 border border-white/[0.08]'} font-medium">
                   ${r.enabled ? 'ACTIVE' : 'PAUSED'}
                 </span>
               </div>
               <div class="flex flex-wrap gap-1.5 mt-2">
-                ${(r.keywords || []).map(kw => `<span class="px-2 py-0.5 rounded bg-black/60 border border-cyber-cyan/40 text-cyber-cyan text-[10px] font-mono">🎯 ${kw}</span>`).join('')}
+                ${(r.keywords || []).map(kw => `<span class="px-2 py-0.5 rounded-md bg-white/[0.04] border border-sky-500/25 text-sky-300 text-[10px] font-mono">${kw}</span>`).join('')}
               </div>
             </div>
 
             <div class="flex items-center gap-2 flex-shrink-0">
-              <button onclick="toggleWatchlistRule('${r.id}', ${!r.enabled})" class="p-1.5 rounded-lg border border-gray-700 hover:border-cyber-cyan text-gray-300 hover:text-white text-xs font-mono">
+              <button onclick="toggleWatchlistRule('${r.id}', ${!r.enabled})" class="p-1.5 rounded-lg border border-white/[0.08] hover:border-white/[0.2] text-slate-400 hover:text-white text-xs font-mono transition">
                 <i data-lucide="${r.enabled ? 'pause' : 'play'}" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="deleteWatchlistRule('${r.id}')" class="p-1.5 rounded-lg border border-gray-700 hover:border-cyber-red text-cyber-red text-xs font-mono">
+              <button onclick="deleteWatchlistRule('${r.id}')" class="p-1.5 rounded-lg border border-white/[0.08] hover:border-rose-500/30 text-rose-400 text-xs font-mono transition">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               </button>
             </div>
@@ -1805,7 +1785,7 @@
 
         lucide.createIcons();
       } catch (e) {
-        listEl.innerHTML = `<p class="text-center text-cyber-red text-xs py-4">Failed to load rules.</p>`;
+        listEl.innerHTML = `<p class="text-center text-rose-400 text-xs py-4">Failed to load rules.</p>`;
       }
     }
 
@@ -1955,22 +1935,22 @@
         const data = await res.json();
         
         list.innerHTML = (data.sources || []).map(s => `
-          <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between border border-cyber-border">
+          <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between border border-white/[0.06]">
             <div>
               <div class="flex items-center gap-2">
-                <h4 class="text-sm font-bold text-white">${s.name}</h4>
-                <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-cyber-black border border-cyber-border text-gray-400">${s.type}</span>
+                <h4 class="text-sm font-semibold text-white">${s.name}</h4>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/[0.04] border border-white/[0.08] text-slate-400">${s.type}</span>
               </div>
-              <p class="text-xs text-cyber-muted font-mono mt-0.5">Category: <span class="text-gray-300">${s.category}</span> • Rate: ${s.rate_limit_seconds}s</p>
+              <p class="text-xs text-slate-400 font-mono mt-0.5">Category: <span class="text-slate-300">${s.category}</span> • Rate: ${s.rate_limit_seconds}s</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" onchange="toggleSource('${s.id}', this.checked)" class="sr-only peer" ${s.enabled ? 'checked' : ''}>
-              <div class="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyber-cyan"></div>
+              <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
             </label>
           </div>
         `).join('');
       } catch (e) {
-        list.innerHTML = `<p class="text-center text-cyber-red text-xs py-4">Failed to load sources.</p>`;
+        list.innerHTML = `<p class="text-center text-rose-400 text-xs py-4">Failed to load sources.</p>`;
       }
     }
 
@@ -2051,15 +2031,15 @@
       if (!textEl || !dotEl) return;
 
       if (data.is_processing) {
-        dotEl.className = "w-2 h-2 rounded-full bg-cyber-amber animate-ping";
+        dotEl.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse";
         const entryName = data.current_entry ? (data.current_entry.slice(0, 20) + '...') : 'Threat';
-        textEl.innerHTML = `<span class="text-cyber-amber font-bold">TRIAGING: ${entryName}</span> (<span class="text-white">${data.queue_size}</span>)`;
+        textEl.innerHTML = `<span class="text-amber-300 font-medium">TRIAGING: ${entryName}</span> (<span class="text-white">${data.queue_size}</span>)`;
       } else if (data.queue_size > 0) {
-        dotEl.className = "w-2 h-2 rounded-full bg-cyber-cyan animate-pulse";
-        textEl.innerHTML = `<span class="text-cyber-cyan font-bold">QUEUED</span> (<span class="text-white">${data.queue_size}</span>)`;
+        dotEl.className = "w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse";
+        textEl.innerHTML = `<span class="text-sky-300 font-medium">QUEUED</span> (<span class="text-white">${data.queue_size}</span>)`;
       } else {
-        dotEl.className = "w-2 h-2 rounded-full bg-cyber-purple animate-pulse";
-        textEl.innerHTML = `AI QUEUE: READY (<span class="text-gray-400">${data.total_completed || 0} triaged</span>)`;
+        dotEl.className = "w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse";
+        textEl.innerHTML = `AI QUEUE: READY (<span class="text-slate-400">${data.total_completed || 0} triaged</span>)`;
       }
     }
 
@@ -2130,57 +2110,57 @@
         globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(globeRenderer.domElement);
 
-      // Inner Wireframe Sphere
+      // Inner Wireframe Sphere (Refined Aerospace Lattice)
       const sphereGeo = new THREE.IcosahedronGeometry(1.6, 3);
       const sphereMat = new THREE.MeshBasicMaterial({
-        color: 0x00f0ff,
+        color: 0x38bdf8,
         wireframe: true,
         transparent: true,
-        opacity: 0.22
+        opacity: 0.14
       });
       globeSphere = new THREE.Mesh(sphereGeo, sphereMat);
       globeScene.add(globeSphere);
 
-      // Core Glow Sphere
-      const coreGeo = new THREE.SphereGeometry(1.4, 24, 24);
+      // Core Obsidian Sphere
+      const coreGeo = new THREE.SphereGeometry(1.4, 28, 28);
       const coreMat = new THREE.MeshBasicMaterial({
-        color: 0x06152d,
+        color: 0x070a12,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.95
       });
       globeScene.add(new THREE.Mesh(coreGeo, coreMat));
 
-      // Longitude / Latitude Accent Rings
+      // Longitude / Latitude Accent Rings (Titanium Silver)
       for (let i = -2; i <= 2; i++) {
         const ringRad = Math.cos((i * Math.PI) / 6) * 1.62;
-        const ringGeo = new THREE.RingGeometry(ringRad - 0.01, ringRad + 0.01, 48);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x263859, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+        const ringGeo = new THREE.RingGeometry(ringRad - 0.008, ringRad + 0.008, 48);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
         const ringMesh = new THREE.Mesh(ringGeo, ringMat);
         ringMesh.rotation.x = Math.PI / 2;
         ringMesh.position.y = Math.sin((i * Math.PI) / 6) * 1.62;
         globeSphere.add(ringMesh);
       }
 
-      // Orbital Scanning Sweep Ring
-      const scanRingGeo = new THREE.RingGeometry(1.85, 1.95, 64);
+      // Orbital Scanning Sweep Ring (Ethereal Sky Azure)
+      const scanRingGeo = new THREE.RingGeometry(1.85, 1.93, 64);
       const scanRingMat = new THREE.MeshBasicMaterial({
-        color: 0x00f0ff,
+        color: 0x60a5fa,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.45
+        opacity: 0.22
       });
       globeRing = new THREE.Mesh(scanRingGeo, scanRingMat);
       globeRing.rotation.x = Math.PI / 2.8;
       globeScene.add(globeRing);
 
-      // 38 Worldwide AI & Threat Intelligence Beacon Nodes (Global geographical distribution)
+      // 38 Worldwide AI & Threat Intelligence Beacon Nodes
       const pointCount = 38;
       const pointPositions = new Float32Array(pointCount * 3);
       const pointColors = new Float32Array(pointCount * 3);
-      const colorCyan = new THREE.Color(0x00f0ff);
-      const colorAmber = new THREE.Color(0xf59e0b);
-      const colorRed = new THREE.Color(0xff0055);
-      const colorGreen = new THREE.Color(0x10b981);
+      const colorCyan = new THREE.Color(0x38bdf8);   // Celestial Azure
+      const colorAmber = new THREE.Color(0xfbbf24);  // Champagne Gold
+      const colorRed = new THREE.Color(0xfb7185);    // Damask Rose
+      const colorGreen = new THREE.Color(0x34d399);  // Nordic Mint
 
       for (let i = 0; i < pointCount; i++) {
         const phi = Math.acos(-1 + (2 * i) / pointCount);
@@ -2202,7 +2182,7 @@
       pointsGeo.setAttribute('position', new THREE.BufferAttribute(pointPositions, 3));
       pointsGeo.setAttribute('color', new THREE.BufferAttribute(pointColors, 3));
       const pointsMat = new THREE.PointsMaterial({
-        size: 0.12,
+        size: 0.085,
         vertexColors: true,
         transparent: true,
         opacity: 0.95
@@ -2293,12 +2273,12 @@
       currentTimeHorizon = hours;
       const pills = document.querySelectorAll('.horizon-pill');
       pills.forEach(p => {
-        p.className = "horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition";
+        p.className = "horizon-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition";
       });
 
       const activePill = document.getElementById(`horizon-${hours || 'all'}`);
       if (activePill) {
-        activePill.className = "horizon-pill px-2.5 py-1 rounded-md bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan font-bold transition";
+        activePill.className = "horizon-pill px-2.5 py-1 rounded-md bg-white/[0.1] text-white border border-white/20 font-medium transition";
       }
 
       playBeep('click');
@@ -2547,17 +2527,17 @@
       }
 
       container.innerHTML = paletteItems.map((item, idx) => `
-        <div onclick="executePaletteItem(${idx})" class="p-3 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition border ${idx === paletteSelectedIndex ? 'bg-cyber-cyan/15 border-cyber-cyan text-white shadow-lg' : 'bg-black/40 border-cyber-border/40 hover:bg-white/5 text-gray-300'}">
+        <div onclick="executePaletteItem(${idx})" class="p-3 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition border ${idx === paletteSelectedIndex ? 'bg-white/[0.08] border-white/25 text-white shadow-md' : 'bg-black/40 border-white/[0.05] hover:bg-white/[0.04] text-slate-300'}">
           <div class="flex items-center gap-3 overflow-hidden">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${idx === paletteSelectedIndex ? 'bg-cyber-cyan text-black' : 'bg-cyber-border text-cyber-cyan'}">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${idx === paletteSelectedIndex ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' : 'bg-white/[0.04] border border-white/[0.08] text-slate-400'}">
               <i data-lucide="${item.icon}" class="w-4 h-4"></i>
             </div>
             <div class="overflow-hidden">
-              <div class="font-bold text-xs truncate ${idx === paletteSelectedIndex ? 'text-cyber-cyan' : 'text-white'}">${item.title}</div>
-              <div class="text-[10px] text-gray-400 truncate">${item.subtitle}</div>
+              <div class="font-medium text-xs truncate ${idx === paletteSelectedIndex ? 'text-white' : 'text-slate-200'}">${item.title}</div>
+              <div class="text-[10px] text-slate-400 truncate">${item.subtitle}</div>
             </div>
           </div>
-          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-black/60 border border-gray-700 text-gray-400 flex-shrink-0">${item.badge}</span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 flex-shrink-0">${item.badge}</span>
         </div>
       `).join('');
       lucide.createIcons();
