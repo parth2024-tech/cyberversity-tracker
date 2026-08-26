@@ -471,6 +471,96 @@ sources:
     region: "global"
     country: "GLOBAL"
 
+  # ==========================================
+  # NEW AI MODELS, WEIGHTS & QUANTIZATIONS
+  # ==========================================
+  - name: "Reddit r/LocalLLaMA (Open Weights Drops)"
+    category: "ai_models"
+    type: "rss"
+    url: "https://www.reddit.com/r/LocalLLaMA/.rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Hugging Face Model Releases"
+    category: "ai_models"
+    type: "rss"
+    url: "https://huggingface.co/blog/feed.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Simon Willison AI & LLM Tools"
+    category: "ai_models"
+    type: "rss"
+    url: "https://simonwillison.net/atom/everything/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  # ==========================================
+  # NEW SECURITY & DEVELOPER TOOLS (GITHUB)
+  # ==========================================
+  - name: "KitPloit Security Tools & Repos"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://feeds.feedburner.com/KitPloit"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Reddit r/netsec Tools & Code"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://www.reddit.com/r/netsec/.rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  # ==========================================
+  # NOVEL EXPLOITS, JAILBREAKS & TRICKS
+  # ==========================================
+  - name: "Packet Storm 0-Day Exploits & PoCs"
+    category: "exploits_tricks"
+    type: "rss"
+    url: "https://rss.packetstormsecurity.com/files/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "PortSwigger Research (Attack Tricks)"
+    category: "exploits_tricks"
+    type: "rss"
+    url: "https://portswigger.net/research/rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "GB"
+
+  - name: "Google Project Zero (Elite 0-Days)"
+    category: "exploits_tricks"
+    type: "rss"
+    url: "https://googleprojectzero.blogspot.com/feeds/posts/default"
+    rate_limit_seconds: 3600
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Trail of Bits Research & Tradecraft"
+    category: "exploits_tricks"
+    type: "rss"
+    url: "https://blog.trailofbits.com/feed/"
+    rate_limit_seconds: 3600
+    enabled: true
+    region: "north_america"
+    country: "US"
+
 
 # Delivery Configuration (user picks one at runtime)
 delivery:

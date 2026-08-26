@@ -13,6 +13,9 @@ class Category(str, Enum):
     CYBERSECURITY = "cybersecurity"
     VULNERABILITIES = "vulnerabilities"
     GITHUB_TRENDING = "github_trending"
+    AI_MODELS = "ai_models"
+    CYBER_TOOLS = "cyber_tools"
+    EXPLOITS_TRICKS = "exploits_tricks"
 
 
 class SourceType(str, Enum):

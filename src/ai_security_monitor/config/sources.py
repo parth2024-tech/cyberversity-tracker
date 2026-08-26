@@ -29,7 +29,10 @@ class SourceConfig(BaseModel):
     @field_validator("category")
     @classmethod
     def validate_category(cls, v: str) -> str:
-        allowed = {"ai_tech", "ai_research", "cybersecurity", "vulnerabilities", "github_trending"}
+        allowed = {
+            "ai_tech", "ai_research", "cybersecurity", "vulnerabilities",
+            "github_trending", "ai_models", "cyber_tools", "exploits_tricks"
+        }
         if v not in allowed:
             raise ValueError(f"Category must be one of {allowed}")
         return v

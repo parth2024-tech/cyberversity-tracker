@@ -101,3 +101,17 @@ async def test_sources_worldwide_coverage():
         assert "north_america" in regions
         assert "apac" in regions
         assert "global" in regions
+
+
+@pytest.mark.asyncio
+async def test_omni_domain_categories():
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Verify that all new categories are recognized without 422 or 500
+        for cat in ("ai_models", "cyber_tools", "exploits_tricks"):
+            resp = await client.get(f"/api/entries?category={cat}&limit=5")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert "entries" in data
+            assert "total" in data

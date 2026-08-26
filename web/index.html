@@ -609,24 +609,33 @@
           <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
             <!-- Category Navigation -->
             <div class="flex items-center gap-1.5 overflow-x-auto w-full pb-1 text-xs font-mono">
-              <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.12] text-white border border-white/20 font-medium transition whitespace-nowrap">ALL</button>
+              <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.12] text-white border border-white/20 font-medium transition whitespace-nowrap">ALL INTEL</button>
+              <button onclick="setCategory('ai_models')" id="tab-ai_models" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-purple-300 hover:text-purple-200 border border-purple-500/25 hover:border-purple-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-400"></i> AI MODELS
+              </button>
+              <button onclick="setCategory('cyber_tools')" id="tab-cyber_tools" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-emerald-300 hover:text-emerald-200 border border-emerald-500/25 hover:border-emerald-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i> TOOLS & REPOS
+              </button>
+              <button onclick="setCategory('exploits_tricks')" id="tab-exploits_tricks" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-amber-300 hover:text-amber-200 border border-amber-500/25 hover:border-amber-500/45 font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> TRICKS & EXPLOITS
+              </button>
+              <button onclick="setCategory('pre_cve')" id="tab-pre_cve" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i> PRE-CVE
+              </button>
+              <button onclick="setCategory('high_velocity')" id="tab-high_velocity" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="flame" class="w-3.5 h-3.5 text-rose-400"></i> HIGH VELOCITY
+              </button>
               <button onclick="setCategory('pinned')" id="tab-pinned" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
                 <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i> PINNED (<span id="pinned-count">0</span>)
               </button>
               <button onclick="setCategory('watchlist')" id="tab-watchlist" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
                 <i data-lucide="target" class="w-3.5 h-3.5 text-sky-400"></i> WATCHLIST
               </button>
-              <button onclick="setCategory('pre_cve')" id="tab-pre_cve" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> PRE-CVE
-              </button>
-              <button onclick="setCategory('high_velocity')" id="tab-high_velocity" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="flame" class="w-3.5 h-3.5 text-rose-400"></i> HIGH VELOCITY
-              </button>
-              <button onclick="setCategory('vulnerabilities')" id="tab-vulnerabilities" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">CVEs</button>
               <button onclick="setCategory('ai_tech')" id="tab-ai_tech" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">AI TECH</button>
               <button onclick="setCategory('ai_research')" id="tab-ai_research" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">RESEARCH</button>
-              <button onclick="setCategory('cybersecurity')" id="tab-cybersecurity" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">THREATS</button>
-              <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">REPOS</button>
+              <button onclick="setCategory('cybersecurity')" id="tab-cybersecurity" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">CYBER NEWS</button>
+              <button onclick="setCategory('vulnerabilities')" id="tab-vulnerabilities" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">CVEs</button>
+              <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap">TRENDING</button>
             </div>
           </div>
 
@@ -1450,7 +1459,10 @@
         ai_tech: 'text-sky-300 border-sky-500/25 bg-sky-500/10',
         ai_research: 'text-indigo-300 border-indigo-500/25 bg-indigo-500/10',
         cybersecurity: 'text-emerald-300 border-emerald-500/25 bg-emerald-500/10',
-        github_trending: 'text-amber-300 border-amber-500/25 bg-amber-500/10'
+        github_trending: 'text-cyan-300 border-cyan-500/25 bg-cyan-500/10',
+        ai_models: 'text-purple-300 border-purple-500/30 bg-purple-500/15',
+        cyber_tools: 'text-teal-300 border-teal-500/30 bg-teal-500/15',
+        exploits_tricks: 'text-amber-300 border-amber-500/40 bg-amber-500/20'
       };
 
       const badgeStyle = categoryBadgeColors[entry.category] || 'text-slate-300 border-white/10 bg-white/[0.04]';
@@ -1563,6 +1575,11 @@
         <div class="flex items-center justify-between gap-3 pt-2 border-t border-white/[0.05] text-xs font-mono flex-wrap">
           <div class="flex items-center gap-1.5 flex-wrap">
             ${ecoPills}
+            ${(entry.tags || []).filter(t => t && t.length < 20).slice(0, 3).map(t => `
+              <span onclick="searchByTag('${t}', event)" class="px-2 py-0.5 rounded bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-sky-300 border border-white/[0.06] text-[10px] font-mono cursor-pointer transition">
+                #${t}
+              </span>
+            `).join('')}
           </div>
           <div class="flex items-center gap-3">
             <span class="text-slate-400 text-[11px]">${pubDate}</span>
@@ -1581,6 +1598,17 @@
       };
 
       return card;
+    }
+
+    function searchByTag(tag, e) {
+      if (e) e.stopPropagation();
+      playBeep('click');
+      const input = document.getElementById('search-input');
+      if (input) {
+        input.value = tag;
+        searchQuery = tag;
+        loadFeed(true);
+      }
     }
 
     // Modal Inspection
