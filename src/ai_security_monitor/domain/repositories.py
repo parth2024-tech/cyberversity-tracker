@@ -43,6 +43,7 @@ class EntryFilters:
     high_velocity_only: bool = False
     analyzed_only: bool = False
     unanalyzed_only: bool = False
+    sort_by: str = "newest"
 
 
 class EntryRepository(ABC):

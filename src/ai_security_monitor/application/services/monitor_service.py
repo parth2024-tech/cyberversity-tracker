@@ -3,6 +3,8 @@ Application monitor service - orchestrates fetching, analyzing, and dispatching.
 """
 from __future__ import annotations
 
+import asyncio
+import os
 from collections.abc import Callable
 from datetime import datetime
 
@@ -167,6 +169,36 @@ class MonitorService:
                                     await get_triage_service().enqueue(added_entry.id)
                                 except Exception as triage_err:
                                     logger.warn(f"Failed to auto-enqueue entry for LLM triage: {triage_err}")
+
+                        # Autonomous Emergency Push Alert (Telegram & Event Broadcast)
+                        if analysis.threat_velocity >= 80 or analysis.is_pre_cve_warning:
+                            if self._broadcast_callback:
+                                try:
+                                    self._broadcast_callback({
+                                        "type": "emergency_threat_alert",
+                                        "data": {
+                                            "id": str(added_entry.id),
+                                            "title": added_entry.title,
+                                            "url": added_entry.url,
+                                            "velocity": analysis.threat_velocity,
+                                            "is_pre_cve": analysis.is_pre_cve_warning,
+                                            "archetype": analysis.attack_archetype,
+                                            "source_name": source.name
+                                        }
+                                    })
+                                except Exception:
+                                    pass
+
+                            # Dispatch Telegram Emergency Alert if credentials present
+                            try:
+                                tg_token = getattr(settings, 'telegram_bot_token', None) or os.getenv('TELEGRAM_BOT_TOKEN')
+                                tg_chat = getattr(settings, 'telegram_chat_id', None) or os.getenv('TELEGRAM_CHAT_ID')
+                                if tg_token and tg_chat:
+                                    from ai_security_monitor.infrastructure.delivery.telegram_delivery import TelegramDelivery
+                                    tg_delivery = TelegramDelivery({'bot_token': tg_token, 'chat_id': tg_chat})
+                                    asyncio.create_task(tg_delivery.send_alert(added_entry, analysis))
+                            except Exception as tg_err:
+                                logger.debug(f"Telegram auto-alert error: {tg_err}")
 
                     except DuplicateEntryError:
                         continue

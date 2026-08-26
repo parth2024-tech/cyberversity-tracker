@@ -109,7 +109,23 @@ class SQLAlchemyEntryRepository(EntryRepository):
         if filters:
             stmt = self._apply_filters(stmt, filters)
 
-        stmt = stmt.order_by(desc(EntryModel.published_at))
+        if filters and filters.sort_by == "velocity":
+            stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
+                desc(AnalysisModelDB.threat_velocity),
+                desc(EntryModel.published_at)
+            )
+        elif filters and filters.sort_by == "blast":
+            stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
+                desc(AnalysisModelDB.blast_radius_score),
+                desc(EntryModel.published_at)
+            )
+        elif filters and filters.sort_by == "severity":
+            stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
+                desc(AnalysisModelDB.severity_index),
+                desc(EntryModel.published_at)
+            )
+        else:
+            stmt = stmt.order_by(desc(EntryModel.published_at))
 
         if pagination:
             stmt = stmt.limit(pagination.limit).offset(pagination.offset)

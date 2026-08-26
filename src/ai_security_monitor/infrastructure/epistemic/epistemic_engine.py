@@ -342,6 +342,18 @@ class EpistemicEngine:
         analysis_result = analyzer_fn(entry_dict)
         evidence_bundles = getattr(analysis_result, 'evidence_bundles', [])
 
+        # Convert evidence bundles for database storage (ClaimType enum -> string value)
+        serializable_bundles = []
+        for bundle in evidence_bundles:
+            bundle_dict = bundle.__dict__.copy()
+            # Safely extract string value from any ClaimType Enum variant
+            ct = getattr(bundle, 'claim_type', None)
+            if hasattr(ct, 'value'):
+                bundle_dict['claim_type'] = ct.value
+            elif ct is not None:
+                bundle_dict['claim_type'] = str(ct)
+            serializable_bundles.append(bundle_dict)
+
         # First, save the overall analysis to get an analysis_id
         analysis_id = self.db.save_analysis(
             entry_id=entry_dict['id'],
@@ -358,10 +370,7 @@ class EpistemicEngine:
             ai_model=analysis_result.ai_model,
             overall_confidence=analysis_result.confidence,
             evidence_version="v1",
-            evidence_bundles=[{
-                **bundle.__dict__,
-                'claim_type': bundle.claim_type.value if isinstance(bundle.claim_type, ClaimType) else bundle.claim_type
-            } for bundle in evidence_bundles]
+            evidence_bundles=serializable_bundles
         )
 
         return analysis_result, evidence_bundles

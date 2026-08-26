@@ -320,19 +320,22 @@ class Database:
             if evidence_bundles:
                 for bundle in evidence_bundles:
                     evidence_json = json.dumps(bundle.get('evidence', {})) if bundle.get('evidence') else None
+                    raw_ct = bundle.get('claim_type', 'inference')
+                    claim_type_str = raw_ct.value if hasattr(raw_ct, 'value') else str(raw_ct or 'inference')
                     conn.execute("""
                         INSERT INTO analysis_evidence
-                        (analysis_id, claim_type, claim_target, claim_value, confidence, evidence_json, method, model_version)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        (analysis_id, claim_type, claim_target, claim_value, confidence, evidence_json, method, model_version, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
                         analysis_id,
-                        bundle.get('claim_type', 'inference'),
+                        claim_type_str,
                         bundle.get('claim_target', ''),
                         str(bundle.get('value', '')),
                         bundle.get('confidence', 0.7),
                         evidence_json,
                         bundle.get('method', 'heuristic'),
-                        bundle.get('model_version', 'heuristic:v2.1')
+                        bundle.get('model_version', 'heuristic:v2.1'),
+                        now
                     ))
 
     def get_analysis(self, entry_id: int) -> dict | None:

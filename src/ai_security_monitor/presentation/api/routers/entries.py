@@ -25,6 +25,7 @@ async def list_entries(
     high_velocity: bool | None = Query(False),
     watchlist_only: bool | None = Query(False),
     hours: int | None = Query(None),
+    sort_by: str = Query("newest"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0)
 ):
@@ -54,7 +55,8 @@ async def list_entries(
             keywords=wl_keywords,
             pre_cve_only=pre_cve or False,
             high_velocity_only=high_velocity or False,
-            since=since
+            since=since,
+            sort_by=sort_by
         )
         pagination = PaginationParams(limit=limit, offset=offset)
 

@@ -1,0 +1,82 @@
+{
+  "name": "ai-security-monitor",
+  "version": "1.0.0",
+  "description": "Enterprise-grade real-time AI security intelligence, zero-day threat monitoring, and autonomous LLM triage system.",
+  "tech_stack": [
+    "Python 3.12",
+    "FastAPI (Async REST & WebSockets)",
+    "SQLAlchemy Async + SQLite (WAL mode)",
+    "Three.js WebGL (Interactive Threat Radar)",
+    "Tailwind CSS + JetBrains Mono",
+    "Ollama (Local LLM GPU Triage via llama3.1:8b)"
+  ],
+  "conventions": [
+    "Clean architecture: domain, application, infrastructure, presentation layers",
+    "Async SQLAlchemy Unit of Work pattern for persistence",
+    "Strict type hinting and dataclasses across domain models",
+    "Luxury dark aesthetic with obsidian palette and refined glassmorphism"
+  ],
+  "architecture_patterns": [
+    "Domain-Driven Design (DDD) with clear boundary contexts",
+    "Repository pattern with dynamic SQL query ordering and filtering",
+    "Reactive WebSocket telemetry broadcast for live sweeps and emergency zero-days",
+    "Asynchronous background worker queue for GPU LLM threat triage"
+  ],
+  "file_structure": {
+    "src/ai_security_monitor/domain": "Core entities, value objects, domain events, repository interfaces",
+    "src/ai_security_monitor/application": "Service orchestration, autonomous triage engine, monitor service",
+    "src/ai_security_monitor/infrastructure": "SQLAlchemy repositories, fetchers, epistemic analyzers, delivery",
+    "src/ai_security_monitor/presentation": "FastAPI REST router, WebSockets, CLI interface",
+    "web/index.html": "Single-page responsive HUD dashboard with Three.js globe and luxury styling",
+    "tests": "Integration and unit test suites mirroring architecture"
+  },
+  "testing_strategy": {
+    "framework": "pytest + pytest-asyncio + httpx",
+    "coverage_target": "50%",
+    "patterns": [
+      "Unit tests for heuristic and blast radius analyzers",
+      "Integration tests for REST endpoints and live database sorting",
+      "Autonomous triage queue worker and deduplication tests"
+    ]
+  },
+  "deployment": {
+    "platform": "Vercel",
+    "branch_strategy": "main → production, dev → preview",
+    "environments": [
+      "development",
+      "staging",
+      "production"
+    ]
+  },
+  "sprint_focus": "Building the user onboarding flow with email verification and profile setup.",
+  "sprint_skills": [
+    "lifecycle/security-and-hardening",
+    "lifecycle/api-and-interface-design",
+    "lifecycle/test-driven-development"
+  ],
+  "never_do": [
+    "Never use useEffect for data fetching — use Server Components or SWR",
+    "Never store secrets in .env files committed to git",
+    "Never use inline styles — always use Tailwind classes",
+    "Never use `any` TypeScript type — always type explicitly",
+    "Never mix database queries into React components"
+  ],
+  "preferred_patterns": [
+    "Use Zod for all schema validation",
+    "Use Drizzle ORM for all database access",
+    "Use server actions for mutations",
+    "Use Next.js Image component for all images"
+  ],
+  "agent_skills": {
+    "directory": "/home/thor/skiils",
+    "default_skills": [
+      "lifecycle/using-agent-skills",
+      "lifecycle/context-engineering"
+    ],
+    "mandatory_skills": {
+      "api": "lifecycle/api-and-interface-design",
+      "auth": "lifecycle/security-and-hardening"
+    },
+    "session_reporting_preference": true
+  }
+}
