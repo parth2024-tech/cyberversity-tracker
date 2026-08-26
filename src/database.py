@@ -28,6 +28,8 @@ class Database:
             # Enable WAL mode for high concurrency
             self._local.conn.execute("PRAGMA journal_mode=WAL")
             self._local.conn.execute("PRAGMA busy_timeout=5000")
+            # Enable foreign key constraints
+            self._local.conn.execute("PRAGMA foreign_keys=ON")
         return self._local.conn
 
     @contextmanager
@@ -122,12 +124,45 @@ class Database:
                     attack_archetype TEXT,         -- (Feature 5)
                     weaponization_potential TEXT,  -- (Feature 5)
                     ai_model TEXT,
+                    overall_confidence REAL DEFAULT 0.7,   -- aggregate confidence (epistemic)
+                    evidence_version TEXT DEFAULT 'v1',     -- schema version for replay
                     analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (entry_id) REFERENCES entries(id)
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_entry_analysis_entry ON entry_analysis(entry_id);
                 CREATE INDEX IF NOT EXISTS idx_entry_analysis_velocity ON entry_analysis(threat_velocity DESC);
+
+                -- Epistemic tracking: per-claim evidence for each analysis
+                CREATE TABLE IF NOT EXISTS analysis_evidence (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    analysis_id INTEGER NOT NULL,
+                    claim_type TEXT NOT NULL CHECK (claim_type IN ('fact','inference','hypothesis','assumption','unknown')),
+                    claim_target TEXT NOT NULL,
+                    claim_value TEXT NOT NULL,
+                    confidence REAL NOT NULL CHECK (confidence >= 0.0 AND confidence <= 1.0),
+                    evidence_json TEXT,
+                    method TEXT NOT NULL CHECK (method IN ('heuristic','llm','hybrid')),
+                    model_version TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (analysis_id) REFERENCES entry_analysis(id)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_analysis_evidence_analysis ON analysis_evidence(analysis_id);
+                CREATE INDEX IF NOT EXISTS idx_analysis_evidence_target ON analysis_evidence(claim_target);
+                CREATE INDEX IF NOT EXISTS idx_analysis_evidence_type ON analysis_evidence(claim_type);
+
+                -- Ground truth outcomes for calibration
+                CREATE TABLE IF NOT EXISTS analysis_outcome (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    analysis_id INTEGER NOT NULL,
+                    outcome_type TEXT NOT NULL CHECK (outcome_type IN ('telegram_sent','user_dismissed','user_escalated','false_positive','confirmed')),
+                    outcome_value TEXT,
+                    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (analysis_id) REFERENCES entry_analysis(id)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_analysis_outcome_analysis ON analysis_outcome(analysis_id);
             """)
 
             # Safe column migrations for existing databases
@@ -139,7 +174,9 @@ class Database:
                 ("affected_ecosystem", "TEXT"),
                 ("is_pre_cve_warning", "BOOLEAN DEFAULT 0"),
                 ("attack_archetype", "TEXT"),
-                ("weaponization_potential", "TEXT")
+                ("weaponization_potential", "TEXT"),
+                ("overall_confidence", "REAL DEFAULT 0.7"),
+                ("evidence_version", "TEXT DEFAULT 'v1'")
             ]
             for col_name, col_def in new_columns:
                 if col_name not in existing_cols:
@@ -227,19 +264,43 @@ class Database:
                       mitigation: str, threat_velocity: int, severity_index: int,
                       blast_radius_score: int = 20, affected_ecosystem: list[str] = None,
                       is_pre_cve_warning: bool = False, attack_archetype: str = None,
-                      weaponization_potential: str = None, ai_model: str = "AetherGuard:v2"):
-        """Save AI analysis for an entry."""
+                      weaponization_potential: str = None, ai_model: str = "AetherGuard:v2",
+                      overall_confidence: float = 0.7, evidence_version: str = "v1",
+                      evidence_bundles: list | None = None):
+        """Save AI analysis for an entry with epistemic evidence tracking."""
         affected_json = json.dumps(affected_ecosystem) if affected_ecosystem else None
         with self.transaction() as conn:
-            conn.execute("""
+            # Insert analysis row
+            cursor = conn.execute("""
                 INSERT OR REPLACE INTO entry_analysis
                 (entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
                  blast_radius_score, affected_ecosystem, is_pre_cve_warning, attack_archetype,
-                 weaponization_potential, ai_model)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 weaponization_potential, ai_model, overall_confidence, evidence_version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
                   blast_radius_score, affected_json, 1 if is_pre_cve_warning else 0,
-                  attack_archetype, weaponization_potential, ai_model))
+                  attack_archetype, weaponization_potential, ai_model, overall_confidence, evidence_version))
+            
+            analysis_id = cursor.lastrowid
+            
+            # Insert evidence bundles if provided
+            if evidence_bundles:
+                for bundle in evidence_bundles:
+                    evidence_json = json.dumps(bundle.get('evidence', {})) if bundle.get('evidence') else None
+                    conn.execute("""
+                        INSERT INTO analysis_evidence
+                        (analysis_id, claim_type, claim_target, claim_value, confidence, evidence_json, method, model_version)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        analysis_id,
+                        bundle.get('claim_type', 'inference'),
+                        bundle.get('claim_target', ''),
+                        str(bundle.get('value', '')),
+                        bundle.get('confidence', 0.7),
+                        evidence_json,
+                        bundle.get('method', 'heuristic'),
+                        bundle.get('model_version', 'heuristic:v2.1')
+                    ))
 
     def get_analysis(self, entry_id: int) -> dict | None:
         """Get analysis for an entry."""

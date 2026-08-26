@@ -10,6 +10,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+import json
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
@@ -237,6 +239,225 @@ def cmd_server(args):
     uvicorn.run("src.server:app", host=args.host, port=args.port, reload=args.reload)
 
 
+def cmd_strategy_init(args):
+    """Initialize and populate the first generation of strategy genomes."""
+    from database import get_db
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
+
+    db = get_db()
+    engine = create_evolution_engine(db, population_size=args.population)
+    population = engine.initialize_population()
+
+    print(f"✓ Initialized strategy population with {len(population)} strategies")
+    print(f"  Generation: {engine.generation}")
+
+    # Run first generation benchmark
+    if not args.skip_benchmark:
+        print(f"\nRunning benchmark against last {args.test_entries} entries...")
+        gen_result = engine.run_generation(test_limit=args.test_entries, elite_size=3)
+        print(f"  Best fitness: {gen_result['best_fitness']:.4f}")
+        print(f"  Avg fitness:  {gen_result['avg_fitness']:.4f}")
+
+    # Save best strategy
+    engine.save_best_strategy(args.strategy_name)
+    best = engine.get_best_strategy()
+    print(f"\n✓ Best strategy saved as '{args.strategy_name}'")
+    print(f"  Fitness: {best.fitness_score:.4f}")
+    print(f"  Genes: {json.dumps(best.genes, indent=2)}")
+
+
+def cmd_strategy_evolve(args):
+    """Evolve strategies through N generations."""
+    from database import get_db
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
+
+    db = get_db()
+    engine = create_evolution_engine(db, population_size=args.population)
+
+    # Load existing best strategy as seed
+    existing = engine.load_strategy(args.strategy_name)
+    if existing:
+        print(f"Loaded existing strategy '{args.strategy_name}' (fitness: {existing.fitness_score:.4f})")
+        engine.initialize_population(seed_strategies=[existing])
+    else:
+        print("No existing strategy found. Initializing random population.")
+        engine.initialize_population()
+
+    for i in range(args.generations):
+        print(f"\n--- Generation {engine.generation + 1} ---")
+        gen_result = engine.run_generation(test_limit=args.test_entries, elite_size=3)
+        print(f"  Best fitness: {gen_result['best_fitness']:.4f}")
+        print(f"  Avg fitness:  {gen_result['avg_fitness']:.4f}")
+
+    engine.save_best_strategy(args.strategy_name)
+    best = engine.get_best_strategy()
+    print(f"\n✓ Evolution complete. Best strategy saved as '{args.strategy_name}'")
+    print(f"  Fitness: {best.fitness_score:.4f}")
+
+
+def cmd_strategy_show(args):
+    """Show the current best strategy."""
+    from database import get_db
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
+
+    db = get_db()
+    engine = create_evolution_engine(db)
+    strategy = engine.load_strategy(args.strategy_name)
+
+    if strategy is None:
+        print(f"Strategy '{args.strategy_name}' not found. Run 'strategy-init' first.")
+        sys.exit(1)
+
+    print(f"\n📊 Strategy: {args.strategy_name}")
+    print(f"{'=' * 60}")
+    print(f"  Generation: {strategy.generation}")
+    print(f"  Fitness:    {strategy.fitness_score:.4f}")
+    print(f"\n  Genes:")
+    for key, value in strategy.genes.items():
+        print(f"    {key}: {value}")
+
+
+def cmd_replay(args):
+    """Replay historical entries with mutated strategies."""
+    from database import get_db
+    from ai_security_monitor.infrastructure.evolution.replay_harness import create_replay_manager
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import StrategyDna
+
+    db = get_db()
+    manager = create_replay_manager(db)
+
+    print(f"Loading last {args.limit} entries for replay...")
+    entries = manager.harness.load_entries(limit=args.limit)
+    print(f"  Loaded {len(entries)} entries")
+
+    if len(entries) == 0:
+        print("No entries found. Run 'fetch' first.")
+        sys.exit(1)
+
+    # Load best strategy
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
+    engine = create_evolution_engine(db)
+    best = engine.load_strategy(args.strategy_name)
+
+    if best is None:
+        print(f"Strategy '{args.strategy_name}' not found.")
+        sys.exit(1)
+
+    # Create a mutated variant
+    mutated = best.mutate(mutation_rate=0.3, mutation_strength=0.2)
+    print(f"\nComparing strategies:")
+    print(f"  Original: gen={best.generation}, fitness={best.fitness_score:.4f}")
+    print(f"  Mutated:  gen={mutated.generation}")
+
+    comparisons = manager.harness.compare_strategies(entries, best, mutated)
+
+    improvements = sum(1 for c in comparisons if c.improvement_score > 0)
+    regressions = sum(1 for c in comparisons if c.improvement_score < 0)
+    neutral = sum(1 for c in comparisons if c.improvement_score == 0)
+    avg_improvement = sum(c.improvement_score for c in comparisons) / len(comparisons)
+
+    print(f"\n  Results:")
+    print(f"    Improved: {improvements}/{len(comparisons)}")
+    print(f"    Regressed: {regressions}/{len(comparisons)}")
+    print(f"    Neutral:  {neutral}/{len(comparisons)}")
+    print(f"    Avg improvement: {avg_improvement:+.4f}")
+
+
+def cmd_beliefs(args):
+    """Show the system's epistemic beliefs."""
+    from database import get_db
+    from ai_security_monitor.infrastructure.epistemic.epistemic_engine import EpistemicEngine
+
+    db = get_db()
+    engine = EpistemicEngine(db)
+    beliefs = engine.get_system_beliefs()
+
+    print(f"\n🧠 System Beliefs")
+    print(f"{'=' * 60}")
+    print(f"  Total claims tracked: {beliefs['total_claims']}")
+
+    print(f"\n  Claims by type:")
+    for ct, count in beliefs['claims_by_type'].items():
+        if count > 0:
+            print(f"    {ct}: {count}")
+
+    print(f"\n  Claims by method:")
+    for method, count in beliefs['claims_by_method'].items():
+        print(f"    {method}: {count}")
+
+    if beliefs['top_confidence_claims']:
+        print(f"\n  Top confidence claims:")
+        for claim in beliefs['top_confidence_claims']:
+            print(f"    [{claim['claim_type']}] {claim['target'][:50]}")
+            print(f"      Raw: {claim['raw_confidence']:.3f} | Calibrated: {claim['calibrated_confidence']:.3f}")
+
+    if beliefs['calibration_stats']:
+        print(f"\n  Calibration stats:")
+        for key, stats in beliefs['calibration_stats'].items():
+            print(f"    {key}: {stats['total_outcomes']} outcomes, {stats['confirmed']} confirmed")
+
+
+def cmd_opportunities(args):
+    """Show detected improvement opportunities."""
+    from database import get_db
+    from ai_security_monitor.infrastructure.evolution.counterfactual_engine import create_counterfactual_engine
+
+    db = get_db()
+    engine = create_counterfactual_engine(db)
+    report = engine.get_analysis_report()
+
+    print(f"\n🔍 Opportunity Detection Report")
+    print(f"{'=' * 60}")
+    print(f"  Total decisions tracked: {report['total_decisions']}")
+    print(f"  Patterns detected:       {report['patterns_detected']}")
+    print(f"  Average regret:          {report['average_regret']:.4f} ({report['regret_assessment']})")
+
+    if report['opportunities']:
+        print(f"\n  Actionable Opportunities:")
+        for opp in report['opportunities']:
+            print(f"    [{opp['type']}] confidence={opp['confidence']:.2f}")
+            print(f"    {opp['recommendation']}")
+
+
+def cmd_validate_strategy(args):
+    """Validate that a new strategy improves over the current one."""
+    from database import get_db
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
+    from ai_security_monitor.infrastructure.evolution.replay_harness import create_replay_manager
+
+    db = get_db()
+    engine = create_evolution_engine(db)
+    manager = create_replay_manager(db)
+
+    current = engine.load_strategy(args.strategy_name)
+    if current is None:
+        print(f"Strategy '{args.strategy_name}' not found.")
+        sys.exit(1)
+
+    # Create a mutated variant for comparison
+    variant = current.mutate(mutation_rate=0.4, mutation_strength=0.3)
+    print(f"Validating mutated strategy against '{args.strategy_name}'...")
+    print(f"  Test entries: {args.test_entries}")
+
+    result = manager.validate_strategy_improvement(
+        variant, current,
+        test_limit=args.test_entries,
+        min_improvement=args.min_improvement,
+    )
+
+    print(f"\n  Improvement: {result['improvement']:+.4f}")
+    print(f"  Max regression: {result['max_regression']:+.4f}")
+    print(f"  Avg latency: {result['avg_latency_ms']:.1f}ms")
+    print(f"  Recommendation: {result['recommendation'].upper()}")
+
+    details = result.get('details', {})
+    if details:
+        print(f"\n  Breakdown:")
+        print(f"    Improved:  {details.get('entries_with_improvement', 0)}")
+        print(f"    Regressed: {details.get('entries_with_regression', 0)}")
+        print(f"    Neutral:   {details.get('entries_neutral', 0)}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='AI Security Monitor - Zero-cost monitoring for AI tech & cybersecurity',
@@ -369,6 +590,41 @@ Examples:
     test_parser.add_argument('--telegram-token')
     test_parser.add_argument('--telegram-chat')
 
+    # strategy-init
+    strategy_init_parser = subparsers.add_parser('strategy-init', help='Initialize strategy genome population')
+    strategy_init_parser.add_argument('--population', type=int, default=20, help='Population size (default: 20)')
+    strategy_init_parser.add_argument('--test-entries', type=int, default=50, help='Test entries for benchmark (default: 50)')
+    strategy_init_parser.add_argument('--skip-benchmark', action='store_true', help='Skip initial benchmark')
+    strategy_init_parser.add_argument('--strategy-name', default='best', help='Name for saved strategy (default: best)')
+
+    # strategy-evolve
+    strategy_evolve_parser = subparsers.add_parser('strategy-evolve', help='Evolve strategies through generations')
+    strategy_evolve_parser.add_argument('--generations', type=int, default=5, help='Number of generations (default: 5)')
+    strategy_evolve_parser.add_argument('--population', type=int, default=20, help='Population size (default: 20)')
+    strategy_evolve_parser.add_argument('--test-entries', type=int, default=100, help='Test entries per generation (default: 100)')
+    strategy_evolve_parser.add_argument('--strategy-name', default='best', help='Strategy name to load/save (default: best)')
+
+    # strategy-show
+    strategy_show_parser = subparsers.add_parser('strategy-show', help='Show current best strategy')
+    strategy_show_parser.add_argument('--strategy-name', default='best', help='Strategy name (default: best)')
+
+    # replay
+    replay_parser = subparsers.add_parser('replay', help='Replay historical entries with mutated strategies')
+    replay_parser.add_argument('--limit', type=int, default=100, help='Entries to replay (default: 100)')
+    replay_parser.add_argument('--strategy-name', default='best', help='Base strategy name (default: best)')
+
+    # beliefs
+    subparsers.add_parser('beliefs', help='Show system epistemic beliefs')
+
+    # opportunities
+    subparsers.add_parser('opportunities', help='Show detected improvement opportunities')
+
+    # validate-strategy
+    validate_parser = subparsers.add_parser('validate-strategy', help='Validate strategy improvement via replay')
+    validate_parser.add_argument('--strategy-name', default='best', help='Base strategy name (default: best)')
+    validate_parser.add_argument('--test-entries', type=int, default=100, help='Test entries (default: 100)')
+    validate_parser.add_argument('--min-improvement', type=float, default=0.05, help='Min improvement required (default: 0.05)')
+
     args = parser.parse_args()
 
     if not args.command:
@@ -393,6 +649,13 @@ Examples:
         'test-delivery': cmd_test_delivery,
         'analyze': cmd_analyze,
         'enriched-digest': cmd_enriched_digest,
+        'strategy-init': cmd_strategy_init,
+        'strategy-evolve': cmd_strategy_evolve,
+        'strategy-show': cmd_strategy_show,
+        'replay': cmd_replay,
+        'beliefs': cmd_beliefs,
+        'opportunities': cmd_opportunities,
+        'validate-strategy': cmd_validate_strategy,
     }
 
     commands[args.command](args)

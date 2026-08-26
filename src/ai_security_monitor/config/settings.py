@@ -69,13 +69,17 @@ class FetchSettings(BaseSettings):
 class AnalyzerSettings(BaseSettings):
     """AI analysis configuration."""
     enabled: bool = Field(default=True, description="Enable AI analysis")
-    default_model: str = Field(default="heuristic", description="Default analyzer: heuristic, ollama, groq")
+    default_model: str = Field(default="heuristic", description="Default analyzer: heuristic, ollama, groq, auto/offline")
     ollama_host: str = Field(default="http://localhost:11434", description="Ollama API host")
     ollama_model: str = Field(default="llama3.1:8b", description="Ollama model name")
     groq_api_key: str | None = Field(default=None, description="Groq API key")
     groq_model: str = Field(default="llama-3.1-70b-versatile", description="Groq model name")
     max_tokens: int = Field(default=2000, description="Max tokens for LLM response")
     temperature: float = Field(default=0.1, description="LLM temperature")
+    
+    # Local LLM routing via Hermes gateway
+    use_local_llm: bool = Field(default=True, description="Route LLM calls through local gateway (auto/offline)")
+    local_model: str = Field(default="auto/offline", description="Local model via gateway")
 
     model_config = SettingsConfigDict(env_prefix="ANALYZER_")
 

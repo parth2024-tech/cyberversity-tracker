@@ -36,6 +36,7 @@ class ArxivFetcher(BaseFetcher):
         async with httpx.AsyncClient(
             timeout=self.timeout,
             headers={"User-Agent": settings.fetch.user_agent},
+            follow_redirects=True,
         ) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()

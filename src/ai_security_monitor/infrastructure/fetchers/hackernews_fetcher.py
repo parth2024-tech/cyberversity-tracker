@@ -31,7 +31,7 @@ class HackerNewsFetcher(BaseFetcher):
         }
         headers = {"User-Agent": settings.fetch.user_agent}
 
-        async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, headers=headers, follow_redirects=True) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
 

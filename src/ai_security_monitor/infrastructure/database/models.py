@@ -42,8 +42,8 @@ class SourceModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    entries: Mapped[list["EntryModel"]] = relationship(back_populates="source", lazy="dynamic")
-    fetch_logs: Mapped[list["FetchLogModel"]] = relationship(back_populates="source", lazy="dynamic")
+    entries: Mapped[list["EntryModel"]] = relationship(back_populates="source", lazy="selectin")
+    fetch_logs: Mapped[list["FetchLogModel"]] = relationship(back_populates="source", lazy="selectin")
 
     __table_args__ = (
         Index("ix_sources_category_enabled", "category", "enabled"),
@@ -69,8 +69,8 @@ class EntryModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    source: Mapped["SourceModel"] = relationship(back_populates="entries")
-    analysis: Mapped[Optional["AnalysisModel"]] = relationship(back_populates="entry", uselist=False)
+    source: Mapped["SourceModel"] = relationship(back_populates="entries", lazy="selectin")
+    analysis: Mapped[Optional["AnalysisModel"]] = relationship(back_populates="entry", uselist=False, lazy="selectin")
 
     __table_args__ = (
         Index("ix_entries_category_published", "category", "published_at"),
@@ -100,7 +100,7 @@ class AnalysisModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    entry: Mapped["EntryModel"] = relationship(back_populates="analysis")
+    entry: Mapped["EntryModel"] = relationship(back_populates="analysis", lazy="selectin")
 
     __table_args__ = (
         Index("ix_analysis_threat_velocity", "threat_velocity"),

@@ -233,7 +233,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
     def _model_to_entity(self, model: EntryModel) -> Entry:
         analysis = None
-        if model.analysis:
+        if "analysis" in model.__dict__ and model.analysis is not None:
             analysis = Analysis(
                 id=_str_to_uuid(model.analysis.id),
                 entry_id=_str_to_uuid(model.analysis.entry_id),
@@ -243,11 +243,11 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 threat_velocity=model.analysis.threat_velocity,
                 severity_index=model.analysis.severity_index,
                 blast_radius_score=model.analysis.blast_radius_score,
-                affected_ecosystem=model.analysis.affected_ecosystem,
+                affected_ecosystem=model.analysis.affected_ecosystem or [],
                 is_pre_cve_warning=model.analysis.is_pre_cve_warning,
                 attack_archetype=model.analysis.attack_archetype,
                 weaponization_potential=model.analysis.weaponization_potential,
-                model=AnalysisModel(model.analysis.model),
+                model=AnalysisModel(model.analysis.model) if model.analysis.model in [m.value for m in AnalysisModel] else AnalysisModel.HEURISTIC,
                 confidence=model.analysis.confidence,
                 created_at=model.analysis.created_at,
                 updated_at=model.analysis.updated_at,

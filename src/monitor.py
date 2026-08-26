@@ -153,10 +153,12 @@ class AISecurityMonitor:
                 )
                 if entry_id:
                     entries_new += 1
-                    # Auto-analyze immediately (Features 1, 3, 5)
+                    # Auto-analyze immediately (Features 1, 3, 5) with epistemic tracking
                     try:
                         from analyzer import create_analyzer
+                        from ai_security_monitor.infrastructure.epistemic.epistemic_engine import EpistemicEngine
                         analyzer = create_analyzer(self.config.get('analyzer', {}))
+                        epistemic = EpistemicEngine(self.db)
                         raw_dict = {
                             'id': entry_id if isinstance(entry_id, int) else 0,
                             'title': entry['title'],
@@ -168,7 +170,7 @@ class AISecurityMonitor:
                             'tags': entry.get('tags', []),
                             'metadata': entry.get('metadata', {})
                         }
-                        analysis = analyzer.analyze(raw_dict)
+                        analysis, evidence_bundles = epistemic.analyze_with_evidence(raw_dict, analyzer.analyze)
                         if isinstance(entry_id, int):
                             self.db.save_analysis(
                                 entry_id=entry_id,
@@ -182,7 +184,10 @@ class AISecurityMonitor:
                                 is_pre_cve_warning=analysis.is_pre_cve_warning,
                                 attack_archetype=analysis.attack_archetype,
                                 weaponization_potential=analysis.weaponization_potential,
-                                ai_model=analysis.ai_model
+                                ai_model=analysis.ai_model,
+                                overall_confidence=analysis.confidence,
+                                evidence_version="v1",
+                                evidence_bundles=[b.__dict__ for b in evidence_bundles] if evidence_bundles else None
                             )
                     except Exception as an_err:
                         logger.warning(f"Error auto-analyzing entry: {an_err}")
@@ -380,31 +385,37 @@ class AISecurityMonitor:
         # Get analyzer (automatically manages LLM with fast heuristic fallback)
         analyzer_config = self.config.get('analyzer', {})
         analyzer = create_analyzer(analyzer_config)
+        from ai_security_monitor.infrastructure.epistemic.epistemic_engine import EpistemicEngine
+        epistemic = EpistemicEngine(self.db)
 
-        # Analyze batch
-        results = analyzer.analyze_batch(unanalyzed)
-
-        # Save analyses
+        # Analyze batch with epistemic tracking
         analyzed = 0
         high_velocity = 0
-        for entry_id, analysis in results:
-            self.db.save_analysis(
-                entry_id=entry_id,
-                attack_vector=analysis.attack_vector,
-                risk_assessment=analysis.risk_assessment,
-                mitigation=analysis.mitigation,
-                threat_velocity=analysis.threat_velocity,
-                severity_index=analysis.severity_index,
-                blast_radius_score=analysis.blast_radius_score,
-                affected_ecosystem=analysis.affected_ecosystem,
-                is_pre_cve_warning=analysis.is_pre_cve_warning,
-                attack_archetype=analysis.attack_archetype,
-                weaponization_potential=analysis.weaponization_potential,
-                ai_model=analysis.ai_model
-            )
-            analyzed += 1
-            if analysis.threat_velocity >= 70:
-                high_velocity += 1
+        for entry in unanalyzed:
+            try:
+                analysis, evidence_bundles = epistemic.analyze_with_evidence(entry, analyzer.analyze)
+                self.db.save_analysis(
+                    entry_id=entry['id'],
+                    attack_vector=analysis.attack_vector,
+                    risk_assessment=analysis.risk_assessment,
+                    mitigation=analysis.mitigation,
+                    threat_velocity=analysis.threat_velocity,
+                    severity_index=analysis.severity_index,
+                    blast_radius_score=analysis.blast_radius_score,
+                    affected_ecosystem=analysis.affected_ecosystem,
+                    is_pre_cve_warning=analysis.is_pre_cve_warning,
+                    attack_archetype=analysis.attack_archetype,
+                    weaponization_potential=analysis.weaponization_potential,
+                    ai_model=analysis.ai_model,
+                    overall_confidence=analysis.confidence,
+                    evidence_version="v1",
+                    evidence_bundles=[b.__dict__ for b in evidence_bundles] if evidence_bundles else None
+                )
+                analyzed += 1
+                if analysis.threat_velocity >= 70:
+                    high_velocity += 1
+            except Exception as e:
+                logger.warning(f"Failed to analyze entry {entry.get('id')}: {e}")
 
         logger.info(f"AI Analysis complete: {analyzed} analyzed, {high_velocity} high velocity")
         return {'analyzed': analyzed, 'failed': len(unanalyzed) - analyzed, 'high_velocity': high_velocity}

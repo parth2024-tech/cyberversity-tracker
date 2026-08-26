@@ -38,6 +38,7 @@ class AnalysisModel(str, Enum):
     HEURISTIC = "heuristic"
     OLLAMA = "ollama"
     GROQ = "groq"
+    LOCAL = "local"
     BLAST_RADIUS = "blast_radius"
 
 

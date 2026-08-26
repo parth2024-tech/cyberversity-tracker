@@ -105,7 +105,7 @@ def create_app() -> FastAPI:
 
     # Serve static web UI
     import os
-    web_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "web")
+    web_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "web"))
     if os.path.exists(web_dir):
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 

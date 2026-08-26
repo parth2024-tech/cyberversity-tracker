@@ -1,4 +1,4 @@
-"""
+""""
 AI Triage, Blast Radius & Pre-CVE Early Warning Engine
 Autonomous security intelligence for AI & Cybersecurity.
 
@@ -11,10 +11,32 @@ Features:
 import logging
 import re
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Optional
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+class ClaimType(Enum):
+    """Epistemic status of a claim in the analysis."""
+    FACT = "fact"              # Verified externally (CVSS, CVE ID, CISA KEV)
+    INFERENCE = "inference"    # Derived from evidence (keyword matching, heuristics)
+    HYPOTHESIS = "hypothesis"  # Plausible but untested (blast radius extrapolation)
+    ASSUMPTION = "assumption"  # Temporarily accepted (default weights, baseline scores)
+    UNKNOWN = "unknown"        # Explicitly unresolved
+
+
+@dataclass
+class EvidenceBundle:
+    """Self-documenting result from a scoring function with confidence and evidence trail."""
+    value: Any
+    confidence: float                    # 0.0 - 1.0
+    claim_type: ClaimType                # Epistemic status
+    evidence: dict                       # What supported this claim (keywords, CVSS, metadata)
+    method: str                          # "heuristic" | "llm" | "hybrid"
+    model_version: str                   # e.g., "heuristic:v2.1", "ollama:llama3.2:3b"
 
 
 @dataclass
@@ -31,6 +53,7 @@ class AnalysisResult:
     attack_archetype: str         # (Feature 5: E.g., 'Jailbreak', 'RAG Poisoning', 'Model Inversion', 'RCE')
     weaponization_potential: str  # (Feature 5: 'Theoretical', 'PoC Verified', 'Active Weaponization')
     ai_model: str
+    evidence_bundles: list = None  # List of EvidenceBundle for epistemic tracking
 
 
 class BlastRadiusEngine:
@@ -353,7 +376,7 @@ class HeuristicAnalyzer:
         return f"Isolate {ecosystem[0] if ecosystem else 'runtime'} containers, apply upstream security updates, and monitor execution logs."
 
     def analyze(self, entry: dict) -> AnalysisResult:
-        """Analyze entry using full intelligence heuristics."""
+        """Analyze entry using full intelligence heuristics with epistemic evidence tracking."""
         title = entry.get('title', '')
         summary = entry.get('summary', '')
         text = f"{title} {summary}"
@@ -361,20 +384,64 @@ class HeuristicAnalyzer:
         url = entry.get('url', '')
         metadata = entry.get('metadata', {})
 
+        evidence_bundles = []
+        MODEL_VER = "heuristic:v2.1"
+
         # 1. Feature 1: Blast Radius
         blast_radius, ecosystem = BlastRadiusEngine.calculate_blast_radius(text, metadata, category)
+        # Evidence: which AI ecosystem keywords matched
+        matched_eco = [k for k in BlastRadiusEngine.AI_ECOSYSTEM_MAP
+                       if re.search(r'\b' + re.escape(k) + r'\b', text.lower())]
+        evidence_bundles.append(EvidenceBundle(
+            value=blast_radius,
+            confidence=0.7 if matched_eco else 0.4,
+            claim_type=ClaimType.INFERENCE,
+            evidence={"matched_ecosystems": matched_eco, "ecosystem_count": len(ecosystem),
+                      "cvss": metadata.get('cvss_score'), "category": category},
+            method="heuristic",
+            model_version=MODEL_VER,
+        ))
 
         # 2. Feature 5: Pre-CVE Zero-Day Detection
         is_pre_cve, archetype, weaponization = PreCVEEarlyWarningDetector.detect_early_warning(text, category, url)
+        evidence_bundles.append(EvidenceBundle(
+            value=is_pre_cve,
+            confidence=0.8 if is_pre_cve else 0.6,
+            claim_type=ClaimType.HYPOTHESIS if is_pre_cve else ClaimType.INFERENCE,
+            evidence={"archetype": archetype, "weaponization": weaponization,
+                      "category": category, "url_contains_arxiv": 'arxiv.org' in url.lower()},
+            method="heuristic",
+            model_version=MODEL_VER,
+        ))
 
         # 3. Feature 3: AI Triage & Scoring
         velocity = self._score_velocity(text, metadata, is_pre_cve, weaponization)
+        evidence_bundles.append(EvidenceBundle(
+            value=velocity,
+            confidence=0.85 if metadata.get('cvss_score') or metadata.get('cisa_kev') else 0.5,
+            claim_type=ClaimType.INFERENCE,
+            evidence={"cvss": metadata.get('cvss_score'), "cisa_kev": metadata.get('cisa_kev'),
+                      "high_vel_kw_count": sum(1 for kw in self.HIGH_VELOCITY_KEYWORDS if kw in text.lower())},
+            method="heuristic",
+            model_version=MODEL_VER,
+        ))
+
         severity = self._score_severity(text, metadata, blast_radius)
+        evidence_bundles.append(EvidenceBundle(
+            value=severity,
+            confidence=0.9 if metadata.get('cvss_score') else 0.5,
+            claim_type=ClaimType.FACT if metadata.get('cvss_score') else ClaimType.INFERENCE,
+            evidence={"cvss": metadata.get('cvss_score'), "severity_field": metadata.get('severity'),
+                      "blast_radius": blast_radius},
+            method="heuristic",
+            model_version=MODEL_VER,
+        ))
+
         attack_vector = self._extract_attack_vector(text, metadata, archetype)
         risk = self._extract_risk(text, metadata, blast_radius, ecosystem)
         mitigation = self._extract_mitigation(text, metadata, ecosystem)
 
-        return AnalysisResult(
+        result = AnalysisResult(
             attack_vector=attack_vector,
             risk_assessment=risk,
             mitigation=mitigation,
@@ -385,8 +452,10 @@ class HeuristicAnalyzer:
             is_pre_cve_warning=is_pre_cve,
             attack_archetype=archetype,
             weaponization_potential=weaponization,
-            ai_model="AetherGuard-NeuralHeuristics:v2"
+            ai_model="AetherGuard-NeuralHeuristics:v2",
+            evidence_bundles=evidence_bundles,
         )
+        return result
 
     def analyze_batch(self, entries: list[dict]) -> list[tuple[int, AnalysisResult]]:
         results = []

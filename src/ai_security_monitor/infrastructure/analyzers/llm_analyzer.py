@@ -1,4 +1,4 @@
-# LLM-based analyzer with Ollama and Groq support.
+# LLM-based analyzer with Ollama, Groq, and local gateway support.
 
 import json
 import os
@@ -13,25 +13,30 @@ from ai_security_monitor.infrastructure.analyzers.base import (
 
 
 class LLMAnalyzer(BaseAnalyzer):
-    """LLM-based analyzer supporting Ollama and Groq."""
+    """LLM-based analyzer supporting Ollama, Groq, and local gateway (auto/offline)."""
 
     def __init__(self, config: dict | None = None):
         super().__init__(config)
-        self.provider = config.get("provider", "ollama") if config else "ollama"
-        self.model_name = config.get("model", settings.analyzer.ollama_model) if config else settings.analyzer.ollama_model
+        self.provider = config.get("provider", settings.analyzer.default_model) if config else settings.analyzer.default_model
         self.max_tokens = config.get("max_tokens", settings.analyzer.max_tokens) if config else settings.analyzer.max_tokens
         self.temperature = config.get("temperature", settings.analyzer.temperature) if config else settings.analyzer.temperature
 
-        # Initialize client based on provider
-        if self.provider == "groq":
-            self._init_groq()
-        else:
+        # Determine which backend to use
+        if self.provider in ("ollama", "heuristic"):
             self._init_ollama()
+        elif self.provider == "groq":
+            self._init_groq()
+        elif self.provider in ("local", "local_llm", "gateway", "auto/offline"):
+            self._init_gateway()
+        else:
+            # Default to gateway for unknown providers
+            self._init_gateway()
 
     def _init_ollama(self):
         """Initialize Ollama client."""
         self.ollama_host = settings.analyzer.ollama_host
-        self.ollama_model = self.model_name
+        self.ollama_model = settings.analyzer.ollama_model
+        self._use_gateway = False
 
     def _init_groq(self):
         """Initialize Groq client."""
@@ -41,17 +46,34 @@ class LLMAnalyzer(BaseAnalyzer):
             if not api_key:
                 raise ValueError("Groq API key not configured")
             self.client = Groq(api_key=api_key)
-            self.model_name = settings.analyzer.groq_model
+            self.groq_model = settings.analyzer.groq_model
+            self._use_gateway = False
         except ImportError:
             raise ValueError("Groq package not installed. Install with: pip install groq")
 
+    def _init_gateway(self):
+        """Initialize local gateway (Hermes omniroute) client."""
+        self.gateway_host = "http://localhost:20128/v1"
+        self.gateway_model = settings.analyzer.local_model
+        self._use_gateway = True
+
     @property
     def analyzer_type(self) -> str:
-        return f"llm_{self.provider}"
+        if self.provider in ("ollama", "heuristic"):
+            return f"llm_{self.provider}"
+        elif self.provider == "groq":
+            return "llm_groq"
+        else:
+            return "llm_local"
 
     @property
     def model(self) -> AnalysisModel:
-        return AnalysisModel.OLLAMA if self.provider == "ollama" else AnalysisModel.GROQ
+        if self.provider == "groq":
+            return AnalysisModel.GROQ
+        elif self.provider == "ollama":
+            return AnalysisModel.OLLAMA
+        else:
+            return AnalysisModel.LOCAL
 
     def _build_prompt(self, entry: Entry) -> str:
         """Build analysis prompt for LLM."""
@@ -100,13 +122,41 @@ JSON only, no extra text."""
     async def _call_groq(self, prompt: str) -> dict:
         """Call Groq API."""
         response = await self.client.chat.completions.create(
-            model=self.model_name,
+            model=self.groq_model,
             messages=[{"role": "user", "content": prompt}],
             temperature=self.temperature,
             max_tokens=self.max_tokens,
             response_format={"type": "json_object"},
         )
         return json.loads(response.choices[0].message.content)
+
+    async def _call_gateway(self, prompt: str) -> dict:
+        """Call local gateway (Hermes omniroute) API."""
+        import httpx
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(
+                f"{self.gateway_host}/chat/completions",
+                json={
+                    "model": self.gateway_model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "stream": False,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+            # Extract JSON from response (may have reasoning content)
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                # Try to find JSON in the response
+                import re
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    return json.loads(json_match.group())
+                raise
 
     async def analyze(self, entry: Entry) -> AnalysisResult:
         """Analyze entry using LLM."""
@@ -115,8 +165,10 @@ JSON only, no extra text."""
         try:
             if self.provider == "groq":
                 result = await self._call_groq(prompt)
-            else:
+            elif self.provider in ("ollama", "heuristic"):
                 result = await self._call_ollama(prompt)
+            else:
+                result = await self._call_gateway(prompt)
 
             # Validate and normalize
             return AnalysisResult(
@@ -136,7 +188,7 @@ JSON only, no extra text."""
             )
         except Exception as e:
             # Fallback to heuristic on LLM failure
-            print(f"LLM analysis failed, falling back to heuristic: {e}")
+            print(f"LLM analysis failed ({self.provider}), falling back to heuristic: {e}")
             from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
                 HeuristicAnalyzer,
             )
@@ -146,3 +198,7 @@ JSON only, no extra text."""
 
 analyzer_registry.register("ollama", LLMAnalyzer)
 analyzer_registry.register("groq", LLMAnalyzer)
+analyzer_registry.register("local", LLMAnalyzer)
+analyzer_registry.register("local_llm", LLMAnalyzer)
+analyzer_registry.register("gateway", LLMAnalyzer)
+analyzer_registry.register("auto/offline", LLMAnalyzer)

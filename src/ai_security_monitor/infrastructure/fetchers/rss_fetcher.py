@@ -26,6 +26,7 @@ class RSSFetcher(BaseFetcher):
         async with httpx.AsyncClient(
             timeout=self.timeout,
             headers={"User-Agent": settings.fetch.user_agent},
+            follow_redirects=True,
         ) as client:
             response = await client.get(self.source.url)
             response.raise_for_status()
