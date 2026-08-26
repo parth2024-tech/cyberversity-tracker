@@ -51,6 +51,9 @@ class MonitorService:
             for s_cfg in sources_cfg:
                 existing = await uow.sources.get_by_name(s_cfg.name)
                 if not existing:
+                    cfg_dict = dict(s_cfg.config or {})
+                    cfg_dict['region'] = getattr(s_cfg, 'region', 'global')
+                    cfg_dict['country'] = getattr(s_cfg, 'country', 'GLOBAL')
                     new_source = Source(
                         name=s_cfg.name,
                         category=Category(s_cfg.category) if isinstance(s_cfg.category, str) else s_cfg.category,
@@ -59,7 +62,7 @@ class MonitorService:
                         query=s_cfg.query,
                         rate_limit_seconds=s_cfg.rate_limit_seconds,
                         enabled=s_cfg.enabled,
-                        config=s_cfg.config or {}
+                        config=cfg_dict
                     )
                     await uow.sources.add(new_source)
                     count += 1
@@ -73,6 +76,12 @@ class MonitorService:
                         changed = True
                     if existing.enabled != s_cfg.enabled:
                         existing.enabled = s_cfg.enabled
+                        changed = True
+                    if existing.config.get('region') != s_cfg.region:
+                        existing.config['region'] = s_cfg.region
+                        changed = True
+                    if existing.config.get('country') != s_cfg.country:
+                        existing.config['country'] = s_cfg.country
                         changed = True
                     if changed:
                         await uow.sources.update(existing)
@@ -106,6 +115,11 @@ class MonitorService:
                         continue
 
                     try:
+                        # Stamp sovereign region and country from source config
+                        entry.metadata = entry.metadata or {}
+                        entry.metadata['region'] = source.config.get('region', 'global')
+                        entry.metadata['country'] = source.config.get('country', 'GLOBAL')
+
                         added_entry = await uow.entries.add(entry)
                         new_entries_count += 1
 
@@ -143,6 +157,8 @@ class MonitorService:
                                         "summary": added_entry.summary,
                                         "category": added_entry.category.value,
                                         "source_name": source.name,
+                                        "region": source.config.get('region', 'global'),
+                                        "country": source.config.get('country', 'GLOBAL'),
                                         "published_at": added_entry.published_at.isoformat(),
                                         "tags": added_entry.tags,
                                         "analysis": {

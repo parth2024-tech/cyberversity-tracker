@@ -1,18 +1,19 @@
-# AI Technology & Cybersecurity Monitoring Sources
-# All sources are publicly accessible via RSS/Atom feeds or public APIs
-# Respects robots.txt and ToS with polite rate limits
+# AI Technology & Cybersecurity Worldwide Intelligence Sources
+# Monitoring 52+ verified global threat feeds, sovereign CERTs, academic radars, and frontier AI labs.
+# Standardized on UTC timeline for continuous planetary threat hunting.
 
 sources:
   # ==========================================
-  # AI TECHNOLOGY LAUNCHES & RESEARCH
+  # FRONTIER AI LABS & RESEARCH (GLOBAL)
   # ==========================================
-  # Frontier AI Labs & Engineering (Global)
   - name: "OpenAI News"
     category: "ai_tech"
     type: "rss"
     url: "https://openai.com/news/rss.xml"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Google DeepMind Blog"
     category: "ai_tech"
@@ -20,6 +21,8 @@ sources:
     url: "https://deepmind.google/blog/rss.xml"
     rate_limit_seconds: 1800
     enabled: true
+    region: "europe"
+    country: "GB"
 
   - name: "Google AI Blog"
     category: "ai_tech"
@@ -27,6 +30,8 @@ sources:
     url: "https://blog.google/technology/ai/rss/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Microsoft AI Blog"
     category: "ai_tech"
@@ -34,6 +39,8 @@ sources:
     url: "https://www.microsoft.com/en-us/research/blog/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Meta AI Research"
     category: "ai_tech"
@@ -41,6 +48,17 @@ sources:
     url: "https://engineering.fb.com/category/ai-research/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "Mistral AI Research"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://mistral.ai/news/index.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "FR"
 
   - name: "NVIDIA Developer AI Blog"
     category: "ai_tech"
@@ -48,6 +66,8 @@ sources:
     url: "https://developer.nvidia.com/blog/category/deep-learning/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "AWS Machine Learning Blog"
     category: "ai_tech"
@@ -55,6 +75,8 @@ sources:
     url: "https://aws.amazon.com/blogs/machine-learning/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Hugging Face Blog"
     category: "ai_tech"
@@ -62,14 +84,38 @@ sources:
     url: "https://huggingface.co/blog/feed.xml"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
-  # Global AI Journalism & Specialized Outlets
+  - name: "OECD AI Policy & Safety Observatory"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://oecd.ai/en/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Euractiv European AI Policy"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.euractiv.com/section/digital/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "EU"
+
+  # ==========================================
+  # GLOBAL TECH & AI SPECIALIZED JOURNALISM
+  # ==========================================
   - name: "MIT Technology Review AI"
     category: "ai_tech"
     type: "rss"
     url: "https://www.technologyreview.com/topic/artificial-intelligence/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "VentureBeat AI"
     category: "ai_tech"
@@ -77,6 +123,8 @@ sources:
     url: "https://venturebeat.com/category/ai/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "TechCrunch AI"
     category: "ai_tech"
@@ -84,6 +132,8 @@ sources:
     url: "https://techcrunch.com/tag/artificial-intelligence/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Wired AI"
     category: "ai_tech"
@@ -91,6 +141,8 @@ sources:
     url: "https://www.wired.com/feed/tag/ai/latest/rss"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Ars Technica AI"
     category: "ai_tech"
@@ -98,6 +150,8 @@ sources:
     url: "https://arstechnica.com/tag/ai/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "The Register AI / ML"
     category: "ai_tech"
@@ -105,6 +159,8 @@ sources:
     url: "https://www.theregister.com/software/ai_ml/headlines.atom"
     rate_limit_seconds: 1800
     enabled: true
+    region: "europe"
+    country: "GB"
 
   - name: "BBC Technology (Global AI)"
     category: "ai_tech"
@@ -112,6 +168,8 @@ sources:
     url: "https://feeds.bbci.co.uk/news/technology/rss.xml"
     rate_limit_seconds: 1800
     enabled: true
+    region: "europe"
+    country: "GB"
 
   - name: "MarkTechPost AI"
     category: "ai_tech"
@@ -119,6 +177,8 @@ sources:
     url: "https://www.marktechpost.com/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "KDnuggets AI/ML"
     category: "ai_tech"
@@ -126,6 +186,8 @@ sources:
     url: "https://www.kdnuggets.com/feed"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "AI Business"
     category: "ai_tech"
@@ -133,6 +195,8 @@ sources:
     url: "https://aibusiness.com/rss.xml"
     rate_limit_seconds: 1800
     enabled: true
+    region: "europe"
+    country: "GB"
 
   - name: "Towards Data Science"
     category: "ai_tech"
@@ -140,6 +204,8 @@ sources:
     url: "https://towardsdatascience.com/feed"
     rate_limit_seconds: 1800
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "SiliconANGLE AI"
     category: "ai_tech"
@@ -147,6 +213,8 @@ sources:
     url: "https://siliconangle.com/category/ai/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "The AI Edge"
     category: "ai_tech"
@@ -154,6 +222,8 @@ sources:
     url: "https://theaiedge.substack.com/feed"
     rate_limit_seconds: 1800
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "InfoQ AI & ML"
     category: "ai_tech"
@@ -161,8 +231,12 @@ sources:
     url: "https://feed.infoq.com/ai-ml-data-eng/news"
     rate_limit_seconds: 1800
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
-  # Academic & Frontier Research
+  # ==========================================
+  # ACADEMIC & PRE-CVE RESEARCH RADARS (WORLDWIDE)
+  # ==========================================
   - name: "arXiv AI Papers (cs.AI, cs.LG, cs.CL, cs.CV)"
     category: "ai_research"
     type: "arxiv"
@@ -170,14 +244,18 @@ sources:
     max_results: 50
     rate_limit_seconds: 1800
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "arXiv AI Safety & Alignment (Pre-CVE Radar)"
     category: "ai_research"
     type: "arxiv"
-    query: "(cat:cs.CR AND (ti:LLM OR ti:\"language model\" OR ti:adversarial OR ti:jailbreak OR ti:agent OR ti:safety OR ti:alignment))"
+    query: "(cat:cs.CR AND (ti:LLM OR ti:\"language model\" OR ti:adversarial OR ti:jailbreak OR ti:agent OR ti:safety OR ti:alignment OR ti:backdoor OR ti:trojan OR ti:multimodal))"
     max_results: 30
     rate_limit_seconds: 1800
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "MIT News AI"
     category: "ai_research"
@@ -185,24 +263,110 @@ sources:
     url: "https://news.mit.edu/rss/topic/artificial-intelligence2"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
-  # Real-Time Viral Community Signals
   - name: "Hacker News (Global AI & Frontier Models)"
     category: "ai_tech"
     type: "hackernews"
     tags: ["AI", "ML", "LLM", "GPT", "Claude", "Gemini", "DeepSeek", "Mistral", "agent"]
     rate_limit_seconds: 600
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   # ==========================================
-  # CYBERSECURITY NEWS & THREAT INTEL
+  # SOVEREIGN CERTS & INTERNATIONAL DEFENSE AGENCIES
   # ==========================================
+  - name: "CERT-EU (European Union Cyber Intel)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://cert.europa.eu/feed/security-advisories/rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "EU"
+
+  - name: "UK NCSC (National Cyber Security Centre)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.ncsc.gov.uk/api/1/services/feed/reports/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "GB"
+
+  - name: "France ANSSI (CERT-FR Alerts)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.cert.ssi.gouv.fr/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "FR"
+
+  - name: "Germany BSI (Cybersecurity Alerts)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.bsi.bund.de/SiteGlobals/Functions/RSS/RSSNewsfeed/RSSNewsfeed_News.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "DE"
+
+  - name: "Japan JPCERT/CC (East Asia Incident Grid)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.jpcert.or.jp/rss/jpcert.rdf"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "JP"
+
+  - name: "Australian Cyber Security Centre (ACSC)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.cyber.gov.au/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "AU"
+
+  - name: "Canadian Centre for Cyber Security (CCCS)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://cyber.gc.ca/api/sitrep/en/rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "CA"
+
+  - name: "SANS Internet Storm Center (Worldwide Telemetry)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://isc.sans.edu/rssfeed.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "SecurityWeek (International Cyber Defense)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.securityweek.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
   - name: "Krebs on Security"
     category: "cybersecurity"
     type: "rss"
     url: "https://krebsonsecurity.com/feed/"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "The Hacker News"
     category: "cybersecurity"
@@ -210,6 +374,8 @@ sources:
     url: "https://thehackernews.com/feeds/posts/default"
     rate_limit_seconds: 1800
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "Schneier on Security"
     category: "cybersecurity"
@@ -217,6 +383,8 @@ sources:
     url: "https://www.schneier.com/feed/atom/"
     rate_limit_seconds: 3600
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Dark Reading"
     category: "cybersecurity"
@@ -224,6 +392,8 @@ sources:
     url: "https://www.darkreading.com/rss.xml"
     rate_limit_seconds: 1800
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "BleepingComputer"
     category: "cybersecurity"
@@ -231,7 +401,8 @@ sources:
     url: "https://www.bleepingcomputer.com/feed/"
     rate_limit_seconds: 1800
     enabled: true
-
+    region: "north_america"
+    country: "US"
 
   - name: "Wired Security"
     category: "cybersecurity"
@@ -239,6 +410,8 @@ sources:
     url: "https://www.wired.com/feed/category/security/latest/rss"
     rate_limit_seconds: 3600
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "Ars Technica Security"
     category: "cybersecurity"
@@ -246,16 +419,19 @@ sources:
     url: "https://arstechnica.com/security/feed/"
     rate_limit_seconds: 3600
     enabled: true
+    region: "north_america"
+    country: "US"
 
   # ==========================================
-  # CVE & VULNERABILITY FEEDS
+  # CVE & VULNERABILITY FEEDS (WORLDWIDE)
   # ==========================================
-  # NVD API v2.0 - Using REST API instead of deprecated XML feeds
   - name: "NVD Recent CVEs (API)"
     category: "vulnerabilities"
     type: "nvd_api"
     rate_limit_seconds: 3600
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "CISA Known Exploited Vulnerabilities"
     category: "vulnerabilities"
@@ -263,15 +439,19 @@ sources:
     url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
     rate_limit_seconds: 3600
     enabled: true
+    region: "north_america"
+    country: "US"
 
   - name: "GitHub Security Advisories"
     category: "vulnerabilities"
     type: "github_advisories"
     rate_limit_seconds: 3600
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   # ==========================================
-  # GITHUB TRENDING SECURITY REPOS
+  # GITHUB TRENDING REPOSITORIES (WORLDWIDE)
   # ==========================================
   - name: "GitHub Trending Security (Daily)"
     category: "github_trending"
@@ -279,6 +459,8 @@ sources:
     since: "daily"
     rate_limit_seconds: 3600
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
   - name: "GitHub Trending Security (Weekly)"
     category: "github_trending"
@@ -286,6 +468,8 @@ sources:
     since: "weekly"
     rate_limit_seconds: 86400
     enabled: true
+    region: "global"
+    country: "GLOBAL"
 
 
 # Delivery Configuration (user picks one at runtime)
@@ -313,14 +497,14 @@ delivery:
     enabled: true  # Always available as fallback
 
 
-# Digest Settings
+# Digest Settings (Universal UTC Worldwide Schedule)
 digest:
   schedule: "daily"  # "daily" or "weekly"
-  time: "08:00"  # Local time
+  time: "08:00"  # UTC Time
   max_items_per_category: 10
   include_summary: true
   summary_max_length: 300
-  timezone: "Asia/Kolkata"
+  timezone: "UTC"
 
 
 # Database

@@ -62,3 +62,42 @@ async def test_entries_sorting():
         q_data = resp_q.json()
         assert "queue_size" in q_data
         assert "is_processing" in q_data
+
+
+@pytest.mark.asyncio
+async def test_entries_regional_filtering():
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Query Europe region
+        resp_eu = await client.get("/api/entries?region=europe&limit=5")
+        assert resp_eu.status_code == 200
+        data_eu = resp_eu.json()
+        assert "entries" in data_eu
+        for e in data_eu["entries"]:
+            assert e.get("region") == "europe"
+
+        # Query North America region
+        resp_na = await client.get("/api/entries?region=north_america&limit=5")
+        assert resp_na.status_code == 200
+        data_na = resp_na.json()
+        assert "entries" in data_na
+        for e in data_na["entries"]:
+            assert e.get("region") == "north_america"
+
+
+@pytest.mark.asyncio
+async def test_sources_worldwide_coverage():
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/sources")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "sources" in data
+        sources = data["sources"]
+        regions = {s.get("config", {}).get("region") for s in sources}
+        assert "europe" in regions
+        assert "north_america" in regions
+        assert "apac" in regions
+        assert "global" in regions

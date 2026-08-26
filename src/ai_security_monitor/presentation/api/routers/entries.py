@@ -25,6 +25,7 @@ async def list_entries(
     high_velocity: bool | None = Query(False),
     watchlist_only: bool | None = Query(False),
     hours: int | None = Query(None),
+    region: str | None = Query(None),
     sort_by: str = Query("newest"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0)
@@ -43,6 +44,9 @@ async def list_entries(
 
     async with SqlAlchemyUnitOfWork() as uow:
         active_rules = await uow.watchlist.list(enabled_only=True)
+        all_sources = await uow.sources.list()
+        sources_map = {str(s.id): s for s in all_sources}
+
         wl_keywords = None
         if watchlist_only:
             wl_keywords = [kw for r in active_rules for kw in r.keywords if kw.strip()]
@@ -56,7 +60,8 @@ async def list_entries(
             pre_cve_only=pre_cve or False,
             high_velocity_only=high_velocity or False,
             since=since,
-            sort_by=sort_by
+            sort_by=sort_by,
+            region=region if region and region != "all" else None
         )
         pagination = PaginationParams(limit=limit, offset=offset)
 
@@ -68,6 +73,11 @@ async def list_entries(
             matched_rules = [r.name for r in active_rules if r.matches(e)]
             if watchlist_only and not matched_rules:
                 continue
+
+            src = sources_map.get(str(e.source_id))
+            src_name = src.name if src else "Verified Intel"
+            src_region = (src.config.get("region") if src and src.config else None) or (e.metadata.get("region") if e.metadata else None) or "global"
+            src_country = (src.config.get("country") if src and src.config else None) or (e.metadata.get("country") if e.metadata else None) or "GLOBAL"
 
             analysis_dict = None
             if e.analysis:
@@ -88,6 +98,9 @@ async def list_entries(
             serialized_entries.append({
                 "id": str(e.id),
                 "source_id": str(e.source_id),
+                "source_name": src_name,
+                "region": src_region,
+                "country": src_country,
                 "title": e.title,
                 "url": e.url,
                 "content_hash": e.content_hash,

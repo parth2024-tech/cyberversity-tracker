@@ -37,7 +37,8 @@ async def list_sources(all_sources: bool = True):
                     "rate_limit_seconds": s.rate_limit_seconds,
                     "last_fetched_at": s.last_fetched_at.isoformat() if s.last_fetched_at else None,
                     "last_status": s.last_status.value if s.last_status else None,
-                    "last_entries_new": s.last_entries_new
+                    "last_entries_new": s.last_entries_new,
+                    "config": s.config
                 } for s in sources
             ]
         }

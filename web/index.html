@@ -451,7 +451,7 @@
         <!-- Sources Modal Trigger -->
         <button onclick="openSourcesModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
           <i data-lucide="radio" class="w-3.5 h-3.5 text-slate-400"></i>
-          <span>Feeds (<span id="active-sources-count" class="text-sky-300">38</span>)</span>
+          <span>Global Feeds (<span id="active-sources-count" class="text-sky-300">50</span>)</span>
         </button>
 
         <!-- Telegram Trigger -->
@@ -474,13 +474,13 @@
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-sky-400"></span>
           <h2 class="text-xs font-mono font-semibold tracking-wider uppercase text-slate-200 flex items-center gap-2">
-            <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> Global Threat Telemetry Matrix
+            <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> Planetary Threat Defense Radar
           </h2>
         </div>
         <div class="flex items-center gap-3 text-xs font-mono">
           <span class="text-slate-400 hidden sm:inline flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span id="globe-beacons-count" class="text-slate-200 font-semibold">38</span> GLOBAL BEACONS ACTIVE
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="globe-beacons-count" class="text-slate-200 font-semibold">50+</span> WORLD DEFENSE NODES (6 CONTINENTS)
           </span>
           <button onclick="toggle3DGlobe()" class="text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.16] transition text-[11px]">Minimize</button>
         </div>
@@ -488,12 +488,18 @@
 
       <div class="relative w-full h-64 sm:h-80 flex items-center justify-center cursor-grab active:cursor-grabbing" id="three-globe-viewport">
         <!-- Three.js Canvas mounts here -->
-        <div class="absolute top-3 left-3 z-10 pointer-events-none space-y-1 font-mono text-[10px] text-slate-400 bg-slate-950/70 p-2.5 rounded-xl border border-white/[0.08] backdrop-blur-md">
-          <p class="text-sky-300 font-semibold tracking-wide">SPATIAL RADAR: 360° ACTIVE</p>
-          <p>FPS: <span id="globe-fps" class="text-emerald-300">60</span> | ORBIT: <span class="text-indigo-300">0.2 rad/s</span></p>
+        <div class="absolute top-3 left-3 z-10 pointer-events-none space-y-1 font-mono text-[10px] text-slate-400 bg-slate-950/80 p-2.5 rounded-xl border border-white/[0.08] backdrop-blur-md">
+          <p class="text-sky-300 font-semibold tracking-wide flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 24H PLANETARY RADAR ACTIVE</p>
+          <p>SYNC: <span class="text-sky-300 font-medium">UTC</span> | SENSORS: <span id="globe-fps" class="text-emerald-300">50 SENSORS</span> | ROTATION: <span class="text-indigo-300">0.2 rad/s</span></p>
         </div>
 
-        <div class="absolute bottom-3 right-3 z-10 pointer-events-none font-mono text-[10px] text-slate-400 bg-slate-950/70 px-3 py-1.5 rounded-xl border border-white/[0.08] backdrop-blur-md flex items-center gap-2">
+        <div class="absolute bottom-3 left-3 z-10 pointer-events-none font-mono text-[10px] text-slate-300 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-white/[0.08] backdrop-blur-md hidden sm:flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+          <span class="text-slate-400">DEFENSE GRID:</span>
+          <span id="globe-active-station" class="text-sky-300 font-medium">🇯🇵 Tokyo • 🇬🇧 London • 🇪🇺 Brussels • 🇺🇸 Washington • 🇦🇺 Canberra</span>
+        </div>
+
+        <div class="absolute bottom-3 right-3 z-10 pointer-events-none font-mono text-[10px] text-slate-400 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-white/[0.08] backdrop-blur-md flex items-center gap-2">
           <i data-lucide="mouse-pointer" class="w-3 h-3 text-sky-400"></i>
           <span>Drag to rotate • Hover to pause</span>
         </div>
@@ -642,6 +648,21 @@
               <button onclick="exportStixJson()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export to STIX 2.1 Threat Intel format">
                 <i data-lucide="shield" class="w-3 h-3 text-indigo-400"></i> Export STIX
               </button>
+            </div>
+          </div>
+
+          <!-- Geographic Worldwide Threat Theatre Selector -->
+          <div class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.06] flex-wrap text-xs font-mono">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[10px] text-sky-400 font-medium uppercase mr-1 flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3 text-sky-400"></i> THEATRE:</span>
+              <button onclick="setRegionFilter('all')" id="region-all" class="region-pill px-2.5 py-1 rounded-md bg-sky-500/15 text-sky-200 border border-sky-500/35 font-medium transition">🌍 ALL THEATRES (50+)</button>
+              <button onclick="setRegionFilter('europe')" id="region-europe" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇪🇺 EUROPE & UK</button>
+              <button onclick="setRegionFilter('north_america')" id="region-north_america" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇺🇸 NORTH AMERICA</button>
+              <button onclick="setRegionFilter('apac')" id="region-apac" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇯🇵 ASIA-PACIFIC</button>
+              <button onclick="setRegionFilter('global')" id="region-global" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🌐 GLOBAL RADARS</button>
+            </div>
+            <div class="text-[10px] font-mono text-slate-500">
+              UTC SYNCHRONIZED
             </div>
           </div>
 
@@ -1288,6 +1309,24 @@
       });
     }
 
+    // Geographic Worldwide Theatre Filter
+    let currentRegion = 'all';
+
+    function setRegionFilter(reg) {
+      playBeep('click');
+      currentRegion = reg;
+      document.querySelectorAll('.region-pill').forEach(btn => {
+        btn.classList.remove('bg-sky-500/15', 'text-sky-200', 'border-sky-500/35', 'font-medium');
+        btn.classList.add('bg-white/[0.02]', 'text-slate-400', 'border-white/[0.06]');
+      });
+      const activeBtn = document.getElementById(`region-${reg}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white/[0.02]', 'text-slate-400', 'border-white/[0.06]');
+        activeBtn.classList.add('bg-sky-500/15', 'text-sky-200', 'border-sky-500/35', 'font-medium');
+      }
+      loadFeed(true);
+    }
+
     // Load Live Intelligence Feed
     async function loadFeed(reset = false) {
       if (reset) {
@@ -1320,6 +1359,10 @@
           url = `/api/entries?limit=150&offset=0&sort_by=${sortMode}`;
         } else if (currentCategory !== 'all') {
           url += `&category=${currentCategory}`;
+        }
+
+        if (currentRegion && currentRegion !== 'all') {
+          url += `&region=${currentRegion}`;
         }
 
         if (currentTimeHorizon > 0) {
@@ -1413,6 +1456,18 @@
       const badgeStyle = categoryBadgeColors[entry.category] || 'text-slate-300 border-white/10 bg-white/[0.04]';
       const pubDate = entry.published_at ? entry.published_at.slice(0, 16).replace('T', ' ') : 'Recent';
 
+      // Sovereign Country Flags & Regional Intelligence Badging
+      const countryFlags = {
+        'US': '🇺🇸', 'CA': '🇨🇦', 'GB': '🇬🇧', 'EU': '🇪🇺',
+        'FR': '🇫🇷', 'DE': '🇩🇪', 'JP': '🇯🇵', 'AU': '🇦🇺',
+        'SG': '🇸🇬', 'CH': '🇨🇭', 'IN': '🇮🇳', 'IL': '🇮🇱',
+        'KR': '🇰🇷', 'NL': '🇳🇱', 'SE': '🇸🇪', 'FI': '🇫🇮',
+        'BR': '🇧🇷', 'ZA': '🇿🇦', 'GLOBAL': '🌐'
+      };
+      const countryCode = entry.country || (entry.metadata && entry.metadata.country) || 'GLOBAL';
+      const flagEmoji = countryFlags[countryCode] || '🌐';
+      const sourceDisplayName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Global Intel');
+
       // Framework Ecosystem Badges
       const ecoPills = ecosystem.slice(0, 3).map(e => `
         <span class="px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.08] text-[10px] font-mono">
@@ -1446,7 +1501,10 @@
               </span>
             `).join('')}
 
-            <span class="text-slate-400 text-xs font-medium">${entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Intelligence Feed')}</span>
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-slate-300 text-[11px] font-mono">
+              <span>${flagEmoji}</span>
+              <span class="font-medium text-slate-200">${sourceDisplayName}</span>
+            </span>
           </div>
 
           <div class="flex items-center gap-2">
@@ -2022,21 +2080,36 @@
         const res = await fetch('/api/sources');
         const data = await res.json();
         
-        list.innerHTML = (data.sources || []).map(s => `
-          <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between border border-white/[0.06]">
-            <div>
-              <div class="flex items-center gap-2">
-                <h4 class="text-sm font-semibold text-white">${s.name}</h4>
-                <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/[0.04] border border-white/[0.08] text-slate-400">${s.type}</span>
+        const countryFlags = {
+          'US': '🇺🇸', 'CA': '🇨🇦', 'GB': '🇬🇧', 'EU': '🇪🇺',
+          'FR': '🇫🇷', 'DE': '🇩🇪', 'JP': '🇯🇵', 'AU': '🇦🇺',
+          'SG': '🇸🇬', 'CH': '🇨🇭', 'IN': '🇮🇳', 'IL': '🇮🇱',
+          'KR': '🇰🇷', 'NL': '🇳🇱', 'SE': '🇸🇪', 'FI': '🇫🇮',
+          'BR': '🇧🇷', 'ZA': '🇿🇦', 'GLOBAL': '🌐'
+        };
+
+        list.innerHTML = (data.sources || []).map(s => {
+          const country = (s.config && s.config.country) || 'GLOBAL';
+          const region = (s.config && s.config.region) || 'global';
+          const flag = countryFlags[country] || '🌐';
+          return `
+            <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between border border-white/[0.06]">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-semibold text-white">${s.name}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.04] border border-white/[0.08] text-slate-300">${flag} ${country}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-sky-500/10 border border-sky-500/25 text-sky-300 font-medium">${region.replace('_', ' ')}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/[0.04] border border-white/[0.08] text-slate-400">${s.type}</span>
+                </div>
+                <p class="text-xs text-slate-400 font-mono mt-1">Category: <span class="text-slate-300">${s.category}</span> • Rate: ${s.rate_limit_seconds}s ${s.url ? `• <a href="${s.url}" target="_blank" class="text-sky-400 hover:underline">Feed URL</a>` : ''}</p>
               </div>
-              <p class="text-xs text-slate-400 font-mono mt-0.5">Category: <span class="text-slate-300">${s.category}</span> • Rate: ${s.rate_limit_seconds}s</p>
+              <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+                <input type="checkbox" onchange="toggleSource('${s.id}', this.checked)" class="sr-only peer" ${s.enabled ? 'checked' : ''}>
+                <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+              </label>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" onchange="toggleSource('${s.id}', this.checked)" class="sr-only peer" ${s.enabled ? 'checked' : ''}>
-              <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
-            </label>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } catch (e) {
         list.innerHTML = `<p class="text-center text-rose-400 text-xs py-4">Failed to load sources.</p>`;
       }
@@ -2286,26 +2359,55 @@
       globeRing.rotation.x = Math.PI / 2.8;
       globeScene.add(globeRing);
 
-      // 38 Worldwide AI & Threat Intelligence Beacon Nodes
-      const pointCount = 38;
+      // 24 Sovereign Threat Defense Stations (True Planetary Lat/Lon Coordinates)
+      const WORLD_STATIONS = [
+        { name: 'Tokyo Cyber Command', country: 'JP', flag: '🇯🇵', lat: 35.6762, lon: 139.6503, color: 0x38bdf8 },
+        { name: 'London NCSC Node', country: 'GB', flag: '🇬🇧', lat: 51.5074, lon: -0.1278, color: 0x818cf8 },
+        { name: 'Paris ANSSI / Mistral', country: 'FR', flag: '🇫🇷', lat: 48.8566, lon: 2.3522, color: 0x34d399 },
+        { name: 'Berlin BSI Station', country: 'DE', flag: '🇩🇪', lat: 52.5200, lon: 13.4050, color: 0xfbbf24 },
+        { name: 'Brussels CERT-EU / AI Office', country: 'EU', flag: '🇪🇺', lat: 50.8503, lon: 4.3517, color: 0x38bdf8 },
+        { name: 'Washington DC CISA / NIST', country: 'US', flag: '🇺🇸', lat: 38.9072, lon: -77.0369, color: 0xfb7185 },
+        { name: 'Canberra ACSC Defense', country: 'AU', flag: '🇦🇺', lat: -35.2809, lon: 149.1300, color: 0x34d399 },
+        { name: 'Ottawa CCCS Gateway', country: 'CA', flag: '🇨🇦', lat: 45.4215, lon: -75.6972, color: 0x818cf8 },
+        { name: 'Singapore SingCERT', country: 'SG', flag: '🇸🇬', lat: 1.3521, lon: 103.8198, color: 0x38bdf8 },
+        { name: 'Zurich ETH AI Safety Lab', country: 'CH', flag: '🇨🇭', lat: 47.3769, lon: 8.5417, color: 0xfbbf24 },
+        { name: 'Sydney Pacific Radar', country: 'AU', flag: '🇦🇺', lat: -33.8688, lon: 151.2093, color: 0x34d399 },
+        { name: 'Bengaluru AI Cyber Hub', country: 'IN', flag: '🇮🇳', lat: 12.9716, lon: 77.5946, color: 0x38bdf8 },
+        { name: 'Tel Aviv Threat Intel', country: 'IL', flag: '🇮🇱', lat: 32.0853, lon: 34.7818, color: 0xfb7185 },
+        { name: 'Seoul East Asia Defense', country: 'KR', flag: '🇰🇷', lat: 37.5665, lon: 126.9780, color: 0x38bdf8 },
+        { name: 'San Francisco Frontier AI Grid', country: 'US', flag: '🇺🇸', lat: 37.7749, lon: -122.4194, color: 0x818cf8 },
+        { name: 'New York Financial Telemetry', country: 'US', flag: '🇺🇸', lat: 40.7128, lon: -74.0060, color: 0xfb7185 },
+        { name: 'Toronto Vector AI Hub', country: 'CA', flag: '🇨🇦', lat: 43.6532, lon: -79.3832, color: 0x818cf8 },
+        { name: 'Amsterdam AMS-IX Cyber Node', country: 'NL', flag: '🇳🇱', lat: 52.3676, lon: 4.9041, color: 0x34d399 },
+        { name: 'Stockholm Nordic Defense', country: 'SE', flag: '🇸🇪', lat: 59.3293, lon: 18.0686, color: 0x38bdf8 },
+        { name: 'Helsinki Hybrid CoE', country: 'FI', flag: '🇫🇮', lat: 60.1699, lon: 24.9384, color: 0x38bdf8 },
+        { name: 'São Paulo Latin America Node', country: 'BR', flag: '🇧🇷', lat: -23.5505, lon: -46.6333, color: 0xfbbf24 },
+        { name: 'Cape Town Africa Defense', country: 'ZA', flag: '🇿🇦', lat: -33.9249, lon: 18.4241, color: 0x34d399 },
+        { name: 'Oxford AI Governance', country: 'GB', flag: '🇬🇧', lat: 51.7520, lon: -1.2577, color: 0x818cf8 },
+        { name: 'Cambridge AI Safety Center', country: 'GB', flag: '🇬🇧', lat: 52.2053, lon: 0.1218, color: 0x38bdf8 }
+      ];
+
+      function geoToVector3(lat, lon, radius) {
+        const phi = (90 - lat) * (Math.PI / 180);
+        const theta = (lon + 180) * (Math.PI / 180);
+        const x = -(radius * Math.sin(phi) * Math.cos(theta));
+        const z = (radius * Math.sin(phi) * Math.sin(theta));
+        const y = (radius * Math.cos(phi));
+        return new THREE.Vector3(x, y, z);
+      }
+
+      const pointCount = WORLD_STATIONS.length;
       const pointPositions = new Float32Array(pointCount * 3);
       const pointColors = new Float32Array(pointCount * 3);
-      const colorCyan = new THREE.Color(0x38bdf8);   // Celestial Azure
-      const colorAmber = new THREE.Color(0xfbbf24);  // Champagne Gold
-      const colorRed = new THREE.Color(0xfb7185);    // Damask Rose
-      const colorGreen = new THREE.Color(0x34d399);  // Nordic Mint
 
       for (let i = 0; i < pointCount; i++) {
-        const phi = Math.acos(-1 + (2 * i) / pointCount);
-        const theta = Math.sqrt(pointCount * Math.PI) * phi;
-        const r = 1.62;
+        const st = WORLD_STATIONS[i];
+        const v = geoToVector3(st.lat, st.lon, 1.62);
+        pointPositions[i * 3] = v.x;
+        pointPositions[i * 3 + 1] = v.y;
+        pointPositions[i * 3 + 2] = v.z;
 
-        pointPositions[i * 3] = r * Math.cos(theta) * Math.sin(phi);
-        pointPositions[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
-        pointPositions[i * 3 + 2] = r * Math.cos(phi);
-
-        const choice = i % 4;
-        const c = choice === 0 ? colorCyan : choice === 1 ? colorRed : choice === 2 ? colorAmber : colorGreen;
+        const c = new THREE.Color(st.color);
         pointColors[i * 3] = c.r;
         pointColors[i * 3 + 1] = c.g;
         pointColors[i * 3 + 2] = c.b;
@@ -2373,6 +2475,19 @@
 
         globeRenderer.render(globeScene, globeCamera);
       }
+
+      // Cycle active planetary defense stations in HUD
+      let stationIdx = 0;
+      setInterval(() => {
+        const el = document.getElementById('globe-active-station');
+        if (el && WORLD_STATIONS.length) {
+          const st1 = WORLD_STATIONS[stationIdx % WORLD_STATIONS.length];
+          const st2 = WORLD_STATIONS[(stationIdx + 1) % WORLD_STATIONS.length];
+          const st3 = WORLD_STATIONS[(stationIdx + 2) % WORLD_STATIONS.length];
+          el.innerHTML = `${st1.flag} ${st1.name} • ${st2.flag} ${st2.name} • ${st3.flag} ${st3.name}`;
+          stationIdx = (stationIdx + 1) % WORLD_STATIONS.length;
+        }
+      }, 3500);
 
       animateGlobe();
     } catch (e) {

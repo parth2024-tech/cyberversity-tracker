@@ -258,6 +258,11 @@ class SQLAlchemyEntryRepository(EntryRepository):
         if filters.unanalyzed_only:
             stmt = stmt.outerjoin(AnalysisModelDB).where(AnalysisModelDB.entry_id.is_(None))
 
+        if filters.region and filters.region != "all":
+            stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id).where(
+                SourceModel.config.like(f'%"region": "{filters.region}"%')
+            )
+
         return stmt
 
     def _model_to_entity(self, model: EntryModel) -> Entry:

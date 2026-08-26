@@ -22,6 +22,8 @@ class SourceConfig(BaseModel):
     query: str | None = Field(default=None, description="Query parameter (for arXiv)")
     rate_limit_seconds: int = Field(default=3600, description="Rate limit in seconds")
     enabled: bool = Field(default=True, description="Whether source is active")
+    region: str = Field(default="global", description="Geographic region (global, europe, apac, north_america)")
+    country: str = Field(default="GLOBAL", description="Country ISO or flag code")
     config: dict[str, Any] = Field(default_factory=dict, description="Type-specific extra config")
 
     @field_validator("category")
