@@ -17,25 +17,23 @@ class LLMAnalyzer(BaseAnalyzer):
 
     def __init__(self, config: dict | None = None):
         super().__init__(config)
-        self.provider = config.get("provider", settings.analyzer.default_model) if config else settings.analyzer.default_model
-        self.max_tokens = config.get("max_tokens", settings.analyzer.max_tokens) if config else settings.analyzer.max_tokens
-        self.temperature = config.get("temperature", settings.analyzer.temperature) if config else settings.analyzer.temperature
+        cfg = config or {}
+        self.provider = cfg.get("provider") or ("groq" if (settings.analyzer.groq_api_key and cfg.get("provider") == "groq") else "ollama")
+        self.max_tokens = cfg.get("max_tokens", 250)
+        self.temperature = cfg.get("temperature", settings.analyzer.temperature)
 
-        # Determine which backend to use
-        if self.provider in ("ollama", "heuristic"):
-            self._init_ollama()
-        elif self.provider == "groq":
+        # Route to Groq if explicitly requested, otherwise use local Ollama
+        if self.provider == "groq":
             self._init_groq()
-        elif self.provider in ("local", "local_llm", "gateway", "auto/offline"):
-            self._init_gateway()
         else:
-            # Default to gateway for unknown providers
-            self._init_gateway()
+            self._init_ollama()
 
     def _init_ollama(self):
         """Initialize Ollama client."""
-        self.ollama_host = settings.analyzer.ollama_host
-        self.ollama_model = settings.analyzer.ollama_model
+        cfg = self.config or {}
+        self.ollama_host = cfg.get("ollama_host", settings.analyzer.ollama_host)
+        # Use qwen2:0.5b (138 tokens/sec on RTX 3050 GPU) or specified model
+        self.ollama_model = cfg.get("ollama_model") or "qwen2:0.5b"
         self._use_gateway = False
 
     def _init_groq(self):
@@ -115,7 +113,7 @@ JSON only, no extra text."""
             },
         }
 
-        async with httpx.AsyncClient(timeout=45) as client:
+        async with httpx.AsyncClient(timeout=15) as client:
             try:
                 response = await client.post(f"{self.ollama_host}/api/generate", json=payload)
                 response.raise_for_status()

@@ -233,6 +233,45 @@ class MonitorService:
 
             recent_logs = await uow.fetch_logs.get_recent(hours=24, limit=15)
 
+            # Compute real affected AI framework exposures from database
+            framework_exposure = []
+            try:
+                import json
+                from sqlalchemy import text
+                stmt = text(
+                    "SELECT affected_ecosystem, blast_radius_score "
+                    "FROM entry_analysis WHERE affected_ecosystem IS NOT NULL AND affected_ecosystem != '[]'"
+                )
+                raw_rows = (await uow.session.execute(stmt)).fetchall()
+                f_stats: dict[str, dict[str, float]] = {}
+                for eco_json, blast in raw_rows:
+                    try:
+                        ecos = json.loads(eco_json) if isinstance(eco_json, str) else eco_json
+                        if isinstance(ecos, list):
+                            for e in ecos:
+                                e_clean = str(e).strip()
+                                if not e_clean:
+                                    continue
+                                if e_clean not in f_stats:
+                                    f_stats[e_clean] = {"count": 0, "total_blast": 0}
+                                f_stats[e_clean]["count"] += 1
+                                f_stats[e_clean]["total_blast"] += (blast or 0)
+                    except Exception:
+                        pass
+
+                for name, data in sorted(f_stats.items(), key=lambda x: x[1]["count"], reverse=True)[:5]:
+                    cnt = int(data["count"])
+                    avg_b = round(data["total_blast"] / cnt, 1) if cnt > 0 else 0.0
+                    risk_label = "HIGH RISK" if avg_b >= 75 else ("ELEVATED" if avg_b >= 60 else ("MODERATE" if avg_b >= 35 else "MONITORED"))
+                    framework_exposure.append({
+                        "name": name,
+                        "count": cnt,
+                        "avg_blast": avg_b,
+                        "risk_level": risk_label
+                    })
+            except Exception as e:
+                pass
+
             return {
                 "total_entries": total_entries,
                 "total_sources": total_sources,
@@ -240,6 +279,7 @@ class MonitorService:
                 "pre_cve_warnings": pre_cve_warnings,
                 "watchlist_rules": watchlist_rules,
                 "by_category": cats,
+                "framework_exposure": framework_exposure,
                 "recent_fetches": [
                     {
                         "source_name": log_item.source_name,

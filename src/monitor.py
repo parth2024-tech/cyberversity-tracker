@@ -71,10 +71,10 @@ class AISecurityMonitor:
 
     def _should_fetch(self, source: dict) -> bool:
         """Check if source should be fetched based on rate limit."""
-        if not source.get('last_fetched'):
+        if not source.get('last_fetched_at'):
             return True
 
-        last_fetch = datetime.fromisoformat(source['last_fetched'].replace('Z', '+00:00'))
+        last_fetch = datetime.fromisoformat(source['last_fetched_at'].replace('Z', '+00:00'))
         rate_limit = timedelta(seconds=source.get('rate_limit_seconds', 3600))
         return datetime.now() - last_fetch >= rate_limit
 
@@ -99,7 +99,7 @@ class AISecurityMonitor:
 
             # Get fetcher
             fetcher_kwargs = {'rate_limit_seconds': source.get('rate_limit_seconds', 3600)}
-            source_config = source.get('config_json')
+            source_config = source.get('config')
             if source_config:
                 import json
                 fetcher_kwargs.update(json.loads(source_config))

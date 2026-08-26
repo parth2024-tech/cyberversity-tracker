@@ -226,13 +226,22 @@
           <textarea id="triage-content" rows="4" placeholder="Paste vulnerability description, proof of concept, or academic paper abstract here..." class="w-full glass-input rounded-xl px-4 py-2.5 text-xs font-mono focus:border-cyber-purple"></textarea>
         </div>
 
-        <div class="flex items-center justify-between gap-4">
-          <button onclick="fillTriageSample()" class="text-xs font-mono text-cyber-purple hover:underline flex items-center gap-1">
-            <i data-lucide="file-code" class="w-3.5 h-3.5"></i> Insert Sample Zero-Day Advisory
-          </button>
-          <button id="run-triage-btn" onclick="runSandboxTriage()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-purple-500/25 transition">
-            <i data-lucide="zap" class="w-4 h-4"></i> Run AI Triage Engine
-          </button>
+        <div class="flex items-center justify-between gap-4 flex-wrap pt-1">
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-mono text-gray-400 uppercase font-semibold">Engine:</label>
+            <select id="sandbox-model-select" class="glass-input rounded-xl px-3 py-1.5 text-xs font-mono text-cyan-300">
+              <option value="ollama">🦙 Local Ollama (llama3.1:8b)</option>
+              <option value="heuristic">⚡ Ultra-Fast Heuristic Engine</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="fillTriageSample()" class="text-xs font-mono text-cyber-purple hover:underline flex items-center gap-1">
+              <i data-lucide="file-code" class="w-3.5 h-3.5"></i> Sample Zero-Day
+            </button>
+            <button id="run-triage-btn" onclick="runSandboxTriage()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-purple-500/25 transition">
+              <i data-lucide="zap" class="w-4 h-4"></i> Run AI Triage Engine
+            </button>
+          </div>
         </div>
 
         <!-- Sandbox Results Box -->
@@ -727,46 +736,9 @@
             <span class="text-[10px] font-mono text-cyber-muted uppercase">BLAST MATRIX</span>
           </div>
 
-          <div class="space-y-2 text-xs font-mono">
-            <div>
-              <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-gray-300">PyTorch & TorchScript</span>
-                <span class="text-cyber-red font-bold">HIGH RISK</span>
-              </div>
-              <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
-                <div class="bg-gradient-to-r from-orange-500 to-red-500 h-1.5 rounded-full" style="width: 78%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-gray-300">LangChain & LlamaIndex</span>
-                <span class="text-cyber-amber font-bold">ELEVATED</span>
-              </div>
-              <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
-                <div class="bg-gradient-to-r from-yellow-500 to-amber-500 h-1.5 rounded-full" style="width: 65%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-gray-300">Ollama & vLLM Serving</span>
-                <span class="text-cyber-cyan font-bold">MODERATE</span>
-              </div>
-              <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-cyan-500 h-1.5 rounded-full" style="width: 52%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-gray-300">HuggingFace Transformers</span>
-                <span class="text-cyber-purple font-bold">MONITORED</span>
-              </div>
-              <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
-                <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full" style="width: 44%"></div>
-              </div>
-            </div>
+          <div id="framework-exposure-list" class="space-y-2.5 text-xs font-mono">
+            <!-- Dynamically populated from live SQLite analysis -->
+            <p class="text-cyber-muted text-center py-4 text-[11px]">Computing framework blast exposure...</p>
           </div>
         </div>
 
@@ -985,7 +957,21 @@
       ws.onopen = () => {
         console.log("WebSocket connected to Threat Radar");
         const statusEl = document.getElementById('connection-status');
-        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span> WS: STREAMING (<span id="ping-time">14ms</span>)`;
+        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span> WS: STREAMING (<span id="ping-time">0ms</span>)`;
+        
+        // Measure real network RTT latency every 4s
+        if (window._pingInterval) clearInterval(window._pingInterval);
+        window._pingInterval = setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping', timestamp: performance.now() }));
+          }
+        }, 4000);
+        // Initial ping immediately
+        setTimeout(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping', timestamp: performance.now() }));
+          }
+        }, 500);
       };
 
       ws.onmessage = (event) => {
@@ -998,6 +984,7 @@
       };
 
       ws.onclose = () => {
+        if (window._pingInterval) clearInterval(window._pingInterval);
         const statusEl = document.getElementById('connection-status');
         statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyber-red animate-pulse"></span> WS: RECONNECTING...`;
         setTimeout(initWebSocket, 3000);
@@ -1010,8 +997,14 @@
 
     // Handle incoming WebSocket messages
     function handleWebSocketMessage(msg) {
-      if (msg.type === 'connected') {
-        renderStats(msg.stats);
+      if (msg.type === 'pong') {
+        const pingTimeEl = document.getElementById('ping-time');
+        if (pingTimeEl && msg.timestamp) {
+          const rtt = Math.max(1, Math.round(performance.now() - msg.timestamp));
+          pingTimeEl.innerText = rtt + 'ms';
+        }
+      } else if (msg.type === 'connected') {
+        if (msg.stats) renderStats(msg.stats);
       } else if (msg.type === 'new_entry') {
         const entry = msg.data;
         showToastNotification(entry);
@@ -1124,6 +1117,9 @@
       if (!stats) return;
       document.getElementById('stat-total').innerText = (stats.total_entries || 0).toLocaleString();
       document.getElementById('active-sources-count').innerText = stats.total_sources || 24;
+      if (document.getElementById('active-watchlist-count') && stats.watchlist_rules !== undefined) {
+        document.getElementById('active-watchlist-count').innerText = stats.watchlist_rules;
+      }
       document.getElementById('stat-precve').innerText = (stats.pre_cve_warnings || 0).toLocaleString();
       document.getElementById('stat-highvel').innerText = (stats.high_velocity_entries || 0).toLocaleString();
 
@@ -1132,6 +1128,34 @@
       document.getElementById('stat-sec').innerText = ((cats.cybersecurity || 0) + (cats.vulnerabilities || 0)).toLocaleString();
 
       renderCategoryChart(cats);
+
+      // Render Dynamic AI Framework Exposure
+      const fwList = document.getElementById('framework-exposure-list');
+      if (fwList && stats.framework_exposure && stats.framework_exposure.length > 0) {
+        const riskColors = {
+          'HIGH RISK': { text: 'text-cyber-red', bar: 'from-orange-500 to-red-500' },
+          'ELEVATED': { text: 'text-cyber-amber', bar: 'from-yellow-500 to-amber-500' },
+          'MODERATE': { text: 'text-cyber-cyan', bar: 'from-blue-500 to-cyan-500' },
+          'MONITORED': { text: 'text-cyber-purple', bar: 'from-indigo-500 to-purple-500' }
+        };
+
+        fwList.innerHTML = stats.framework_exposure.map(fw => {
+          const cfg = riskColors[fw.risk_level] || riskColors['MONITORED'];
+          const pct = Math.min(100, Math.max(15, Math.round(fw.avg_blast || 50)));
+          return `
+            <div onclick="quickFilterFramework('${fw.name}')" class="cursor-pointer hover:bg-white/5 p-1.5 rounded-lg transition" title="Click to filter intelligence for ${fw.name}">
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-gray-300 font-bold flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3 text-cyber-cyan"></i>${fw.name} (${fw.count})</span>
+                <span class="${cfg.text} font-bold text-[10px]">${fw.risk_level}</span>
+              </div>
+              <div class="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-gradient-to-r ${cfg.bar} h-1.5 rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        lucide.createIcons();
+      }
 
       const fetchList = document.getElementById('recent-fetches-list');
       if (stats.recent_fetches && stats.recent_fetches.length > 0) {
@@ -1149,6 +1173,14 @@
       } else {
         fetchList.innerHTML = `<p class="text-cyber-muted text-center py-4">No recent sweep logs.</p>`;
       }
+    }
+
+    function quickFilterFramework(name) {
+      const input = document.getElementById('search-input');
+      if (input) input.value = name;
+      searchQuery = name;
+      playBeep('click');
+      loadFeed(true);
     }
 
     // Render Doughnut Chart
@@ -1464,6 +1496,7 @@
       const risk = analysis.risk_assessment || entry.risk_assessment || 'Evaluate exposure within your specific deployment environment.';
       const mitigation = analysis.mitigation || entry.mitigation || 'Apply upstream vendor updates and audit boundary access.';
 
+      const srcName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Intelligence Feed');
       const pubDate = entry.published_at ? entry.published_at.replace('T', ' ') : 'Unknown';
       const tags = (entry.tags || []).map(t => `<span class="px-2 py-1 rounded bg-cyber-black text-cyber-cyan border border-cyber-border text-xs font-mono">#${t}</span>`).join(' ');
       const ecoBadges = ecosystem.map(e => `<span class="px-2.5 py-1 rounded-lg bg-blue-950/80 text-blue-300 border border-blue-700/60 text-xs font-mono font-bold flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i>${e}</span>`).join(' ');
@@ -1481,7 +1514,7 @@
                   ⚠️ PRE-CVE ZERO-DAY WARNING
                 </span>
               ` : ''}
-              <span class="text-xs font-mono text-gray-400">${entry.source_name} • ${pubDate}</span>
+              <span class="text-xs font-mono text-gray-400">${srcName} • ${pubDate}</span>
             </div>
 
             <!-- Score Gauges -->
@@ -1541,7 +1574,7 @@
                 <g transform="translate(15, 15)">
                   <rect width="115" height="60" rx="10" fill="#0b1121" stroke="#00f0ff" stroke-width="1.5"/>
                   <text x="57" y="25" fill="#00f0ff" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle">SOURCE ORIGIN</text>
-                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${(entry.source_name || 'FEED').slice(0, 11)}</text>
+                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${srcName.slice(0, 12)}</text>
                 </g>
 
                 <!-- Node 2: Attack Technique -->
@@ -1868,27 +1901,31 @@
       playBeep('alert');
 
       try {
+        const model = (document.getElementById('sandbox-model-select') || {}).value || 'ollama';
         const res = await fetch('/api/analysis/quick', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, content, model: 'heuristic' })
+          body: JSON.stringify({ title, content, model })
         });
         const data = await res.json();
         
         resultsBox.classList.remove('hidden');
         resultsBox.innerHTML = `
-          <div class="flex items-center justify-between border-b border-cyber-border pb-2">
-            <span class="font-bold text-cyber-purple uppercase">Sandbox Analysis Result</span>
-            <div class="flex gap-2">
-              <span class="px-2 py-0.5 rounded bg-black border border-cyber-cyan text-cyber-cyan">VELOCITY: ${data.threat_velocity}/100</span>
-              <span class="px-2 py-0.5 rounded bg-black border border-cyber-red text-cyber-red">SEVERITY: ${data.severity_index}/100</span>
-              <span class="px-2 py-0.5 rounded bg-black border border-cyber-purple text-cyber-purple">BLAST: ${data.blast_radius_score}/100</span>
+          <div class="flex items-center justify-between border-b border-cyber-border pb-2 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-cyber-purple uppercase">Sandbox Analysis Result</span>
+              <span class="text-[10px] font-mono uppercase bg-purple-950/90 border border-cyber-purple text-purple-300 px-2 py-0.5 rounded font-bold">${data.model}</span>
+            </div>
+            <div class="flex gap-2 font-mono text-[10px]">
+              <span class="px-2 py-0.5 rounded bg-black border border-cyber-cyan text-cyber-cyan font-bold">VELOCITY: ${data.threat_velocity}/100</span>
+              <span class="px-2 py-0.5 rounded bg-black border border-cyber-red text-cyber-red font-bold">SEVERITY: ${data.severity_index}/100</span>
+              <span class="px-2 py-0.5 rounded bg-black border border-cyber-purple text-cyber-purple font-bold">BLAST: ${data.blast_radius_score}/100</span>
             </div>
           </div>
           <div><span class="text-cyber-cyan font-bold">ATTACK VECTOR:</span> ${data.attack_vector}</div>
-          <div><span class="text-cyber-red font-bold">RISK LEVEL:</span> ${data.risk_assessment}</div>
-          <div><span class="text-cyber-green font-bold">REMEDIATION:</span> ${data.mitigation}</div>
-          ${data.affected_ecosystem ? `<div><span class="text-blue-400 font-bold">AFFECTED STACKS:</span> ${data.affected_ecosystem.join(', ')}</div>` : ''}
+          <div><span class="text-cyber-red font-bold">RISK ASSESSMENT:</span> ${data.risk_assessment}</div>
+          <div><span class="text-cyber-green font-bold">MITIGATION:</span> ${data.mitigation}</div>
+          ${data.affected_ecosystem && data.affected_ecosystem.length ? `<div><span class="text-blue-400 font-bold">AFFECTED ECOSYSTEMS:</span> ${data.affected_ecosystem.join(', ')}</div>` : ''}
         `;
         playBeep('alert');
       } catch (e) {

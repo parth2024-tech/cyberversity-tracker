@@ -59,8 +59,17 @@ async def websocket_endpoint(websocket: WebSocket):
         }))
 
         while True:
-            # Keep-alive receive
-            _ = await websocket.receive_text()
+            # Handle incoming ping / messages
+            data_raw = await websocket.receive_text()
+            try:
+                msg = json.loads(data_raw)
+                if msg.get("type") == "ping":
+                    await websocket.send_text(json.dumps({
+                        "type": "pong",
+                        "timestamp": msg.get("timestamp")
+                    }))
+            except Exception:
+                pass
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception as e:

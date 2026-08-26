@@ -236,46 +236,56 @@ class Database:
 
     def update_source_fetch(self, source_id: int, success: bool, error: str = None):
         """Update source last fetch time and error count."""
+        from datetime import datetime
+        now = datetime.utcnow().isoformat()
         with self.transaction() as conn:
             if success:
                 conn.execute("""
-                    UPDATE sources SET last_fetched = CURRENT_TIMESTAMP, last_success = CURRENT_TIMESTAMP, error_count = 0
+                    UPDATE sources SET last_fetched_at = ?, last_status = 'success', error_count = 0
                     WHERE id = ?
-                """, (source_id,))
+                """, (now, source_id))
             else:
                 conn.execute("""
-                    UPDATE sources SET last_fetched = CURRENT_TIMESTAMP, error_count = error_count + 1
+                    UPDATE sources SET last_fetched_at = ?, last_status = 'error', error_count = error_count + 1
                     WHERE id = ?
-                """, (source_id,))
+                """, (now, source_id))
 
     def log_fetch(self, source_id: int, source_name: str, status: str,
                   entries_found: int = 0, entries_new: int = 0,
                   error: str = None, duration_ms: int = 0):
         """Log a fetch attempt."""
+        import uuid
+        from datetime import datetime
+        fetch_id = str(uuid.uuid4())
+        now = datetime.utcnow().isoformat()
         with self.transaction() as conn:
             conn.execute("""
-                INSERT INTO fetch_log (source_id, source_name, status, entries_found, entries_new, error_message, duration_ms)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (source_id, source_name, status, entries_found, entries_new, error, duration_ms))
+                INSERT INTO fetch_log (id, source_id, source_name, status, entries_new, entries_total, error_message, duration_ms, fetched_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (fetch_id, source_id, source_name, status, entries_new, entries_found, error, duration_ms, now))
 
     def add_entry(self, source_id: int, source_name: str, category: str,
                   title: str, url: str, content_hash: str,
                   summary: str = None, published_at: datetime = None,
                   tags: list[str] = None, metadata: dict = None) -> int | None:
         """Add an entry if not duplicate (by content_hash). Returns inserted entry ID or None."""
-        tags_json = json.dumps(tags) if tags else None
-        metadata_json = json.dumps(metadata) if metadata else None
-        pub_time = published_at.isoformat() if published_at else None
+        import uuid
+        from datetime import datetime
+        entry_id = str(uuid.uuid4())
+        tags_json = json.dumps(tags) if tags else '[]'
+        metadata_json = json.dumps(metadata) if metadata else '{}'
+        pub_time = published_at.isoformat() if published_at else datetime.utcnow().isoformat()
+        now = datetime.utcnow().isoformat()
 
         with self.transaction() as conn:
             try:
                 cursor = conn.execute("""
-                    INSERT INTO entries (source_id, source_name, category, title, url, content_hash,
-                                         summary, published_at, tags, metadata_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO entries (id, source_id, category, title, url, content_hash,
+                                         summary, published_at, tags, metadata_json, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     RETURNING id
-                """, (source_id, source_name, category, title, url, content_hash,
-                      summary, pub_time, tags_json, metadata_json))
+                """, (entry_id, source_id, category, title, url, content_hash,
+                      summary or '', pub_time, tags_json, metadata_json, now, now))
                 row = cursor.fetchone()
                 return row[0] if row else True
             except sqlite3.IntegrityError:

@@ -133,7 +133,7 @@ class RSSFetcher(BaseFetcher):
 class ArxivFetcher(BaseFetcher):
     """Fetch papers from arXiv API."""
 
-    BASE_URL = "http://export.arxiv.org/api/query"
+    BASE_URL = "https://export.arxiv.org/api/query"
 
     def __init__(self, rate_limit_seconds: int = 1800, query: str = "", max_results: int = 50):
         super().__init__(rate_limit_seconds)
