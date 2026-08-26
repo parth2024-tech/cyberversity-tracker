@@ -355,6 +355,8 @@
         </button>
       </div>
     </div>
+  </div>
+
   <!-- MODAL: Spotlight Command Palette (Cmd+K) -->
   <div id="command-palette-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-xl flex items-start justify-center p-4 pt-16 sm:pt-24" onclick="handlePaletteBackdrop(event)">
     <div class="glass-panel w-full max-w-2xl rounded-2xl p-0 relative border border-cyber-cyan/50 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
@@ -1368,7 +1370,7 @@
               </span>
             `).join('')}
 
-            <span class="text-slate-400 font-semibold text-xs">${entry.source_name}</span>
+            <span class="text-slate-400 font-semibold text-xs">${entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Intelligence Feed')}</span>
           </div>
 
           <div class="flex items-center gap-2">
@@ -2071,20 +2073,21 @@
     let globeVelX = 0.002, globeVelY = 0;
 
     function initThreeGlobe() {
-      const container = document.getElementById('three-globe-viewport');
-      if (!container || typeof THREE === 'undefined') return;
+      try {
+        const container = document.getElementById('three-globe-viewport');
+        if (!container || typeof THREE === 'undefined') return;
 
-      const w = container.clientWidth || 800;
-      const h = container.clientHeight || 300;
+        const w = container.clientWidth || 800;
+        const h = container.clientHeight || 300;
 
-      globeScene = new THREE.Scene();
-      globeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-      globeCamera.position.z = 4.5;
+        globeScene = new THREE.Scene();
+        globeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+        globeCamera.position.z = 4.5;
 
-      globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-      globeRenderer.setSize(w, h);
-      globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      container.appendChild(globeRenderer.domElement);
+        globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        globeRenderer.setSize(w, h);
+        globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(globeRenderer.domElement);
 
       // Inner Wireframe Sphere
       const sphereGeo = new THREE.IcosahedronGeometry(1.6, 3);
@@ -2218,7 +2221,12 @@
       }
 
       animateGlobe();
+    } catch (e) {
+      console.warn("Three.js globe initialization gracefully skipped:", e);
+      const panel = document.getElementById('globe-panel');
+      if (panel) panel.classList.add('hidden');
     }
+  }
 
     function toggle3DGlobe() {
       const panel = document.getElementById('globe-panel');
@@ -2558,14 +2566,14 @@
 
     // Initialize on DOM Ready
     window.addEventListener('DOMContentLoaded', () => {
-      initCanvasBackground();
-      lucide.createIcons();
-      initWebSocket();
-      initThreeGlobe();
-      refreshStats();
-      fetchTriageStatus();
-      updatePinnedBadge();
-      loadFeed(true);
+      try { initCanvasBackground(); } catch (e) { console.warn("Canvas bg:", e); }
+      try { lucide.createIcons(); } catch (e) { console.warn("Lucide:", e); }
+      try { initWebSocket(); } catch (e) { console.warn("WebSocket:", e); }
+      try { initThreeGlobe(); } catch (e) { console.warn("ThreeGlobe:", e); }
+      try { refreshStats(); } catch (e) { console.warn("RefreshStats:", e); }
+      try { fetchTriageStatus(); } catch (e) { console.warn("TriageStatus:", e); }
+      try { updatePinnedBadge(); } catch (e) { console.warn("PinnedBadge:", e); }
+      try { loadFeed(true); } catch (e) { console.warn("LoadFeed:", e); }
     });
   </script>
 </body>
