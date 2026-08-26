@@ -61,6 +61,20 @@ class MonitorService:
                     )
                     await uow.sources.add(new_source)
                     count += 1
+                else:
+                    changed = False
+                    if s_cfg.url and existing.url != s_cfg.url:
+                        existing.url = s_cfg.url
+                        changed = True
+                    if s_cfg.query and existing.query != s_cfg.query:
+                        existing.query = s_cfg.query
+                        changed = True
+                    if existing.enabled != s_cfg.enabled:
+                        existing.enabled = s_cfg.enabled
+                        changed = True
+                    if changed:
+                        await uow.sources.update(existing)
+                        count += 1
             await uow.commit()
 
         logger.info(f"Initialized {count} sources from configuration")
@@ -221,7 +235,7 @@ class MonitorService:
         """Get aggregate system metrics and stats."""
         async with self._uow_factory() as uow:
             total_entries = await uow.entries.count()
-            total_sources = len(await uow.sources.list())
+            total_sources = len(await uow.sources.list(enabled_only=True))
             high_velocity = await uow.analyses.count_high_velocity(70)
             pre_cve_warnings = await uow.analyses.count_pre_cve_warnings()
             watchlist_rules = len(await uow.watchlist.list())

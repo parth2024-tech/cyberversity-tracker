@@ -55,6 +55,13 @@ class AnalysisResult:
     ai_model: str
     evidence_bundles: list = None  # List of EvidenceBundle for epistemic tracking
 
+    @property
+    def confidence(self) -> float:
+        """Calculate overall confidence from evidence bundles."""
+        if not self.evidence_bundles:
+            return 0.5
+        return sum(b.confidence for b in self.evidence_bundles) / len(self.evidence_bundles)
+
 
 class BlastRadiusEngine:
     """

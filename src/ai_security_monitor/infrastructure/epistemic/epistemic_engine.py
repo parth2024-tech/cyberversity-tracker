@@ -358,7 +358,10 @@ class EpistemicEngine:
             ai_model=analysis_result.ai_model,
             overall_confidence=analysis_result.confidence,
             evidence_version="v1",
-            evidence_bundles=[bundle.__dict__ for bundle in evidence_bundles]
+            evidence_bundles=[{
+                **bundle.__dict__,
+                'claim_type': bundle.claim_type.value if isinstance(bundle.claim_type, ClaimType) else bundle.claim_type
+            } for bundle in evidence_bundles]
         )
 
         return analysis_result, evidence_bundles

@@ -299,21 +299,23 @@ class Database:
                       overall_confidence: float = 0.7, evidence_version: str = "v1",
                       evidence_bundles: list | None = None):
         """Save AI analysis for an entry with epistemic evidence tracking."""
+        import uuid
+        from datetime import datetime
+        analysis_id = str(uuid.uuid4())
         affected_json = json.dumps(affected_ecosystem) if affected_ecosystem else None
+        now = datetime.utcnow().isoformat()
         with self.transaction() as conn:
             # Insert analysis row
             cursor = conn.execute("""
                 INSERT OR REPLACE INTO entry_analysis
-                (entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
+                (id, entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
                  blast_radius_score, affected_ecosystem, is_pre_cve_warning, attack_archetype,
-                 weaponization_potential, model, overall_confidence, evidence_version)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
+                 weaponization_potential, model, confidence, overall_confidence, evidence_version, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (analysis_id, entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
                   blast_radius_score, affected_json, 1 if is_pre_cve_warning else 0,
-                  attack_archetype, weaponization_potential, ai_model, overall_confidence, evidence_version))
-            
-            analysis_id = cursor.lastrowid
-            
+                  attack_archetype, weaponization_potential, ai_model, overall_confidence, overall_confidence, evidence_version, now, now))
+
             # Insert evidence bundles if provided
             if evidence_bundles:
                 for bundle in evidence_bundles:

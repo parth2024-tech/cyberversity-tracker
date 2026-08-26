@@ -6,55 +6,163 @@ sources:
   # ==========================================
   # AI TECHNOLOGY LAUNCHES & RESEARCH
   # ==========================================
-  - name: "OpenAI Blog"
+  # Frontier AI Labs & Engineering (Global)
+  - name: "OpenAI News"
     category: "ai_tech"
     type: "rss"
-    url: "https://openai.com/blog/rss.xml"
-    rate_limit_seconds: 3600
-    enabled: true
-
-  - name: "Anthropic News"
-    category: "ai_tech"
-    type: "rss"
-    url: "https://www.anthropic.com/news/feed.xml"
-    rate_limit_seconds: 3600
-    enabled: false  # No official RSS feed available
-
-  - name: "Google AI Blog"
-    category: "ai_tech"
-    type: "rss"
-    url: "https://blog.google/technology/ai/rss/"
-    rate_limit_seconds: 3600
+    url: "https://openai.com/news/rss.xml"
+    rate_limit_seconds: 1800
     enabled: true
 
   - name: "Google DeepMind Blog"
     category: "ai_tech"
     type: "rss"
     url: "https://deepmind.google/blog/rss.xml"
-    rate_limit_seconds: 3600
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "Google AI Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://blog.google/technology/ai/rss/"
+    rate_limit_seconds: 1800
     enabled: true
 
   - name: "Microsoft AI Blog"
     category: "ai_tech"
     type: "rss"
     url: "https://www.microsoft.com/en-us/research/blog/feed/"
-    rate_limit_seconds: 3600
+    rate_limit_seconds: 1800
     enabled: true
 
-  - name: "Meta AI Blog"
+  - name: "Meta AI Research"
     category: "ai_tech"
     type: "rss"
-    url: "https://ai.meta.com/blog/rss/"
-    rate_limit_seconds: 3600
-    enabled: false  # No official RSS feed available
+    url: "https://engineering.fb.com/category/ai-research/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "NVIDIA Developer AI Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://developer.nvidia.com/blog/category/deep-learning/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "AWS Machine Learning Blog"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://aws.amazon.com/blogs/machine-learning/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
 
   - name: "Hugging Face Blog"
     category: "ai_tech"
     type: "rss"
     url: "https://huggingface.co/blog/feed.xml"
-    rate_limit_seconds: 3600
+    rate_limit_seconds: 1800
     enabled: true
 
+  # Global AI Journalism & Specialized Outlets
+  - name: "MIT Technology Review AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.technologyreview.com/topic/artificial-intelligence/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "VentureBeat AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://venturebeat.com/category/ai/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "TechCrunch AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://techcrunch.com/tag/artificial-intelligence/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "Wired AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.wired.com/feed/tag/ai/latest/rss"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "Ars Technica AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://arstechnica.com/tag/ai/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "The Register AI / ML"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.theregister.com/software/ai_ml/headlines.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "BBC Technology (Global AI)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://feeds.bbci.co.uk/news/technology/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "MarkTechPost AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.marktechpost.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "KDnuggets AI/ML"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.kdnuggets.com/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "AI Business"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://aibusiness.com/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "Towards Data Science"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://towardsdatascience.com/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "SiliconANGLE AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://siliconangle.com/category/ai/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "The AI Edge"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://theaiedge.substack.com/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "InfoQ AI & ML"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://feed.infoq.com/ai-ml-data-eng/news"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  # Academic & Frontier Research
   - name: "arXiv AI Papers (cs.AI, cs.LG, cs.CL, cs.CV)"
     category: "ai_research"
     type: "arxiv"
@@ -63,10 +171,26 @@ sources:
     rate_limit_seconds: 1800
     enabled: true
 
-  - name: "Hacker News (AI/ML tagged)"
+  - name: "arXiv AI Safety & Alignment (Pre-CVE Radar)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "(cat:cs.CR AND (ti:LLM OR ti:\"language model\" OR ti:adversarial OR ti:jailbreak OR ti:agent OR ti:safety OR ti:alignment))"
+    max_results: 30
+    rate_limit_seconds: 1800
+    enabled: true
+
+  - name: "MIT News AI"
+    category: "ai_research"
+    type: "rss"
+    url: "https://news.mit.edu/rss/topic/artificial-intelligence2"
+    rate_limit_seconds: 1800
+    enabled: true
+
+  # Real-Time Viral Community Signals
+  - name: "Hacker News (Global AI & Frontier Models)"
     category: "ai_tech"
     type: "hackernews"
-    tags: ["AI", "ML", "LLM", "GPT", "transformer", "neural", "deep learning"]
+    tags: ["AI", "ML", "LLM", "GPT", "Claude", "Gemini", "DeepSeek", "Mistral", "agent"]
     rate_limit_seconds: 600
     enabled: true
 
@@ -108,26 +232,6 @@ sources:
     rate_limit_seconds: 1800
     enabled: true
 
-  - name: "SecurityWeek"
-    category: "cybersecurity"
-    type: "rss"
-    url: "https://www.securityweek.com/feed/"
-    rate_limit_seconds: 1800
-    enabled: false  # 403 Forbidden
-
-  - name: "The Verge AI"
-    category: "ai_tech"
-    type: "rss"
-    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
-    rate_limit_seconds: 3600
-    enabled: false  # 403 Forbidden
-
-  - name: "TechCrunch AI"
-    category: "ai_tech"
-    type: "rss"
-    url: "https://techcrunch.com/tag/artificial-intelligence/feed/"
-    rate_limit_seconds: 3600
-    enabled: true
 
   - name: "Wired Security"
     category: "cybersecurity"

@@ -477,7 +477,7 @@
         <!-- Sources Modal Trigger -->
         <button onclick="openSourcesModal()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-gray-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold">
           <i data-lucide="radio" class="w-4 h-4 text-cyber-cyan"></i>
-          <span>Feeds (<span id="active-sources-count" class="text-cyber-cyan">24</span>)</span>
+          <span>Feeds (<span id="active-sources-count" class="text-cyber-cyan">38</span>)</span>
         </button>
 
         <!-- Telegram Trigger -->
@@ -503,7 +503,7 @@
           </h2>
         </div>
         <div class="flex items-center gap-3 text-xs font-mono">
-          <span class="text-gray-400 hidden sm:inline"><span class="text-cyber-green">●</span> 24 FEED BEACONS ACTIVE</span>
+          <span class="text-gray-400 hidden sm:inline"><span class="text-cyber-green">●</span> <span id="globe-beacons-count">38</span> GLOBAL BEACONS ACTIVE</span>
           <button onclick="toggle3DGlobe()" class="text-gray-400 hover:text-white px-2 py-1 rounded bg-black/60 border border-gray-700">Minimize</button>
         </div>
       </div>
@@ -1116,7 +1116,11 @@
     function renderStats(stats) {
       if (!stats) return;
       document.getElementById('stat-total').innerText = (stats.total_entries || 0).toLocaleString();
-      document.getElementById('active-sources-count').innerText = stats.total_sources || 24;
+      const totalSrcs = stats.total_sources || 38;
+      document.getElementById('active-sources-count').innerText = totalSrcs;
+      if (document.getElementById('globe-beacons-count')) {
+        document.getElementById('globe-beacons-count').innerText = totalSrcs;
+      }
       if (document.getElementById('active-watchlist-count') && stats.watchlist_rules !== undefined) {
         document.getElementById('active-watchlist-count').innerText = stats.watchlist_rules;
       }
@@ -2169,8 +2173,8 @@
       globeRing.rotation.x = Math.PI / 2.8;
       globeScene.add(globeRing);
 
-      // 24 Real-world Threat Beacon Nodes (Geographical distribution)
-      const pointCount = 24;
+      // 38 Worldwide AI & Threat Intelligence Beacon Nodes (Global geographical distribution)
+      const pointCount = 38;
       const pointPositions = new Float32Array(pointCount * 3);
       const pointColors = new Float32Array(pointCount * 3);
       const colorCyan = new THREE.Color(0x00f0ff);

@@ -46,6 +46,7 @@ class SchedulerSettings(BaseSettings):
     """Background scheduler configuration."""
     enabled: bool = Field(default=True, description="Enable background scheduler")
     timezone: str = Field(default="UTC", description="Scheduler timezone")
+    fetch_interval_minutes: int = Field(default=30, description="Periodic radar sweep interval in minutes")
     fetch_cron: str = Field(default="0 6 * * *", description="Fetch job cron (6 AM daily)")
     digest_cron: str = Field(default="0 8 * * *", description="Digest job cron (8 AM daily)")
 

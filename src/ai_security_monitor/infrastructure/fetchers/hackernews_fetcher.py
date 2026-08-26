@@ -25,8 +25,8 @@ class HackerNewsFetcher(BaseFetcher):
         url = "https://hn.algolia.com/api/v1/search"
         params = {
             "tags": "story",
-            "query": "AI OR ML OR LLM OR GPT OR neural OR transformer OR machine learning",
-            "hitsPerPage": 50,
+            "query": "AI OR LLM OR GPT OR Claude OR Gemini OR DeepSeek OR Mistral OR Llama OR neural OR transformer OR \"machine learning\" OR \"generative AI\" OR agent",
+            "hitsPerPage": 75,
             "page": 0,
         }
         headers = {"User-Agent": settings.fetch.user_agent}
