@@ -70,9 +70,10 @@
     }
   </script>
   
-  <!-- Lucide Icons & Chart.js -->
+  <!-- Lucide Icons, Chart.js & Three.js 3D Engine -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   
   <style>
     body {
@@ -354,6 +355,30 @@
         </button>
       </div>
     </div>
+  <!-- MODAL: Spotlight Command Palette (Cmd+K) -->
+  <div id="command-palette-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-xl flex items-start justify-center p-4 pt-16 sm:pt-24" onclick="handlePaletteBackdrop(event)">
+    <div class="glass-panel w-full max-w-2xl rounded-2xl p-0 relative border border-cyber-cyan/50 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
+      <!-- Search Input Bar -->
+      <div class="flex items-center px-4 py-3.5 border-b border-cyber-border gap-3 bg-cyber-black/70">
+        <i data-lucide="search" class="w-5 h-5 text-cyber-cyan"></i>
+        <input id="palette-search" type="text" placeholder="Type a command or search 4,250+ threats (PyTorch, RCE, DeepSeek, LangChain)..." class="w-full bg-transparent text-sm font-mono text-white placeholder:text-gray-500 focus:outline-none" oninput="handlePaletteSearch()">
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">ESC</span>
+      </div>
+
+      <!-- Quick Actions & Results Container -->
+      <div id="palette-content" class="flex-1 overflow-y-auto p-3 space-y-3 font-mono text-xs max-h-[60vh]">
+        <!-- Injected dynamically via JS -->
+      </div>
+
+      <!-- Palette Footer -->
+      <div class="px-4 py-2 border-t border-cyber-border/60 bg-cyber-black/60 flex items-center justify-between text-[11px] font-mono text-gray-400">
+        <div class="flex items-center gap-3">
+          <span><kbd class="px-1.5 py-0.5 rounded bg-gray-800 text-cyber-cyan text-[10px]">↑↓</kbd> Navigate</span>
+          <span><kbd class="px-1.5 py-0.5 rounded bg-gray-800 text-cyber-cyan text-[10px]">↵</kbd> Select</span>
+        </div>
+        <span class="text-cyber-cyan font-bold">AETHER-GUARD SPOTLIGHT</span>
+      </div>
+    </div>
   </div>
 
 
@@ -402,6 +427,18 @@
 
       <!-- Action Hub Controls -->
       <div class="flex items-center flex-wrap gap-2.5">
+        <!-- Spotlight Command Palette Trigger -->
+        <button onclick="openCommandPalette()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-cyber-cyan hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold" title="Press Ctrl+K or Cmd+K">
+          <i data-lucide="command" class="w-4 h-4 text-cyber-cyan"></i>
+          <span>Spotlight <kbd class="px-1.5 py-0.5 rounded bg-black/80 border border-cyber-cyan/40 text-[10px] text-cyber-cyan">⌘K</kbd></span>
+        </button>
+
+        <!-- 3D Globe Radar Toggle -->
+        <button onclick="toggle3DGlobe()" id="globe-toggle-btn" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono font-semibold" title="Toggle 3D WebGL Holographic Threat Globe">
+          <i data-lucide="globe" class="w-4 h-4 text-cyber-cyan"></i>
+          <span>3D Radar</span>
+        </button>
+
         <!-- Audio Synth Toggle -->
         <button id="audio-toggle" onclick="toggleAudio()" class="p-2.5 rounded-xl glass-panel text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono" title="Toggle audio feedback">
           <i id="audio-icon" data-lucide="volume-2" class="w-4 h-4 text-cyber-cyan"></i>
@@ -443,8 +480,36 @@
           <i id="scan-icon" data-lucide="refresh-cw" class="w-4 h-4 text-black"></i>
           <span>Trigger Scan</span>
         </button>
-      </div>
     </header>
+
+    <!-- 3D WEBGL HOLOGRAPHIC THREAT RADAR GLOBE -->
+    <div id="globe-panel" class="glass-panel rounded-2xl p-4 relative overflow-hidden border border-cyber-cyan/40 shadow-2xl transition-all duration-500">
+      <div class="flex items-center justify-between pb-3 border-b border-cyber-border/60">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyber-cyan animate-ping"></span>
+          <h2 class="text-sm font-mono font-bold tracking-wider uppercase text-cyber-cyan flex items-center gap-2">
+            <i data-lucide="globe" class="w-4 h-4"></i> Global 3D Threat Telemetry Matrix // Three.js WebGL
+          </h2>
+        </div>
+        <div class="flex items-center gap-3 text-xs font-mono">
+          <span class="text-gray-400 hidden sm:inline"><span class="text-cyber-green">●</span> 24 FEED BEACONS ACTIVE</span>
+          <button onclick="toggle3DGlobe()" class="text-gray-400 hover:text-white px-2 py-1 rounded bg-black/60 border border-gray-700">Minimize</button>
+        </div>
+      </div>
+
+      <div class="relative w-full h-64 sm:h-80 flex items-center justify-center cursor-grab active:cursor-grabbing" id="three-globe-viewport">
+        <!-- Three.js Canvas mounts here -->
+        <div class="absolute top-3 left-3 z-10 pointer-events-none space-y-1 font-mono text-[10px] text-gray-400 bg-black/60 p-2.5 rounded-lg border border-gray-800 backdrop-blur-md">
+          <p class="text-cyber-cyan font-bold">SPATIAL RADAR: 360° ACTIVE</p>
+          <p>FPS: <span id="globe-fps" class="text-cyber-green">60</span> | ORBIT: <span class="text-cyber-purple">0.2 rad/s</span></p>
+        </div>
+
+        <div class="absolute bottom-3 right-3 z-10 pointer-events-none font-mono text-[10px] text-gray-400 bg-black/60 px-3 py-1.5 rounded-lg border border-gray-800 backdrop-blur-md flex items-center gap-2">
+          <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-cyber-cyan"></i>
+          <span>Drag to rotate globe • Hover to pause</span>
+        </div>
+      </div>
+    </div>
 
     <!-- METRICS TELEMETRY ROW -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -550,6 +615,9 @@
             <!-- Category Navigation -->
             <div class="flex items-center gap-1.5 overflow-x-auto w-full pb-1 text-xs font-mono">
               <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-cyan text-black font-bold transition whitespace-nowrap">ALL</button>
+              <button onclick="setCategory('pinned')" id="tab-pinned" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyber-purple hover:text-white border border-cyber-purple/50 font-bold transition whitespace-nowrap flex items-center gap-1">
+                <i data-lucide="star" class="w-3.5 h-3.5 text-cyber-purple"></i> PINNED (<span id="pinned-count">0</span>)
+              </button>
               <button onclick="setCategory('watchlist')" id="tab-watchlist" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyan-400 hover:text-white border border-cyber-cyan/50 font-bold transition whitespace-nowrap flex items-center gap-1">
                 <i data-lucide="target" class="w-3.5 h-3.5"></i> WATCHLIST
               </button>
@@ -564,6 +632,27 @@
               <button onclick="setCategory('ai_research')" id="tab-ai_research" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">📚 RESEARCH</button>
               <button onclick="setCategory('cybersecurity')" id="tab-cybersecurity" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">🔒 THREATS</button>
               <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-gray-300 hover:text-white border border-cyber-border transition whitespace-nowrap">⭐ REPOS</button>
+            </div>
+          </div>
+
+          <!-- Temporal Horizon Filter & Export Controls -->
+          <div class="flex items-center justify-between gap-3 pt-2 border-t border-cyber-border/40 flex-wrap text-xs font-mono">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[10px] text-cyber-muted font-bold uppercase mr-1">HORIZON:</span>
+              <button onclick="setTimeHorizon(0)" id="horizon-all" class="horizon-pill px-2.5 py-1 rounded-md bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan font-bold transition">ALL TIME</button>
+              <button onclick="setTimeHorizon(24)" id="horizon-24" class="horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition">⚡ 24 HOURS</button>
+              <button onclick="setTimeHorizon(168)" id="horizon-168" class="horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition">📅 7 DAYS</button>
+              <button onclick="setTimeHorizon(720)" id="horizon-720" class="horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition">🗓️ 30 DAYS</button>
+            </div>
+
+            <!-- Export Hub -->
+            <div class="flex items-center gap-2">
+              <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-md bg-black/70 border border-gray-700 hover:border-cyber-cyan text-gray-300 hover:text-white text-[11px] flex items-center gap-1 transition" title="Export current/pinned threats to Markdown Brief">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-cyber-cyan"></i> Export MD
+              </button>
+              <button onclick="exportStixJson()" class="px-2.5 py-1 rounded-md bg-black/70 border border-gray-700 hover:border-cyber-purple text-gray-300 hover:text-white text-[11px] flex items-center gap-1 transition" title="Export to STIX 2.1 Threat Intel format">
+                <i data-lucide="shield" class="w-3.5 h-3.5 text-cyber-purple"></i> Export STIX
+              </button>
             </div>
           </div>
 
@@ -1141,23 +1230,46 @@
           url += `&pre_cve=true`;
         } else if (currentCategory === 'high_velocity') {
           url += `&high_velocity=true`;
+        } else if (currentCategory === 'pinned') {
+          // Handled with pinned IDs filter
+          url = `/api/entries?limit=150&offset=0`;
         } else if (currentCategory !== 'all') {
           url += `&category=${currentCategory}`;
+        }
+
+        if (currentTimeHorizon > 0) {
+          url += `&hours=${currentTimeHorizon}`;
         }
         
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
 
         const res = await fetch(url);
-        const data = await res.json();
+        let data = await res.json();
+
+        if (currentCategory === 'pinned') {
+          const pinnedIds = new Set(getPinnedThreatIds());
+          data.entries = (data.entries || []).filter(e => pinnedIds.has(e.id));
+        }
+
+        // Handle sorting
+        const sortMode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'newest';
+        if (sortMode === 'velocity') {
+          data.entries.sort((a, b) => ((b.analysis?.threat_velocity || b.threat_velocity || 0) - (a.analysis?.threat_velocity || a.threat_velocity || 0)));
+        } else if (sortMode === 'blast') {
+          data.entries.sort((a, b) => ((b.analysis?.blast_radius_score || b.blast_radius_score || 0) - (a.analysis?.blast_radius_score || a.blast_radius_score || 0)));
+        }
 
         if (reset) container.innerHTML = '';
 
         if (!data.entries || data.entries.length === 0) {
           if (reset) {
+            const emptyMsg = currentCategory === 'pinned' 
+              ? "No pinned threats in your investigation board. Click the ⭐ icon on any threat card to pin it here!"
+              : "No intelligence items found for selected criteria.";
             container.innerHTML = `
               <div class="glass-panel rounded-2xl p-12 text-center text-cyber-muted space-y-2">
-                <i data-lucide="inbox" class="w-8 h-8 mx-auto text-gray-500"></i>
-                <p class="font-mono text-sm">No intelligence items found for selected criteria.</p>
+                <i data-lucide="${currentCategory === 'pinned' ? 'star' : 'inbox'}" class="w-8 h-8 mx-auto text-gray-500"></i>
+                <p class="font-mono text-sm">${emptyMsg}</p>
               </div>
             `;
             lucide.createIcons();
@@ -1268,6 +1380,10 @@
             <span class="px-2 py-0.5 rounded bg-black/70 border ${blastRadius >= 60 ? 'border-cyber-purple text-cyber-purple font-bold' : 'border-gray-700 text-gray-400'} text-[10px] font-mono">
               BLAST: ${blastRadius}/100
             </span>
+            <!-- Pin ⭐ Button -->
+            <button onclick="togglePinThreat('${entry.id}', event)" class="p-1 rounded hover:bg-white/10 transition" title="Pin to active investigation board">
+              <i data-lucide="star" class="w-4 h-4 ${isThreatPinned(entry.id) ? 'text-amber-400 fill-amber-400' : 'text-gray-500 hover:text-amber-300'}"></i>
+            </button>
           </div>
         </div>
 
@@ -1320,7 +1436,7 @@
       `;
 
       card.onclick = (e) => {
-        if (e.target.tagName !== 'A') {
+        if (e.target.tagName !== 'A' && !e.target.closest('button')) {
           playBeep('click');
           openInspectModal(entry);
         }
@@ -1384,6 +1500,64 @@
           <h2 class="text-xl sm:text-2xl font-bold font-display text-white leading-snug">
             ${entry.title}
           </h2>
+
+          <!-- Visual Attack Topology & Propagation Path -->
+          <div class="p-4 rounded-xl bg-cyber-black/70 border border-cyber-cyan/30 space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-mono uppercase text-cyber-cyan font-bold flex items-center gap-1.5">
+                <i data-lucide="git-commit" class="w-3.5 h-3.5 text-cyber-cyan"></i> Visual Attack Propagation Flow
+              </h4>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyber-purple/20 border border-cyber-purple/40 text-purple-300">BLAST RADIUS: ${blastRadius}/100</span>
+            </div>
+
+            <div class="w-full overflow-x-auto py-1">
+              <svg class="w-full min-w-[560px] h-24" viewBox="0 0 580 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="flowGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#00f0ff" />
+                    <stop offset="100%" stop-color="#a855f7" />
+                  </linearGradient>
+                  <linearGradient id="flowGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#a855f7" />
+                    <stop offset="100%" stop-color="#ff0055" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Flow Line 1 -->
+                <line x1="130" y1="45" x2="220" y2="45" stroke="url(#flowGrad1)" stroke-width="2.5" stroke-dasharray="6,4">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1s" repeatCount="indefinite" />
+                </line>
+                <polygon points="220,40 228,45 220,50" fill="#a855f7" />
+
+                <!-- Flow Line 2 -->
+                <line x1="340" y1="45" x2="430" y2="45" stroke="url(#flowGrad2)" stroke-width="2.5" stroke-dasharray="6,4">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1s" repeatCount="indefinite" />
+                </line>
+                <polygon points="430,40 438,45 430,50" fill="#ff0055" />
+
+                <!-- Node 1: Intelligence Origin -->
+                <g transform="translate(15, 15)">
+                  <rect width="115" height="60" rx="10" fill="#0b1121" stroke="#00f0ff" stroke-width="1.5"/>
+                  <text x="57" y="25" fill="#00f0ff" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle">SOURCE ORIGIN</text>
+                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${(entry.source_name || 'FEED').slice(0, 11)}</text>
+                </g>
+
+                <!-- Node 2: Attack Technique -->
+                <g transform="translate(225, 15)">
+                  <rect width="115" height="60" rx="10" fill="#0b1121" stroke="#a855f7" stroke-width="1.5"/>
+                  <text x="57" y="25" fill="#a855f7" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle">EXPLOIT VECTOR</text>
+                  <text x="57" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${archetype.slice(0, 11)}</text>
+                </g>
+
+                <!-- Node 3: Target Impact -->
+                <g transform="translate(435, 15)">
+                  <rect width="130" height="60" rx="10" fill="#0b1121" stroke="${blastRadius >= 60 ? '#ff0055' : '#10b981'}" stroke-width="1.5"/>
+                  <text x="65" y="25" fill="${blastRadius >= 60 ? '#ff0055' : '#10b981'}" font-family="JetBrains Mono" font-size="9" font-weight="bold" text-anchor="middle">TARGET ECOSYSTEM</text>
+                  <text x="65" y="44" fill="#ffffff" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle">${(ecosystem[0] || 'INFRASTRUCTURE').slice(0, 14)}</text>
+                </g>
+              </svg>
+            </div>
+          </div>
 
           <!-- Affected AI Ecosystem -->
           ${ecosystem.length > 0 ? `
@@ -1887,13 +2061,510 @@
       loadFeed(true);
     }
 
+    // =========================================================================
+    // FEATURE 1 & 2: 3D HOLOGRAPHIC THREAT RADAR GLOBE (Three.js WebGL)
+    // =========================================================================
+    let globeScene, globeCamera, globeRenderer, globeSphere, globeRing, globePoints;
+    let isGlobeVisible = true;
+    let isDraggingGlobe = false;
+    let prevMouseX = 0, prevMouseY = 0;
+    let globeVelX = 0.002, globeVelY = 0;
+
+    function initThreeGlobe() {
+      const container = document.getElementById('three-globe-viewport');
+      if (!container || typeof THREE === 'undefined') return;
+
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 300;
+
+      globeScene = new THREE.Scene();
+      globeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+      globeCamera.position.z = 4.5;
+
+      globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      globeRenderer.setSize(w, h);
+      globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(globeRenderer.domElement);
+
+      // Inner Wireframe Sphere
+      const sphereGeo = new THREE.IcosahedronGeometry(1.6, 3);
+      const sphereMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.22
+      });
+      globeSphere = new THREE.Mesh(sphereGeo, sphereMat);
+      globeScene.add(globeSphere);
+
+      // Core Glow Sphere
+      const coreGeo = new THREE.SphereGeometry(1.4, 24, 24);
+      const coreMat = new THREE.MeshBasicMaterial({
+        color: 0x06152d,
+        transparent: true,
+        opacity: 0.85
+      });
+      globeScene.add(new THREE.Mesh(coreGeo, coreMat));
+
+      // Longitude / Latitude Accent Rings
+      for (let i = -2; i <= 2; i++) {
+        const ringRad = Math.cos((i * Math.PI) / 6) * 1.62;
+        const ringGeo = new THREE.RingGeometry(ringRad - 0.01, ringRad + 0.01, 48);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x263859, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.rotation.x = Math.PI / 2;
+        ringMesh.position.y = Math.sin((i * Math.PI) / 6) * 1.62;
+        globeSphere.add(ringMesh);
+      }
+
+      // Orbital Scanning Sweep Ring
+      const scanRingGeo = new THREE.RingGeometry(1.85, 1.95, 64);
+      const scanRingMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.45
+      });
+      globeRing = new THREE.Mesh(scanRingGeo, scanRingMat);
+      globeRing.rotation.x = Math.PI / 2.8;
+      globeScene.add(globeRing);
+
+      // 24 Real-world Threat Beacon Nodes (Geographical distribution)
+      const pointCount = 24;
+      const pointPositions = new Float32Array(pointCount * 3);
+      const pointColors = new Float32Array(pointCount * 3);
+      const colorCyan = new THREE.Color(0x00f0ff);
+      const colorAmber = new THREE.Color(0xf59e0b);
+      const colorRed = new THREE.Color(0xff0055);
+      const colorGreen = new THREE.Color(0x10b981);
+
+      for (let i = 0; i < pointCount; i++) {
+        const phi = Math.acos(-1 + (2 * i) / pointCount);
+        const theta = Math.sqrt(pointCount * Math.PI) * phi;
+        const r = 1.62;
+
+        pointPositions[i * 3] = r * Math.cos(theta) * Math.sin(phi);
+        pointPositions[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
+        pointPositions[i * 3 + 2] = r * Math.cos(phi);
+
+        const choice = i % 4;
+        const c = choice === 0 ? colorCyan : choice === 1 ? colorRed : choice === 2 ? colorAmber : colorGreen;
+        pointColors[i * 3] = c.r;
+        pointColors[i * 3 + 1] = c.g;
+        pointColors[i * 3 + 2] = c.b;
+      }
+
+      const pointsGeo = new THREE.BufferGeometry();
+      pointsGeo.setAttribute('position', new THREE.BufferAttribute(pointPositions, 3));
+      pointsGeo.setAttribute('color', new THREE.BufferAttribute(pointColors, 3));
+      const pointsMat = new THREE.PointsMaterial({
+        size: 0.12,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95
+      });
+      globePoints = new THREE.Points(pointsGeo, pointsMat);
+      globeSphere.add(globePoints);
+
+      // Mouse drag controls
+      container.addEventListener('mousedown', (e) => {
+        isDraggingGlobe = true;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isDraggingGlobe = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDraggingGlobe) return;
+        const deltaX = e.clientX - prevMouseX;
+        const deltaY = e.clientY - prevMouseY;
+        globeVelX = deltaX * 0.005;
+        globeVelY = deltaY * 0.005;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      });
+
+      // Window resize handling
+      window.addEventListener('resize', () => {
+        if (!container || !globeRenderer) return;
+        const nw = container.clientWidth;
+        const nh = container.clientHeight;
+        globeCamera.aspect = nw / nh;
+        globeCamera.updateProjectionMatrix();
+        globeRenderer.setSize(nw, nh);
+      });
+
+      // Animation Loop (Zero allocations inside frame)
+      function animateGlobe() {
+        requestAnimationFrame(animateGlobe);
+        if (!isGlobeVisible) return;
+
+        if (globeSphere) {
+          if (!isDraggingGlobe) {
+            globeVelX *= 0.96;
+            globeVelY *= 0.96;
+            globeSphere.rotation.y += 0.003 + globeVelX;
+            globeSphere.rotation.x += globeVelY;
+          } else {
+            globeSphere.rotation.y += globeVelX;
+            globeSphere.rotation.x += globeVelY;
+          }
+        }
+
+        if (globeRing) {
+          globeRing.rotation.z += 0.01;
+        }
+
+        globeRenderer.render(globeScene, globeCamera);
+      }
+
+      animateGlobe();
+    }
+
+    function toggle3DGlobe() {
+      const panel = document.getElementById('globe-panel');
+      const btn = document.getElementById('globe-toggle-btn');
+      isGlobeVisible = !isGlobeVisible;
+
+      if (isGlobeVisible) {
+        panel.classList.remove('hidden');
+        if (btn) btn.classList.add('text-cyber-cyan');
+      } else {
+        panel.classList.add('hidden');
+        if (btn) btn.classList.remove('text-cyber-cyan');
+      }
+      playBeep('click');
+    }
+
+    // =========================================================================
+    // FEATURE 3: TEMPORAL HORIZON FILTERING (24h / 7d / 30d / All)
+    // =========================================================================
+    let currentTimeHorizon = 0;
+
+    function setTimeHorizon(hours) {
+      currentTimeHorizon = hours;
+      const pills = document.querySelectorAll('.horizon-pill');
+      pills.forEach(p => {
+        p.className = "horizon-pill px-2.5 py-1 rounded-md bg-black/60 text-gray-400 border border-gray-800 hover:text-white transition";
+      });
+
+      const activePill = document.getElementById(`horizon-${hours || 'all'}`);
+      if (activePill) {
+        activePill.className = "horizon-pill px-2.5 py-1 rounded-md bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan font-bold transition";
+      }
+
+      playBeep('click');
+      loadFeed(true);
+    }
+
+    // =========================================================================
+    // FEATURE 4: PERSONAL INVESTIGATION PINBOARD & BOOKMARKS
+    // =========================================================================
+    const PINNED_STORAGE_KEY = 'aether_pinned_threats';
+
+    function getPinnedThreatIds() {
+      try {
+        return JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function isThreatPinned(id) {
+      return getPinnedThreatIds().includes(id);
+    }
+
+    function togglePinThreat(id, event) {
+      if (event) event.stopPropagation();
+      playBeep('click');
+
+      let pinned = getPinnedThreatIds();
+      if (pinned.includes(id)) {
+        pinned = pinned.filter(item => item !== id);
+      } else {
+        pinned.push(id);
+      }
+
+      localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(pinned));
+      updatePinnedBadge();
+
+      // If on pinned tab, refresh feed
+      if (currentCategory === 'pinned') {
+        loadFeed(true);
+      } else {
+        // Update star icon on clicked card
+        const card = event ? event.target.closest('button') : null;
+        if (card) {
+          const icon = card.querySelector('svg');
+          if (icon) {
+            const isNowPinned = pinned.includes(id);
+            icon.setAttribute('class', `w-4 h-4 ${isNowPinned ? 'text-amber-400 fill-amber-400' : 'text-gray-500 hover:text-amber-300'}`);
+          }
+        }
+      }
+    }
+
+    function updatePinnedBadge() {
+      const countEl = document.getElementById('pinned-count');
+      if (countEl) {
+        countEl.innerText = getPinnedThreatIds().length;
+      }
+    }
+
+    // =========================================================================
+    // FEATURE 5: 1-CLICK EXPORT HUB (Markdown & STIX 2.1 JSON)
+    // =========================================================================
+    function getExportThreatList() {
+      const pinnedIds = new Set(getPinnedThreatIds());
+      if (pinnedIds.size > 0) {
+        const pinnedList = allFeedItems.filter(e => pinnedIds.has(e.id));
+        if (pinnedList.length > 0) return pinnedList;
+      }
+      return allFeedItems.slice(0, 20);
+    }
+
+    function exportMarkdownReport() {
+      playBeep('alert');
+      const threats = getExportThreatList();
+      const now = new Date().toISOString().slice(0, 10);
+
+      let md = `# AetherGuard Threat Intelligence & Incident Report\n`;
+      md += `**Generated**: ${new Date().toUTCString()} | **Scope**: ${threats.length} High-Impact Threats\n\n`;
+      md += `| Threat Title | Source | Category | Velocity | Severity | Blast Radius |\n`;
+      md += `| :--- | :--- | :--- | :---: | :---: | :---: |\n`;
+
+      threats.forEach(t => {
+        const a = t.analysis || {};
+        const vel = a.threat_velocity || t.threat_velocity || 25;
+        const sev = a.severity_index || t.severity_index || 25;
+        const blast = a.blast_radius_score || t.blast_radius_score || 20;
+        md += `| [${t.title.replace(/\|/g, '-')}](${t.url}) | ${t.source_name} | ${t.category} | ${vel}/100 | ${sev}/100 | ${blast}/100 |\n`;
+      });
+
+      md += `\n## Detailed Attack Vectors & Hardening Fixes\n\n`;
+      threats.forEach((t, idx) => {
+        const a = t.analysis || {};
+        md += `### ${idx + 1}. ${t.title}\n`;
+        md += `- **Published**: ${t.published_at || 'Recent'}\n`;
+        md += `- **Primary Attack Vector**: ${a.attack_vector || 'Standard exploit path'}\n`;
+        md += `- **Tangible Infrastructure Risk**: ${a.risk_assessment || 'Potential service disruption'}\n`;
+        md += `- **Immediate Mitigation**: ${a.mitigation || 'Apply upstream vendor updates'}\n`;
+        md += `- **Affected AI/Infra Ecosystem**: ${(a.affected_ecosystem || []).join(', ') || 'N/A'}\n\n`;
+      });
+
+      downloadFile(`aether-threat-report-${now}.md`, 'text/markdown', md);
+    }
+
+    function exportStixJson() {
+      playBeep('alert');
+      const threats = getExportThreatList();
+      const now = new Date().toISOString();
+
+      const stixBundle = {
+        type: "bundle",
+        id: `bundle--${crypto.randomUUID ? crypto.randomUUID() : 'aether-' + Date.now()}`,
+        spec_version: "2.1",
+        objects: threats.map(t => {
+          const a = t.analysis || {};
+          return {
+            type: "indicator",
+            spec_version: "2.1",
+            id: `indicator--${crypto.randomUUID ? crypto.randomUUID() : 'threat-' + Math.random().toString(36).slice(2, 9)}`,
+            created: now,
+            modified: now,
+            name: t.title,
+            description: `${t.summary || ''} [Mitigation: ${a.mitigation || 'N/A'}]`,
+            pattern: `[file:hashes.'SHA-256' = '${t.content_hash || ''}']`,
+            pattern_type: "stix",
+            valid_from: now,
+            confidence: Math.round((a.confidence || 0.85) * 100),
+            indicator_types: [a.is_pre_cve_warning ? "anomalous-activity" : "malicious-activity"],
+            external_references: [{ source_name: t.source_name, url: t.url }]
+          };
+        })
+      };
+
+      downloadFile(`aether-stix-bundle-${now.slice(0, 10)}.json`, 'application/json', JSON.stringify(stixBundle, null, 2));
+    }
+
+    function downloadFile(filename, type, data) {
+      const blob = new Blob([data], { type });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    // =========================================================================
+    // FEATURE 1: SPOTLIGHT COMMAND PALETTE (Cmd+K / Ctrl+K)
+    // =========================================================================
+    let paletteSelectedIndex = 0;
+    let paletteItems = [];
+
+    const DEFAULT_PALETTE_ACTIONS = [
+      { id: 'action-auto-triage', title: 'Run Autonomous Local LLM Triage', subtitle: 'Queue top threats for local Ollama (llama3.1:8b) deep analysis', icon: 'sparkles', badge: 'AI TRIAGE', type: 'action', run: triggerTriageBackfill },
+      { id: 'action-scan', title: 'Trigger Real-Time Intelligence Sweep', subtitle: 'Ingest latest CVEs, arXiv papers & GitHub advisories', icon: 'refresh-cw', badge: 'RADAR', type: 'action', run: triggerScan },
+      { id: 'action-3d', title: 'Toggle 3D Holographic Globe Radar', subtitle: 'View or hide Three.js spatial threat matrix', icon: 'globe', badge: '3D WEBGL', type: 'action', run: toggle3DGlobe },
+      { id: 'action-h24', title: 'Filter: Last 24 Hours Only', subtitle: 'Show emerging threats discovered in past 24h', icon: 'clock', badge: '24H', type: 'action', run: () => setTimeHorizon(24) },
+      { id: 'action-pinned', title: 'Open Active Investigation Pinboard', subtitle: 'View all bookmarked & pinned incident files', icon: 'star', badge: 'PINBOARD', type: 'action', run: () => setCategory('pinned') },
+      { id: 'action-export-md', title: 'Export Threat Intelligence Markdown Brief', subtitle: 'Download formatted report for Notion/Obsidian/GitHub', icon: 'file-text', badge: 'REPORT', type: 'action', run: exportMarkdownReport },
+      { id: 'action-export-stix', title: 'Export Threat Intel STIX 2.1 Bundle', subtitle: 'Download JSON indicators for SIEM / MISP ingestion', icon: 'shield', badge: 'STIX 2.1', type: 'action', run: exportStixJson },
+      { id: 'action-watchlist', title: 'Manage Threat Hunting Watchlists', subtitle: 'Configure keyword rules and alerts', icon: 'target', badge: 'RULES', type: 'action', run: openWatchlistModal },
+      { id: 'action-audio', title: 'Toggle Cybernetic Audio Soundscape', subtitle: 'Switch audio synthesis alerts ON/OFF', icon: 'volume-2', badge: 'AUDIO', type: 'action', run: toggleAudio }
+    ];
+
+    function openCommandPalette() {
+      const modal = document.getElementById('command-palette-modal');
+      const input = document.getElementById('palette-search');
+      modal.classList.remove('hidden');
+      input.value = '';
+      input.focus();
+      paletteSelectedIndex = 0;
+      paletteItems = [...DEFAULT_PALETTE_ACTIONS];
+      renderPaletteItems();
+      playBeep('click');
+    }
+
+    function closeCommandPalette() {
+      const modal = document.getElementById('command-palette-modal');
+      modal.classList.add('hidden');
+    }
+
+    function handlePaletteBackdrop(e) {
+      if (e.target.id === 'command-palette-modal') {
+        closeCommandPalette();
+      }
+    }
+
+    let paletteDebounceTimer = null;
+    function handlePaletteSearch() {
+      clearTimeout(paletteDebounceTimer);
+      paletteDebounceTimer = setTimeout(async () => {
+        const query = document.getElementById('palette-search').value.trim().toLowerCase();
+        if (!query) {
+          paletteItems = [...DEFAULT_PALETTE_ACTIONS];
+          paletteSelectedIndex = 0;
+          renderPaletteItems();
+          return;
+        }
+
+        // Filter default actions
+        const matchedActions = DEFAULT_PALETTE_ACTIONS.filter(a =>
+          a.title.toLowerCase().includes(query) || a.subtitle.toLowerCase().includes(query) || a.badge.toLowerCase().includes(query)
+        );
+
+        // Fetch live threats matching search query
+        try {
+          const res = await fetch(`/api/entries?search=${encodeURIComponent(query)}&limit=8`);
+          const data = await res.json();
+          const threatMatches = (data.entries || []).map(entry => ({
+            id: `threat-${entry.id}`,
+            title: entry.title,
+            subtitle: `${entry.source_name} • ${entry.category} • Velocity: ${entry.threat_velocity || 25}/100`,
+            icon: 'alert-triangle',
+            badge: entry.category.toUpperCase(),
+            type: 'threat',
+            entry: entry,
+            run: () => {
+              closeCommandPalette();
+              openInspectModal(entry);
+            }
+          }));
+
+          paletteItems = [...matchedActions, ...threatMatches];
+          paletteSelectedIndex = 0;
+          renderPaletteItems();
+        } catch (e) {
+          paletteItems = matchedActions;
+          paletteSelectedIndex = 0;
+          renderPaletteItems();
+        }
+      }, 150);
+    }
+
+    function renderPaletteItems() {
+      const container = document.getElementById('palette-content');
+      if (!paletteItems.length) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-gray-500 font-mono text-xs">
+            <i data-lucide="compass" class="w-6 h-6 mx-auto mb-2 text-gray-600"></i>
+            No matching commands or threat advisories found.
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = paletteItems.map((item, idx) => `
+        <div onclick="executePaletteItem(${idx})" class="p-3 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition border ${idx === paletteSelectedIndex ? 'bg-cyber-cyan/15 border-cyber-cyan text-white shadow-lg' : 'bg-black/40 border-cyber-border/40 hover:bg-white/5 text-gray-300'}">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${idx === paletteSelectedIndex ? 'bg-cyber-cyan text-black' : 'bg-cyber-border text-cyber-cyan'}">
+              <i data-lucide="${item.icon}" class="w-4 h-4"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div class="font-bold text-xs truncate ${idx === paletteSelectedIndex ? 'text-cyber-cyan' : 'text-white'}">${item.title}</div>
+              <div class="text-[10px] text-gray-400 truncate">${item.subtitle}</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-black/60 border border-gray-700 text-gray-400 flex-shrink-0">${item.badge}</span>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function executePaletteItem(index) {
+      if (paletteItems[index] && typeof paletteItems[index].run === 'function') {
+        playBeep('click');
+        const action = paletteItems[index];
+        closeCommandPalette();
+        action.run();
+      }
+    }
+
+    // Keyboard navigation listeners for Spotlight Cmd+K
+    document.addEventListener('keydown', (e) => {
+      // Cmd+K or Ctrl+K
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const modal = document.getElementById('command-palette-modal');
+        if (modal.classList.contains('hidden')) {
+          openCommandPalette();
+        } else {
+          closeCommandPalette();
+        }
+        return;
+      }
+
+      const modal = document.getElementById('command-palette-modal');
+      if (modal && !modal.classList.contains('hidden')) {
+        if (e.key === 'Escape') {
+          closeCommandPalette();
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          paletteSelectedIndex = (paletteSelectedIndex + 1) % Math.max(1, paletteItems.length);
+          renderPaletteItems();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          paletteSelectedIndex = (paletteSelectedIndex - 1 + paletteItems.length) % Math.max(1, paletteItems.length);
+          renderPaletteItems();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          executePaletteItem(paletteSelectedIndex);
+        }
+      }
+    });
+
     // Initialize on DOM Ready
     window.addEventListener('DOMContentLoaded', () => {
       initCanvasBackground();
       lucide.createIcons();
       initWebSocket();
+      initThreeGlobe();
       refreshStats();
       fetchTriageStatus();
+      updatePinnedBadge();
       loadFeed(true);
     });
   </script>
