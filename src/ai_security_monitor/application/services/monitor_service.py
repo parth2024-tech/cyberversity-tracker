@@ -144,6 +144,16 @@ class MonitorService:
                             except Exception as ws_err:
                                 logger.warn(f"WebSocket broadcast error: {ws_err}")
 
+                        # Auto-enqueue high-priority entries into Autonomous LLM Triage Queue
+                        if settings.analyzer.autonomous_triage_enabled:
+                            if (analysis.threat_velocity >= settings.analyzer.triage_velocity_threshold
+                                    or analysis.is_pre_cve_warning):
+                                try:
+                                    from ai_security_monitor.application.services.autonomous_triage_service import get_triage_service
+                                    await get_triage_service().enqueue(added_entry.id)
+                                except Exception as triage_err:
+                                    logger.warn(f"Failed to auto-enqueue entry for LLM triage: {triage_err}")
+
                     except DuplicateEntryError:
                         continue
 

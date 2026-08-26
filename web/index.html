@@ -384,13 +384,18 @@
               <i data-lucide="shield-check" class="w-3 h-3"></i> DEFCON 3: ELEVATED
             </span>
           </div>
-          <div class="flex items-center gap-3 text-xs font-mono text-cyber-muted mt-1">
+          <div class="flex items-center gap-3 text-xs font-mono text-cyber-muted mt-1 flex-wrap">
             <span class="flex items-center gap-1.5" id="connection-status">
               <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span>
               WS: STREAMING (<span id="ping-time">14ms</span>)
             </span>
             <span>•</span>
             <span id="clock" class="text-slate-300 font-semibold">00:00:00 UTC</span>
+            <span>•</span>
+            <span id="triage-status-badge" class="flex items-center gap-1.5 text-cyber-purple font-semibold cursor-pointer" onclick="triggerTriageBackfill()" title="Autonomous LLM Triage Queue (Local Ollama llama3.1:8b)">
+              <span id="triage-dot" class="w-2 h-2 rounded-full bg-cyber-purple animate-pulse"></span>
+              <span id="triage-status-text">AI QUEUE: READY (0)</span>
+            </span>
           </div>
         </div>
       </div>
@@ -401,6 +406,12 @@
         <button id="audio-toggle" onclick="toggleAudio()" class="p-2.5 rounded-xl glass-panel text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono" title="Toggle audio feedback">
           <i id="audio-icon" data-lucide="volume-2" class="w-4 h-4 text-cyber-cyan"></i>
           <span class="hidden sm:inline">AUDIO: ON</span>
+        </button>
+
+        <!-- Auto-LLM Triage Queue Trigger -->
+        <button onclick="triggerTriageBackfill()" id="auto-triage-btn" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-purple/60 text-purple-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold" title="Queue top high-velocity threats for autonomous local Ollama triage">
+          <i data-lucide="sparkles" class="w-4 h-4 text-cyber-purple"></i>
+          <span>Auto-LLM Triage</span>
         </button>
 
         <!-- Watchlist Trigger -->
@@ -932,6 +943,10 @@
             loadFeed(true);
           }
         }
+      } else if (msg.type === 'triage_queue_updated') {
+        updateTriageStatus(msg.data);
+      } else if (msg.type === 'triage_completed') {
+        handleTriageCompleted(msg.data);
       }
     }
 
@@ -1229,6 +1244,12 @@
               </span>
             ` : ''}
 
+            ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `
+              <span class="px-2.5 py-0.5 rounded-md bg-purple-950/90 border border-cyber-purple text-purple-300 text-[10px] font-bold font-mono shadow-md shadow-purple-500/20 flex items-center gap-1">
+                <i data-lucide="cpu" class="w-3 h-3 text-cyber-purple"></i> DEEP LLM TRIAGED
+              </span>
+            ` : ''}
+
             ${(entry.matched_watchlist_rules || []).map(w => `
               <span class="px-2.5 py-0.5 rounded-md bg-cyan-950/80 border border-cyber-cyan text-cyber-cyan text-[10px] font-bold font-mono animate-pulse flex items-center gap-1">
                 <i data-lucide="target" class="w-3 h-3"></i> ${w}
@@ -1436,9 +1457,14 @@
 
           <!-- Footer Actions -->
           <div class="pt-4 flex items-center justify-between border-t border-cyber-border flex-wrap gap-3">
-            <a href="${entry.url}" target="_blank" class="px-5 py-2.5 rounded-xl bg-cyber-cyan text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-cyan-300 transition">
-              Open Original Source <i data-lucide="external-link" class="w-4 h-4"></i>
-            </a>
+            <div class="flex items-center gap-2">
+              <button onclick="enqueueEntryForTriage('${entry.id}')" class="px-4 py-2.5 rounded-xl bg-purple-950/80 border border-cyber-purple text-purple-300 hover:text-white font-bold text-xs uppercase font-mono tracking-wider flex items-center gap-1.5 transition">
+                <i data-lucide="sparkles" class="w-4 h-4 text-cyber-purple"></i> Deep LLM Triage (Ollama)
+              </button>
+              <a href="${entry.url}" target="_blank" class="px-5 py-2.5 rounded-xl bg-cyber-cyan text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-cyan-300 transition">
+                Open Original Source <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+            </div>
             <button onclick="closeInspectModal()" class="px-5 py-2.5 rounded-xl bg-cyber-black border border-cyber-border text-xs font-mono text-gray-300 hover:text-white transition">
               Dismiss
             </button>
@@ -1791,12 +1817,83 @@
       }
     }
 
+    // Autonomous LLM Triage Queue Management
+    async function fetchTriageStatus() {
+      try {
+        const res = await fetch('/api/triage/queue');
+        const data = await res.json();
+        updateTriageStatus(data);
+      } catch (e) {
+        console.warn("Failed to fetch triage queue status:", e);
+      }
+    }
+
+    function updateTriageStatus(data) {
+      const textEl = document.getElementById('triage-status-text');
+      const dotEl = document.getElementById('triage-dot');
+      if (!textEl || !dotEl) return;
+
+      if (data.is_processing) {
+        dotEl.className = "w-2 h-2 rounded-full bg-cyber-amber animate-ping";
+        const entryName = data.current_entry ? (data.current_entry.slice(0, 20) + '...') : 'Threat';
+        textEl.innerHTML = `<span class="text-cyber-amber font-bold">TRIAGING: ${entryName}</span> (<span class="text-white">${data.queue_size}</span>)`;
+      } else if (data.queue_size > 0) {
+        dotEl.className = "w-2 h-2 rounded-full bg-cyber-cyan animate-pulse";
+        textEl.innerHTML = `<span class="text-cyber-cyan font-bold">QUEUED</span> (<span class="text-white">${data.queue_size}</span>)`;
+      } else {
+        dotEl.className = "w-2 h-2 rounded-full bg-cyber-purple animate-pulse";
+        textEl.innerHTML = `AI QUEUE: READY (<span class="text-gray-400">${data.total_completed || 0} triaged</span>)`;
+      }
+    }
+
+    async function triggerTriageBackfill() {
+      const btn = document.getElementById('auto-triage-btn');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin text-cyber-purple"></i> Enqueueing...`;
+      lucide.createIcons();
+      playBeep('alert');
+
+      try {
+        const res = await fetch('/api/triage/backfill?limit=10', { method: 'POST' });
+        const data = await res.json();
+        alert(`⚡ Enqueued ${data.enqueued_count} high-velocity threats into Autonomous LLM Triage Queue!\nLocal Ollama (llama3.1:8b) is triaging them in the background.`);
+        fetchTriageStatus();
+      } catch (e) {
+        console.error("Triage backfill error:", e);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 text-cyber-purple"></i><span>Auto-LLM Triage</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    async function enqueueEntryForTriage(entryId) {
+      playBeep('click');
+      try {
+        const res = await fetch(`/api/triage/enqueue/${entryId}`, { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || "Entry enqueued for deep autonomous LLM triage.");
+        fetchTriageStatus();
+      } catch (e) {
+        console.error("Enqueue error:", e);
+      }
+    }
+
+    function handleTriageCompleted(data) {
+      playBeep('critical');
+      fetchTriageStatus();
+      refreshStats();
+      // Reload feed to display updated scores and deep LLM badges
+      loadFeed(true);
+    }
+
     // Initialize on DOM Ready
     window.addEventListener('DOMContentLoaded', () => {
       initCanvasBackground();
       lucide.createIcons();
       initWebSocket();
       refreshStats();
+      fetchTriageStatus();
       loadFeed(true);
     });
   </script>

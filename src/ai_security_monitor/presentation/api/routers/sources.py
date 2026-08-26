@@ -61,3 +61,12 @@ async def toggle_source(source_id: str, req: SourceToggleRequest):
         await uow.commit()
 
         return {"status": "success", "source_id": str(source.id), "enabled": source.enabled}
+
+
+@sources_router.post("/fetch")
+async def trigger_fetch_sweep():
+    """Trigger an immediate radar sweep across all sources."""
+    from ai_security_monitor.application.services.monitor_service import MonitorService
+    service = MonitorService()
+    results = await service.fetch_all()
+    return {"status": "success", "results": results}

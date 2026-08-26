@@ -20,6 +20,7 @@ from ai_security_monitor.presentation.api.routers import (
     entries_router,
     sources_router,
     stats_router,
+    triage_router,
     watchlist_router,
 )
 from ai_security_monitor.presentation.api.websocket.manager import websocket_router
@@ -54,10 +55,38 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.scheduler = scheduler
         logger.info("Background scheduler started")
 
+    # Start Autonomous LLM Triage Worker (if enabled)
+    if settings.analyzer.autonomous_triage_enabled:
+        import asyncio
+        from ai_security_monitor.application.services.autonomous_triage_service import (
+            get_triage_service,
+        )
+        from ai_security_monitor.presentation.api.websocket.manager import manager
+
+        triage_service = get_triage_service()
+
+        def _broadcast_to_ws(msg: dict):
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(manager.broadcast(msg))
+            except Exception:
+                pass
+
+        triage_service.set_broadcast_callback(_broadcast_to_ws)
+        await triage_service.start()
+        app.state.triage_service = triage_service
+        logger.info("Autonomous High-Priority LLM Triage Worker started in background")
+
     yield
 
     # Shutdown
     logger.info("Shutting down AI Security Monitor API")
+
+    # Stop triage worker
+    if hasattr(app.state, "triage_service"):
+        await app.state.triage_service.stop()
+        logger.info("Autonomous High-Priority LLM Triage Worker stopped")
 
     # Stop scheduler
     if hasattr(app.state, "scheduler"):
@@ -104,7 +133,12 @@ def create_app() -> FastAPI:
     app.include_router(digest_router, prefix="/api", tags=["Digest"])
     app.include_router(digest_router, prefix="/api/telegram", tags=["Telegram"])
     app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
+    app.include_router(triage_router, prefix="/api", tags=["Autonomous Triage"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
+
+    # Quick sweep route alias
+    from ai_security_monitor.presentation.api.routers.sources import trigger_fetch_sweep
+    app.post("/api/fetch", tags=["Sources"])(trigger_fetch_sweep)
 
     # Serve static web UI
     import os

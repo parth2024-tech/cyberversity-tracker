@@ -100,24 +100,43 @@ Provide JSON output with these fields:
 JSON only, no extra text."""
 
     async def _call_ollama(self, prompt: str) -> dict:
-        """Call Ollama API."""
+        """Call Ollama API with guaranteed JSON format."""
         import httpx
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(
-                f"{self.ollama_host}/api/generate",
-                json={
-                    "model": self.ollama_model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": self.temperature,
-                        "num_predict": self.max_tokens,
-                    },
-                },
-            )
-            response.raise_for_status()
+        import re
+
+        payload = {
+            "model": self.ollama_model,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": self.temperature,
+                "num_predict": self.max_tokens,
+            },
+        }
+
+        async with httpx.AsyncClient(timeout=45) as client:
+            try:
+                response = await client.post(f"{self.ollama_host}/api/generate", json=payload)
+                response.raise_for_status()
+            except Exception as first_err:
+                # If primary model fails or times out, fallback to ultra-fast qwen2:0.5b
+                try:
+                    payload["model"] = "qwen2:0.5b"
+                    response = await client.post(f"{self.ollama_host}/api/generate", json=payload)
+                    response.raise_for_status()
+                except Exception:
+                    raise first_err
+
             data = response.json()
-            return json.loads(data["response"])
+            raw_content = data.get("response", "{}")
+            try:
+                return json.loads(raw_content)
+            except json.JSONDecodeError:
+                json_match = re.search(r'\{.*\}', raw_content, re.DOTALL)
+                if json_match:
+                    return json.loads(json_match.group())
+                raise
 
     async def _call_groq(self, prompt: str) -> dict:
         """Call Groq API."""
@@ -170,21 +189,47 @@ JSON only, no extra text."""
             else:
                 result = await self._call_gateway(prompt)
 
-            # Validate and normalize
+            # Validate and normalize string fields
+            raw_risk = result.get("risk_assessment")
+            if isinstance(raw_risk, dict):
+                risk_str = f"{raw_risk.get('risk_level', 'High')} risk: {raw_risk.get('impact_description', '')}"
+            elif isinstance(raw_risk, list):
+                risk_str = "; ".join(str(x) for x in raw_risk)
+            else:
+                risk_str = str(raw_risk or "Risk assessment unavailable")
+
+            raw_mit = result.get("mitigation")
+            if isinstance(raw_mit, list):
+                mit_str = "; ".join(str(m) for m in raw_mit)
+            elif isinstance(raw_mit, dict):
+                mit_str = "; ".join(f"{k}: {v}" for k, v in raw_mit.items())
+            else:
+                mit_str = str(raw_mit or "No mitigation provided")
+
+            raw_vector = result.get("attack_vector")
+            if isinstance(raw_vector, (dict, list)):
+                vector_str = str(raw_vector)
+            else:
+                vector_str = str(raw_vector or "Analysis unavailable")
+
+            raw_eco = result.get("affected_ecosystem", [])
+            if isinstance(raw_eco, str):
+                raw_eco = [raw_eco]
+
             return AnalysisResult(
                 entry_id=entry.id,
-                attack_vector=result.get("attack_vector", "Analysis unavailable"),
-                risk_assessment=result.get("risk_assessment", "Risk assessment unavailable"),
-                mitigation=result.get("mitigation", "No mitigation provided"),
-                threat_velocity=max(1, min(100, result.get("threat_velocity", 50))),
-                severity_index=max(1, min(100, result.get("severity_index", 50))),
-                blast_radius_score=max(0, min(100, result.get("blast_radius_score", 0))),
-                affected_ecosystem=result.get("affected_ecosystem", []),
-                is_pre_cve_warning=result.get("is_pre_cve_warning", False),
-                attack_archetype=result.get("attack_archetype", "Unknown"),
-                weaponization_potential=result.get("weaponization_potential", "Theoretical"),
+                attack_vector=vector_str,
+                risk_assessment=risk_str,
+                mitigation=mit_str,
+                threat_velocity=max(1, min(100, int(result.get("threat_velocity", 50)))),
+                severity_index=max(1, min(100, int(result.get("severity_index", 50)))),
+                blast_radius_score=max(0, min(100, int(result.get("blast_radius_score", 0)))),
+                affected_ecosystem=raw_eco if isinstance(raw_eco, list) else [],
+                is_pre_cve_warning=bool(result.get("is_pre_cve_warning", False)),
+                attack_archetype=str(result.get("attack_archetype", "Unknown")),
+                weaponization_potential=str(result.get("weaponization_potential", "Theoretical")),
                 model=self.model,
-                confidence=0.9,
+                confidence=0.95,
             )
         except Exception as e:
             # Fallback to heuristic on LLM failure

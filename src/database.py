@@ -444,8 +444,10 @@ class Database:
         """
         params = []
         if since:
+            # SQLite stores datetime as 'YYYY-MM-DD HH:MM:SS', not ISO 'T' format
+            since_str = since.strftime('%Y-%m-%d %H:%M:%S')
             query += " AND e.published_at >= ?"
-            params.append(since.isoformat())
+            params.append(since_str)
         query += " ORDER BY e.published_at DESC LIMIT ?"
         params.append(limit)
 

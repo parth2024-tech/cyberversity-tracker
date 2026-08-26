@@ -319,6 +319,9 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
+    async def get_by_entry(self, entry_id: UUID) -> Analysis | None:
+        return await self.get(entry_id)
+
     async def get_by_id(self, analysis_id: UUID) -> Analysis | None:
         stmt = select(AnalysisModelDB).where(AnalysisModelDB.id == _uuid_to_str(analysis_id))
         result = await self._session.execute(stmt)

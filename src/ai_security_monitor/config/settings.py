@@ -74,12 +74,18 @@ class AnalyzerSettings(BaseSettings):
     ollama_model: str = Field(default="llama3.1:8b", description="Ollama model name")
     groq_api_key: str | None = Field(default=None, description="Groq API key")
     groq_model: str = Field(default="llama-3.1-70b-versatile", description="Groq model name")
-    max_tokens: int = Field(default=2000, description="Max tokens for LLM response")
+    max_tokens: int = Field(default=400, description="Max tokens for LLM response")
     temperature: float = Field(default=0.1, description="LLM temperature")
     
     # Local LLM routing via Hermes gateway
     use_local_llm: bool = Field(default=True, description="Route LLM calls through local gateway (auto/offline)")
     local_model: str = Field(default="auto/offline", description="Local model via gateway")
+
+    # Autonomous High-Priority Triage Queue
+    autonomous_triage_enabled: bool = Field(default=True, description="Enable autonomous high-priority LLM triage")
+    triage_velocity_threshold: int = Field(default=70, description="Minimum threat velocity to auto-enqueue for LLM triage")
+    triage_concurrency: int = Field(default=1, description="Max concurrent LLM triage jobs")
+    triage_interval_seconds: float = Field(default=2.0, description="Pause between queued triage tasks")
 
     model_config = SettingsConfigDict(env_prefix="ANALYZER_")
 
