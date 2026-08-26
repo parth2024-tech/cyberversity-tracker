@@ -114,7 +114,8 @@ class TelegramDelivery(BaseDelivery):
         return full_message
 
     def _escape_html(self, text: str) -> str:
-        return text.replace("&", "&").replace("<", "<").replace(">", ">")
+        import html
+        return html.escape(str(text or ""), quote=False)
 
 
 delivery_registry.register("telegram", TelegramDelivery)

@@ -30,7 +30,7 @@ class SourceModel(Base):
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
-    url: Mapped[str] = mapped_column(Text, default="")
+    url: Mapped[str | None] = mapped_column(Text, nullable=True)
     query: Mapped[str | None] = mapped_column(Text, nullable=True)
     rate_limit_seconds: Mapped[int] = mapped_column(Integer, default=3600)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
@@ -96,6 +96,8 @@ class AnalysisModel(Base):
     weaponization_potential: Mapped[str] = mapped_column(String(50), default="Theoretical")
     model: Mapped[str] = mapped_column(String(50), default="heuristic")
     confidence: Mapped[float] = mapped_column(default=1.0)
+    overall_confidence: Mapped[float] = mapped_column(default=0.7)
+    evidence_version: Mapped[str] = mapped_column(String(20), default="v1")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -162,4 +164,31 @@ class WatchlistRuleModel(Base):
     min_threat_velocity: Mapped[int] = mapped_column(Integer, default=0)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AnalysisEvidenceModel(Base):
+    """Epistemic evidence tracking for analysis claims."""
+    __tablename__ = "analysis_evidence"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    analysis_id: Mapped[str] = mapped_column(String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True)
+    claim_type: Mapped[str] = mapped_column(String(20), nullable=False)  # fact, inference, hypothesis, assumption, unknown
+    claim_target: Mapped[str] = mapped_column(Text, nullable=False)
+    claim_value: Mapped[str] = mapped_column(Text, nullable=False)
+    confidence: Mapped[float] = mapped_column(default=0.0)
+    evidence_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    method: Mapped[str] = mapped_column(String(20), nullable=False)  # heuristic, llm, hybrid
+    model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AnalysisOutcomeModel(Base):
+    """Ground truth outcomes for calibration."""
+    __tablename__ = "analysis_outcome"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    analysis_id: Mapped[str] = mapped_column(String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True)
+    outcome_type: Mapped[str] = mapped_column(String(20), nullable=False)  # telegram_sent, user_dismissed, user_escalated, false_positive, confirmed
+    outcome_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

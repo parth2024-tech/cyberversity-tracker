@@ -48,41 +48,51 @@ class Database:
         with self.transaction() as conn:
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS sources (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT UNIQUE NOT NULL,
-                    category TEXT NOT NULL,
-                    type TEXT NOT NULL,
+                    id VARCHAR(36) PRIMARY KEY NOT NULL,
+                    name VARCHAR(255) UNIQUE NOT NULL,
+                    category VARCHAR(50) NOT NULL,
+                    type VARCHAR(50) NOT NULL,
                     url TEXT,
-                    config_json TEXT,
-                    rate_limit_seconds INTEGER DEFAULT 3600,
-                    enabled BOOLEAN DEFAULT 1,
-                    last_fetched TIMESTAMP,
-                    last_success TIMESTAMP,
-                    error_count INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    query TEXT,
+                    rate_limit_seconds INTEGER NOT NULL,
+                    enabled BOOLEAN NOT NULL,
+                    last_fetched_at DATETIME,
+                    last_status VARCHAR(20),
+                    last_entries_new INTEGER NOT NULL DEFAULT 0,
+                    config JSON NOT NULL DEFAULT '{}',
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL
                 );
+
+                CREATE UNIQUE INDEX IF NOT EXISTS ix_sources_name ON sources (name);
+                CREATE INDEX IF NOT EXISTS ix_sources_enabled ON sources (enabled);
+                CREATE INDEX IF NOT EXISTS ix_sources_category ON sources (category);
+                CREATE INDEX IF NOT EXISTS ix_sources_category_enabled ON sources (category, enabled);
 
                 CREATE TABLE IF NOT EXISTS entries (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    source_id INTEGER NOT NULL,
-                    source_name TEXT NOT NULL,
-                    category TEXT NOT NULL,
+                    id VARCHAR(36) PRIMARY KEY NOT NULL,
+                    source_id VARCHAR(36) NOT NULL,
                     title TEXT NOT NULL,
                     url TEXT NOT NULL,
-                    content_hash TEXT UNIQUE NOT NULL,
-                    summary TEXT,
-                    published_at TIMESTAMP,
-                    fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    tags TEXT,  -- JSON array
-                    metadata_json TEXT,  -- Extra source-specific data
-                    FOREIGN KEY (source_id) REFERENCES sources(id)
+                    content_hash VARCHAR(64) NOT NULL,
+                    summary TEXT NOT NULL DEFAULT '',
+                    published_at DATETIME NOT NULL,
+                    fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    category VARCHAR(50) NOT NULL,
+                    tags JSON NOT NULL DEFAULT '[]',
+                    metadata_json JSON NOT NULL DEFAULT '{}',
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (source_id) REFERENCES sources (id)
                 );
 
-                CREATE INDEX IF NOT EXISTS idx_entries_published ON entries(published_at DESC);
-                CREATE INDEX IF NOT EXISTS idx_entries_category ON entries(category);
-                CREATE INDEX IF NOT EXISTS idx_entries_source ON entries(source_id);
-                CREATE INDEX IF NOT EXISTS idx_entries_hash ON entries(content_hash);
-                CREATE INDEX IF NOT EXISTS idx_entries_fetched ON entries(fetched_at DESC);
+                CREATE INDEX IF NOT EXISTS ix_entries_source_id ON entries (source_id);
+                CREATE INDEX IF NOT EXISTS ix_entries_category_published ON entries (category, published_at);
+                CREATE INDEX IF NOT EXISTS ix_entries_fetched_at ON entries (fetched_at);
+                CREATE INDEX IF NOT EXISTS ix_entries_source_published ON entries (source_id, published_at);
+                CREATE INDEX IF NOT EXISTS ix_entries_published_at ON entries (published_at);
+                CREATE INDEX IF NOT EXISTS ix_entries_category ON entries (category);
+                CREATE UNIQUE INDEX IF NOT EXISTS ix_entries_content_hash ON entries (content_hash);
 
                 CREATE TABLE IF NOT EXISTS digest_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,48 +105,54 @@ class Database:
                 );
 
                 CREATE TABLE IF NOT EXISTS fetch_log (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    source_id INTEGER NOT NULL,
-                    source_name TEXT NOT NULL,
-                    status TEXT NOT NULL,  -- 'success', 'error', 'skipped'
-                    entries_found INTEGER DEFAULT 0,
-                    entries_new INTEGER DEFAULT 0,
+                    id VARCHAR(36) PRIMARY KEY NOT NULL,
+                    source_id VARCHAR(36) NOT NULL,
+                    source_name VARCHAR(255) NOT NULL,
+                    status VARCHAR(20) NOT NULL,
+                    entries_new INTEGER NOT NULL DEFAULT 0,
+                    entries_total INTEGER NOT NULL DEFAULT 0,
                     error_message TEXT,
-                    duration_ms INTEGER,
-                    fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (source_id) REFERENCES sources(id)
+                    duration_ms INTEGER NOT NULL DEFAULT 0,
+                    fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (source_id) REFERENCES sources (id)
                 );
 
-                CREATE INDEX IF NOT EXISTS idx_fetch_log_source ON fetch_log(source_id);
-                CREATE INDEX IF NOT EXISTS idx_fetch_log_time ON fetch_log(fetched_at DESC);
+                CREATE INDEX IF NOT EXISTS ix_fetch_log_source_fetched ON fetch_log (source_id, fetched_at);
+                CREATE INDEX IF NOT EXISTS ix_fetch_log_status ON fetch_log (status);
+                CREATE INDEX IF NOT EXISTS ix_fetch_log_fetched_at ON fetch_log (fetched_at);
+                CREATE INDEX IF NOT EXISTS ix_fetch_log_source_id ON fetch_log (source_id);
 
                 CREATE TABLE IF NOT EXISTS entry_analysis (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    entry_id INTEGER NOT NULL UNIQUE,
-                    attack_vector TEXT,
-                    risk_assessment TEXT,
-                    mitigation TEXT,
-                    threat_velocity INTEGER,       -- 1-100
-                    severity_index INTEGER,        -- 1-100
-                    blast_radius_score INTEGER,    -- 1-100 (Feature 1)
-                    affected_ecosystem TEXT,       -- JSON list (Feature 1)
-                    is_pre_cve_warning BOOLEAN,    -- (Feature 5)
-                    attack_archetype TEXT,         -- (Feature 5)
-                    weaponization_potential TEXT,  -- (Feature 5)
-                    ai_model TEXT,
-                    overall_confidence REAL DEFAULT 0.7,   -- aggregate confidence (epistemic)
-                    evidence_version TEXT DEFAULT 'v1',     -- schema version for replay
-                    analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (entry_id) REFERENCES entries(id)
+                    id VARCHAR(36) PRIMARY KEY NOT NULL,
+                    entry_id VARCHAR(36) NOT NULL UNIQUE,
+                    attack_vector TEXT NOT NULL,
+                    risk_assessment TEXT NOT NULL,
+                    mitigation TEXT NOT NULL,
+                    threat_velocity INTEGER NOT NULL,
+                    severity_index INTEGER NOT NULL,
+                    blast_radius_score INTEGER NOT NULL DEFAULT 0,
+                    affected_ecosystem JSON NOT NULL DEFAULT '[]',
+                    is_pre_cve_warning BOOLEAN NOT NULL DEFAULT 0,
+                    attack_archetype VARCHAR(100) NOT NULL DEFAULT '',
+                    weaponization_potential VARCHAR(50) NOT NULL DEFAULT 'Theoretical',
+                    model VARCHAR(50) NOT NULL DEFAULT 'heuristic',
+                    confidence REAL NOT NULL DEFAULT 1.0,
+                    overall_confidence REAL NOT NULL DEFAULT 0.7,
+                    evidence_version VARCHAR(20) NOT NULL DEFAULT 'v1',
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (entry_id) REFERENCES entries (id)
                 );
 
-                CREATE INDEX IF NOT EXISTS idx_entry_analysis_entry ON entry_analysis(entry_id);
-                CREATE INDEX IF NOT EXISTS idx_entry_analysis_velocity ON entry_analysis(threat_velocity DESC);
+                CREATE UNIQUE INDEX IF NOT EXISTS ix_entry_analysis_entry_id ON entry_analysis (entry_id);
+                CREATE INDEX IF NOT EXISTS ix_analysis_threat_velocity ON entry_analysis (threat_velocity);
+                CREATE INDEX IF NOT EXISTS ix_analysis_pre_cve ON entry_analysis (is_pre_cve_warning);
+                CREATE INDEX IF NOT EXISTS ix_analysis_severity ON entry_analysis (severity_index);
 
                 -- Epistemic tracking: per-claim evidence for each analysis
                 CREATE TABLE IF NOT EXISTS analysis_evidence (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    analysis_id INTEGER NOT NULL,
+                    analysis_id VARCHAR(36) NOT NULL,
                     claim_type TEXT NOT NULL CHECK (claim_type IN ('fact','inference','hypothesis','assumption','unknown')),
                     claim_target TEXT NOT NULL,
                     claim_value TEXT NOT NULL,
@@ -155,7 +171,7 @@ class Database:
                 -- Ground truth outcomes for calibration
                 CREATE TABLE IF NOT EXISTS analysis_outcome (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    analysis_id INTEGER NOT NULL,
+                    analysis_id VARCHAR(36) NOT NULL,
                     outcome_type TEXT NOT NULL CHECK (outcome_type IN ('telegram_sent','user_dismissed','user_escalated','false_positive','confirmed')),
                     outcome_value TEXT,
                     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -186,22 +202,27 @@ class Database:
                         pass
 
     def upsert_source(self, name: str, category: str, type_: str, url: str = None,
-                      config: dict = None, rate_limit: int = 3600, enabled: bool = True) -> int:
+                      config: dict = None, rate_limit: int = 3600, enabled: bool = True) -> str:
         """Insert or update a source, return its ID."""
-        config_json = json.dumps(config) if config else None
+        import uuid
+        from datetime import datetime
+        config_json = json.dumps(config) if config else '{}'
+        now = datetime.utcnow().isoformat()
+        source_id = str(uuid.uuid4())
         with self.transaction() as conn:
             cursor = conn.execute("""
-                INSERT INTO sources (name, category, type, url, config_json, rate_limit_seconds, enabled)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO sources (id, name, category, type, url, config, query, rate_limit_seconds, enabled, last_entries_new, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(name) DO UPDATE SET
                     category=excluded.category,
                     type=excluded.type,
                     url=excluded.url,
-                    config_json=excluded.config_json,
+                    config=excluded.config,
                     rate_limit_seconds=excluded.rate_limit_seconds,
-                    enabled=excluded.enabled
+                    enabled=excluded.enabled,
+                    updated_at=excluded.updated_at
                 RETURNING id
-            """, (name, category, type_, url, config_json, rate_limit, enabled))
+            """, (source_id, name, category, type_, url, config_json, None, rate_limit, enabled, 0, now, now))
             return cursor.fetchone()[0]
 
     def get_sources(self, enabled_only: bool = True) -> list[dict]:
@@ -275,7 +296,7 @@ class Database:
                 INSERT OR REPLACE INTO entry_analysis
                 (entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
                  blast_radius_score, affected_ecosystem, is_pre_cve_warning, attack_archetype,
-                 weaponization_potential, ai_model, overall_confidence, evidence_version)
+                 weaponization_potential, model, overall_confidence, evidence_version)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (entry_id, attack_vector, risk_assessment, mitigation, threat_velocity, severity_index,
                   blast_radius_score, affected_json, 1 if is_pre_cve_warning else 0,
@@ -333,7 +354,7 @@ class Database:
                 a.is_pre_cve_warning,
                 a.attack_archetype,
                 a.weaponization_potential,
-                a.ai_model as analysis_model
+                a.model as analysis_model
             FROM entries e
             LEFT JOIN entry_analysis a ON e.id = a.entry_id
             WHERE 1=1
