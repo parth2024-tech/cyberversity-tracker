@@ -27,7 +27,16 @@ def server(
     reload: bool = typer.Option(False, "--reload", "-r", help="Auto-reload on code change"),
 ):
     """Launch the real-time web command center and API server."""
+    import os
     import uvicorn
+    # Support cloud runtime PORT environment variable (Render, Fly.io, etc.)
+    env_port = os.environ.get("PORT") or os.environ.get("API_PORT")
+    if env_port and port == 8000:
+        try:
+            port = int(env_port)
+        except ValueError:
+            pass
+
     console.print(f"[bold cyan]🚀 Launching AI Security Monitor Command Center on http://{host}:{port}[/bold cyan]")
     uvicorn.run("ai_security_monitor.presentation.api.main:app", host=host, port=port, reload=reload)
 

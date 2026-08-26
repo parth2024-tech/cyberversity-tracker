@@ -149,3 +149,17 @@ class DigestModel(Base):
     __table_args__ = (
         Index("ix_digests_schedule_created", "schedule", "created_at"),
     )
+
+
+class WatchlistRuleModel(Base):
+    """User-defined framework watchlist and threat alert rule model."""
+    __tablename__ = "watchlist_rules"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    keywords: Mapped[list[str]] = mapped_column(JSON, default=list)
+    categories: Mapped[list[str]] = mapped_column(JSON, default=list)
+    min_threat_velocity: Mapped[int] = mapped_column(Integer, default=0)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+

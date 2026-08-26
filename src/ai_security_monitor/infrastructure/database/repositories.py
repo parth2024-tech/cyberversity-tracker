@@ -22,6 +22,7 @@ from ai_security_monitor.domain.entities import (
     Source,
     SourceType,
 )
+from ai_security_monitor.domain.watchlist import WatchlistRule
 from ai_security_monitor.domain.exceptions import (
     DuplicateEntryError,
     EntityNotFoundError,
@@ -43,6 +44,7 @@ from ai_security_monitor.infrastructure.database.models import (
     EntryModel,
     FetchLogModel,
     SourceModel,
+    WatchlistRuleModel,
 )
 
 
@@ -216,6 +218,17 @@ class SQLAlchemyEntryRepository(EntryRepository):
                     EntryModel.summary.ilike(search_term),
                 )
             )
+
+        if filters.keywords:
+            kw_conditions = []
+            for kw in filters.keywords:
+                kw_clean = kw.strip()
+                if kw_clean:
+                    pattern = f"%{kw_clean}%"
+                    kw_conditions.append(EntryModel.title.ilike(pattern))
+                    kw_conditions.append(EntryModel.summary.ilike(pattern))
+            if kw_conditions:
+                stmt = stmt.where(or_(*kw_conditions))
 
         if filters.pre_cve_only:
             stmt = stmt.join(AnalysisModelDB).where(AnalysisModelDB.is_pre_cve_warning.is_(True))
@@ -613,3 +626,70 @@ class SQLAlchemyDigestRepository(DigestRepository):
             delivery_channels=model.delivery_channels or [],
             created_at=model.created_at,
         )
+
+
+class SQLAlchemyWatchlistRepository:
+    """SQLAlchemy implementation of Watchlist rules repository."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    async def add(self, rule: WatchlistRule) -> WatchlistRule:
+        model = WatchlistRuleModel(
+            id=_uuid_to_str(rule.id),
+            name=rule.name,
+            keywords=rule.keywords,
+            categories=[c.value if hasattr(c, "value") else str(c) for c in rule.categories],
+            min_threat_velocity=rule.min_threat_velocity,
+            enabled=rule.enabled,
+            created_at=rule.created_at,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def get(self, rule_id: UUID) -> WatchlistRule | None:
+        stmt = select(WatchlistRuleModel).where(WatchlistRuleModel.id == _uuid_to_str(rule_id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def list(self, enabled_only: bool = False) -> list[WatchlistRule]:
+        stmt = select(WatchlistRuleModel).order_by(desc(WatchlistRuleModel.created_at))
+        if enabled_only:
+            stmt = stmt.where(WatchlistRuleModel.enabled.is_(True))
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+        return [self._model_to_entity(m) for m in models]
+
+    async def delete(self, rule_id: UUID) -> bool:
+        stmt = select(WatchlistRuleModel).where(WatchlistRuleModel.id == _uuid_to_str(rule_id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            return False
+        await self._session.delete(model)
+        await self._session.flush()
+        return True
+
+    async def toggle(self, rule_id: UUID, enabled: bool) -> WatchlistRule:
+        stmt = select(WatchlistRuleModel).where(WatchlistRuleModel.id == _uuid_to_str(rule_id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("WatchlistRule", str(rule_id))
+        model.enabled = enabled
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    def _model_to_entity(self, model: WatchlistRuleModel) -> WatchlistRule:
+        return WatchlistRule(
+            id=_str_to_uuid(model.id),
+            name=model.name,
+            keywords=model.keywords or [],
+            categories=[Category(c) for c in (model.categories or []) if c in [cat.value for cat in Category]],
+            min_threat_velocity=model.min_threat_velocity or 0,
+            enabled=model.enabled,
+            created_at=model.created_at,
+        )
+

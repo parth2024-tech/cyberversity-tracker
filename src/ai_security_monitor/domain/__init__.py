@@ -14,6 +14,7 @@ from ai_security_monitor.domain.entities import (
     Source,
     SourceType,
 )
+from ai_security_monitor.domain.watchlist import WatchlistRule
 from ai_security_monitor.domain.events import (
     DigestDeliveredEvent,
     DigestGeneratedEvent,
@@ -63,7 +64,7 @@ from ai_security_monitor.domain.value_objects import (
 
 __all__ = [
     # Entities
-    "Entity", "Source", "Entry", "Analysis", "FetchLog", "Digest",
+    "Entity", "Source", "Entry", "Analysis", "FetchLog", "Digest", "WatchlistRule",
     "Category", "SourceType", "FetchStatus", "AnalysisModel",
     # Exceptions
     "DomainError", "SourceError", "SourceNotFoundError", "SourceDisabledError",

@@ -242,6 +242,60 @@
     </div>
   </div>
 
+  <!-- MODAL: Custom Framework Watchlist Manager -->
+  <div id="watchlist-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-cyber-cyan/50 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between pb-4 border-b border-cyber-border">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-cyber-cyan/20 text-cyber-cyan flex items-center justify-center border border-cyber-cyan/40">
+            <i data-lucide="target" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-display font-bold tracking-wide">Custom Threat Hunting Watchlists</h2>
+            <p class="text-xs text-cyber-muted font-mono">Track custom framework keywords, enterprise assets, or specific threat actors</p>
+          </div>
+        </div>
+        <button onclick="closeWatchlistModal()" class="text-gray-400 hover:text-white bg-gray-900/80 hover:bg-gray-800 p-2 rounded-xl border border-gray-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-4 rounded-xl bg-cyber-black/80 border border-cyber-border space-y-3">
+        <h3 class="text-xs font-mono font-bold uppercase text-cyber-cyan flex items-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Create New Hunting Rule
+        </h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-mono text-gray-400 mb-1">RULE NAME</label>
+            <input id="new-wl-name" type="text" placeholder="e.g. Frontier LLMs & MoE Exploit Radar" class="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono">
+          </div>
+          <div>
+            <label class="block text-[11px] font-mono text-gray-400 mb-1">KEYWORDS (COMMA SEPARATED)</label>
+            <input id="new-wl-keywords" type="text" placeholder="e.g. deepseek, vllm, langchain, qwen, llama" class="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 pt-1 flex-wrap">
+          <div class="flex items-center gap-2">
+            <label class="text-[11px] font-mono text-gray-400">MIN VELOCITY:</label>
+            <input id="new-wl-velocity" type="number" min="0" max="100" value="0" class="w-20 glass-input rounded-lg px-2 py-1 text-xs font-mono text-center">
+          </div>
+          <button onclick="createNewWatchlistRule()" class="px-4 py-2 rounded-xl bg-cyber-cyan text-black font-bold text-xs font-mono uppercase flex items-center gap-1.5 hover:bg-cyan-300 transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Save Hunting Rule
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-2 pr-1">
+        <h3 class="text-xs font-mono font-bold uppercase text-gray-400 mb-2">Configured Rules</h3>
+        <div id="watchlist-rules-list" class="space-y-2.5">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Sources Management Switchboard -->
   <div id="sources-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-cyber-border">
@@ -347,6 +401,12 @@
         <button id="audio-toggle" onclick="toggleAudio()" class="p-2.5 rounded-xl glass-panel text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono" title="Toggle audio feedback">
           <i id="audio-icon" data-lucide="volume-2" class="w-4 h-4 text-cyber-cyan"></i>
           <span class="hidden sm:inline">AUDIO: ON</span>
+        </button>
+
+        <!-- Watchlist Trigger -->
+        <button onclick="openWatchlistModal()" class="px-3.5 py-2.5 rounded-xl glass-panel hover:border-cyber-cyan/60 text-cyan-300 hover:text-white transition flex items-center gap-2 text-xs font-mono font-semibold">
+          <i data-lucide="target" class="w-4 h-4 text-cyber-cyan"></i>
+          <span>Watchlist (<span id="active-watchlist-count" class="text-cyber-cyan">0</span>)</span>
         </button>
 
         <!-- AI Sandbox Trigger -->
@@ -479,6 +539,9 @@
             <!-- Category Navigation -->
             <div class="flex items-center gap-1.5 overflow-x-auto w-full pb-1 text-xs font-mono">
               <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-cyan text-black font-bold transition whitespace-nowrap">ALL</button>
+              <button onclick="setCategory('watchlist')" id="tab-watchlist" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyan-400 hover:text-white border border-cyber-cyan/50 font-bold transition whitespace-nowrap flex items-center gap-1">
+                <i data-lucide="target" class="w-3.5 h-3.5"></i> WATCHLIST
+              </button>
               <button onclick="setCategory('pre_cve')" id="tab-pre_cve" class="cat-tab px-3.5 py-1.5 rounded-lg bg-cyber-black text-cyber-amber hover:text-white border border-cyber-amber/50 font-bold transition whitespace-nowrap flex items-center gap-1">
                 <i data-lucide="zap" class="w-3.5 h-3.5"></i> PRE-CVE
               </button>
@@ -1057,7 +1120,9 @@
 
       try {
         let url = `/api/entries?limit=${limit}&offset=${offset}`;
-        if (currentCategory === 'pre_cve') {
+        if (currentCategory === 'watchlist') {
+          url += `&watchlist_only=true`;
+        } else if (currentCategory === 'pre_cve') {
           url += `&pre_cve=true`;
         } else if (currentCategory === 'high_velocity') {
           url += `&high_velocity=true`;
@@ -1163,6 +1228,12 @@
                 <i data-lucide="zap" class="w-3 h-3"></i> PRE-CVE ZERO-DAY
               </span>
             ` : ''}
+
+            ${(entry.matched_watchlist_rules || []).map(w => `
+              <span class="px-2.5 py-0.5 rounded-md bg-cyan-950/80 border border-cyber-cyan text-cyber-cyan text-[10px] font-bold font-mono animate-pulse flex items-center gap-1">
+                <i data-lucide="target" class="w-3 h-3"></i> ${w}
+              </span>
+            `).join('')}
 
             <span class="text-slate-400 font-semibold text-xs">${entry.source_name}</span>
           </div>
@@ -1435,6 +1506,132 @@
         setTimeout(() => {
           btn.disabled = false;
         }, 2000);
+      }
+    }
+
+    // Watchlist Management
+    function openWatchlistModal() {
+      document.getElementById('watchlist-modal').classList.remove('hidden');
+      playBeep('click');
+      loadWatchlistRules();
+    }
+
+    function closeWatchlistModal() {
+      document.getElementById('watchlist-modal').classList.add('hidden');
+    }
+
+    async function loadWatchlistRules() {
+      const listEl = document.getElementById('watchlist-rules-list');
+      listEl.innerHTML = `<p class="text-center font-mono text-xs text-cyber-muted py-4">Loading hunting rules...</p>`;
+
+      try {
+        const res = await fetch('/api/watchlist');
+        const data = await res.json();
+
+        document.getElementById('active-watchlist-count').innerText = data.total || 0;
+
+        if (!data.rules || data.rules.length === 0) {
+          listEl.innerHTML = `
+            <div class="p-6 text-center text-cyber-muted font-mono text-xs glass-panel rounded-xl">
+              No custom hunting rules configured. Create one above to track custom keywords!
+            </div>
+          `;
+          return;
+        }
+
+        listEl.innerHTML = data.rules.map(r => `
+          <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between gap-3 border border-cyber-border">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h4 class="text-xs font-bold text-white font-mono truncate">${r.name}</h4>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${r.enabled ? 'bg-cyber-green/20 text-cyber-green' : 'bg-gray-800 text-gray-400'} font-bold">
+                  ${r.enabled ? 'ACTIVE' : 'PAUSED'}
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                ${(r.keywords || []).map(kw => `<span class="px-2 py-0.5 rounded bg-black/60 border border-cyber-cyan/40 text-cyber-cyan text-[10px] font-mono">🎯 ${kw}</span>`).join('')}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button onclick="toggleWatchlistRule('${r.id}', ${!r.enabled})" class="p-1.5 rounded-lg border border-gray-700 hover:border-cyber-cyan text-gray-300 hover:text-white text-xs font-mono">
+                <i data-lucide="${r.enabled ? 'pause' : 'play'}" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="deleteWatchlistRule('${r.id}')" class="p-1.5 rounded-lg border border-gray-700 hover:border-cyber-red text-cyber-red text-xs font-mono">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+        lucide.createIcons();
+      } catch (e) {
+        listEl.innerHTML = `<p class="text-center text-cyber-red text-xs py-4">Failed to load rules.</p>`;
+      }
+    }
+
+    async function createNewWatchlistRule() {
+      const name = document.getElementById('new-wl-name').value.trim();
+      const rawKeywords = document.getElementById('new-wl-keywords').value.trim();
+      const velocity = parseInt(document.getElementById('new-wl-velocity').value) || 0;
+
+      if (!name || !rawKeywords) {
+        alert("Please enter both a rule name and keywords.");
+        return;
+      }
+
+      const keywords = rawKeywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+
+      try {
+        const res = await fetch('/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            keywords,
+            min_threat_velocity: velocity,
+            enabled: true
+          })
+        });
+
+        if (res.ok) {
+          document.getElementById('new-wl-name').value = '';
+          document.getElementById('new-wl-keywords').value = '';
+          playBeep('alert');
+          loadWatchlistRules();
+          refreshStats();
+          loadFeed(true);
+        }
+      } catch (e) {
+        console.error("Create watchlist rule error: ", e);
+      }
+    }
+
+    async function toggleWatchlistRule(id, enabled) {
+      try {
+        await fetch(`/api/watchlist/${id}/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled })
+        });
+        playBeep('click');
+        loadWatchlistRules();
+        loadFeed(true);
+      } catch (e) {
+        console.error("Toggle rule error: ", e);
+      }
+    }
+
+    async function deleteWatchlistRule(id) {
+      if (!confirm("Delete this hunting rule?")) return;
+      try {
+        await fetch(`/api/watchlist/${id}`, { method: 'DELETE' });
+        playBeep('click');
+        loadWatchlistRules();
+        refreshStats();
+        loadFeed(true);
+      } catch (e) {
+        console.error("Delete rule error: ", e);
       }
     }
 

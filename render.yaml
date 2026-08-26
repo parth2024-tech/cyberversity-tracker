@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: aether-guard-monitor
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: API_HOST
+        value: "0.0.0.0"
+      - key: SCHEDULER_ENABLED
+        value: "true"
+      - key: SCHEDULER_FETCH_CRON
+        value: "0 */6 * * *"

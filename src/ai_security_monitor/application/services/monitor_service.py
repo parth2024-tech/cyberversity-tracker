@@ -214,6 +214,7 @@ class MonitorService:
             total_sources = len(await uow.sources.list())
             high_velocity = await uow.analyses.count_high_velocity(70)
             pre_cve_warnings = await uow.analyses.count_pre_cve_warnings()
+            watchlist_rules = len(await uow.watchlist.list())
 
             cats = {}
             for cat in Category:
@@ -227,6 +228,7 @@ class MonitorService:
                 "total_sources": total_sources,
                 "high_velocity_entries": high_velocity,
                 "pre_cve_warnings": pre_cve_warnings,
+                "watchlist_rules": watchlist_rules,
                 "by_category": cats,
                 "recent_fetches": [
                     {

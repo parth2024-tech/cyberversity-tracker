@@ -38,6 +38,7 @@ class EntryFilters:
     since: datetime | None = None
     until: datetime | None = None
     search: str | None = None
+    keywords: list[str] | None = None
     pre_cve_only: bool = False
     high_velocity_only: bool = False
     analyzed_only: bool = False

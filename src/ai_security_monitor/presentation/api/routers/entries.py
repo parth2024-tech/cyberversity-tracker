@@ -23,11 +23,12 @@ async def list_entries(
     search: str | None = Query(None),
     pre_cve: bool | None = Query(False),
     high_velocity: bool | None = Query(False),
+    watchlist_only: bool | None = Query(False),
     hours: int | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0)
 ):
-    """Query intelligence entries with pagination, search, and feature filters."""
+    """Query intelligence entries with pagination, search, watchlist, and feature filters."""
     since = None
     if hours:
         since = datetime.utcnow() - timedelta(hours=hours)
@@ -39,21 +40,33 @@ async def list_entries(
         except ValueError:
             pass
 
-    filters = EntryFilters(
-        category=cat_enum,
-        search=search,
-        pre_cve_only=pre_cve or False,
-        high_velocity_only=high_velocity or False,
-        since=since
-    )
-    pagination = PaginationParams(limit=limit, offset=offset)
-
     async with SqlAlchemyUnitOfWork() as uow:
+        active_rules = await uow.watchlist.list(enabled_only=True)
+        wl_keywords = None
+        if watchlist_only:
+            wl_keywords = [kw for r in active_rules for kw in r.keywords if kw.strip()]
+            if not wl_keywords:
+                wl_keywords = ["__no_matching_watchlist_configured__"]
+
+        filters = EntryFilters(
+            category=cat_enum,
+            search=search,
+            keywords=wl_keywords,
+            pre_cve_only=pre_cve or False,
+            high_velocity_only=high_velocity or False,
+            since=since
+        )
+        pagination = PaginationParams(limit=limit, offset=offset)
+
         entries = await uow.entries.list(filters=filters, pagination=pagination)
         total = await uow.entries.count(filters=filters)
 
         serialized_entries = []
         for e in entries:
+            matched_rules = [r.name for r in active_rules if r.matches(e)]
+            if watchlist_only and not matched_rules:
+                continue
+
             analysis_dict = None
             if e.analysis:
                 analysis_dict = {
@@ -82,12 +95,13 @@ async def list_entries(
                 "category": e.category.value,
                 "tags": e.tags,
                 "metadata": e.metadata,
+                "matched_watchlist_rules": matched_rules,
                 "analysis": analysis_dict
             })
 
         return {
             "entries": serialized_entries,
-            "total": total,
+            "total": total if not watchlist_only else len(serialized_entries),
             "limit": limit,
             "offset": offset
         }

@@ -20,6 +20,7 @@ from ai_security_monitor.presentation.api.routers import (
     entries_router,
     sources_router,
     stats_router,
+    watchlist_router,
 )
 from ai_security_monitor.presentation.api.websocket.manager import websocket_router
 
@@ -101,6 +102,7 @@ def create_app() -> FastAPI:
     app.include_router(sources_router, prefix="/api", tags=["Sources"])
     app.include_router(analysis_router, prefix="/api", tags=["Analysis"])
     app.include_router(digest_router, prefix="/api", tags=["Digest"])
+    app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
     # Serve static web UI
