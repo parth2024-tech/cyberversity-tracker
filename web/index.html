@@ -237,6 +237,36 @@
       border-color: rgba(34,211,238,0.28) !important;
     }
 
+    /* Audio HUD & Waveform Visualizer */
+    #audio-hud {
+      background: rgba(6, 9, 15, 0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+    .audio-bar {
+      width: 3px;
+      background: var(--cyan);
+      border-radius: 2px;
+      height: 4px;
+      transition: height 0.15s ease;
+    }
+    .audio-playing .audio-bar:nth-child(1) { animation: audio-bounce 0.8s infinite ease-in-out; }
+    .audio-playing .audio-bar:nth-child(2) { animation: audio-bounce 0.6s infinite ease-in-out 0.1s; }
+    .audio-playing .audio-bar:nth-child(3) { animation: audio-bounce 1.0s infinite ease-in-out 0.2s; }
+    .audio-playing .audio-bar:nth-child(4) { animation: audio-bounce 0.7s infinite ease-in-out 0.15s; }
+    .audio-playing .audio-bar:nth-child(5) { animation: audio-bounce 0.9s infinite ease-in-out 0.25s; }
+
+    @keyframes audio-bounce {
+      0%, 100% { height: 4px; }
+      50% { height: 20px; }
+    }
+
+    .card-speaking {
+      border-color: rgba(34, 211, 238, 0.8) !important;
+      box-shadow: -6px 0 28px rgba(34, 211, 238, 0.35), 0 4px 20px rgba(0,0,0,0.6) !important;
+      transform: translateX(4px) !important;
+    }
+
     @media (max-width: 1023px) {
       #sidebar-nav { display: none; }
       .main-layout { margin-left: 0 !important; }
@@ -504,6 +534,12 @@
 
     <div class="sidebar-divider"></div>
 
+    <!-- Audio Voice Briefing -->
+    <button class="sidebar-btn" onclick="VoiceRadar.startBriefing()" title="">
+      <i data-lucide="mic" class="w-4 h-4 text-purple-400"></i>
+      <span class="sidebar-tooltip">AI Voice Briefing</span>
+    </button>
+
     <!-- Auto-LLM Triage -->
     <button class="sidebar-btn" onclick="triggerTriageBackfill()" title="">
       <i data-lucide="sparkles" class="w-4 h-4"></i>
@@ -569,6 +605,10 @@
         </button>
         <button onclick="openCommandPalette()" class="hidden sm:flex w-9 h-9 items-center justify-center rounded-md border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.06] text-slate-500 hover:text-slate-300 transition" title="Command palette ⌘K">
           <i data-lucide="command" class="w-4 h-4"></i>
+        </button>
+        <button onclick="VoiceRadar.startBriefing()" class="flex items-center gap-1.5 px-3 py-2 rounded-md bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/35 text-purple-300 hover:text-white font-mono text-xs font-semibold tracking-wide transition active:scale-95 shadow-sm" title="Play AI Voice Intelligence Briefing">
+          <i data-lucide="mic" class="w-3.5 h-3.5 text-purple-400 animate-pulse"></i>
+          <span class="hidden md:inline">AUDIO BRIEF</span>
         </button>
         <button id="scan-btn" onclick="triggerScan()" class="flex items-center gap-2 px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/20">
           <i id="scan-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
@@ -883,15 +923,19 @@
       audioEnabled = !audioEnabled;
       const icon = document.getElementById('audio-icon');
       const toggleBtn = document.getElementById('audio-toggle');
-      if (audioEnabled) {
-        icon.setAttribute('data-lucide', 'volume-2');
-        toggleBtn.querySelector('span').innerText = 'AUDIO: ON';
-        toggleBtn.classList.remove('opacity-60');
-        playBeep('alert');
-      } else {
-        icon.setAttribute('data-lucide', 'volume-x');
-        toggleBtn.querySelector('span').innerText = 'AUDIO: OFF';
-        toggleBtn.classList.add('opacity-60');
+      if (icon) {
+        icon.setAttribute('data-lucide', audioEnabled ? 'volume-2' : 'volume-x');
+      }
+      if (toggleBtn) {
+        const span = toggleBtn.querySelector('span');
+        if (span) span.innerText = audioEnabled ? 'AUDIO: ON' : 'AUDIO: OFF';
+        if (audioEnabled) {
+          toggleBtn.classList.remove('opacity-60');
+          playBeep('alert');
+        } else {
+          toggleBtn.classList.add('opacity-60');
+          if (window.VoiceRadar && VoiceRadar.speaking) VoiceRadar.stop();
+        }
       }
       lucide.createIcons();
     }
@@ -1534,6 +1578,9 @@
           </div>
           <div class="flex items-center gap-3 text-[9px] font-mono text-slate-600 flex-shrink-0">
             <span>${pubDate}</span>
+            <button onclick="event.stopPropagation(); VoiceRadar.speakSingleEntry('${entry.id}')" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Read Advisory Aloud">
+              <i data-lucide="volume-2" class="w-3 h-3 text-cyan-400"></i> READ
+            </button>
             <button class="text-cyan-500 hover:text-cyan-300 transition font-medium">INSPECT →</button>
           </div>
         </div>
@@ -1608,6 +1655,10 @@
 
             <!-- Score Gauges & Pin Button -->
             <div class="flex items-center gap-2 font-mono text-xs flex-wrap">
+              <button onclick="VoiceRadar.speakSingleEntry('${entry.id}')" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/35 hover:border-cyan-400 text-cyan-300 transition flex items-center gap-1.5 text-xs font-mono" title="Listen to AI Voice Breakdown">
+                <i data-lucide="volume-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>LISTEN</span>
+              </button>
               <button onclick="togglePinThreatFromModal('${entry.id}')" id="modal-pin-btn" class="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-amber-400/40 text-slate-300 hover:text-amber-300 transition flex items-center gap-1.5 text-xs font-mono" title="Pin / Bookmark Threat">
                 <i data-lucide="star" class="w-3.5 h-3.5 ${isThreatPinned(entry.id) ? 'fill-amber-400 text-amber-400' : ''}"></i>
                 <span id="modal-pin-text">${isThreatPinned(entry.id) ? 'PINNED' : 'PIN'}</span>
@@ -2864,6 +2915,430 @@
       }
     });
 
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // VOICE RADAR: 100% FREE CLIENT-SIDE AI SPEECH & BRIEFING ENGINE
+    // ══════════════════════════════════════════════════════════════════════════
+    const VoiceRadar = {
+      speaking: false,
+      paused: false,
+      rate: 1.0,
+      selectedVoice: null,
+      playlist: [],
+      currentIndex: 0,
+      _activeUtterances: [], // Prevents Chrome V8 Garbage-Collection truncation
+      _chunkIndex: 0,
+      _currentChunks: [],
+      _activeCardId: null,
+
+      init() {
+        if (!('speechSynthesis' in window)) {
+          console.warn("Web Speech API not supported in this browser.");
+          return;
+        }
+
+        const populateVoices = () => {
+          const voices = window.speechSynthesis.getVoices();
+          const voiceSelect = document.getElementById('hud-voice-select');
+          if (!voiceSelect || voices.length === 0) return;
+
+          const priority = [
+            'Google UK English Female',
+            'Google US English',
+            'Microsoft Jenny Online (Natural)',
+            'Microsoft Guy Online (Natural)',
+            'Microsoft Aria Online (Natural)',
+            'Samantha',
+            'Daniel',
+            'Karen',
+            'Moira'
+          ];
+
+          voiceSelect.innerHTML = '';
+          const englishVoices = voices.filter(v => v.lang && v.lang.startsWith('en'));
+          const displayVoices = englishVoices.length > 0 ? englishVoices : voices;
+
+          displayVoices.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.name;
+            opt.textContent = `${v.name.replace(/(Microsoft|Google|Apple)\s*/i, '').slice(0, 16)} (${v.lang ? v.lang.slice(0, 2) : 'en'})`;
+            voiceSelect.appendChild(opt);
+          });
+
+          for (const name of priority) {
+            const match = voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()));
+            if (match) {
+              this.selectedVoice = match;
+              voiceSelect.value = match.name;
+              break;
+            }
+          }
+          if (!this.selectedVoice && displayVoices.length > 0) {
+            this.selectedVoice = displayVoices[0];
+            voiceSelect.value = displayVoices[0].name;
+          }
+        };
+
+        populateVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+          window.speechSynthesis.onvoiceschanged = populateVoices;
+        }
+      },
+
+      setVoice(name) {
+        const voices = window.speechSynthesis.getVoices();
+        const found = voices.find(v => v.name === name);
+        if (found) {
+          this.selectedVoice = found;
+          playBeep('click');
+        }
+      },
+
+      cycleSpeed() {
+        const rates = [1.0, 1.25, 1.5];
+        const curIdx = rates.indexOf(this.rate);
+        this.rate = rates[(curIdx + 1) % rates.length];
+        const btn = document.getElementById('hud-speed-btn');
+        if (btn) btn.textContent = this.rate.toFixed(1) + 'x';
+        playBeep('click');
+      },
+
+      playTacticalChirp() {
+        if (!audioEnabled) return;
+        try {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.08);
+        } catch (e) {}
+      },
+
+      normalizeSecurityText(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/https?:\/\/[^\s]+/g, '')
+          .replace(/CVE-(\d{4})-(\d+)/gi, (m, y, id) => `C V E ${y}, ${id}`)
+          .replace(/\bPoC\b/g, 'Proof of Concept')
+          .replace(/\bRAG\b/g, 'R A G')
+          .replace(/\bLLMs\b/g, 'L L Ms')
+          .replace(/\bLLM\b/g, 'L L M')
+          .replace(/\barXiv\b/gi, 'Archive')
+          .replace(/\b0-day\b/gi, 'zero day')
+          .replace(/\bzero-day\b/gi, 'zero day')
+          .replace(/[*#`_~[\]]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      },
+
+      // Sentence tokenization: prevents Chrome 15s freeze bug completely
+      splitIntoChunks(text, maxLen = 160) {
+        if (!text) return [];
+        const sentences = text.match(/[^.!?;
+]+[.!?;
+]+|[^.!?;
+]+$/g) || [text];
+        const chunks = [];
+
+        for (let s of sentences) {
+          s = s.trim();
+          if (!s) continue;
+          if (s.length <= maxLen) {
+            chunks.push(s);
+          } else {
+            const words = s.split(' ');
+            let cur = '';
+            for (const w of words) {
+              if ((cur + ' ' + w).length <= maxLen) {
+                cur = cur ? cur + ' ' + w : w;
+              } else {
+                if (cur) chunks.push(cur);
+                cur = w;
+              }
+            }
+            if (cur) chunks.push(cur);
+          }
+        }
+        return chunks;
+      },
+
+      _speakChunks(chunks, onComplete) {
+        window.speechSynthesis.cancel();
+        this._currentChunks = chunks;
+        this._chunkIndex = 0;
+        this._activeUtterances = [];
+
+        if (chunks.length === 0) {
+          if (onComplete) onComplete();
+          return;
+        }
+
+        const playNext = () => {
+          if (!this.speaking) return;
+          if (this._chunkIndex >= this._currentChunks.length) {
+            this._setVisualizer(false);
+            if (onComplete) onComplete();
+            return;
+          }
+
+          const chunkText = this._currentChunks[this._chunkIndex];
+          const utt = new SpeechSynthesisUtterance(chunkText);
+          this._activeUtterances.push(utt); // Store reference to prevent V8 GC
+
+          if (this.selectedVoice) utt.voice = this.selectedVoice;
+          utt.rate = this.rate;
+          utt.pitch = 1.0;
+
+          utt.onstart = () => {
+            this._setVisualizer(true);
+          };
+
+          utt.onend = () => {
+            this._chunkIndex++;
+            playNext();
+          };
+
+          utt.onerror = (err) => {
+            console.warn("Speech chunk warning:", err);
+            this._chunkIndex++;
+            playNext();
+          };
+
+          window.speechSynthesis.speak(utt);
+        };
+
+        playNext();
+      },
+
+      _setVisualizer(active) {
+        const viz = document.getElementById('audio-visualizer');
+        if (viz) {
+          if (active) viz.classList.add('audio-playing');
+          else viz.classList.remove('audio-playing');
+        }
+      },
+
+      _highlightCard(cardId) {
+        if (this._activeCardId) {
+          const prev = document.getElementById('threat-card-' + this._activeCardId);
+          if (prev) prev.classList.remove('card-speaking');
+        }
+        this._activeCardId = cardId;
+        if (cardId) {
+          const el = document.getElementById('threat-card-' + cardId);
+          if (el) {
+            el.classList.add('card-speaking');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      },
+
+      startBriefing(customItems = null) {
+        let items = customItems;
+        if (!items || items.length === 0) {
+          items = [...allFeedItems].sort((a, b) => {
+            const aPre = a.is_pre_cve_warning || (a.analysis && a.analysis.is_pre_cve_warning) ? 1 : 0;
+            const bPre = b.is_pre_cve_warning || (b.analysis && b.analysis.is_pre_cve_warning) ? 1 : 0;
+            if (bPre !== aPre) return bPre - aPre;
+            const aVel = (a.analysis ? a.analysis.threat_velocity : a.threat_velocity) || 0;
+            const bVel = (b.analysis ? b.analysis.threat_velocity : b.threat_velocity) || 0;
+            return bVel - aVel;
+          }).slice(0, 5);
+        }
+
+        if (items.length === 0) {
+          showToast("No active intelligence advisories to brief.", "alert");
+          return;
+        }
+
+        this.playlist = items;
+        this.currentIndex = 0;
+        this.speaking = true;
+        this.paused = false;
+
+        const hud = document.getElementById('audio-hud');
+        if (hud) hud.classList.remove('hidden');
+
+        const playBtnIcon = document.getElementById('hud-play-icon');
+        if (playBtnIcon) playBtnIcon.setAttribute('data-lucide', 'pause');
+        lucide.createIcons();
+
+        this.playTacticalChirp();
+        this._playPlaylistItem(0, true);
+      },
+
+      _playPlaylistItem(idx, includeIntro = false) {
+        if (idx < 0 || idx >= this.playlist.length) {
+          this.stop();
+          return;
+        }
+
+        this.currentIndex = idx;
+        const item = this.playlist[idx];
+        const analysis = item.analysis || {};
+        const vel = analysis.threat_velocity !== undefined ? analysis.threat_velocity : (item.threat_velocity || 25);
+        const blast = analysis.blast_radius_score !== undefined ? analysis.blast_radius_score : (item.blast_radius_score || 20);
+        const src = item.source_name || (item.source ? item.source.name : 'Radar Intelligence');
+
+        const counter = document.getElementById('hud-item-counter');
+        const headline = document.getElementById('hud-headline');
+        const status = document.getElementById('hud-status-text');
+
+        if (counter) counter.textContent = `${idx + 1} / ${this.playlist.length}`;
+        if (headline) headline.textContent = item.title;
+        if (status) status.textContent = `BRIEFING // ITEM ${idx + 1}`;
+
+        this._highlightCard(item.id);
+
+        let script = '';
+        if (includeIntro) {
+          script += `AetherGuard Intelligence Briefing. DEFCON 3 elevated alert. Analyzing top ${this.playlist.length} security developments. `;
+        }
+
+        script += `Item ${idx + 1}. ${this.normalizeSecurityText(item.title)}. `;
+        script += `Source, ${src}. Threat velocity ${vel}. Blast radius score ${blast}. `;
+
+        if (analysis.risk_assessment) {
+          script += `Risk assessment: ${this.normalizeSecurityText(analysis.risk_assessment)}. `;
+        } else if (item.summary) {
+          script += `${this.normalizeSecurityText(item.summary.slice(0, 180))}. `;
+        }
+
+        if (analysis.mitigation) {
+          script += `Recommended patch: ${this.normalizeSecurityText(analysis.mitigation)}. `;
+        }
+
+        if (idx === this.playlist.length - 1) {
+          script += `End of intelligence briefing. All monitoring arrays remain active.`;
+        }
+
+        const chunks = this.splitIntoChunks(script);
+        this._speakChunks(chunks, () => {
+          if (idx + 1 < this.playlist.length) {
+            setTimeout(() => {
+              this.playTacticalChirp();
+              this._playPlaylistItem(idx + 1, false);
+            }, 600);
+          } else {
+            setTimeout(() => {
+              this.stop();
+            }, 1000);
+          }
+        });
+      },
+
+      speakSingleEntry(entryId) {
+        const item = allFeedItems.find(x => String(x.id) === String(entryId));
+        if (!item) return;
+
+        this.playlist = [item];
+        this.currentIndex = 0;
+        this.speaking = true;
+        this.paused = false;
+
+        const hud = document.getElementById('audio-hud');
+        if (hud) hud.classList.remove('hidden');
+
+        const counter = document.getElementById('hud-item-counter');
+        const headline = document.getElementById('hud-headline');
+        const status = document.getElementById('hud-status-text');
+        const playBtnIcon = document.getElementById('hud-play-icon');
+
+        if (counter) counter.textContent = '1 / 1';
+        if (headline) headline.textContent = item.title;
+        if (status) status.textContent = 'TACTICAL READOUT';
+        if (playBtnIcon) playBtnIcon.setAttribute('data-lucide', 'pause');
+        lucide.createIcons();
+
+        this._highlightCard(item.id);
+        this.playTacticalChirp();
+
+        const analysis = item.analysis || {};
+        const vel = analysis.threat_velocity !== undefined ? analysis.threat_velocity : (item.threat_velocity || 25);
+        const blast = analysis.blast_radius_score !== undefined ? analysis.blast_radius_score : (item.blast_radius_score || 20);
+        const src = item.source_name || (item.source ? item.source.name : 'Radar Intelligence');
+
+        let script = `${this.normalizeSecurityText(item.title)}. `;
+        script += `Source: ${src}. Threat velocity ${vel}. Blast radius score ${blast}. `;
+
+        if (analysis.attack_vector) {
+          script += `Attack vector: ${this.normalizeSecurityText(analysis.attack_vector)}. `;
+        }
+        if (analysis.risk_assessment) {
+          script += `Risk assessment: ${this.normalizeSecurityText(analysis.risk_assessment)}. `;
+        } else if (item.summary) {
+          script += `${this.normalizeSecurityText(item.summary.slice(0, 200))}. `;
+        }
+        if (analysis.mitigation) {
+          script += `Recommended patch: ${this.normalizeSecurityText(analysis.mitigation)}. `;
+        }
+
+        const chunks = this.splitIntoChunks(script);
+        this._speakChunks(chunks, () => {
+          setTimeout(() => this.stop(), 800);
+        });
+      },
+
+      togglePlayPause() {
+        if (!this.speaking) {
+          this.startBriefing();
+          return;
+        }
+
+        const icon = document.getElementById('hud-play-icon');
+        if (this.paused) {
+          window.speechSynthesis.resume();
+          this.paused = false;
+          this._setVisualizer(true);
+          if (icon) icon.setAttribute('data-lucide', 'pause');
+        } else {
+          window.speechSynthesis.pause();
+          this.paused = true;
+          this._setVisualizer(false);
+          if (icon) icon.setAttribute('data-lucide', 'play');
+        }
+        lucide.createIcons();
+        playBeep('click');
+      },
+
+      next() {
+        if (this.currentIndex + 1 < this.playlist.length) {
+          playBeep('click');
+          this.playTacticalChirp();
+          this._playPlaylistItem(this.currentIndex + 1, false);
+        } else {
+          this.stop();
+        }
+      },
+
+      prev() {
+        if (this.currentIndex > 0) {
+          playBeep('click');
+          this.playTacticalChirp();
+          this._playPlaylistItem(this.currentIndex - 1, false);
+        }
+      },
+
+      stop() {
+        this.speaking = false;
+        this.paused = false;
+        window.speechSynthesis.cancel();
+        this._setVisualizer(false);
+        this._highlightCard(null);
+
+        const hud = document.getElementById('audio-hud');
+        if (hud) hud.classList.add('hidden');
+        playBeep('click');
+      }
+    };
+
     // Initialize on DOM Ready
     window.addEventListener('DOMContentLoaded', () => {
       try { initCanvasBackground(); } catch (e) { console.warn("Canvas bg:", e); }
@@ -2875,6 +3350,8 @@
       try { updatePinnedBadge(); } catch (e) { console.warn("PinnedBadge:", e); }
       try { loadFeed(true); } catch (e) { console.warn("LoadFeed:", e); }
       try { updateSweepFreshness(); } catch (e) { console.warn("SweepFreshness:", e); }
+      try { VoiceRadar.init(); } catch (e) { console.warn("VoiceRadar:", e); }
+
       // Poll sweep freshness every 60 seconds
       setInterval(() => { try { updateSweepFreshness(); } catch(e){} }, 60000);
     });
@@ -2933,5 +3410,59 @@
       }
     }
   </script>
+
+  <!-- FLOATING TACTICAL AUDIO HUD (Voice AI Radar Player) -->
+  <div id="audio-hud" class="fixed bottom-5 left-4 right-4 sm:left-20 sm:right-auto sm:w-[580px] z-50 hidden glass-panel p-3.5 border border-cyan-500/40 shadow-2xl shadow-cyan-950/80 transition-all duration-300">
+    <div class="flex items-center justify-between gap-3">
+      <!-- Left: Frequency Visualizer & Status -->
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div id="audio-visualizer" class="flex items-end gap-1 h-6 px-2 py-1 rounded bg-black/60 border border-white/[0.08] flex-shrink-0">
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+          <div class="audio-bar"></div>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[9px] font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span id="hud-status-text">VOICE RADAR // ACTIVE</span>
+            </span>
+            <span id="hud-item-counter" class="text-[9px] font-mono text-slate-400 bg-white/[0.06] border border-white/[0.08] px-1.5 py-0.2 rounded font-medium">1 / 5</span>
+          </div>
+          <p id="hud-headline" class="text-xs font-mono font-semibold text-slate-100 truncate mt-0.5">Initializing voice briefing...</p>
+        </div>
+      </div>
+
+      <!-- Right Controls -->
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <!-- Prev -->
+        <button onclick="VoiceRadar.prev()" class="p-1.5 rounded hover:bg-white/[0.08] text-slate-400 hover:text-white transition" title="Previous advisory">
+          <i data-lucide="skip-back" class="w-3.5 h-3.5"></i>
+        </button>
+        <!-- Play/Pause -->
+        <button id="hud-play-btn" onclick="VoiceRadar.togglePlayPause()" class="w-7 h-7 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition shadow-md shadow-cyan-500/30" title="Play/Pause">
+          <i id="hud-play-icon" data-lucide="pause" class="w-3.5 h-3.5 fill-current"></i>
+        </button>
+        <!-- Next -->
+        <button onclick="VoiceRadar.next()" class="p-1.5 rounded hover:bg-white/[0.08] text-slate-400 hover:text-white transition" title="Next advisory">
+          <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+        </button>
+        <!-- Speed Toggle -->
+        <button id="hud-speed-btn" onclick="VoiceRadar.cycleSpeed()" class="px-1.5 py-1 rounded text-[10px] font-mono font-bold bg-white/[0.06] hover:bg-white/[0.12] text-cyan-300 border border-white/[0.08] transition" title="Playback Speed">
+          1.0x
+        </button>
+        <!-- Voice Selector -->
+        <select id="hud-voice-select" onchange="VoiceRadar.setVoice(this.value)" class="hidden md:block bg-black/60 text-[10px] font-mono text-slate-300 border border-white/[0.1] rounded px-1.5 py-1 focus:outline-none focus:border-cyan-500 max-w-[110px] truncate" title="Select Natural Voice">
+        </select>
+        <!-- Close/Stop -->
+        <button onclick="VoiceRadar.stop()" class="p-1.5 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition ml-0.5" title="Stop Audio">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
