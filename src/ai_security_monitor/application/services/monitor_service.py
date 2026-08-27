@@ -285,6 +285,57 @@ class MonitorService:
             "total_new": total_new
         }
 
+    async def purge_stale_entries(self, older_than_days: int = 30) -> dict:
+        """Remove entries older than `older_than_days` days to keep the database fresh.
+
+        Returns a summary dict with the count of purged entries.
+        """
+        async with self._uow_factory() as uow:
+            purged = await uow.entries.purge_old_entries(older_than_days=older_than_days)
+            await uow.commit()
+
+        logger.info(f"Data hygiene purge complete: removed {purged} entries older than {older_than_days} days")
+        return {"purged": purged, "older_than_days": older_than_days}
+
+    async def get_sweep_status(self) -> dict:
+        """Return live sweep freshness data: last sweep time, next sweep ETA, per-source freshness."""
+        from ai_security_monitor.application.services.scheduler_service import _last_sweep_at
+
+        now = datetime.utcnow()
+        interval_minutes = settings.scheduler.fetch_interval_minutes
+
+        last_sweep_iso = _last_sweep_at.isoformat() + "Z" if _last_sweep_at else None
+        seconds_since = int((now - _last_sweep_at).total_seconds()) if _last_sweep_at else None
+        next_sweep_in = max(0, interval_minutes * 60 - seconds_since) if seconds_since is not None else None
+
+        async with self._uow_factory() as uow:
+            sources = await uow.sources.list(enabled_only=True)
+
+        source_freshness = []
+        for src in sources:
+            last = src.last_fetched_at
+            age_seconds = int((now - last).total_seconds()) if last else None
+            source_freshness.append({
+                "name": src.name,
+                "last_fetched_at": last.isoformat() + "Z" if last else None,
+                "age_seconds": age_seconds,
+                "status": src.last_status.value if src.last_status else "never",
+                "last_new": src.last_entries_new or 0,
+            })
+
+        # Sort: stale sources (longest since last fetch) first
+        source_freshness.sort(key=lambda x: x["age_seconds"] if x["age_seconds"] is not None else 999999999, reverse=True)
+
+        return {
+            "last_sweep_at": last_sweep_iso,
+            "seconds_since_last_sweep": seconds_since,
+            "next_sweep_in_seconds": next_sweep_in,
+            "sweep_interval_minutes": interval_minutes,
+            "total_sources": len(sources),
+            "sources": source_freshness,
+        }
+
+
     async def get_stats(self) -> dict:
         """Get aggregate system metrics and stats."""
         async with self._uow_factory() as uow:

@@ -407,6 +407,12 @@
             <span class="text-slate-600">•</span>
             <span id="clock" class="text-slate-300 font-medium">00:00:00 UTC</span>
             <span class="text-slate-600">•</span>
+            <!-- Live Data Freshness Indicator -->
+            <span id="sweep-freshness-badge" class="flex items-center gap-1.5 font-medium cursor-pointer hover:opacity-80 transition" title="Data freshness — time since last full intelligence sweep" onclick="openSourcesModal()">
+              <span id="sweep-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+              <span id="sweep-freshness-text" class="text-slate-400">SWEEP: --</span>
+            </span>
+            <span class="text-slate-600">•</span>
             <span id="triage-status-badge" class="flex items-center gap-1.5 text-indigo-300 font-medium cursor-pointer hover:text-indigo-200 transition" onclick="triggerTriageBackfill()" title="Autonomous LLM Triage Queue (Local Ollama)">
               <span id="triage-dot" class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
               <span id="triage-status-text">AI QUEUE: READY (0)</span>
@@ -2950,7 +2956,64 @@
       try { fetchTriageStatus(); } catch (e) { console.warn("TriageStatus:", e); }
       try { updatePinnedBadge(); } catch (e) { console.warn("PinnedBadge:", e); }
       try { loadFeed(true); } catch (e) { console.warn("LoadFeed:", e); }
+      try { updateSweepFreshness(); } catch (e) { console.warn("SweepFreshness:", e); }
+      // Poll sweep freshness every 60 seconds
+      setInterval(() => { try { updateSweepFreshness(); } catch(e){} }, 60000);
     });
+
+    // ─── Live Sweep Freshness Indicator ─────────────────────────────────────
+    async function updateSweepFreshness() {
+      const dot = document.getElementById('sweep-dot');
+      const txt = document.getElementById('sweep-freshness-text');
+      if (!dot || !txt) return;
+
+      try {
+        const res = await fetch('/api/stats/sweep-status');
+        if (!res.ok) { txt.textContent = 'SWEEP: ERR'; return; }
+        const data = await res.json();
+
+        const secs = data.seconds_since_last_sweep;
+        if (secs === null || secs === undefined) {
+          txt.textContent = 'SWEEP: STARTING';
+          dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
+          txt.className = 'text-amber-400';
+          return;
+        }
+
+        // Human-readable age
+        let age;
+        if (secs < 60) age = `${secs}s ago`;
+        else if (secs < 3600) age = `${Math.floor(secs / 60)}m ago`;
+        else age = `${Math.floor(secs / 3600)}h ago`;
+
+        // Next sweep countdown
+        const nextSecs = data.next_sweep_in_seconds;
+        let nextLabel = '';
+        if (nextSecs !== null && nextSecs !== undefined) {
+          if (nextSecs < 60) nextLabel = ` | NEXT: ${nextSecs}s`;
+          else nextLabel = ` | NEXT: ${Math.floor(nextSecs / 60)}m`;
+        }
+
+        txt.textContent = `SWEPT: ${age}${nextLabel}`;
+
+        // Color-code freshness: green ≤ 35min, amber ≤ 90min, red > 90min
+        const mins = secs / 60;
+        if (mins <= 35) {
+          dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+          txt.className = 'text-emerald-300';
+        } else if (mins <= 90) {
+          dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+          txt.className = 'text-amber-300';
+        } else {
+          dot.className = 'w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse';
+          txt.className = 'text-rose-300';
+        }
+      } catch (err) {
+        txt.textContent = 'SWEEP: --';
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
+        txt.className = 'text-slate-400';
+      }
+    }
   </script>
 </body>
 </html>

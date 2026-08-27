@@ -192,6 +192,33 @@ class SQLAlchemyEntryRepository(EntryRepository):
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 
+    async def purge_old_entries(self, older_than_days: int = 30) -> int:
+        """Delete entries (and their cascaded analyses) older than `older_than_days` days.
+
+        Returns the number of rows purged.
+        """
+        from sqlalchemy import delete as sa_delete
+
+        cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+
+        # Fetch IDs to purge first (so cascade to analyses works via ORM delete)
+        stmt = select(EntryModel.id).where(EntryModel.published_at < cutoff)
+        result = await self._session.execute(stmt)
+        old_ids = [row[0] for row in result.fetchall()]
+
+        if not old_ids:
+            return 0
+
+        # Delete associated analyses first (avoid FK constraint errors if no cascade)
+        await self._session.execute(
+            sa_delete(AnalysisModelDB).where(AnalysisModelDB.entry_id.in_(old_ids))
+        )
+        # Delete the entries themselves
+        del_result = await self._session.execute(
+            sa_delete(EntryModel).where(EntryModel.id.in_(old_ids))
+        )
+        return del_result.rowcount or len(old_ids)
+
     async def get_by_category(
         self,
         category: Category,
