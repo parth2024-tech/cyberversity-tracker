@@ -503,7 +503,7 @@
     </button>
 
     <!-- 3D Globe -->
-    <button class="sidebar-btn" onclick="toggle3DGlobe()" title="">
+    <button class="sidebar-btn" id="globe-toggle-btn" onclick="toggle3DGlobe()" title="">
       <i data-lucide="globe" class="w-4 h-4"></i>
       <span class="sidebar-tooltip">3D Radar Globe</span>
     </button>
@@ -511,7 +511,7 @@
     <!-- Watchlist -->
     <button class="sidebar-btn" onclick="openWatchlistModal()" title="">
       <i data-lucide="target" class="w-4 h-4"></i>
-      <span class="sidebar-tooltip">Watchlist</span>
+      <span class="sidebar-tooltip">Watchlist (<span id="active-watchlist-count">0</span>)</span>
     </button>
 
     <!-- AI Sandbox -->
@@ -541,7 +541,7 @@
     </button>
 
     <!-- Auto-LLM Triage -->
-    <button class="sidebar-btn" onclick="triggerTriageBackfill()" title="">
+    <button class="sidebar-btn" id="auto-triage-btn" onclick="triggerTriageBackfill()" title="">
       <i data-lucide="sparkles" class="w-4 h-4"></i>
       <span class="sidebar-tooltip">Auto-LLM Triage</span>
     </button>
@@ -1035,7 +1035,7 @@
       ws.onopen = () => {
         console.log("WebSocket connected to Threat Radar");
         const statusEl = document.getElementById('connection-status');
-        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span> WS: STREAMING (<span id="ping-time">0ms</span>)`;
+        statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> WS:<span id="ping-time" class="text-emerald-400 ml-0.5">0ms</span>`;
         
         // Measure real network RTT latency every 4s
         if (window._pingInterval) clearInterval(window._pingInterval);
@@ -1064,7 +1064,7 @@
       ws.onclose = () => {
         if (window._pingInterval) clearInterval(window._pingInterval);
         const statusEl = document.getElementById('connection-status');
-        statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyber-red animate-pulse"></span> WS: RECONNECTING...`;
+        statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span> WS:<span class="text-rose-400 ml-0.5">RECONNECTING</span>`;
         setTimeout(initWebSocket, 3000);
       };
 
@@ -1326,7 +1326,9 @@
 
     // Render Doughnut Chart
     function renderCategoryChart(cats) {
-      const ctx = document.getElementById('categoryChart').getContext('2d');
+      const chartCanvas = document.getElementById('categoryChart');
+      if (!chartCanvas) return;
+      const ctx = chartCanvas.getContext('2d');
       const labels = ['Frontier AI Tech', 'arXiv AI Research', 'Cybersecurity Threats', 'CVE Vulnerabilities', 'Trending Repos'];
       const dataValues = [
         cats.ai_tech || 0,
@@ -1935,7 +1937,7 @@
         const res = await fetch('/api/watchlist');
         const data = await res.json();
 
-        document.getElementById('active-watchlist-count').innerText = data.total || 0;
+        const wlCountEl = document.getElementById('active-watchlist-count'); if (wlCountEl) wlCountEl.innerText = data.total || 0;
 
         if (!data.rules || data.rules.length === 0) {
           listEl.innerHTML = `
@@ -3041,10 +3043,7 @@
       // Sentence tokenization: prevents Chrome 15s freeze bug completely
       splitIntoChunks(text, maxLen = 160) {
         if (!text) return [];
-        const sentences = text.match(/[^.!?;
-]+[.!?;
-]+|[^.!?;
-]+$/g) || [text];
+        const sentences = text.match(/[^.!?;\r\n]+[.!?;\r\n]+|[^.!?;\r\n]+$/g) || [text];
         const chunks = [];
 
         for (let s of sentences) {
@@ -3412,7 +3411,7 @@
   </script>
 
   <!-- FLOATING TACTICAL AUDIO HUD (Voice AI Radar Player) -->
-  <div id="audio-hud" class="fixed bottom-5 left-4 right-4 sm:left-20 sm:right-auto sm:w-[580px] z-50 hidden glass-panel p-3.5 border border-cyan-500/40 shadow-2xl shadow-cyan-950/80 transition-all duration-300">
+  <div id="audio-hud" class="fixed bottom-16 sm:bottom-5 left-4 right-4 sm:left-20 sm:right-auto sm:w-[580px] z-50 hidden glass-panel p-3.5 border border-cyan-500/40 shadow-2xl shadow-cyan-950/80 transition-all duration-300">
     <div class="flex items-center justify-between gap-3">
       <!-- Left: Frequency Visualizer & Status -->
       <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -3463,6 +3462,35 @@
       </div>
     </div>
   </div>
+
+
+  <!-- MOBILE BOTTOM NAVIGATION (Shown on < 1024px screens) -->
+  <nav id="mobile-nav" class="fixed bottom-0 left-0 right-0 h-14 bg-slate-950/95 backdrop-blur-xl border-t border-white/[0.08] z-40 flex items-center justify-around px-2 lg:hidden">
+    <button onclick="setCategory('all')" class="flex flex-col items-center gap-0.5 text-cyan-400 text-[10px] font-mono">
+      <i data-lucide="activity" class="w-4 h-4"></i>
+      <span>Feed</span>
+    </button>
+    <button onclick="toggle3DGlobe()" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-cyan-400 text-[10px] font-mono">
+      <i data-lucide="globe" class="w-4 h-4"></i>
+      <span>Radar</span>
+    </button>
+    <button onclick="VoiceRadar.startBriefing()" class="flex flex-col items-center gap-0.5 text-purple-400 hover:text-purple-300 text-[10px] font-mono">
+      <i data-lucide="mic" class="w-4 h-4 animate-pulse"></i>
+      <span>Briefing</span>
+    </button>
+    <button onclick="openWatchlistModal()" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-cyan-400 text-[10px] font-mono">
+      <i data-lucide="target" class="w-4 h-4"></i>
+      <span>Watchlist</span>
+    </button>
+    <button onclick="openTriageModal()" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-cyan-400 text-[10px] font-mono">
+      <i data-lucide="flask-conical" class="w-4 h-4"></i>
+      <span>Sandbox</span>
+    </button>
+    <button onclick="openSourcesModal()" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-cyan-400 text-[10px] font-mono">
+      <i data-lucide="radio" class="w-4 h-4"></i>
+      <span>Feeds</span>
+    </button>
+  </nav>
 
 </body>
 </html>
