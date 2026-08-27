@@ -871,6 +871,16 @@
     // Global State
     let currentCategory = 'all';
     let searchQuery = '';
+    const categoryBadgeColors = {
+      vulnerabilities: 'text-rose-300 border-rose-500/25 bg-rose-500/10',
+      ai_tech: 'text-sky-300 border-sky-500/25 bg-sky-500/10',
+      ai_research: 'text-indigo-300 border-indigo-500/25 bg-indigo-500/10',
+      cybersecurity: 'text-emerald-300 border-emerald-500/25 bg-emerald-500/10',
+      github_trending: 'text-cyan-300 border-cyan-500/25 bg-cyan-500/10',
+      ai_models: 'text-purple-300 border-purple-500/30 bg-purple-500/15',
+      cyber_tools: 'text-teal-300 border-teal-500/30 bg-teal-500/15',
+      exploits_tricks: 'text-amber-300 border-amber-500/40 bg-amber-500/20'
+    };
     let offset = 0;
     const limit = 25;
     let ws = null;
@@ -879,9 +889,16 @@
     let allFeedItems = [];
 
     // Web Audio Synthesizer for high-tech UI feedback
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    try {
+      if (AudioContextClass) audioCtx = new AudioContextClass();
+    } catch (e) {
+      console.warn("Web Audio API not supported or restricted:", e);
+    }
+
     function playBeep(type = 'click') {
-      if (!audioEnabled) return;
+      if (!audioEnabled || !audioCtx) return;
       try {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
@@ -1142,6 +1159,17 @@
     }
 
     // Generic Luxury HUD Toast System
+    function showToast(message, type = 'info') {
+      showHUDToast({
+        title: type === 'alert' ? 'System Notice' : 'Intelligence Radar',
+        message: message,
+        badge: type.toUpperCase(),
+        icon: type === 'alert' ? 'alert-triangle' : 'shield',
+        color: type === 'alert' ? 'text-amber-400' : 'text-cyan-400',
+        borderClass: type === 'alert' ? 'border-amber-500/40' : 'border-cyan-500/40'
+      });
+    }
+
     function showHUDToast({ title, message, badge = "SYSTEM", icon = "info", color = "text-sky-400", borderClass = "border-white/[0.08]", onClick = null }) {
       const container = document.getElementById('toast-container');
       if (!container) return;
@@ -1240,7 +1268,7 @@
       if (el) {
         el.style.opacity = '0';
         el.style.transform = 'translateX(100%)';
-        setTimeout(() => el.remove(), 300);
+        setTimeout(() => { if (el && el.remove) el.remove(); else if (el && el.parentNode) el.parentNode.removeChild(el); }, 300);
       }
     }
 
@@ -1628,7 +1656,7 @@
       const mitreId = analysis.mitre_attack_id || entry.mitre_attack_id || (entry.category === 'vulnerabilities' ? 'T1190' : null);
       const mitreTech = analysis.mitre_technique || entry.mitre_technique || (entry.category === 'vulnerabilities' ? 'Exploitation of Known Vulnerability' : null);
 
-      const srcName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Intelligence Feed');
+      const srcName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? (() => { try { return new URL(entry.url).hostname.replace('www.', ''); } catch(e) { return 'Intelligence Feed'; } })() : 'Intelligence Feed');
       const pubDate = entry.published_at ? entry.published_at.replace('T', ' ') : 'Unknown';
       const tags = (entry.tags || []).map(t => `<span class="px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.08] text-xs font-mono">#${t}</span>`).join(' ');
       const ecoBadges = ecosystem.map(e => `<span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/25 text-xs font-mono font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i>${e}</span>`).join(' ');
@@ -3006,7 +3034,7 @@
       },
 
       playTacticalChirp() {
-        if (!audioEnabled) return;
+        if (!audioEnabled || !audioCtx) return;
         try {
           if (audioCtx.state === 'suspended') audioCtx.resume();
           const osc = audioCtx.createOscillator();
@@ -3069,6 +3097,10 @@
       },
 
       _speakChunks(chunks, onComplete) {
+        if (!('speechSynthesis' in window)) {
+          if (onComplete) onComplete();
+          return;
+        }
         window.speechSynthesis.cancel();
         this._currentChunks = chunks;
         this._chunkIndex = 0;
@@ -3328,7 +3360,7 @@
       stop() {
         this.speaking = false;
         this.paused = false;
-        window.speechSynthesis.cancel();
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         this._setVisualizer(false);
         this._highlightCard(null);
 
@@ -3337,9 +3369,10 @@
         playBeep('click');
       }
     };
+    window.VoiceRadar = VoiceRadar;
 
-    // Initialize on DOM Ready
-    window.addEventListener('DOMContentLoaded', () => {
+    // Resilient App Initialization
+    function initApp() {
       try { initCanvasBackground(); } catch (e) { console.warn("Canvas bg:", e); }
       try { lucide.createIcons(); } catch (e) { console.warn("Lucide:", e); }
       try { initWebSocket(); } catch (e) { console.warn("WebSocket:", e); }
@@ -3353,7 +3386,13 @@
 
       // Poll sweep freshness every 60 seconds
       setInterval(() => { try { updateSweepFreshness(); } catch(e){} }, 60000);
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
 
     // ─── Live Sweep Freshness Indicator ─────────────────────────────────────
     async function updateSweepFreshness() {
