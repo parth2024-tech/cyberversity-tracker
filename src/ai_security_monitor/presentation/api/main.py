@@ -45,6 +45,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     else:
         logger.info("Database health check passed")
 
+    # Auto-seed sources from configuration
+    try:
+        from ai_security_monitor.application.services.monitor_service import MonitorService
+        monitor_service = MonitorService()
+        await monitor_service.init_sources()
+        logger.info("Sources configuration synchronized with database")
+    except Exception as seed_err:
+        logger.warn(f"Failed to auto-seed sources: {seed_err}")
+
     # Start background scheduler (if enabled)
     if settings.scheduler.enabled:
         from ai_security_monitor.application.services.scheduler_service import (

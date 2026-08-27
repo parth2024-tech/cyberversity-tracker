@@ -1,17 +1,11 @@
 services:
   - type: web
-    name: aether-guard-monitor
-    runtime: docker
-    plan: free
-    region: oregon
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/health
+    name: ai-security-monitor
+    runtime: python
+    buildCommand: "pip install -e ."
+    startCommand: "uvicorn ai_security_monitor.presentation.api.main:app --host 0.0.0.0 --port $PORT"
     envVars:
-      - key: PYTHONUNBUFFERED
-        value: "1"
-      - key: API_HOST
-        value: "0.0.0.0"
-      - key: SCHEDULER_ENABLED
-        value: "true"
-      - key: SCHEDULER_FETCH_CRON
-        value: "0 */6 * * *"
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: ENVIRONMENT
+        value: "production"
