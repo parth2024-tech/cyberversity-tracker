@@ -56,102 +56,190 @@
   <style>
     :root {
       color-scheme: dark;
+      --void: #030508;
+      --surface: #080b12;
+      --surface-high: #111622;
+      --border: rgba(255,255,255,0.06);
+      --border-hover: rgba(255,255,255,0.12);
+      --cyan: #22d3ee;
+      --violet: #8b5cf6;
+      --rose: #fb7185;
+      --amber: #f59e0b;
+      --green: #10b981;
+      --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
     }
+    * { box-sizing: border-box; }
 
     body {
-      background-color: #06080d;
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(13, 17, 26, 0.5) 0px, transparent 100%);
+      background-color: var(--void);
+      background-image:
+        radial-gradient(ellipse 80% 60% at 0% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(34, 211, 238, 0.07) 0%, transparent 50%);
       background-attachment: fixed;
-      color: #F8FAFC;
+      color: #f1f5f9;
       min-height: 100vh;
       overflow-x: hidden;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
-    
-    /* Cosmic Background Canvas */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V16L28 0l28 16v34L28 66zm0 34L0 84V66l28 16 28-16v18L28 100z' fill='none' stroke='rgba(255,255,255,0.028)' stroke-width='0.8'/%3E%3C/svg%3E");
+      background-size: 56px 100px;
+    }
     #bg-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
-      pointer-events: none;
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh; z-index: 0;
+      pointer-events: none; opacity: 0.3;
     }
+    #sidebar-nav, header, .main-layout, .modal-layer { position: relative; z-index: 1; }
 
-    /* Precision Frosted Glass Panels */
     .glass-panel {
-      background: rgba(12, 15, 24, 0.76);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(8, 11, 18, 0.88);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border); border-radius: 8px;
+      transition: border-color 0.2s ease;
     }
-    
-    .glass-panel:hover {
-      border-color: rgba(56, 189, 248, 0.25);
-      box-shadow: 0 12px 40px -4px rgba(0, 0, 0, 0.7), 0 0 20px 0 rgba(56, 189, 248, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-    }
-
+    .glass-panel:hover { border-color: rgba(34, 211, 238, 0.16); }
     .glass-panel-amber {
-      background: linear-gradient(180deg, rgba(35, 26, 15, 0.78) 0%, rgba(18, 14, 10, 0.78) 100%);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(251, 191, 36, 0.28);
-      box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6), 0 0 24px 0 rgba(251, 191, 36, 0.08), inset 0 1px 0 0 rgba(251, 191, 36, 0.12);
-      border-radius: 16px;
+      background: rgba(10, 8, 4, 0.92); backdrop-filter: blur(16px);
+      border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px;
+    }
+    .glass-panel-red {
+      background: rgba(10, 4, 6, 0.92); backdrop-filter: blur(16px);
+      border: 1px solid rgba(251, 113, 133, 0.2); border-radius: 8px;
     }
 
-    .glass-panel-red {
-      background: linear-gradient(180deg, rgba(38, 18, 25, 0.78) 0%, rgba(20, 11, 15, 0.78) 100%);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(251, 113, 133, 0.28);
-      box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6), 0 0 24px 0 rgba(251, 113, 133, 0.08), inset 0 1px 0 0 rgba(251, 113, 133, 0.12);
-      border-radius: 16px;
+    .feed-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left-width: 3px; border-radius: 4px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer; position: relative;
+    }
+    .feed-card:hover { transform: translateX(2px); }
+    .feed-card.accent-cyan   { border-left-color: var(--cyan); }
+    .feed-card.accent-amber  { border-left-color: var(--amber); }
+    .feed-card.accent-rose   { border-left-color: var(--rose); }
+    .feed-card.accent-violet { border-left-color: var(--violet); }
+    .feed-card.accent-green  { border-left-color: var(--green); }
+    .feed-card.accent-cyan:hover  { box-shadow: -5px 0 24px rgba(34,211,238,0.14), 0 4px 16px rgba(0,0,0,0.5); }
+    .feed-card.accent-amber:hover { box-shadow: -5px 0 24px rgba(245,158,11,0.14), 0 4px 16px rgba(0,0,0,0.5); }
+    .feed-card.accent-rose:hover  { box-shadow: -5px 0 24px rgba(251,113,133,0.16), 0 4px 16px rgba(0,0,0,0.5); }
+    .feed-card.accent-violet:hover{ box-shadow: -5px 0 24px rgba(139,92,246,0.14), 0 4px 16px rgba(0,0,0,0.5); }
+
+    #sidebar-nav {
+      position: fixed; left: 0; top: 0;
+      width: 56px; height: 100vh;
+      background: rgba(4, 5, 9, 0.97); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 0; gap: 2px; z-index: 100;
+    }
+    .sidebar-brand {
+      font-family: var(--font-mono); font-size: 9px; font-weight: 800;
+      letter-spacing: 0.1em; color: var(--cyan);
+      writing-mode: vertical-rl; transform: rotate(180deg);
+      margin-bottom: 12px; opacity: 0.65;
+    }
+    .sidebar-divider { width: 24px; height: 1px; background: var(--border); margin: 5px 0; }
+    .sidebar-btn {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; border: 1px solid transparent;
+      color: #3f4d5e; transition: all 0.15s ease;
+      cursor: pointer; position: relative; background: none;
+    }
+    .sidebar-btn:hover, .sidebar-btn.active {
+      color: var(--cyan); border-color: rgba(34,211,238,0.2);
+      background: rgba(34,211,238,0.06);
+    }
+    .sidebar-btn.active::before {
+      content: ''; position: absolute; left: -1px; top: 22%; bottom: 22%;
+      width: 2px; background: var(--cyan); border-radius: 0 2px 2px 0;
+      box-shadow: 0 0 10px var(--cyan);
+    }
+    .sidebar-tooltip {
+      position: absolute; left: 50px;
+      background: var(--surface-high); border: 1px solid var(--border-hover);
+      color: #e2e8f0; font-family: var(--font-mono); font-size: 11px;
+      padding: 4px 10px; border-radius: 4px; white-space: nowrap;
+      pointer-events: none; opacity: 0; transform: translateX(-4px);
+      transition: opacity 0.15s ease, transform 0.15s ease; z-index: 200;
+    }
+    .sidebar-btn:hover .sidebar-tooltip { opacity: 1; transform: translateX(0); }
+
+    #mission-header {
+      border-top: 2px solid transparent;
+      border-image: linear-gradient(90deg, var(--cyan), var(--violet), var(--rose)) 1;
+    }
+
+    .kpi-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 18px 20px; position: relative; overflow: hidden;
+    }
+    .kpi-card.kpi-cyan   { border-bottom: 2px solid rgba(34,211,238,0.55); }
+    .kpi-card.kpi-amber  { border-bottom: 2px solid rgba(245,158,11,0.55); }
+    .kpi-card.kpi-rose   { border-bottom: 2px solid rgba(251,113,133,0.55); }
+    .kpi-card.kpi-violet { border-bottom: 2px solid rgba(139,92,246,0.55); }
+    .kpi-card.kpi-green  { border-bottom: 2px solid rgba(16,185,129,0.55); }
+    .kpi-number {
+      font-family: var(--font-mono); font-size: 40px; font-weight: 800;
+      line-height: 1; letter-spacing: -0.04em;
+    }
+    .kpi-card.kpi-cyan .kpi-number   { color: var(--cyan); }
+    .kpi-card.kpi-amber .kpi-number  { color: var(--amber); }
+    .kpi-card.kpi-rose .kpi-number   { color: var(--rose); }
+    .kpi-card.kpi-violet .kpi-number { color: var(--violet); }
+    .kpi-card.kpi-green .kpi-number  { color: var(--green); }
+    .kpi-label {
+      font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase; color: #334155; margin-top: 6px;
     }
 
     .glass-input {
-      background: rgba(8, 11, 18, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: 12px;
-      color: #F8FAFC;
-      transition: all 0.25s ease;
+      background: rgba(4, 5, 9, 0.9); border: 1px solid var(--border);
+      border-radius: 6px; color: #f1f5f9; font-family: var(--font-mono);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .glass-input:focus {
-      border-color: rgba(56, 189, 248, 0.5);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), 0 0 16px rgba(56, 189, 248, 0.1);
-      outline: none;
+      border-color: rgba(34,211,238,0.4);
+      box-shadow: 0 0 0 2px rgba(34,211,238,0.1); outline: none;
     }
 
-    /* Minimalist Technical Scrollbars */
-    ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    .panel-section { padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .panel-section:last-child { border-bottom: none; }
+    .panel-heading {
+      font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; color: #2d3a4a;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 7px;
     }
-    ::-webkit-scrollbar-track {
-      background: rgba(6, 8, 13, 0.8);
+    .panel-heading::before { content: ''; width: 14px; height: 1px; background: var(--cyan); opacity: 0.45; flex-shrink: 0; }
+
+    .scan-banner {
+      border-top: 1px solid rgba(34,211,238,0.18);
+      border-bottom: 1px solid rgba(34,211,238,0.18);
+      background: rgba(34,211,238,0.025);
     }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.14);
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.3);
+    @keyframes marquee-slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .marquee-track { overflow: hidden; white-space: nowrap; }
+    .marquee-inner { display: inline-block; animation: marquee-slide 35s linear infinite; }
+
+    .metallic-heading { color: #fff; font-family: var(--font-mono); font-weight: 800; }
+    .cat-tab { font-family: var(--font-mono); font-size: 10px; border-radius: 4px; transition: all 0.15s ease; }
+    .cat-tab.active-tab {
+      background: rgba(34,211,238,0.1) !important;
+      color: var(--cyan) !important;
+      border-color: rgba(34,211,238,0.28) !important;
     }
 
-    /* Sophisticated Metallic Typography */
-    .metallic-heading {
-      background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 60%, #94A3B8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    @media (max-width: 1023px) {
+      #sidebar-nav { display: none; }
+      .main-layout { margin-left: 0 !important; }
     }
   </style>
 </head>
@@ -372,112 +460,124 @@
   </div>
 
 
+
+  <!-- LEFT ICON SIDEBAR: Mission Control Nav Strip -->
+  <nav id="sidebar-nav">
+    <span class="sidebar-brand">AGY</span>
+    <div class="sidebar-divider"></div>
+
+    <!-- Feed (active by default) -->
+    <button class="sidebar-btn active" onclick="setCategory('all')" title="">
+      <i data-lucide="activity" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">Live Feed</span>
+    </button>
+
+    <!-- 3D Globe -->
+    <button class="sidebar-btn" onclick="toggle3DGlobe()" title="">
+      <i data-lucide="globe" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">3D Radar Globe</span>
+    </button>
+
+    <!-- Watchlist -->
+    <button class="sidebar-btn" onclick="openWatchlistModal()" title="">
+      <i data-lucide="target" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">Watchlist</span>
+    </button>
+
+    <!-- AI Sandbox -->
+    <button class="sidebar-btn" onclick="openTriageModal()" title="">
+      <i data-lucide="flask-conical" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">AI Sandbox</span>
+    </button>
+
+    <!-- Sources -->
+    <button class="sidebar-btn" onclick="openSourcesModal()" title="">
+      <i data-lucide="radio" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">Global Feeds (<span id="sidebar-sources-count">—</span>)</span>
+    </button>
+
+    <!-- Telegram -->
+    <button class="sidebar-btn" onclick="openTelegramModal()" title="">
+      <i data-lucide="send" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">Telegram Alerts</span>
+    </button>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Auto-LLM Triage -->
+    <button class="sidebar-btn" onclick="triggerTriageBackfill()" title="">
+      <i data-lucide="sparkles" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">Auto-LLM Triage</span>
+    </button>
+
+    <!-- Command Palette -->
+    <button class="sidebar-btn" onclick="openCommandPalette()" title="">
+      <i data-lucide="command" class="w-4 h-4"></i>
+      <span class="sidebar-tooltip">Command ⌘K</span>
+    </button>
+  </nav>
+
   <!-- MAIN CONTAINER -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+  <div class="main-layout max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5 lg:ml-14">
 
-    <!-- COMMAND HUD BAR -->
-    <header class="glass-panel p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border border-white/[0.08]">
-      <!-- Title & Live Radar Status -->
-      <div class="flex items-center gap-3.5">
-        <div class="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.12] shadow-sm">
-          <i data-lucide="shield" class="w-5 h-5 text-sky-400"></i>
-          <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
-            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
-          </span>
-        </div>
-
-        <div>
-          <div class="flex items-center gap-2.5 flex-wrap">
-            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-1">
-              AETHER<span class="text-sky-400 font-normal">GUARD</span>
-            </h1>
-            <span class="text-[10px] font-mono uppercase bg-white/[0.05] border border-white/[0.1] text-slate-300 px-2 py-0.5 rounded-full font-medium">
-              v2.0 // AI THREAT RADAR
-            </span>
-            <span class="hidden md:inline-flex items-center gap-1 text-[10px] font-mono uppercase bg-amber-500/10 border border-amber-500/25 text-amber-300 px-2 py-0.5 rounded-full font-medium">
-              <i data-lucide="shield-alert" class="w-3 h-3 text-amber-400"></i> DEFCON 3: ELEVATED
+    <!-- MISSION CONTROL BAR -->
+    <header id="mission-header" class="glass-panel px-5 py-3 flex items-center justify-between gap-4">
+      <!-- Brand + Status Pills -->
+      <div class="flex items-center gap-4 min-w-0">
+        <div class="flex items-center gap-2.5">
+          <div class="relative flex-shrink-0">
+            <i data-lucide="shield" class="w-5 h-5 text-cyan-400"></i>
+            <span class="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
             </span>
           </div>
-          <div class="flex items-center gap-3 text-xs font-mono text-slate-400 mt-1 flex-wrap">
-            <span class="flex items-center gap-1.5" id="connection-status">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              WS: STREAMING (<span id="ping-time" class="text-emerald-300 font-semibold">2ms</span>)
-            </span>
-            <span class="text-slate-600">•</span>
-            <span id="clock" class="text-slate-300 font-medium">00:00:00 UTC</span>
-            <span class="text-slate-600">•</span>
-            <!-- Live Data Freshness Indicator -->
-            <span id="sweep-freshness-badge" class="flex items-center gap-1.5 font-medium cursor-pointer hover:opacity-80 transition" title="Data freshness — time since last full intelligence sweep" onclick="openSourcesModal()">
-              <span id="sweep-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-              <span id="sweep-freshness-text" class="text-slate-400">SWEEP: --</span>
-            </span>
-            <span class="text-slate-600">•</span>
-            <span id="triage-status-badge" class="flex items-center gap-1.5 text-indigo-300 font-medium cursor-pointer hover:text-indigo-200 transition" onclick="triggerTriageBackfill()" title="Autonomous LLM Triage Queue (Local Ollama)">
-              <span id="triage-dot" class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-              <span id="triage-status-text">AI QUEUE: READY (0)</span>
-            </span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="metallic-heading text-lg tracking-tight">AETHER<span style="color:var(--cyan)">GUARD</span></h1>
+              <span class="text-[9px] font-mono bg-white/[0.04] border border-white/[0.08] text-slate-400 px-1.5 py-0.5 rounded font-medium tracking-widest">v2.0</span>
+              <span class="hidden sm:inline-flex items-center gap-1 text-[9px] font-mono uppercase bg-rose-500/10 border border-rose-500/25 text-rose-300 px-2 py-0.5 rounded font-medium">
+                <span class="w-1 h-1 rounded-full bg-rose-400 animate-pulse"></span> DEFCON 3
+              </span>
+            </div>
+            <div class="flex items-center gap-2.5 text-[10px] font-mono text-slate-500 mt-0.5 flex-wrap">
+              <span class="flex items-center gap-1" id="connection-status">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                WS:<span id="ping-time" class="text-emerald-400 ml-0.5">—ms</span>
+              </span>
+              <span class="text-slate-700">│</span>
+              <span id="clock" class="text-slate-400">00:00:00 UTC</span>
+              <span class="text-slate-700">│</span>
+              <span id="sweep-freshness-badge" class="flex items-center gap-1 cursor-pointer" onclick="openSourcesModal()">
+                <span id="sweep-dot" class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                <span id="sweep-freshness-text" class="text-slate-500">SWEEP —</span>
+              </span>
+              <span class="text-slate-700">│</span>
+              <span id="triage-status-badge" class="flex items-center gap-1 cursor-pointer" onclick="triggerTriageBackfill()">
+                <span id="triage-dot" class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                <span id="triage-status-text" class="text-indigo-400">QUEUE: 0</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Action Hub Controls -->
-      <div class="flex items-center flex-wrap gap-2">
-        <!-- Spotlight Command Palette Trigger -->
-        <button onclick="openCommandPalette()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-2 text-xs font-medium" title="Press Ctrl+K or Cmd+K">
-          <i data-lucide="command" class="w-3.5 h-3.5 text-sky-400"></i>
-          <span>Spotlight <kbd class="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.1] text-[10px] text-slate-300">⌘K</kbd></span>
+      <!-- Right Controls: Scan + Audio + Spotlight only -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button id="audio-toggle" onclick="toggleAudio()" class="w-9 h-9 flex items-center justify-center rounded-md border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.06] text-slate-500 hover:text-slate-300 transition" title="Toggle audio">
+          <i id="audio-icon" data-lucide="volume-2" class="w-4 h-4"></i>
         </button>
-
-        <!-- 3D Globe Radar Toggle -->
-        <button onclick="toggle3DGlobe()" id="globe-toggle-btn" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium" title="Toggle 3D WebGL Threat Globe">
-          <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i>
-          <span>3D Radar</span>
+        <button onclick="openCommandPalette()" class="hidden sm:flex w-9 h-9 items-center justify-center rounded-md border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.06] text-slate-500 hover:text-slate-300 transition" title="Command palette ⌘K">
+          <i data-lucide="command" class="w-4 h-4"></i>
         </button>
-
-        <!-- Audio Synth Toggle -->
-        <button id="audio-toggle" onclick="toggleAudio()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium" title="Toggle audio telemetry feedback">
-          <i id="audio-icon" data-lucide="volume-2" class="w-3.5 h-3.5 text-slate-400"></i>
-          <span class="hidden sm:inline">AUDIO: ON</span>
-        </button>
-
-        <!-- Auto-LLM Triage Queue Trigger -->
-        <button onclick="triggerTriageBackfill()" id="auto-triage-btn" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-indigo-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium" title="Queue top high-velocity threats for autonomous local Ollama triage">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i>
-          <span>Auto-LLM</span>
-        </button>
-
-        <!-- Watchlist Trigger -->
-        <button onclick="openWatchlistModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
-          <i data-lucide="target" class="w-3.5 h-3.5 text-sky-400"></i>
-          <span>Watchlist (<span id="active-watchlist-count" class="text-sky-300">0</span>)</span>
-        </button>
-
-        <!-- AI Sandbox Trigger -->
-        <button onclick="openTriageModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
-          <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-purple-400"></i>
-          <span>Sandbox</span>
-        </button>
-
-        <!-- Sources Modal Trigger -->
-        <button onclick="openSourcesModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
-          <i data-lucide="radio" class="w-3.5 h-3.5 text-slate-400"></i>
-          <span>Global Feeds (<span id="active-sources-count" class="text-sky-300">50</span>)</span>
-        </button>
-
-        <!-- Telegram Trigger -->
-        <button onclick="openTelegramModal()" class="px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-medium">
-          <i data-lucide="send" class="w-3.5 h-3.5 text-blue-400"></i>
-          <span class="hidden sm:inline">Telegram</span>
-        </button>
-
-        <!-- Trigger Scan Button -->
-        <button id="scan-btn" onclick="triggerScan()" class="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-sm shadow-sky-500/25 transition active:scale-98">
-          <i id="scan-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-950"></i>
-          <span>Scan Feeds</span>
+        <button id="scan-btn" onclick="triggerScan()" class="flex items-center gap-2 px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/20">
+          <i id="scan-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span>Scan</span>
         </button>
       </div>
     </header>
+
+
 
     <!-- 3D WEBGL HOLOGRAPHIC THREAT RADAR GLOBE -->
     <div id="globe-panel" class="glass-panel p-4 relative overflow-hidden transition-all duration-500 border border-white/[0.08]">
@@ -518,96 +618,47 @@
     </div>
 
     <!-- METRICS TELEMETRY ROW -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-      <!-- Total Intelligence Ingested -->
-      <div class="glass-panel p-4 flex items-center justify-between border border-white/[0.08] hover:border-white/[0.16] transition">
-        <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-medium">Total Intel Ingested</p>
-          <h3 id="stat-total" class="text-2xl font-bold font-mono tracking-tight text-white mt-1">4,336</h3>
-          <p class="text-[10px] text-emerald-400 flex items-center gap-1.5 mt-1 font-mono font-medium">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> SQLite WAL Live
-          </p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-300">
-          <i data-lucide="layers" class="w-4 h-4 text-sky-400"></i>
-        </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <!-- Total Intelligence -->
+      <div class="kpi-card kpi-cyan">
+        <div class="kpi-number" id="total-entries">—</div>
+        <div class="kpi-label">Total Intel</div>
       </div>
-
-      <!-- Pre-CVE Zero-Day Warnings -->
-      <div class="glass-panel p-4 flex items-center justify-between border border-amber-500/25 bg-amber-500/[0.03] hover:border-amber-500/40 transition">
-        <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-medium flex items-center gap-1.5">
-            <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> Pre-CVE Warnings
-          </p>
-          <h3 id="stat-precve" class="text-2xl font-bold font-mono tracking-tight text-amber-200 mt-1">2</h3>
-          <p class="text-[10px] text-amber-400/80 font-mono mt-1">arXiv Academic Exploits</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-300">
-          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
-        </div>
+      <!-- Pre-CVE Warnings -->
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-number" id="pre-cve-count">—</div>
+        <div class="kpi-label">Pre-CVE Zero-Days</div>
       </div>
-
       <!-- High Velocity Threats -->
-      <div class="glass-panel p-4 flex items-center justify-between border border-rose-500/25 bg-rose-500/[0.03] hover:border-rose-500/40 transition">
-        <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-rose-300 font-medium flex items-center gap-1.5">
-            <i data-lucide="flame" class="w-3 h-3 text-rose-400"></i> High Velocity
-          </p>
-          <h3 id="stat-highvel" class="text-2xl font-bold font-mono tracking-tight text-rose-200 mt-1">10</h3>
-          <p class="text-[10px] text-rose-400/80 font-mono mt-1">Velocity Score ≥ 70</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-300">
-          <i data-lucide="activity" class="w-4 h-4 text-rose-400"></i>
-        </div>
+      <div class="kpi-card kpi-rose">
+        <div class="kpi-number" id="high-vel-count">—</div>
+        <div class="kpi-label">High Velocity</div>
       </div>
-
-      <!-- AI Tech & Papers -->
-      <div class="glass-panel p-4 flex items-center justify-between border border-indigo-500/20 bg-indigo-500/[0.03] hover:border-indigo-500/35 transition">
-        <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-indigo-300 font-medium">Frontier AI Releases</p>
-          <h3 id="stat-ai" class="text-2xl font-bold font-mono tracking-tight text-indigo-200 mt-1">2,252</h3>
-          <p class="text-[10px] text-indigo-400/80 font-mono mt-1">LLMs & arXiv Papers</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300">
-          <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
-        </div>
+      <!-- AI Tech -->
+      <div class="kpi-card kpi-violet">
+        <div class="kpi-number" id="ai-count">—</div>
+        <div class="kpi-label">AI Research</div>
       </div>
-
-      <!-- Security Advisories & CVEs -->
-      <div class="glass-panel p-4 flex items-center justify-between border border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/35 transition">
-        <div>
-          <p class="text-[10px] font-mono uppercase tracking-wider text-emerald-300 font-medium">Cyber Threats</p>
-          <h3 id="stat-sec" class="text-2xl font-bold font-mono tracking-tight text-emerald-200 mt-1">1,885</h3>
-          <p class="text-[10px] text-emerald-400/80 font-mono mt-1">CISA, GHSA, NVD</p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-300">
-          <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
-        </div>
+      <!-- Active Sources -->
+      <div class="kpi-card kpi-green">
+        <div class="kpi-number" id="active-sources-count">—</div>
+        <div class="kpi-label">Live Sources</div>
       </div>
     </div>
 
 
-    <!-- PRE-CVE ZERO-DAY HIGHLIGHT RADAR BANNER -->
-    <div id="precve-radar-banner" class="glass-panel p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border border-amber-500/25 bg-gradient-to-r from-amber-500/[0.06] via-transparent to-transparent">
-      <div class="flex items-center gap-3.5 w-full sm:w-auto">
-        <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center flex-shrink-0">
-          <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-mono font-semibold text-amber-300 uppercase tracking-wider">PRE-CVE ZERO-DAY RADAR ACTIVE</span>
-            <span class="text-[10px] font-mono bg-amber-500/20 text-amber-200 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium">EARLY DETECTION</span>
-          </div>
-          <p class="text-xs text-slate-300 mt-0.5 line-clamp-1 font-sans">
-            Autonomous radar identified novel LLM jailbreak / agent hijacking exploits in arXiv research before official CVE publishing.
-          </p>
-        </div>
+    <!-- PRE-CVE ZERO-DAY ALERT MARQUEE BANNER -->
+    <div id="precve-radar-banner" class="scan-banner py-2 px-4 flex items-center gap-4 overflow-hidden">
+      <span class="flex-shrink-0 flex items-center gap-1.5 font-mono text-[10px] font-bold text-amber-400 uppercase tracking-widest border-r border-amber-500/20 pr-4">
+        <i data-lucide="zap" class="w-3.5 h-3.5"></i> PRE-CVE
+      </span>
+      <div class="marquee-track flex-1">
+        <span class="marquee-inner text-[10px] font-mono text-slate-400">
+          ZERO-DAY RADAR ACTIVE &nbsp;·&nbsp; Autonomous detection of novel LLM jailbreaks, agent hijacking, RAG poisoning before CVE filing &nbsp;·&nbsp; arXiv scanning enabled &nbsp;·&nbsp; MITRE ATT&CK correlation active &nbsp;·&nbsp; ZERO-DAY RADAR ACTIVE &nbsp;·&nbsp; Autonomous detection of novel LLM jailbreaks, agent hijacking, RAG poisoning before CVE filing &nbsp;·&nbsp; arXiv scanning enabled &nbsp;·&nbsp; MITRE ATT&CK correlation active &nbsp;·&nbsp;
+        </span>
       </div>
-      <button onclick="setCategory('pre_cve')" class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 font-mono font-medium text-xs uppercase transition whitespace-nowrap flex-shrink-0">
-        Filter Advisories →
-      </button>
+      <button onclick="setCategory('pre_cve')" class="flex-shrink-0 text-[10px] font-mono font-bold text-amber-400 hover:text-amber-300 uppercase tracking-wider border border-amber-500/25 px-3 py-1 rounded-sm transition">VIEW →</button>
     </div>
-
 
     <!-- MAIN CONTENT GRID -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -705,7 +756,7 @@
         </div>
 
         <!-- Live Scan Progress Bar (Shown during scan) -->
-        <div id="scan-progress-banner" class="hidden glass-panel p-3.5 border border-sky-500/30 bg-sky-500/[0.04] flex items-center justify-between">
+        <div id="scan-progress-banner" class="hidden scan-banner p-3 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></div>
             <p id="scan-banner-text" class="text-xs font-mono text-sky-300 font-medium">Scanning 38 global intelligence feeds...</p>
@@ -714,7 +765,7 @@
         </div>
 
         <!-- Feed Cards Container -->
-        <div id="feed-container" class="space-y-4">
+        <div id="feed-container" class="space-y-2">
           <!-- Populated dynamically via JS -->
         </div>
 
@@ -727,88 +778,48 @@
 
       </div>
 
-      <!-- RIGHT 4 COLUMNS: RADAR TELEMETRY, BLAST RADIUS CHARTS & ENGINE INFO -->
-      <div class="lg:col-span-4 space-y-4">
-        
-        <!-- Category Distribution Chart -->
-        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-              <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-sky-400"></i>
-              Intel Category Spectrum
-            </h3>
-            <span class="text-[10px] font-mono text-slate-500 uppercase">REAL-TIME</span>
-          </div>
+      <!-- RIGHT PANEL: flat sections -->
+      <div class="lg:col-span-4">
+        <div class="glass-panel p-5">
 
-          <div class="relative h-56 flex items-center justify-center">
-            <canvas id="categoryChart"></canvas>
-          </div>
-        </div>
-
-        <!-- AI Framework Blast Radius Exposure -->
-        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-              <i data-lucide="target" class="w-3.5 h-3.5 text-indigo-400"></i>
-              AI Framework Exposure
-            </h3>
-            <span class="text-[10px] font-mono text-slate-500 uppercase">BLAST MATRIX</span>
-          </div>
-
-          <div id="framework-exposure-list" class="space-y-2.5 text-xs font-mono">
-            <!-- Dynamically populated from live SQLite analysis -->
-            <p class="text-slate-500 text-center py-4 text-[11px]">Computing framework blast exposure...</p>
-          </div>
-        </div>
-
-        <!-- Autonomous Engine Capabilities -->
-        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
-          <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-            <i data-lucide="cpu" class="w-3.5 h-3.5 text-sky-400"></i>
-            Autonomous Detection Engine
-          </h3>
-          <div class="space-y-2 text-[11px] font-mono">
-            <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
-              <div class="text-amber-300 font-medium flex items-center gap-1.5">
-                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Pre-CVE Early Warning System
-              </div>
-              <p class="text-slate-400 mt-1 font-sans text-xs">Scans arXiv research to detect novel LLM jailbreaks, RAG poisoning, and agent hijack prior to CVE filing.</p>
+          <!-- Intel Category Spectrum -->
+          <div class="panel-section">
+            <div class="panel-heading">Intel Spectrum</div>
+            <div class="relative h-52 flex items-center justify-center">
+              <canvas id="categoryChart"></canvas>
             </div>
-            <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
-              <div class="text-sky-300 font-medium flex items-center gap-1.5">
-                <i data-lucide="target" class="w-3.5 h-3.5 text-sky-400"></i> AI Blast Radius Calculator
-              </div>
-              <p class="text-slate-400 mt-1 font-sans text-xs">Cross-correlates vulnerabilities against open-source AI stacks (PyTorch, LangChain, Ollama, Transformers).</p>
+          </div>
+
+          <!-- AI Framework Blast Exposure -->
+          <div class="panel-section">
+            <div class="panel-heading">AI Framework Exposure</div>
+            <div id="framework-exposure-list" class="space-y-2 text-[10px] font-mono">
+              <p class="text-slate-600 py-3">Computing blast exposure...</p>
             </div>
-            <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
-              <div class="text-indigo-300 font-medium flex items-center justify-between">
-                <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-indigo-400"></i> Local Ollama Triage</span>
-                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">OLLAMA</span>
-              </div>
-              <p class="text-slate-400 mt-1 font-sans text-xs">Autonomous deep analysis of zero-day exploits & arXiv papers using local GPU.</p>
-              <button onclick="triggerAutonomousBackfill()" id="btn-sidebar-backfill" class="w-full mt-2.5 py-1.5 px-3 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-200 hover:text-white text-[11px] font-mono flex items-center justify-center gap-1.5 transition">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i> Auto-Triage Top 25 Threats
+          </div>
+
+          <!-- Detection Engine -->
+          <div class="panel-section">
+            <div class="panel-heading">Autonomous Engine</div>
+            <div class="space-y-2.5 text-[10px] font-mono">
+              <div class="flex items-start gap-2"><span class="text-amber-500 flex-shrink-0">⚡</span><span class="text-slate-500">Pre-CVE arXiv radar — LLM jailbreaks, RAG poisoning, agent hijack detection before CVE filing</span></div>
+              <div class="flex items-start gap-2"><span class="text-cyan-500 flex-shrink-0">◎</span><span class="text-slate-500">Blast radius engine cross-correlates against PyTorch, LangChain, Ollama, Transformers</span></div>
+              <div class="flex items-start gap-2"><span class="text-violet-500 flex-shrink-0">✦</span><span class="text-slate-500">Local Ollama GPU triage for deep autonomous analysis</span></div>
+              <button onclick="triggerAutonomousBackfill()" id="btn-sidebar-backfill" class="w-full mt-2 py-2 px-3 rounded-sm bg-violet-500/10 hover:bg-violet-500/18 border border-violet-500/20 text-violet-400 hover:text-violet-300 text-[9px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="sparkles" class="w-3 h-3"></i> Auto-Triage Top 25
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Recent Sweep Activity Log -->
-        <div class="glass-panel p-5 space-y-3 border border-white/[0.08]">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-mono font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-              <i data-lucide="list-tree" class="w-3.5 h-3.5 text-slate-400"></i>
-              Feed Sweep Telemetry
-            </h3>
-            <span class="text-[10px] font-mono text-slate-500">LAST 24H</span>
+          <!-- Sweep Log -->
+          <div class="panel-section">
+            <div class="panel-heading">Sweep Log · 24h</div>
+            <div id="recent-fetches-list" class="space-y-1.5 max-h-60 overflow-y-auto text-[10px] font-mono"></div>
           </div>
 
-          <div id="recent-fetches-list" class="space-y-2 max-h-72 overflow-y-auto pr-1 text-xs font-mono">
-            <!-- Injected via JS -->
-          </div>
         </div>
-
       </div>
+
 
     </div>
 
@@ -1202,21 +1213,16 @@
 
     function renderStats(stats) {
       if (!stats) return;
-      document.getElementById('stat-total').innerText = (stats.total_entries || 0).toLocaleString();
-      const totalSrcs = stats.total_sources || 38;
-      document.getElementById('active-sources-count').innerText = totalSrcs;
-      if (document.getElementById('globe-beacons-count')) {
-        document.getElementById('globe-beacons-count').innerText = totalSrcs;
-      }
-      if (document.getElementById('active-watchlist-count') && stats.watchlist_rules !== undefined) {
-        document.getElementById('active-watchlist-count').innerText = stats.watchlist_rules;
-      }
-      document.getElementById('stat-precve').innerText = (stats.pre_cve_warnings || 0).toLocaleString();
-      document.getElementById('stat-highvel').innerText = (stats.high_velocity_entries || 0).toLocaleString();
-
+      const _set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+      const totalSrcs = stats.total_sources || 0;
       const cats = stats.by_category || {};
-      document.getElementById('stat-ai').innerText = ((cats.ai_tech || 0) + (cats.ai_research || 0)).toLocaleString();
-      document.getElementById('stat-sec').innerText = ((cats.cybersecurity || 0) + (cats.vulnerabilities || 0)).toLocaleString();
+      _set('total-entries', (stats.total_entries || 0).toLocaleString());
+      _set('pre-cve-count', (stats.pre_cve_warnings || 0).toLocaleString());
+      _set('high-vel-count', (stats.high_velocity_entries || 0).toLocaleString());
+      _set('ai-count', ((cats.ai_tech || 0) + (cats.ai_research || 0)).toLocaleString());
+      _set('active-sources-count', totalSrcs);
+      _set('sidebar-sources-count', totalSrcs);
+      if (document.getElementById('globe-beacons-count')) _set('globe-beacons-count', totalSrcs);
 
       renderCategoryChart(cats);
 
@@ -1445,174 +1451,90 @@
     function createCardElement(entry) {
       const card = document.createElement('div');
       card.id = 'threat-card-' + entry.id;
-      
+
       const analysis = entry.analysis || {};
       const isPreCve = Boolean(analysis.is_pre_cve_warning || entry.is_pre_cve_warning);
       const velocity = analysis.threat_velocity !== undefined ? analysis.threat_velocity : (entry.threat_velocity || 25);
-      const severity = analysis.severity_index !== undefined ? analysis.severity_index : (entry.severity_index || 25);
       const blastRadius = analysis.blast_radius_score !== undefined ? analysis.blast_radius_score : (entry.blast_radius_score || 20);
       const ecosystem = analysis.affected_ecosystem || entry.affected_ecosystem || [];
       const attackVector = analysis.attack_vector || entry.attack_vector || '';
       const risk = analysis.risk_assessment || entry.risk_assessment || '';
       const mitigation = analysis.mitigation || entry.mitigation || '';
 
-      let borderStyle = 'border-white/[0.08] hover:border-sky-400/35 hover:shadow-[0_8px_30px_rgb(56,189,248,0.08)]';
-      if (isPreCve) {
-        borderStyle = 'border-amber-500/35 bg-gradient-to-b from-amber-500/[0.06] to-transparent hover:border-amber-400/50 hover:shadow-[0_8px_30px_rgb(251,191,36,0.1)]';
-      } else if (velocity >= 70) {
-        borderStyle = 'border-rose-500/35 bg-gradient-to-b from-rose-500/[0.06] to-transparent hover:border-rose-400/50 hover:shadow-[0_8px_30px_rgb(244,63,94,0.1)]';
-      }
+      // Determine left accent bar color class
+      let accentClass = 'accent-cyan';
+      if (isPreCve) accentClass = 'accent-amber';
+      else if (velocity >= 75) accentClass = 'accent-rose';
+      else if (velocity >= 50) accentClass = 'accent-amber';
+      else if ((analysis.weaponization_potential || entry.weaponization_potential || '').includes('PoC')) accentClass = 'accent-rose';
+      else if (entry.category === 'ai_models' || entry.category === 'ai_research') accentClass = 'accent-violet';
+      else if (entry.category === 'cybersecurity' || entry.category === 'vulnerabilities') accentClass = 'accent-rose';
 
-      card.className = `glass-panel p-5 transition-all duration-300 hover:-translate-y-1 border ${borderStyle} space-y-3.5 cursor-pointer shadow-lg shadow-black/40`;
+      card.className = `feed-card ${accentClass} p-4`;
 
-      const categoryBadgeColors = {
-        vulnerabilities: 'text-rose-300 border-rose-500/25 bg-rose-500/10',
-        ai_tech: 'text-sky-300 border-sky-500/25 bg-sky-500/10',
-        ai_research: 'text-indigo-300 border-indigo-500/25 bg-indigo-500/10',
-        cybersecurity: 'text-emerald-300 border-emerald-500/25 bg-emerald-500/10',
-        github_trending: 'text-cyan-300 border-cyan-500/25 bg-cyan-500/10',
-        ai_models: 'text-purple-300 border-purple-500/30 bg-purple-500/15',
-        cyber_tools: 'text-teal-300 border-teal-500/30 bg-teal-500/15',
-        exploits_tricks: 'text-amber-300 border-amber-500/40 bg-amber-500/20'
+      const categoryColors = {
+        vulnerabilities: 'text-rose-400', ai_tech: 'text-sky-400',
+        ai_research: 'text-indigo-400', cybersecurity: 'text-emerald-400',
+        github_trending: 'text-cyan-400', ai_models: 'text-violet-400',
+        cyber_tools: 'text-teal-400', exploits_tricks: 'text-amber-400'
       };
-
-      const badgeStyle = categoryBadgeColors[entry.category] || 'text-slate-300 border-white/10 bg-white/[0.04]';
+      const catColor = categoryColors[entry.category] || 'text-slate-400';
+      const catLabel = (entry.category || '').replace(/_/g, ' ').toUpperCase();
       const pubDate = entry.published_at ? entry.published_at.slice(0, 16).replace('T', ' ') : 'Recent';
-
-      // Sovereign Country Flags & Regional Intelligence Badging
-      const countryFlags = {
-        'US': '🇺🇸', 'CA': '🇨🇦', 'GB': '🇬🇧', 'EU': '🇪🇺',
-        'FR': '🇫🇷', 'DE': '🇩🇪', 'JP': '🇯🇵', 'AU': '🇦🇺',
-        'SG': '🇸🇬', 'CH': '🇨🇭', 'IN': '🇮🇳', 'IL': '🇮🇱',
-        'KR': '🇰🇷', 'NL': '🇳🇱', 'SE': '🇸🇪', 'FI': '🇫🇮',
-        'BR': '🇧🇷', 'ZA': '🇿🇦', 'GLOBAL': '🌐'
-      };
+      const sourceDisplayName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? (() => { try { return new URL(entry.url).hostname.replace('www.', ''); } catch(e) { return 'Intel'; } })() : 'Global Intel');
+      const countryFlags = {'US':'🇺🇸','CA':'🇨🇦','GB':'🇬🇧','EU':'🇪🇺','FR':'🇫🇷','DE':'🇩🇪','JP':'🇯🇵','AU':'🇦🇺','SG':'🇸🇬','CH':'🇨🇭','IN':'🇮🇳','IL':'🇮🇱','KR':'🇰🇷','NL':'🇳🇱','SE':'🇸🇪','GLOBAL':'🌐'};
       const countryCode = entry.country || (entry.metadata && entry.metadata.country) || 'GLOBAL';
-      const flagEmoji = countryFlags[countryCode] || '🌐';
-      const sourceDisplayName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? new URL(entry.url).hostname.replace('www.', '') : 'Global Intel');
+      const flag = countryFlags[countryCode] || '🌐';
 
-      // Framework Ecosystem Badges
-      const ecoPills = ecosystem.slice(0, 3).map(e => `
-        <span class="px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.08] text-[10px] font-mono">
-          <i data-lucide="cpu" class="w-2.5 h-2.5 inline mr-1 text-sky-400"></i>${e}
-        </span>
-      `).join(' ');
+      const mitreId = analysis.mitre_attack_id || entry.mitre_attack_id;
+      const weaponization = analysis.weaponization_potential || entry.weaponization_potential || '';
+      const isPoc = weaponization.includes('PoC');
+      const isExploited = weaponization.includes('Active Weaponization');
 
       card.innerHTML = `
-        <!-- Header Row -->
-        <div class="flex items-center justify-between gap-2 flex-wrap text-xs font-mono">
+        <!-- Top Row: Category + Velocity + Controls -->
+        <div class="flex items-center justify-between gap-2 mb-2.5">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase ${badgeStyle}">
-              ${entry.category.replace('_', ' ')}
-            </span>
-
-            ${isPreCve ? `
-              <span class="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/35 text-amber-300 text-[10px] font-medium tracking-wide flex items-center gap-1">
-                <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> PRE-CVE
-              </span>
-            ` : ''}
-
-            ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `
-              <span class="px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/35 text-indigo-300 text-[10px] font-medium font-mono flex items-center gap-1">
-                <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i> AI TRIAGED
-              </span>
-            ` : ''}
-
-            ${(analysis.mitre_attack_id || entry.mitre_attack_id) ? `
-              <span class="px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/35 text-purple-300 text-[10px] font-medium font-mono flex items-center gap-1" title="${analysis.mitre_technique || entry.mitre_technique || 'MITRE ATT&CK'}">
-                <i data-lucide="target" class="w-3 h-3 text-purple-400"></i> ${analysis.mitre_attack_id || entry.mitre_attack_id}
-              </span>
-            ` : ''}
-
-            ${(analysis.weaponization_potential === 'PoC Verified' || entry.weaponization_potential === 'PoC Verified') ? `
-              <span class="px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-semibold font-mono flex items-center gap-1">
-                <i data-lucide="crosshair" class="w-3 h-3 text-rose-400"></i> PoC
-              </span>
-            ` : (analysis.weaponization_potential === 'Active Weaponization' || entry.weaponization_potential === 'Active Weaponization') ? `
-              <span class="px-2 py-0.5 rounded-md bg-red-600/25 border border-red-500/50 text-red-300 text-[10px] font-bold font-mono flex items-center gap-1 animate-pulse">
-                <i data-lucide="flame" class="w-3 h-3 text-red-400"></i> EXPLOITED
-              </span>
-            ` : ''}
-
-            ${(entry.matched_watchlist_rules || []).map(w => `
-              <span class="px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/35 text-sky-300 text-[10px] font-medium font-mono flex items-center gap-1">
-                <i data-lucide="target" class="w-3 h-3 text-sky-400"></i> ${w}
-              </span>
-            `).join('')}
-
-            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-slate-300 text-[11px] font-mono">
-              <span>${flagEmoji}</span>
-              <span class="font-medium text-slate-200">${sourceDisplayName}</span>
-            </span>
+            <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${catLabel}</span>
+            ${isPreCve ? `<span class="text-[9px] font-mono font-bold text-amber-400 uppercase bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-sm">⚡ PRE-CVE</span>` : ''}
+            ${isExploited ? `<span class="text-[9px] font-mono font-bold text-red-400 uppercase bg-red-500/10 border border-red-500/25 px-1.5 py-0.5 rounded-sm animate-pulse">🔴 EXPLOITED</span>` : isPoc ? `<span class="text-[9px] font-mono font-bold text-rose-400 uppercase bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-sm">⚡ PoC</span>` : ''}
+            ${mitreId ? `<span class="text-[9px] font-mono text-violet-400 cursor-default" title="${analysis.mitre_technique || entry.mitre_technique || 'MITRE ATT&CK'}">${mitreId} ›</span>` : ''}
+            ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `<span class="text-[9px] font-mono text-indigo-400">✦ AI</span>` : ''}
+            ${(entry.matched_watchlist_rules || []).map(w => `<span class="text-[9px] font-mono text-cyan-400 uppercase">◉ ${w}</span>`).join('')}
           </div>
-
-          <div class="flex items-center gap-2">
-            <!-- Threat Velocity Pill -->
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${velocity >= 70 ? 'bg-rose-500/15 border border-rose-500/30 text-rose-300' : 'bg-white/[0.04] border border-white/[0.08] text-slate-300'}">
-              <span class="w-1.5 h-1.5 rounded-full ${velocity >= 70 ? 'bg-rose-400' : 'bg-sky-400'}"></span>
-              VEL ${velocity}
-            </span>
-            <!-- Blast Radius Pill -->
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${blastRadius >= 60 ? 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-300' : 'bg-white/[0.04] border border-white/[0.08] text-slate-400'}">
-              <span class="w-1.5 h-1.5 rounded-full ${blastRadius >= 60 ? 'bg-indigo-400' : 'bg-slate-500'}"></span>
-              BLAST ${blastRadius}
-            </span>
-            <!-- Pin Button -->
-            <button onclick="togglePinThreat('${entry.id}', event)" class="p-1 rounded-lg hover:bg-white/[0.08] transition" title="Pin to active investigation board">
-              <i data-lucide="star" class="w-3.5 h-3.5 ${isThreatPinned(entry.id) ? 'text-amber-400 fill-amber-400' : 'text-slate-500 hover:text-amber-300'}"></i>
+          <div class="flex items-center gap-2.5 flex-shrink-0 text-[9px] font-mono">
+            <span class="text-slate-600">${flag} ${sourceDisplayName}</span>
+            <span class="${velocity >= 70 ? 'text-rose-400' : velocity >= 50 ? 'text-amber-400' : 'text-slate-500'}">VEL ${velocity}</span>
+            <span class="${blastRadius >= 60 ? 'text-violet-400' : 'text-slate-600'}">BLAST ${blastRadius}</span>
+            <button onclick="togglePinThreat('${entry.id}', event)" class="text-slate-600 hover:text-amber-400 transition" title="Pin">
+              <i data-lucide="star" class="w-3 h-3 ${isThreatPinned(entry.id) ? 'text-amber-400' : ''}"></i>
             </button>
           </div>
         </div>
 
-        <!-- Title & Summary -->
-        <div>
-          <h3 class="text-base font-semibold text-white hover:text-sky-300 transition line-clamp-2 leading-snug">
-            ${entry.title}
-          </h3>
-          <p class="text-xs text-slate-300 mt-1.5 line-clamp-2 leading-relaxed font-sans">
-            ${entry.summary || 'No detailed abstract available.'}
-          </p>
-        </div>
+        <!-- Title -->
+        <h3 class="text-sm font-semibold text-slate-100 hover:text-cyan-300 transition line-clamp-2 leading-snug mb-2">${entry.title}</h3>
 
-        <!-- Autonomous AI Triage & Impact Box -->
-        ${attackVector || risk ? `
-          <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5 text-xs font-mono">
-            ${attackVector ? `
-              <div class="flex items-start gap-1.5">
-                <span class="text-sky-400 font-semibold flex-shrink-0 text-[11px]">VECTOR:</span>
-                <span class="line-clamp-1 text-slate-300 text-[11px] font-sans">${attackVector}</span>
-              </div>
-            ` : ''}
-            ${risk ? `
-              <div class="flex items-start gap-1.5">
-                <span class="text-rose-400 font-semibold flex-shrink-0 text-[11px]">RISK:</span>
-                <span class="line-clamp-1 text-slate-300 text-[11px] font-sans">${risk}</span>
-              </div>
-            ` : ''}
-            ${mitigation ? `
-              <div class="flex items-start gap-1.5">
-                <span class="text-emerald-400 font-semibold flex-shrink-0 text-[11px]">PATCH:</span>
-                <span class="line-clamp-1 text-slate-300 text-[11px] font-sans">${mitigation}</span>
-              </div>
-            ` : ''}
-          </div>
-        ` : ''}
+        <!-- Summary -->
+        <p class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-3">${entry.summary || 'No detailed abstract available.'}</p>
 
-        <!-- Footer Row -->
-        <div class="flex items-center justify-between gap-3 pt-2 border-t border-white/[0.05] text-xs font-mono flex-wrap">
+        ${(attackVector || risk) ? `
+        <!-- Triage Box -->
+        <div class="border-t border-white/[0.05] pt-2.5 space-y-1 text-[10px] font-mono">
+          ${attackVector ? `<div class="flex gap-1.5"><span class="text-cyan-500 flex-shrink-0">VECTOR</span><span class="text-slate-500 line-clamp-1">${attackVector}</span></div>` : ''}
+          ${risk ? `<div class="flex gap-1.5"><span class="text-rose-500 flex-shrink-0">RISK</span><span class="text-slate-500 line-clamp-1">${risk}</span></div>` : ''}
+          ${mitigation ? `<div class="flex gap-1.5"><span class="text-green-500 flex-shrink-0">PATCH</span><span class="text-slate-500 line-clamp-1">${mitigation}</span></div>` : ''}
+        </div>` : ''}
+
+        <!-- Footer: Tags + Date + Inspect -->
+        <div class="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-white/[0.04]">
           <div class="flex items-center gap-1.5 flex-wrap">
-            ${ecoPills}
-            ${(entry.tags || []).filter(t => t && t.length < 20).slice(0, 3).map(t => `
-              <span onclick="searchByTag('${t}', event)" class="px-2 py-0.5 rounded bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-sky-300 border border-white/[0.06] text-[10px] font-mono cursor-pointer transition">
-                #${t}
-              </span>
-            `).join('')}
+            ${ecosystem.slice(0,2).map(e => `<span class="text-[9px] font-mono text-slate-600 bg-white/[0.03] border border-white/[0.05] px-1.5 py-0.5 rounded-sm">${e}</span>`).join('')}
+            ${(entry.tags || []).filter(t => t && t.length < 18).slice(0,2).map(t => `<span onclick="searchByTag('${t}', event)" class="text-[9px] font-mono text-slate-600 hover:text-cyan-400 cursor-pointer transition">#${t}</span>`).join('')}
           </div>
-          <div class="flex items-center gap-3">
-            <span class="text-slate-400 text-[11px]">${pubDate}</span>
-            <button class="text-sky-400 hover:text-sky-300 flex items-center gap-1 text-xs font-medium transition">
-              Inspect Intel <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </button>
+          <div class="flex items-center gap-3 text-[9px] font-mono text-slate-600 flex-shrink-0">
+            <span>${pubDate}</span>
+            <button class="text-cyan-500 hover:text-cyan-300 transition font-medium">INSPECT →</button>
           </div>
         </div>
       `;
@@ -1896,14 +1818,10 @@
     function setCategory(cat) {
       currentCategory = cat;
       document.querySelectorAll('.cat-tab').forEach(b => {
-        b.classList.remove('bg-white/[0.12]', 'text-white', 'border-white/20');
-        b.classList.add('bg-white/[0.03]', 'text-slate-400', 'border-white/[0.06]');
+        b.classList.remove('active-tab', 'bg-white/[0.12]', 'text-white', 'border-white/20');
       });
       const activeBtn = document.getElementById(`tab-${cat}`);
-      if (activeBtn) {
-        activeBtn.classList.remove('bg-white/[0.03]', 'text-slate-400', 'border-white/[0.06]');
-        activeBtn.classList.add('bg-white/[0.12]', 'text-white', 'border-white/20');
-      }
+      if (activeBtn) activeBtn.classList.add('active-tab');
       playBeep('click');
       loadFeed(true);
     }
