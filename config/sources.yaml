@@ -677,7 +677,7 @@ delivery:
 
   telegram:
     enabled: true
-    bot_token: "8426550330:AAG_pnhsbIyzb2HI15nZBnTveIX_RN1NSow"
+    bot_token: "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
     chat_id: "1650972026"
 
   console:
