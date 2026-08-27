@@ -45,8 +45,14 @@ class DatabaseManager:
 
     def _create_engine(self) -> AsyncEngine:
         """Create async engine with appropriate configuration."""
-        # For SQLite, use NullPool to avoid connection issues
+        # For SQLite, ensure directory exists and use NullPool
         if self._url.startswith("sqlite"):
+            import os
+            db_path = self._url.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "").split("?")[0]
+            dir_name = os.path.dirname(db_path)
+            if dir_name:
+                os.makedirs(dir_name, exist_ok=True)
+
             engine = create_async_engine(
                 self._url,
                 echo=self._echo,
