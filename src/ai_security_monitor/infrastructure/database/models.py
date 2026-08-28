@@ -110,6 +110,11 @@ class AnalysisModel(Base):
         Index("ix_analysis_threat_velocity", "threat_velocity"),
         Index("ix_analysis_pre_cve", "is_pre_cve_warning"),
         Index("ix_analysis_severity", "severity_index"),
+        # Composite indexes for the three sort-JOIN queries in entries router
+        # These turn full table scans into index lookups on the 6,800+ row table
+        Index("ix_analysis_entry_velocity", "entry_id", "threat_velocity"),
+        Index("ix_analysis_entry_blast", "entry_id", "blast_radius_score"),
+        Index("ix_analysis_entry_severity", "entry_id", "severity_index"),
     )
 
 

@@ -959,8 +959,13 @@
           <!-- AI Framework Blast Exposure -->
           <div class="panel-section">
             <div class="panel-heading">AI Framework Exposure</div>
-            <div id="framework-exposure-list" class="space-y-2 text-[10px] font-mono">
-              <p class="text-slate-600 py-3">Computing blast exposure...</p>
+            <div id="framework-exposure-list" class="space-y-2.5 text-[10px] font-mono">
+              <div class="space-y-2 animate-pulse py-1">
+                <div class="flex justify-between items-center"><div class="h-2.5 bg-white/[0.05] rounded w-24"></div><div class="h-2 bg-white/[0.03] rounded w-10"></div></div>
+                <div class="h-1 bg-white/[0.03] rounded-full w-full"></div>
+                <div class="flex justify-between items-center pt-1"><div class="h-2.5 bg-white/[0.05] rounded w-20"></div><div class="h-2 bg-white/[0.03] rounded w-8"></div></div>
+                <div class="h-1 bg-white/[0.03] rounded-full w-full"></div>
+              </div>
             </div>
           </div>
 
@@ -1562,13 +1567,25 @@
 
       const container = document.getElementById('feed-container');
       if (reset) {
-        container.innerHTML = `
-          <div class="glass-panel rounded-2xl p-12 text-center text-cyber-muted space-y-3">
-            <i data-lucide="radar" class="w-8 h-8 mx-auto text-cyber-cyan animate-spin"></i>
-            <p class="font-mono text-xs">Computing AI blast radius & threat telemetry...</p>
-          </div>
-        `;
-        lucide.createIcons();
+        // Skeleton card loader — shows 6 placeholder cards instantly
+        // so the page never appears blank/stuck during API fetch
+        const skeletonCard = () => `
+          <div class="skeleton-card glass-panel rounded-2xl p-5 border border-white/[0.05] animate-pulse">
+            <div class="flex items-start gap-3">
+              <div class="h-5 w-20 bg-white/[0.06] rounded-full"></div>
+              <div class="h-5 w-14 bg-white/[0.04] rounded-full"></div>
+              <div class="ml-auto h-5 w-10 bg-white/[0.04] rounded-full"></div>
+            </div>
+            <div class="mt-3 space-y-2">
+              <div class="h-4 bg-white/[0.07] rounded w-full"></div>
+              <div class="h-4 bg-white/[0.05] rounded w-4/5"></div>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <div class="h-3 w-24 bg-white/[0.04] rounded"></div>
+              <div class="h-3 w-16 bg-white/[0.04] rounded"></div>
+            </div>
+          </div>`;
+        container.innerHTML = Array.from({length: 6}, skeletonCard).join('');
       }
 
       try {
@@ -1597,7 +1614,7 @@
         
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
 
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: 'default' });
         let data = await res.json();
 
         if (currentCategory === 'pinned') {
@@ -1631,6 +1648,18 @@
         document.getElementById('load-more-btn').style.display = data.entries.length < limit ? 'none' : 'inline-block';
       } catch (e) {
         console.error("Load feed error: ", e);
+        if (reset) {
+          container.innerHTML = `
+            <div class="glass-panel rounded-2xl p-10 text-center text-cyber-muted space-y-3">
+              <i data-lucide="wifi-off" class="w-8 h-8 mx-auto text-amber-500"></i>
+              <p class="font-mono text-sm text-slate-300">Transient telemetry sync delay. Reconnecting...</p>
+              <button onclick="loadFeed(true)" class="px-4 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-300 font-mono text-xs transition">
+                ⚡ Force Re-sync
+              </button>
+            </div>
+          `;
+          lucide.createIcons();
+        }
       }
     }
 
@@ -3749,18 +3778,25 @@
     };
     window.VoiceRadar = VoiceRadar;
 
-    // Resilient App Initialization
+    // Resilient App Initialization — all async calls fire in parallel
     function initApp() {
+      // Synchronous setup first (instant)
       try { initCanvasBackground(); } catch (e) { console.warn("Canvas bg:", e); }
       try { lucide.createIcons(); } catch (e) { console.warn("Lucide:", e); }
-      try { initWebSocket(); } catch (e) { console.warn("WebSocket:", e); }
       try { initThreeGlobe(); } catch (e) { console.warn("ThreeGlobe:", e); }
-      try { refreshStats(); } catch (e) { console.warn("RefreshStats:", e); }
-      try { fetchTriageStatus(); } catch (e) { console.warn("TriageStatus:", e); }
       try { updatePinnedBadge(); } catch (e) { console.warn("PinnedBadge:", e); }
-      try { loadFeed(true); } catch (e) { console.warn("LoadFeed:", e); }
-      try { updateSweepFreshness(); } catch (e) { console.warn("SweepFreshness:", e); }
       try { VoiceRadar.init(); } catch (e) { console.warn("VoiceRadar:", e); }
+
+      // Fire all async data fetches in parallel — no waiting on each other
+      Promise.allSettled([
+        (async () => { try { await loadFeed(true); } catch (e) { console.warn("LoadFeed:", e); } })(),
+        (async () => { try { await refreshStats(); } catch (e) { console.warn("RefreshStats:", e); } })(),
+        (async () => { try { await fetchTriageStatus(); } catch (e) { console.warn("TriageStatus:", e); } })(),
+        (async () => { try { await updateSweepFreshness(); } catch (e) { console.warn("SweepFreshness:", e); } })(),
+      ]);
+
+      // WebSocket setup (non-blocking)
+      try { initWebSocket(); } catch (e) { console.warn("WebSocket:", e); }
 
       // Poll sweep freshness every 60 seconds
       setInterval(() => { try { updateSweepFreshness(); } catch(e){} }, 60000);

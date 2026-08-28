@@ -75,6 +75,11 @@ class DatabaseManager:
                 cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.execute("PRAGMA busy_timeout=5000")
                 cursor.execute("PRAGMA synchronous=NORMAL")
+                # Performance tuning
+                cursor.execute("PRAGMA cache_size=-16000")      # 16MB page cache
+                cursor.execute("PRAGMA temp_store=MEMORY")      # temp tables in RAM
+                cursor.execute("PRAGMA mmap_size=268435456")    # 256MB memory-mapped I/O
+                cursor.execute("PRAGMA optimize")               # auto-analyze statistics
                 cursor.close()
 
         return engine

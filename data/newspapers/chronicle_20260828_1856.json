@@ -1,0 +1,16 @@
+{
+  "edition_id": "chronicle_20260828_1856",
+  "edition_number": 1250,
+  "title": "The Cyber Intelligence Chronicle \u2014 Edition #1250",
+  "generated_at": "2026-08-28T18:56:56.574034",
+  "window_hours": 5,
+  "total_threats": 40,
+  "lead_story": "ownCloud Flaw Exploited to Steal Nuclear Records From Philippine Research Body",
+  "pre_cve_count": 0,
+  "cve_count": 8,
+  "ai_lab_count": 0,
+  "md_path": "data/newspapers/chronicle_20260828_1856.md",
+  "html_path": "data/newspapers/chronicle_20260828_1856.html",
+  "pdf_path": "data/newspapers/chronicle_20260828_1856.pdf",
+  "has_pdf": true
+}
