@@ -10,6 +10,21 @@ from pathlib import Path
 import json
 from typing import Any, Callable
 
+import shutil
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    HRFlowable,
+    KeepTogether,
+)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
+
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
@@ -18,6 +33,48 @@ from ai_security_monitor.infrastructure.database.unit_of_work import SqlAlchemyU
 logger = get_logger(__name__)
 
 DEFAULT_OUTPUT_DIR = Path("data/newspapers")
+
+
+class NumberedCanvas(canvas.Canvas):
+    """Two-pass canvas for total page count and professional headers/footers."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        num_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.draw_page_decorations(num_pages)
+            canvas.Canvas.showPage(self)
+        canvas.Canvas.save(self)
+
+    def draw_page_decorations(self, page_count):
+        self.saveState()
+        self.setFont("Helvetica", 8)
+        self.setFillColor(colors.HexColor("#64748b"))
+
+        # Running Header on page 2+
+        if self._pageNumber > 1:
+            self.drawString(36, 756, "THE CYBER INTELLIGENCE CHRONICLE — 5-HOUR INTELLIGENCE SWEEP")
+            self.drawRightString(576, 756, "AETHERGUARD SECINTEL")
+            self.setStrokeColor(colors.HexColor("#cbd5e1"))
+            self.setLineWidth(0.5)
+            self.line(36, 750, 576, 750)
+
+        # Running Footer on all pages
+        page_str = f"Page {self._pageNumber} of {page_count}"
+        self.drawString(36, 25, "PUBLISHED AUTONOMOUSLY BY AETHERGUARD SECINTEL • 79 GLOBAL FEEDS MONITORED")
+        self.drawRightString(576, 25, page_str)
+        self.setStrokeColor(colors.HexColor("#cbd5e1"))
+        self.setLineWidth(0.5)
+        self.line(36, 35, 576, 35)
+        self.restoreState()
 
 
 class NewspaperService:
@@ -84,11 +141,13 @@ class NewspaperService:
             edition_id=edition_id,
         )
 
-        # Persist files to disk
+        # Persist text & HTML files to disk
         md_file = self._output_dir / f"{edition_id}.md"
         html_file = self._output_dir / f"{edition_id}.html"
+        pdf_file = self._output_dir / f"{edition_id}.pdf"
         latest_md = self._output_dir / "latest.md"
         latest_html = self._output_dir / "latest.html"
+        latest_pdf = self._output_dir / "latest.pdf"
         meta_file = self._output_dir / f"{edition_id}.json"
         latest_meta = self._output_dir / "latest.json"
 
@@ -96,6 +155,22 @@ class NewspaperService:
         html_file.write_text(html_content, encoding="utf-8")
         latest_md.write_text(markdown_content, encoding="utf-8")
         latest_html.write_text(html_content, encoding="utf-8")
+
+        # Generate PDF Document
+        try:
+            self._render_pdf(
+                pdf_path=pdf_file,
+                entries=entries,
+                categorized=categorized,
+                edition_num=edition_num,
+                generated_at=now,
+                window_hours=window_hours,
+            )
+            shutil.copyfile(pdf_file, latest_pdf)
+            has_pdf = True
+        except Exception as pdf_err:
+            logger.error(f"Failed to generate newspaper PDF: {pdf_err}")
+            has_pdf = False
 
         metadata = {
             "edition_id": edition_id,
@@ -110,6 +185,8 @@ class NewspaperService:
             "ai_lab_count": len(categorized["ai_labs"]),
             "md_path": str(md_file),
             "html_path": str(html_file),
+            "pdf_path": str(pdf_file) if has_pdf else None,
+            "has_pdf": has_pdf,
         }
 
         meta_json = json.dumps(metadata, indent=2)
@@ -146,6 +223,13 @@ class NewspaperService:
         latest_html_file = self._output_dir / "latest.html"
         if latest_html_file.exists():
             return latest_html_file.read_text(encoding="utf-8")
+        return None
+
+    def get_latest_pdf_path(self) -> Path | None:
+        """Retrieve the file path to the latest newspaper PDF document."""
+        latest_pdf_file = self._output_dir / "latest.pdf"
+        if latest_pdf_file.exists():
+            return latest_pdf_file
         return None
 
     def list_editions(self, limit: int = 15) -> list[dict[str, Any]]:
@@ -651,3 +735,280 @@ class NewspaperService:
 </html>
 """
         return html_out
+
+    # ─── PDF Document Renderer ───────────────────────────────────────────────
+
+    def _render_pdf(
+        self,
+        pdf_path: Path,
+        entries: list[Entry],
+        categorized: dict[str, Any],
+        edition_num: int,
+        generated_at: datetime,
+        window_hours: int,
+    ) -> None:
+        """Render an authentic, editorial PDF document for printing and emailing."""
+        doc = SimpleDocTemplate(
+            str(pdf_path),
+            pagesize=letter,
+            leftMargin=36,
+            rightMargin=36,
+            topMargin=42,
+            bottomMargin=45,
+        )
+
+        base_styles = getSampleStyleSheet()
+
+        # Custom Typography
+        masthead_title = ParagraphStyle(
+            'MastheadTitle',
+            fontName='Helvetica-Bold',
+            fontSize=22,
+            leading=25,
+            alignment=1,
+            textColor=colors.HexColor('#0f172a'),
+            spaceAfter=2,
+        )
+        masthead_sub = ParagraphStyle(
+            'MastheadSub',
+            fontName='Helvetica-Oblique',
+            fontSize=8.5,
+            leading=11,
+            alignment=1,
+            textColor=colors.HexColor('#475569'),
+            spaceAfter=6,
+        )
+        dateline_style = ParagraphStyle(
+            'Dateline',
+            fontName='Helvetica-Bold',
+            fontSize=8,
+            leading=10,
+            textColor=colors.HexColor('#1e293b'),
+        )
+        breaking_tag = ParagraphStyle(
+            'BreakingTag',
+            fontName='Helvetica-Bold',
+            fontSize=8,
+            leading=10,
+            textColor=colors.HexColor('#b91c1c'),
+            spaceAfter=3,
+        )
+        headline_style = ParagraphStyle(
+            'Headline',
+            fontName='Helvetica-Bold',
+            fontSize=15,
+            leading=18,
+            textColor=colors.HexColor('#0a0d13'),
+            spaceAfter=4,
+        )
+        subhead_style = ParagraphStyle(
+            'Subhead',
+            fontName='Helvetica-Oblique',
+            fontSize=8.5,
+            leading=11,
+            textColor=colors.HexColor('#334155'),
+            spaceAfter=6,
+        )
+        body_style = ParagraphStyle(
+            'Body',
+            fontName='Times-Roman',
+            fontSize=9.5,
+            leading=13,
+            textColor=colors.HexColor('#1f2937'),
+            alignment=4,  # Justified
+            spaceAfter=6,
+        )
+        section_h1 = ParagraphStyle(
+            'SectionH1',
+            fontName='Helvetica-Bold',
+            fontSize=11,
+            leading=14,
+            textColor=colors.HexColor('#0f172a'),
+            spaceBefore=8,
+            spaceAfter=4,
+        )
+        callout_text = ParagraphStyle(
+            'CalloutText',
+            fontName='Courier-Bold',
+            fontSize=7.5,
+            leading=10,
+            textColor=colors.HexColor('#0f172a'),
+        )
+
+        date_str = generated_at.strftime("%A, %B %d, %Y • %H:%M UTC")
+        lead = categorized["lead"]
+        pre_cves = categorized["pre_cve"]
+        cves = categorized["cves"]
+        ai_labs = categorized["ai_labs"]
+
+        story = []
+
+        # 1. Top Barometer
+        top_bar = Table(
+            [[
+                Paragraph("AETHERGUARD DEFENSE DISPATCH", dateline_style),
+                Paragraph("GLOBAL THREAT: <b>DEFCON 3 (ELEVATED)</b>", dateline_style),
+                Paragraph(f"5-HOUR SWEEP CYCLE", ParagraphStyle('R', fontName='Helvetica-Bold', fontSize=8, alignment=2, textColor=colors.HexColor('#1e293b'))),
+            ]],
+            colWidths=[180, 180, 180],
+        )
+        top_bar.setStyle(TableStyle([
+            ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#0f172a')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(top_bar)
+        story.append(Spacer(1, 4))
+
+        # 2. Main Editorial Masthead
+        story.append(Paragraph("THE CYBER INTELLIGENCE CHRONICLE", masthead_title))
+        story.append(Paragraph('"Omnis Vulnerabilitas Patefacietur" — Autonomous Telemetry from 79 Global Threat Arrays', masthead_sub))
+        story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#0f172a"), spaceAfter=2))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#0f172a"), spaceAfter=5))
+
+        # 3. Dateline Row
+        dateline_table = Table(
+            [[
+                Paragraph(f"<b>{date_str}</b>", dateline_style),
+                Paragraph(f"<b>EDITION NO. {edition_num}</b>", ParagraphStyle('C', fontName='Helvetica-Bold', fontSize=8, alignment=1, textColor=colors.HexColor('#1e293b'))),
+                Paragraph("<b>AETHERGUARD AI ENGINE</b>", ParagraphStyle('R', fontName='Helvetica-Bold', fontSize=8, alignment=2, textColor=colors.HexColor('#1e293b'))),
+            ]],
+            colWidths=[200, 140, 200],
+        )
+        dateline_table.setStyle(TableStyle([
+            ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(dateline_table)
+        story.append(Spacer(1, 6))
+
+        # 4. Front Page Lead Story
+        if lead:
+            an = lead.analysis
+            lead_vel = an.threat_velocity if an else 50
+            lead_sev = an.severity_index if an else 50
+            lead_blast = an.blast_radius_score if an else 20
+            lead_eco = ", ".join(an.affected_ecosystem) if an and an.affected_ecosystem else "Global Enterprise Infrastructure"
+            src = self._get_source_name(lead)
+
+            story.append(Paragraph("🚨 BREAKING ADVISORY // CRITICAL ZERO-DAY", breaking_tag))
+            story.append(Paragraph(html.escape(lead.title), headline_style))
+            story.append(Paragraph(
+                f"<b>Threat Velocity: {lead_vel}/100</b> | Severity: {lead_sev}/100 | Blast Index: {lead_blast}/100 | Target: {html.escape(lead_eco)}",
+                subhead_style
+            ))
+
+            lead_text = html.escape(lead.summary or 'Critical threat telemetry detected across perimeter boundary.')
+            story.append(Paragraph(lead_text, body_style))
+
+            if an:
+                callout_data = [
+                    [Paragraph("<b>EXPLOIT VECTOR:</b>", callout_text), Paragraph(html.escape(an.attack_vector or 'Dynamic exploit technique.'), callout_text)],
+                    [Paragraph("<b>RISK ASSESSMENT:</b>", callout_text), Paragraph(html.escape(an.risk_assessment or 'Full pipeline exposure.'), callout_text)],
+                    [Paragraph("<b>TACTICAL PATCH:</b>", callout_text), Paragraph(html.escape(an.mitigation or 'Apply vendor updates immediately.'), callout_text)],
+                ]
+                callout_table = Table(callout_data, colWidths=[110, 430])
+                callout_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f1f5f9')),
+                    ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+                    ('LINEBEFORE', (0, 0), (0, -1), 3, colors.HexColor('#b91c1c')),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ]))
+                story.append(callout_table)
+                story.append(Spacer(1, 6))
+
+        # 5. CISO Executive Brief
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceBefore=4, spaceAfter=4))
+        story.append(Paragraph("👔 CISO EXECUTIVE INTELLIGENCE BRIEF", section_h1))
+        ciso_brief = (
+            f"Over the last <b>{window_hours} hours</b>, AetherGuard telemetry triaged <b>{len(entries)} urgent threat indicators</b>. "
+            f"Of primary concern are <b>{len(pre_cves)} Pre-CVE zero-day research papers</b> presenting immediate architectural exposure to generative AI pipelines "
+            f"and critical enterprise dependencies. Security teams must prioritize sandboxing and deserialization validation."
+        )
+        story.append(Paragraph(ciso_brief, body_style))
+
+        # 6. Pre-CVE & Zero-Day Wire
+        if pre_cves:
+            story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceBefore=4, spaceAfter=4))
+            story.append(Paragraph("⚡ THE ZERO-DAY & PRE-CVE WIRE (Academic & Darknet)", section_h1))
+            for item in pre_cves[:4]:
+                an_item = item.analysis
+                v_score = an_item.threat_velocity if an_item else 30
+                b_score = an_item.blast_radius_score if an_item else 20
+                item_title = f"<b>• {html.escape(item.title)}</b> (Velocity: {v_score}/100, Blast: {b_score}/100)"
+                story.append(Paragraph(item_title, ParagraphStyle('IT', fontName='Helvetica-Bold', fontSize=8.5, leading=11, textColor=colors.HexColor('#0f172a'))))
+                if item.summary:
+                    story.append(Paragraph(html.escape(item.summary[:240]) + '...', ParagraphStyle('IS', fontName='Times-Roman', fontSize=8, leading=10.5, textColor=colors.HexColor('#334155'), spaceAfter=3)))
+
+        # 7. Vulnerability Register Table
+        if cves:
+            story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceBefore=4, spaceAfter=4))
+            story.append(Paragraph("🛡️ THE VULNERABILITY REGISTER (Newly Disclosed CVEs)", section_h1))
+            
+            cve_table_data = [[
+                Paragraph("<b>CVE / Vulnerability</b>", ParagraphStyle('TH', fontName='Helvetica-Bold', fontSize=7.5, textColor=colors.white)),
+                Paragraph("<b>Velocity</b>", ParagraphStyle('THC', fontName='Helvetica-Bold', fontSize=7.5, alignment=1, textColor=colors.white)),
+                Paragraph("<b>Severity</b>", ParagraphStyle('THC', fontName='Helvetica-Bold', fontSize=7.5, alignment=1, textColor=colors.white)),
+                Paragraph("<b>Vector / Archetype</b>", ParagraphStyle('TH', fontName='Helvetica-Bold', fontSize=7.5, textColor=colors.white)),
+                Paragraph("<b>Source</b>", ParagraphStyle('TH', fontName='Helvetica-Bold', fontSize=7.5, textColor=colors.white)),
+            ]]
+            for c in cves[:6]:
+                an_c = c.analysis
+                v_str = f"{an_c.threat_velocity}/100" if an_c else "N/A"
+                s_str = f"{an_c.severity_index}/100" if an_c else "N/A"
+                vec_str = (an_c.attack_archetype or (an_c.attack_vector[:25] + '...')) if an_c else "Advisory"
+                src_str = self._get_source_name(c)[:12]
+
+                cve_table_data.append([
+                    Paragraph(html.escape(c.title[:38]), ParagraphStyle('TD', fontName='Helvetica', fontSize=7, leading=9, textColor=colors.HexColor('#0f172a'))),
+                    Paragraph(v_str, ParagraphStyle('TDC', fontName='Courier-Bold', fontSize=7, leading=9, alignment=1, textColor=colors.HexColor('#b91c1c'))),
+                    Paragraph(s_str, ParagraphStyle('TDC', fontName='Courier-Bold', fontSize=7, leading=9, alignment=1, textColor=colors.HexColor('#b91c1c'))),
+                    Paragraph(html.escape(vec_str), ParagraphStyle('TD', fontName='Helvetica', fontSize=7, leading=9, textColor=colors.HexColor('#334155'))),
+                    Paragraph(html.escape(src_str), ParagraphStyle('TD', fontName='Helvetica', fontSize=7, leading=9, textColor=colors.HexColor('#64748b'))),
+                ])
+
+            cve_table = Table(cve_table_data, colWidths=[200, 50, 50, 150, 90])
+            cve_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (1, 1), (2, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#ffffff'), colors.HexColor('#f8fafc')]),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
+                ('TOPPADDING', (0, 0), (-1, -1), 2.5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            story.append(cve_table)
+            story.append(Spacer(1, 6))
+
+        # 8. Tactical Directives Box
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceBefore=4, spaceAfter=4))
+        directives_text = [
+            "1. Restrict all autonomous LLM tool executions to sandboxed ephemeral environments.",
+            "2. Enforce SafeTensors boundary loading and reject untrusted PyTorch/pickle weights.",
+            "3. Inspect RAG vector embeddings for indirect prompt injections and data poisoning.",
+            "4. Apply immediate patches for high-velocity CVE disclosures cataloged above."
+        ]
+        directives_paras = [Paragraph(f"<b>⚔️ TACTICAL DEFENSE DIRECTIVES:</b>", ParagraphStyle('DH', fontName='Helvetica-Bold', fontSize=8, textColor=colors.HexColor('#0f172a')))]
+        for d in directives_text:
+            directives_paras.append(Paragraph(f"• {d}", ParagraphStyle('DD', fontName='Helvetica', fontSize=7.5, leading=10, textColor=colors.HexColor('#1e293b'))))
+        
+        directives_table = Table([[directives_paras]], colWidths=[540])
+        directives_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#0f172a')),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        story.append(directives_table)
+
+        # Build Document
+        doc.build(story, canvasmaker=NumberedCanvas)

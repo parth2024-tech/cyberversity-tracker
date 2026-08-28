@@ -1,0 +1,14 @@
+{
+  "edition_id": "chronicle_20260828_1656",
+  "edition_number": 1250,
+  "title": "The Cyber Intelligence Chronicle \u2014 Edition #1250",
+  "generated_at": "2026-08-28T16:56:51.504612",
+  "window_hours": 5,
+  "total_threats": 40,
+  "lead_story": "Over 8,300 Gitea servers vulnerable to code execution attacks",
+  "pre_cve_count": 0,
+  "cve_count": 5,
+  "ai_lab_count": 0,
+  "md_path": "data/newspapers/chronicle_20260828_1656.md",
+  "html_path": "data/newspapers/chronicle_20260828_1656.html"
+}

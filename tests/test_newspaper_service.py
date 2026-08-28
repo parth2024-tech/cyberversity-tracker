@@ -102,12 +102,17 @@ async def test_newspaper_api_endpoints():
         assert res_dl_html.status_code == 200
         assert "<!DOCTYPE html>" in res_dl_html.text
 
-        # 5. GET editions list
+        # 5. GET download as PDF
+        res_dl_pdf = await client.get("/api/newspaper/download?format=pdf")
+        assert res_dl_pdf.status_code == 200
+        assert "application/pdf" in res_dl_pdf.headers.get("content-type", "")
+
+        # 6. GET editions list
         res_editions = await client.get("/api/newspaper/editions")
         assert res_editions.status_code == 200
         assert "editions" in res_editions.json()
 
-        # 6. POST manual trigger generation
+        # 7. POST manual trigger generation
         res_gen = await client.post("/api/newspaper/generate", json={"window_hours": 5})
         assert res_gen.status_code == 200
         assert res_gen.json()["status"] == "success"

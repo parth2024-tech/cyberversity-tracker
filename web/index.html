@@ -431,6 +431,14 @@
             <i data-lucide="printer" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>Print / Web View</span>
           </button>
+          <button onclick="openEmailPdfModal()" class="px-3 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 text-sky-300 hover:text-white transition flex items-center gap-1.5" title="Email Newspaper PDF document">
+            <i data-lucide="mail" class="w-3.5 h-3.5 text-sky-400"></i>
+            <span>Email PDF</span>
+          </button>
+          <a href="/api/newspaper/download?format=pdf" class="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 hover:text-white font-bold transition flex items-center gap-1.5" title="Download PDF document">
+            <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
+            <span>Download PDF</span>
+          </a>
           <a href="/api/newspaper/download?format=md" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition flex items-center gap-1.5" title="Download pure Markdown document">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
             <span>Download .MD</span>
@@ -466,6 +474,39 @@
         <div id="newspaper-markdown-view" class="hidden w-full h-full flex-1 p-5 overflow-y-auto bg-black/60 font-mono text-xs text-slate-200 leading-relaxed whitespace-pre-wrap selection:bg-cyan-500 selection:text-black">
           Loading markdown document...
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Email Newspaper PDF Dispatcher -->
+  <div id="email-pdf-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-white/[0.12] shadow-2xl bg-[#080c14]">
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+            <i data-lucide="mail" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-white">Email Newspaper PDF</h2>
+            <p class="text-xs text-slate-400 font-mono">Dispatch 5-hour broadsheet as PDF attachment</p>
+          </div>
+        </div>
+        <button onclick="closeEmailPdfModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 mt-4 font-mono text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1.5 font-semibold">RECIPIENT EMAIL ADDRESS</label>
+          <input type="email" id="email-pdf-target" placeholder="ciso@company.com or your email" class="w-full glass-input px-3.5 py-2.5 rounded-xl border border-white/[0.1] bg-black/50 text-white placeholder-slate-500 text-xs focus:border-sky-400 focus:outline-none">
+        </div>
+
+        <div id="email-pdf-status" class="hidden p-3 rounded-xl text-xs"></div>
+
+        <button id="send-pdf-email-btn" onclick="sendNewspaperPdfEmail()" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition">
+          <i data-lucide="send" class="w-4 h-4"></i> Dispatch PDF to Email
+        </button>
       </div>
     </div>
   </div>
@@ -2393,6 +2434,67 @@
       }).catch(err => {
         console.warn("Clipboard failed:", err);
       });
+    }
+
+    // Email PDF Dispatcher
+    function openEmailPdfModal() {
+      const modal = document.getElementById('email-pdf-modal');
+      const statusBox = document.getElementById('email-pdf-status');
+      if (statusBox) statusBox.classList.add('hidden');
+      if (modal) modal.classList.remove('hidden');
+      playBeep('click');
+      lucide.createIcons();
+    }
+
+    function closeEmailPdfModal() {
+      const modal = document.getElementById('email-pdf-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function sendNewspaperPdfEmail() {
+      const targetInput = document.getElementById('email-pdf-target');
+      const statusBox = document.getElementById('email-pdf-status');
+      const btn = document.getElementById('send-pdf-email-btn');
+      
+      const toEmail = targetInput ? targetInput.value.trim() : '';
+      if (!toEmail || !toEmail.includes('@')) {
+        alert("Please enter a valid recipient email address.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Dispatching PDF...`;
+      lucide.createIcons();
+      playBeep('alert');
+
+      try {
+        const res = await fetch('/api/newspaper/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to_email: toEmail })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          statusBox.classList.remove('hidden', 'bg-rose-500/20', 'text-rose-300', 'border-rose-500/30');
+          statusBox.classList.add('bg-emerald-500/15', 'text-emerald-300', 'border', 'border-emerald-500/30');
+          statusBox.textContent = data.message || `PDF Edition emailed successfully to ${toEmail}!`;
+          showToast(`PDF Edition sent to ${toEmail}!`, "info");
+        } else {
+          statusBox.classList.remove('hidden', 'bg-emerald-500/15', 'text-emerald-300', 'border-emerald-500/30');
+          statusBox.classList.add('bg-rose-500/20', 'text-rose-300', 'border', 'border-rose-500/30');
+          statusBox.textContent = data.detail || "Email delivery failed. Please check SMTP configuration.";
+          showToast("Failed to email PDF: " + (data.detail || "SMTP error"), "alert");
+        }
+      } catch (e) {
+        statusBox.classList.remove('hidden', 'bg-emerald-500/15', 'text-emerald-300', 'border-emerald-500/30');
+        statusBox.classList.add('bg-rose-500/20', 'text-rose-300', 'border', 'border-rose-500/30');
+        statusBox.textContent = "Error sending email: " + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Dispatch PDF to Email`;
+        lucide.createIcons();
+      }
     }
 
     // Telegram Modal Management
