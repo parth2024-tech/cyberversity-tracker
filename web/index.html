@@ -431,6 +431,14 @@
             <i data-lucide="printer" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>Print / Web View</span>
           </button>
+          <button onclick="narrateChronicle()" id="chronicle-narrate-btn" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-emerald-300 hover:text-white transition flex items-center gap-1.5" title="Listen to AI radio voice narration of this Chronicle edition">
+            <i data-lucide="volume-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Listen</span>
+          </button>
+          <button onclick="dispatchNewspaperToTelegram()" id="chronicle-telegram-btn" class="px-3 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 text-sky-300 hover:text-white transition flex items-center gap-1.5" title="Send PDF Newspaper directly to Telegram">
+            <i data-lucide="send" class="w-3.5 h-3.5 text-sky-400"></i>
+            <span>Telegram PDF</span>
+          </button>
           <button onclick="openEmailPdfModal()" class="px-3 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 text-sky-300 hover:text-white transition flex items-center gap-1.5" title="Email Newspaper PDF document">
             <i data-lucide="mail" class="w-3.5 h-3.5 text-sky-400"></i>
             <span>Email PDF</span>
@@ -2336,6 +2344,7 @@
         if (res.ok) {
           const data = await res.json();
           _latestNewspaperMarkdown = data.markdown || '';
+          window._currentNewspaperMarkdown = _latestNewspaperMarkdown;
           
           const titleEl = document.getElementById('newspaper-modal-title');
           const badgeEl = document.getElementById('newspaper-edition-badge');
@@ -2434,6 +2443,61 @@
       }).catch(err => {
         console.warn("Clipboard failed:", err);
       });
+    }
+
+    // Telegram & Voice Dispatchers for Newspaper
+    async function dispatchNewspaperToTelegram() {
+      const btn = document.getElementById('chronicle-telegram-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin text-sky-400"></i><span>Sending...</span>`;
+        lucide.createIcons();
+      }
+      playBeep('alert');
+
+      try {
+        const res = await fetch('/api/newspaper/telegram', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message || "Newspaper PDF sent to Telegram!", "info");
+        } else {
+          showToast("Failed to send to Telegram: " + (data.detail || "Error"), "alert");
+        }
+      } catch (e) {
+        showToast("Telegram send error: " + e.message, "alert");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5 text-sky-400"></i><span>Telegram PDF</span>`;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    function narrateChronicle() {
+      if (!window.VoiceRadar) {
+        showToast("Voice Radar engine not initialized", "alert");
+        return;
+      }
+      const rawMd = window._currentNewspaperMarkdown || "";
+      let narrative = "Good day. This is your 5-Hour Autonomous Security Chronicle summary. Global threat level is DEFCON 3, Elevated. ";
+
+      if (rawMd) {
+        const leadMatch = rawMd.match(/# 🚨 FRONT PAGE:\s*(.+)/);
+        if (leadMatch) {
+          narrative += "Front page breaking advisory: " + leadMatch[1].replace(/[*_~`]/g, '') + ". ";
+        }
+        const cisoMatch = rawMd.match(/## 👔 CISO EXECUTIVE INTELLIGENCE BRIEF\n+([^#\n]+)/);
+        if (cisoMatch) {
+          narrative += "Executive briefing: " + cisoMatch[1].replace(/[*_~`]/g, '') + ". ";
+        }
+        narrative += "Tactical directives: Restrict autonomous tool permissions, validate deserialization endpoints, and inspect RAG embeddings. End of broadcast.";
+      } else {
+        narrative += "Threat intelligence telemetry active across seventy-nine global sensors. All arrays operational.";
+      }
+
+      window.VoiceRadar.speak(narrative, { priority: true });
+      showToast("🎙️ Voice AI reading Chronicle broadcast...", "info");
     }
 
     // Email PDF Dispatcher
@@ -3462,6 +3526,27 @@
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }
+      },
+
+      speak(rawText, options = {}) {
+        if (!rawText) return;
+        this.stop();
+        this.speaking = true;
+        this.paused = false;
+        
+        const hud = document.getElementById('audio-hud');
+        if (hud) hud.classList.remove('hidden');
+        const headline = document.getElementById('hud-headline');
+        const status = document.getElementById('hud-status-text');
+        if (headline) headline.textContent = options.title || "Chronicle Radio Broadcast";
+        if (status) status.textContent = "EDITORIAL BROADCAST // ACTIVE";
+
+        const normalized = this.normalizeSecurityText(rawText);
+        const chunks = this.splitIntoChunks(normalized);
+        this.playTacticalChirp();
+        this._speakChunks(chunks, () => {
+          this.stop();
+        });
       },
 
       startBriefing(customItems = null) {

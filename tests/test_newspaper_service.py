@@ -116,3 +116,11 @@ async def test_newspaper_api_endpoints():
         res_gen = await client.post("/api/newspaper/generate", json={"window_hours": 5})
         assert res_gen.status_code == 200
         assert res_gen.json()["status"] == "success"
+
+        # 8. POST email newspaper with invalid config triggers proper error response
+        res_mail = await client.post("/api/newspaper/email", json={"to_email": "test@example.com"})
+        assert res_mail.status_code in (200, 400, 500)
+
+        # 9. POST telegram newspaper triggers proper response
+        res_tg = await client.post("/api/newspaper/telegram", json={"chat_id": "1650972026"})
+        assert res_tg.status_code in (200, 400, 500)

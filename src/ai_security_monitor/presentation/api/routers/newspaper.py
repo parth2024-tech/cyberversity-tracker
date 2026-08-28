@@ -155,15 +155,20 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
         "to_email": req.to_email,
     }
 
-    email_delivery = delivery_registry.create("email", email_cfg)
-
-    result = await email_delivery.send_newspaper_pdf(
-        pdf_path=pdf_path,
-        edition_number=edition["edition_number"],
-        to_email=req.to_email,
-        lead_story=edition.get("lead_story", ""),
-        total_threats=edition.get("total_threats", 0),
-    )
+    try:
+        email_delivery = delivery_registry.create("email", email_cfg)
+        result = await email_delivery.send_newspaper_pdf(
+            pdf_path=pdf_path,
+            edition_number=edition["edition_number"],
+            to_email=req.to_email,
+            lead_story=edition.get("lead_story", ""),
+            total_threats=edition.get("total_threats", 0),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Email delivery error: {e}"
+        )
 
     if result.success:
         return {
@@ -175,4 +180,61 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
         raise HTTPException(
             status_code=400 if "missing" in (result.error or "") else 500,
             detail=f"Failed to email newspaper PDF: {result.error}"
+        )
+
+
+class TelegramNewspaperRequest(BaseModel):
+    bot_token: str | None = None
+    chat_id: str | None = None
+
+
+@newspaper_router.post("/telegram")
+async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspaperRequest()):
+    """Send the latest 5-hour newspaper PDF document to Telegram."""
+    edition = _newspaper_service.get_latest_edition()
+    if not edition:
+        await _newspaper_service.generate_edition(window_hours=5)
+        edition = _newspaper_service.get_latest_edition()
+
+    if not edition:
+        raise HTTPException(status_code=404, detail="No newspaper edition available.")
+
+    pdf_path = _newspaper_service.get_latest_pdf_path()
+    if not pdf_path or not pdf_path.exists():
+        await _newspaper_service.generate_edition(window_hours=5)
+        pdf_path = _newspaper_service.get_latest_pdf_path()
+
+    if not pdf_path or not pdf_path.exists():
+        raise HTTPException(status_code=500, detail="Failed to locate or generate newspaper PDF.")
+
+    bot_token = req.bot_token or settings.delivery.telegram_bot_token or "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
+    chat_id = req.chat_id or settings.delivery.telegram_chat_id or "1650972026"
+
+    try:
+        tg_delivery = delivery_registry.create("telegram", {
+            "bot_token": bot_token,
+            "chat_id": chat_id,
+        })
+        result = await tg_delivery.send_newspaper_document(
+            pdf_path=pdf_path,
+            edition_number=edition["edition_number"],
+            lead_story=edition.get("lead_story", ""),
+            total_threats=edition.get("total_threats", 0),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Telegram delivery error: {e}"
+        )
+
+    if result.success:
+        return {
+            "status": "success",
+            "message": f"The Cyber Intelligence Chronicle Edition #{edition['edition_number']} (PDF) sent to Telegram chat {chat_id}!",
+            "details": result.message
+        }
+    else:
+        raise HTTPException(
+            status_code=400 if "missing" in (result.error or "") else 500,
+            detail=f"Failed to dispatch to Telegram: {result.error}"
         )

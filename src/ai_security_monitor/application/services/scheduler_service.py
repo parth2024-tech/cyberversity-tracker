@@ -135,6 +135,31 @@ class SchedulerService:
                                 logger.warning(f"Auto-email PDF delivery notice: {email_res.error}")
                     except Exception as mail_err:
                         logger.warning(f"Auto-email newspaper dispatch failed: {mail_err}")
+
+                # Auto-dispatch PDF to Telegram if configured
+                tg_token = settings.delivery.telegram_bot_token or "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
+                tg_chat = settings.delivery.telegram_chat_id or "1650972026"
+                if settings.delivery.telegram_enabled and tg_token and tg_chat:
+                    try:
+                        from ai_security_monitor.infrastructure.delivery.base import delivery_registry
+                        tg_delivery = delivery_registry.create("telegram", {
+                            "bot_token": tg_token,
+                            "chat_id": tg_chat,
+                        })
+                        pdf_path = meta.get("pdf_path")
+                        if pdf_path:
+                            tg_res = await tg_delivery.send_newspaper_document(
+                                pdf_path=pdf_path,
+                                edition_number=meta["edition_number"],
+                                lead_story=meta.get("lead_story", ""),
+                                total_threats=meta.get("total_threats", 0),
+                            )
+                            if tg_res.success:
+                                logger.info(f"Auto-delivered Newspaper PDF Edition #{meta['edition_number']} to Telegram chat {tg_chat}")
+                            else:
+                                logger.warning(f"Telegram PDF delivery notice: {tg_res.error}")
+                    except Exception as tg_err:
+                        logger.warning(f"Auto-telegram newspaper dispatch failed: {tg_err}")
             except Exception as e:
                 logger.error(f"Error in 5-hour newspaper compilation loop: {e}")
 

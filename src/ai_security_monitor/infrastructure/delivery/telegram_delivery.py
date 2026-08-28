@@ -1,6 +1,6 @@
-# Telegram delivery adapter.
+from __future__ import annotations
 
-
+from pathlib import Path
 import httpx
 
 from ai_security_monitor.domain.entities import Analysis, Digest, Entry
@@ -53,6 +53,66 @@ class TelegramDelivery(BaseDelivery):
             )
             await self._send_message(message)
             return DeliveryResult(success=True, channel=self.channel_name, message="Telegram alert sent")
+        except Exception as e:
+            return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
+
+    async def send_newspaper_document(
+        self,
+        pdf_path: str | Path,
+        edition_number: int,
+        lead_story: str = "",
+        total_threats: int = 0,
+    ) -> DeliveryResult:
+        """Send the 5-hour newspaper PDF edition as a document via Telegram Bot API."""
+        try:
+            bot_token = self.config.get("bot_token")
+            chat_id = self.config.get("chat_id")
+
+            if not bot_token or not chat_id:
+                return DeliveryResult(
+                    success=False,
+                    channel=self.channel_name,
+                    error="Telegram bot_token or chat_id is missing."
+                )
+
+            p_path = Path(pdf_path)
+            if not p_path.exists():
+                return DeliveryResult(
+                    success=False,
+                    channel=self.channel_name,
+                    error=f"PDF file not found at {pdf_path}"
+                )
+
+            caption = (
+                f"📰 <b>The Cyber Intelligence Chronicle — Edition #{edition_number}</b>\n\n"
+                f"🚨 <b>Front Page:</b> {self._escape_html(lead_story or 'Autonomous Intelligence Dispatch')}\n"
+                f"📊 <b>Threats Triaged:</b> {total_threats}\n"
+                f"🛡️ <i>5-Hour Autonomous Telemetry Broadsheet attached in PDF.</i>"
+            )
+
+            url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
+            async with httpx.AsyncClient(timeout=45) as client:
+                with open(p_path, "rb") as f:
+                    files = {
+                        "document": (
+                            f"Cyber_Chronicle_Edition_{edition_number}.pdf",
+                            f.read(),
+                            "application/pdf",
+                        )
+                    }
+                    data = {
+                        "chat_id": chat_id,
+                        "caption": caption,
+                        "parse_mode": "HTML",
+                    }
+                    response = await client.post(url, data=data, files=files)
+                    response.raise_for_status()
+
+            return DeliveryResult(
+                success=True,
+                channel=self.channel_name,
+                message=f"Newspaper PDF Edition #{edition_number} delivered to Telegram chat {chat_id}"
+            )
         except Exception as e:
             return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
 
