@@ -18,6 +18,7 @@ from ai_security_monitor.presentation.api.routers import (
     analysis_router,
     digest_router,
     entries_router,
+    newspaper_router,
     sources_router,
     stats_router,
     triage_router,
@@ -143,6 +144,7 @@ def create_app() -> FastAPI:
     app.include_router(digest_router, prefix="/api/telegram", tags=["Telegram"])
     app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
     app.include_router(triage_router, prefix="/api", tags=["Autonomous Triage"])
+    app.include_router(newspaper_router, prefix="/api", tags=["Newspaper"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
     # Quick sweep route alias
