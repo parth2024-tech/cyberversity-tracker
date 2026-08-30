@@ -34,6 +34,7 @@ class HeuristicAnalyzer(BaseAnalyzer):
             r"\b(ransomware)\b",
             r"\b(supply.chain)\b",
             r"\b(critical)\b",
+            r"(零日|0day|在野利用|远程代码执行|勒索软件|严重漏洞|高危漏洞)",
         ],
         "high": [
             r"\b(privilege.escalation)\b",
@@ -49,6 +50,7 @@ class HeuristicAnalyzer(BaseAnalyzer):
             r"\b(prompt.injection)\b",
             r"\b(model.inversion)\b",
             r"\b(data.poisoning)\b",
+            r"(提权|权限提升|命令注入|越狱|提示注入|后门|反序列化|数据投毒|模型逆向|安全通告)",
         ],
         "medium": [
             r"\b(xxe|xml.external.entity)\b",
@@ -59,16 +61,25 @@ class HeuristicAnalyzer(BaseAnalyzer):
             r"\b(denial.of.service|dos)\b",
             r"\b(bypass)\b",
             r"\b(traversal)\b",
+            r"(信息泄露|绕过|未授权访问|弱口令|跨站脚本|拒绝服务|安全补丁)",
         ],
         "low": [
             r"\b(xss|reflected)\b",
             r"\b(open.redirect)\b",
             r"\b(missing.auth)\b",
             r"\b(weak.crypto)\b",
+            r"(重定向|低危|配置缺陷)",
         ],
     }
 
     AI_ECOSYSTEM_PATTERNS = {
+        "DeepSeek": [r"\bdeepseek\b", r"\br1\b", r"\bv3\b", r"深度求索"],
+        "Alibaba Qwen": [r"\bqwen\b", r"\btongyi\b", r"通义千问"],
+        "Zhipu GLM": [r"\bglm\b", r"\bchatglm\b", r"\bzhipu\b", r"智谱"],
+        "Baidu ERNIE / Paddle": [r"\bpaddle\b", r"\bernie\b", r"文心一言", r"飞桨"],
+        "Shanghai AI Lab (InternLM)": [r"\binternlm\b", r"书生·浦语", r"\bopenmmlab\b"],
+        "Moonshot Kimi": [r"\bmoonshot\b", r"\bkimi\b"],
+        "Huawei MindSpore / Ascend": [r"\bmindspore\b", r"\bascend\b", r"昇腾"],
         "PyTorch": [r"\bpytorch\b", r"\btorch\b", r"\btorchvision\b", r"\btorchaudio\b"],
         "TensorFlow": [r"\btensorflow\b", r"\bkeras\b", r"\btflite\b"],
         "HuggingFace": [r"\bhuggingface\b", r"\btransformers\b", r"\btokenizers\b", r"\bpeft\b"],
@@ -82,15 +93,15 @@ class HeuristicAnalyzer(BaseAnalyzer):
     }
 
     ATTACK_ARCHETYPE_PATTERNS = {
-        AttackArchetype.JAILBREAK: [r"\bjailbreak\b", r"\bbypass.*guard\b", r"\bunaligned\b"],
-        AttackArchetype.RAG_POISONING: [r"\brag.*poison\b", r"\bpoison.*retrieval\b", r"\bcorrupt.*knowledge\b"],
-        AttackArchetype.MODEL_INVERSION: [r"\bmodel.inversion\b", r"\binvert.*model\b", r"\bextract.*weights\b"],
-        AttackArchetype.PROMPT_INJECTION: [r"\bprompt.injection\b", r"\binject.*prompt\b", r"\bsystem.prompt\b"],
-        AttackArchetype.DATA_POISONING: [r"\bdata.poison\b", r"\bpoison.*training\b", r"\bbackdoor.*model\b"],
-        AttackArchetype.MODEL_EXTRACTION: [r"\bmodel.extraction\b", r"\bsteal.*model\b", r"\bextract.*architecture\b"],
-        AttackArchetype.SUPPLY_CHAIN: [r"\bsupply.chain\b", r"\bdependency.confusion\b", r"\btyposquat\b"],
-        AttackArchetype.RCE: [r"\brce\b", r"\bremote.code.execution\b", r"\barbitrary.code\b"],
-        AttackArchetype.PRIVILEGE_ESCALATION: [r"\bprivilege.escalation\b", r"\bescalate.*privilege\b"],
+        AttackArchetype.JAILBREAK: [r"\bjailbreak\b", r"\bbypass.*guard\b", r"\bunaligned\b", r"越狱", r"绕过安全对齐"],
+        AttackArchetype.RAG_POISONING: [r"\brag.*poison\b", r"\bpoison.*retrieval\b", r"\bcorrupt.*knowledge\b", r"检索污染", r"知识库投毒"],
+        AttackArchetype.MODEL_INVERSION: [r"\bmodel.inversion\b", r"\binvert.*model\b", r"\bextract.*weights\b", r"模型逆向", r"权重提取"],
+        AttackArchetype.PROMPT_INJECTION: [r"\bprompt.injection\b", r"\binject.*prompt\b", r"\bsystem.prompt\b", r"提示注入", r"提示词注入"],
+        AttackArchetype.DATA_POISONING: [r"\bdata.poison\b", r"\bpoison.*training\b", r"\bbackdoor.*model\b", r"数据投毒", r"模型后门"],
+        AttackArchetype.MODEL_EXTRACTION: [r"\bmodel.extraction\b", r"\bsteal.*model\b", r"\bextract.*architecture\b", r"模型窃取"],
+        AttackArchetype.SUPPLY_CHAIN: [r"\bsupply.chain\b", r"\bdependency.confusion\b", r"\btyposquat\b", r"供应链攻击", r"依赖混淆"],
+        AttackArchetype.RCE: [r"\brce\b", r"\bremote.code.execution\b", r"\barbitrary.code\b", r"远程代码执行", r"任意代码执行"],
+        AttackArchetype.PRIVILEGE_ESCALATION: [r"\bprivilege.escalation\b", r"\bescalate.*privilege\b", r"提权", r"权限提升"],
     }
 
     def _calculate_threat_velocity(self, text: str) -> int:

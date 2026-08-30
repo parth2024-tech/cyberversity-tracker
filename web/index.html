@@ -895,7 +895,8 @@
           <div class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.06] flex-wrap text-xs font-mono">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-[10px] text-sky-400 font-medium uppercase mr-1 flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3 text-sky-400"></i> THEATRE:</span>
-              <button onclick="setRegionFilter('all')" id="region-all" class="region-pill px-2.5 py-1 rounded-md bg-sky-500/15 text-sky-200 border border-sky-500/35 font-medium transition">🌍 ALL THEATRES (50+)</button>
+              <button onclick="setRegionFilter('all')" id="region-all" class="region-pill px-2.5 py-1 rounded-md bg-sky-500/15 text-sky-200 border border-sky-500/35 font-medium transition">🌍 ALL THEATRES (70+)</button>
+              <button onclick="setRegionFilter('china')" id="region-china" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇨🇳 CHINA INTEL & AI</button>
               <button onclick="setRegionFilter('europe')" id="region-europe" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇪🇺 EUROPE & UK</button>
               <button onclick="setRegionFilter('north_america')" id="region-north_america" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇺🇸 NORTH AMERICA</button>
               <button onclick="setRegionFilter('apac')" id="region-apac" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇯🇵 ASIA-PACIFIC</button>
@@ -1558,6 +1559,14 @@
         activeBtn.classList.remove('bg-white/[0.02]', 'text-slate-400', 'border-white/[0.06]');
         activeBtn.classList.add('bg-sky-500/15', 'text-sky-200', 'border-sky-500/35', 'font-medium');
       }
+
+      if (reg === 'china' && typeof globeSphere !== 'undefined' && globeSphere) {
+        globeSphere.rotation.y = -1.8;
+        globeSphere.rotation.x = 0.3;
+        const stationEl = document.getElementById('globe-active-station');
+        if (stationEl) stationEl.innerHTML = '🇨🇳 Beijing CNCERT • 🇨🇳 Shanghai AI Lab • 🇨🇳 Hangzhou Qwen • 🇨🇳 Shenzhen • 🇭🇰 HKCERT';
+      }
+
       loadFeed(true);
     }
 
@@ -2823,8 +2832,13 @@
       globeRing.rotation.x = Math.PI / 2.8;
       globeScene.add(globeRing);
 
-      // 24 Sovereign Threat Defense Stations (True Planetary Lat/Lon Coordinates)
+      // 29 Sovereign Threat Defense Stations (True Planetary Lat/Lon Coordinates)
       const WORLD_STATIONS = [
+        { name: 'Beijing AI & CNCERT Command', country: 'CN', flag: '🇨🇳', lat: 39.9042, lon: 116.4074, color: 0xef4444 },
+        { name: 'Shanghai AI Lab & Fudan Hub', country: 'CN', flag: '🇨🇳', lat: 31.2304, lon: 121.4737, color: 0xf97316 },
+        { name: 'Hangzhou Alibaba Qwen Grid', country: 'CN', flag: '🇨🇳', lat: 30.2741, lon: 120.1551, color: 0xfbbf24 },
+        { name: 'Shenzhen Tencent & MindSpore Lab', country: 'CN', flag: '🇨🇳', lat: 22.5431, lon: 114.0579, color: 0x38bdf8 },
+        { name: 'Hong Kong GovCERT Radar', country: 'HK', flag: '🇭🇰', lat: 22.3193, lon: 114.1694, color: 0xef4444 },
         { name: 'Tokyo Cyber Command', country: 'JP', flag: '🇯🇵', lat: 35.6762, lon: 139.6503, color: 0x38bdf8 },
         { name: 'London NCSC Node', country: 'GB', flag: '🇬🇧', lat: 51.5074, lon: -0.1278, color: 0x818cf8 },
         { name: 'Paris ANSSI / Mistral', country: 'FR', flag: '🇫🇷', lat: 48.8566, lon: 2.3522, color: 0x34d399 },
@@ -3270,6 +3284,7 @@
     let paletteItems = [];
 
     const DEFAULT_PALETTE_ACTIONS = [
+      { id: 'action-theatre-china', title: 'Switch Theatre to China Intel & AI', subtitle: 'Filter DeepSeek, Qwen, CNNVD & sovereign China threat feeds', icon: 'globe', badge: '🇨🇳 CHINA', type: 'action', run: () => setRegionFilter('china') },
       { id: 'action-export-pdf', title: 'Export Threat Intelligence PDF Dossier', subtitle: 'Download executive multi-page PDF briefing report', icon: 'file-down', badge: 'PDF', type: 'action', run: exportPdfReport },
       { id: 'action-auto-triage', title: 'Run Autonomous Local LLM Triage', subtitle: 'Queue top threats for local Ollama (llama3.1:8b) deep analysis', icon: 'sparkles', badge: 'AI TRIAGE', type: 'action', run: triggerTriageBackfill },
       { id: 'action-scan', title: 'Trigger Real-Time Intelligence Sweep', subtitle: 'Ingest latest CVEs, arXiv papers & GitHub advisories', icon: 'refresh-cw', badge: 'RADAR', type: 'action', run: triggerScan },
@@ -3553,6 +3568,11 @@
           .replace(/\barXiv\b/gi, 'Archive')
           .replace(/\b0-day\b/gi, 'zero day')
           .replace(/\bzero-day\b/gi, 'zero day')
+          .replace(/\bCNNVD\b/gi, 'C-N-N-V-D')
+          .replace(/\bCNCERT\b/gi, 'C-N-CERT')
+          .replace(/\bDeepSeek\b/gi, 'Deep-Seek')
+          .replace(/\bQwen\b/gi, 'Q-wen')
+          .replace(/\bZhipu\b/gi, 'Zhi-pu')
           .replace(/[*#`_~[\]]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();

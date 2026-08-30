@@ -292,8 +292,20 @@ class NewspaperService:
         cves = []
         ai_labs = []
         general = []
+        china_radar = []
 
         for e in remaining:
+            region = (e.metadata.get("region") if e.metadata else "") or ""
+            country = (e.metadata.get("country") if e.metadata else "") or ""
+            t_lower = e.title.lower()
+            is_china = (
+                region == "china"
+                or country in ("CN", "HK")
+                or any(k in t_lower for k in ("deepseek", "qwen", "glm", "internlm", "zhipu", "baidu", "360", "cnnvd", "tencent", "tsinghua"))
+            )
+            if is_china and len(china_radar) < 6:
+                china_radar.append(e)
+
             cat = e.category.value if hasattr(e.category, "value") else str(e.category)
             is_pre = e.analysis and e.analysis.is_pre_cve_warning
             if is_pre:
@@ -310,6 +322,7 @@ class NewspaperService:
             "pre_cve": pre_cves[:6],
             "cves": cves[:8],
             "ai_labs": ai_labs[:6],
+            "china_radar": china_radar[:6],
             "general": general[:8],
         }
 
@@ -421,6 +434,22 @@ class NewspaperService:
                     md.append(f"  {lab.summary[:200]}...")
                 if lab.url:
                     md.append(f"  *Reference*: [Open Dispatch]({lab.url})")
+            md.append("")
+
+        # China Tech & AI Security Radar Wire
+        china_items = categorized.get("china_radar", [])
+        if china_items:
+            md.append("---\n")
+            md.append("## 🇨🇳 CHINA TECH & AI SECURITY RADAR (Frontier Models & National Telemetry)\n")
+            md.append("*Dedicated intelligence stream covering DeepSeek, Qwen, CNNVD advisories, and sovereign Chinese labs:*\n")
+            for ch in china_items:
+                an = ch.analysis
+                v = an.threat_velocity if an else 30
+                md.append(f"- **{ch.title}** (Velocity: `{v}/100`)")
+                if ch.summary:
+                    md.append(f"  {ch.summary[:220]}...")
+                if ch.url:
+                    md.append(f"  *Dispatch*: [Open Source]({ch.url})")
             md.append("")
 
         # Tactical Security Directives
@@ -539,6 +568,36 @@ class NewspaperService:
             </p>
           </div>
         """ for lab in ai_labs]) if ai_labs else '<p class="text-xs text-slate-500 italic">No lab dispatches in current cycle.</p>'
+
+        china_radar = categorized.get("china_radar", [])
+        china_cards = "".join([f"""
+          <div class="p-2.5 bg-white/80 border border-[#d1cbba] rounded-sm">
+            <div class="flex items-center justify-between text-[10px] font-mono text-red-700 font-bold mb-1">
+              <span>🇨🇳 {html.escape(self._get_source_name(ch)[:16])}</span>
+              <span>VEL: {ch.analysis.threat_velocity if ch.analysis else 30}/100</span>
+            </div>
+            <h5 class="font-serif font-bold text-xs leading-snug line-clamp-2 mb-1">
+              <a href="{ch.url}" target="_blank" class="hover:text-red-700">{html.escape(ch.title)}</a>
+            </h5>
+            <p class="text-[11px] text-[#4b5563] line-clamp-2">
+              {html.escape(ch.summary or '')}
+            </p>
+          </div>
+        """ for ch in china_radar[:4]]) if china_radar else ""
+
+        china_radar_html = f"""
+        <div class="mt-6 pt-4 border-t-2 border-[#1e2430]">
+          <div class="flex items-center justify-between mb-2.5">
+            <h3 class="font-mono text-xs font-bold uppercase tracking-wider text-red-800 flex items-center gap-1.5">
+              🇨🇳 China Frontier AI & Threat Radar
+            </h3>
+            <span class="text-[10px] font-mono text-[#4b5563]">Sovereign CERTs • DeepSeek • Qwen • CNNVD Telemetry</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            {china_cards}
+          </div>
+        </div>
+        """ if china_cards else ""
 
         html_out = f"""<!DOCTYPE html>
 <html lang="en">
@@ -721,6 +780,9 @@ class NewspaperService:
       </div>
 
     </div>
+
+    <!-- Full-Width Section: China AI & Security Radar -->
+    {china_radar_html}
 
     <div class="double-rule-thick my-6"></div>
 
@@ -986,6 +1048,20 @@ class NewspaperService:
             ]))
             story.append(cve_table)
             story.append(Spacer(1, 6))
+
+        # China Tech & AI Security Radar
+        china_items = categorized.get("china_radar", [])
+        if china_items:
+            story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceBefore=4, spaceAfter=4))
+            story.append(Paragraph("🇨🇳 CHINA TECH & AI SECURITY RADAR (Frontier Models & Sovereign Telemetry)", section_h1))
+            for item in china_items[:3]:
+                an_ch = item.analysis
+                v_ch = an_ch.threat_velocity if an_ch else 30
+                ch_title = f"<b>• {html.escape(item.title)}</b> (Velocity: {v_ch}/100)"
+                story.append(Paragraph(ch_title, ParagraphStyle('CIT', fontName='Helvetica-Bold', fontSize=8, leading=10.5, textColor=colors.HexColor('#991b1b'))))
+                if item.summary:
+                    story.append(Paragraph(html.escape(item.summary[:200]) + '...', ParagraphStyle('CIS', fontName='Times-Roman', fontSize=7.5, leading=10, textColor=colors.HexColor('#334155'), spaceAfter=2)))
+            story.append(Spacer(1, 4))
 
         # 8. Tactical Directives Box
         story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceBefore=4, spaceAfter=4))

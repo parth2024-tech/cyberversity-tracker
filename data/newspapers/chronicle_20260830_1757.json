@@ -1,16 +1,16 @@
 {
-  "edition_id": "chronicle_20260830_1758",
+  "edition_id": "chronicle_20260830_1757",
   "edition_number": 1260,
   "title": "The Cyber Intelligence Chronicle \u2014 Edition #1260",
-  "generated_at": "2026-08-30T17:58:49.937093",
+  "generated_at": "2026-08-30T17:57:42.973570",
   "window_hours": 5,
   "total_threats": 6,
   "lead_story": "High Threat Security Alert (A23-04-06): Multiple Vulnerabilities in Microsoft Products (April 2023)",
   "pre_cve_count": 0,
   "cve_count": 0,
   "ai_lab_count": 0,
-  "md_path": "data/newspapers/chronicle_20260830_1758.md",
-  "html_path": "data/newspapers/chronicle_20260830_1758.html",
-  "pdf_path": "data/newspapers/chronicle_20260830_1758.pdf",
+  "md_path": "data/newspapers/chronicle_20260830_1757.md",
+  "html_path": "data/newspapers/chronicle_20260830_1757.html",
+  "pdf_path": "data/newspapers/chronicle_20260830_1757.pdf",
   "has_pdf": true
 }

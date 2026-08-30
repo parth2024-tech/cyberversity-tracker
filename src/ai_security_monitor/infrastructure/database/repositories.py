@@ -286,9 +286,18 @@ class SQLAlchemyEntryRepository(EntryRepository):
             stmt = stmt.outerjoin(AnalysisModelDB).where(AnalysisModelDB.entry_id.is_(None))
 
         if filters.region and filters.region != "all":
-            stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id).where(
-                SourceModel.config.like(f'%"region": "{filters.region}"%')
-            )
+            if filters.region.lower() in ("china", "cn"):
+                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id).where(
+                    or_(
+                        SourceModel.config.like('%"region": "china"%'),
+                        SourceModel.config.like('%"country": "CN"%'),
+                        SourceModel.config.like('%"country": "HK"%'),
+                    )
+                )
+            else:
+                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id).where(
+                    SourceModel.config.like(f'%"region": "{filters.region}"%')
+                )
 
         return stmt
 

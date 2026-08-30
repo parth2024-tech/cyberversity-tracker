@@ -658,6 +658,181 @@ sources:
     region: "apac"
     country: "AU"
 
+  # =========================================================================
+  # CHINA AI & CYBERSECURITY RADAR (CN / APAC)
+  # Comprehensive Sovereign CERTs, Top Threat Intelligence Labs & Frontier AI
+  # =========================================================================
+  - name: "CNNVD China Vulnerability Alerts (CNNVD安全动态)"
+    category: "vulnerabilities"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "GovCERT China / Hong Kong Alerts"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.govcert.gov.hk/en/rss_security_alerts.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "HK"
+
+  - name: "Qihoo 360 Threat Intelligence (360威胁情报中心)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/920f171e3dae0c8eeb4c97b366b229ba19807732.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Qi-AnXin Threat Research (奇安信技术研究院)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/77a8d89f12dcb0aa75a19731e474a63427089081.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Qi-AnXin XLab (奇安信XLab)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/5c7b6eec254fbb0afac7abf4eae95573fc374555.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Cyber Kunlun CERT (赛博昆仑CERT)"
+    category: "vulnerabilities"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/fb14ec6353e6ebbeb470d35d633471d0bca583a0.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Antiy AVL Threat Intel (安天AVL威胁情报)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/c17498223ad8f92e5434100b16f4894a3107a90b.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "DarkNavy Security Research"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/0d4ffa4a2127cb603c2da49daa678b0e780fd66b.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Tsinghua NISL Lab (清华大学网络与信息安全实验室)"
+    category: "ai_research"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/9c5931fa813fd1a38149e52d5809ce9b19a48ec4.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Venustech ADLab (启明星辰积极防御实验室)"
+    category: "vulnerabilities"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/16f16b9f4eb45442a824a52e3ddb040941a49f68.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "0x727 Red Team (0x727开源安全团队)"
+    category: "exploits_tricks"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/fb95636ab2edd220c83bc38b7041bb8e0a723496.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Xmirror DevSecOps (悬镜安全技术研究)"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/59c134d2e41c3a0724d89cc6fa359bc1abedbc26.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Hawkeye Threat Intelligence (鹰眼威胁情报)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/6bdcd81fd3702868c913261790ec10ffb76df144.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Fudan CodeWisdom Lab (复旦大学软件安全)"
+    category: "ai_research"
+    type: "rss"
+    url: "https://wechat2rss.xlab.app/feed/4e361ed9f2258098a35e02a6b738d6e53107f8bb.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "DeepSeek AI Official Releases"
+    category: "ai_models"
+    type: "rss"
+    url: "https://github.com/deepseek-ai/DeepSeek-V3/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Shanghai AI Lab (InternLM Open Releases)"
+    category: "ai_models"
+    type: "rss"
+    url: "https://github.com/InternLM/InternLM/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "arXiv China Frontier AI Labs"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (Tsinghua OR DeepSeek OR Qwen OR Peking OR Zhipu OR \"Shanghai AI Lab\")"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "SCMP China Tech & AI Radar"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.scmp.com/rss/318206/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
+  - name: "Pandaily China Tech & AI Breakthroughs"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://pandaily.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "china"
+    country: "CN"
+
 
 # Delivery Configuration (user picks one at runtime)
 delivery:
