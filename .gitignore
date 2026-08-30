@@ -11,7 +11,8 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 logs/*.log
-data/audio_cache/*.mp3
+data/audio_cache/*
+data/newspapers/chronicle_*
 
 # Testing & Coverage
 .coverage
