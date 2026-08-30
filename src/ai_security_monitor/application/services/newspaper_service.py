@@ -269,9 +269,17 @@ class NewspaperService:
         return 100 + (hours // 5)
 
     def _categorize_entries(self, entries: list[Entry]) -> dict[str, Any]:
-        """Classify entries into distinct newspaper columns and sections."""
+        """Classify entries into distinct newspaper columns and sections with automated English translation."""
         if not entries:
-            return {"lead": None, "pre_cve": [], "cves": [], "ai_labs": [], "general": []}
+            return {"lead": None, "pre_cve": [], "cves": [], "ai_labs": [], "general": [], "china_radar": []}
+
+        # Auto-translate any foreign language entries to English for the publication
+        from ai_security_monitor.application.services.translation_service import translation_service
+        for e in entries:
+            try:
+                translation_service.translate_entry(e)
+            except Exception:
+                pass
 
         def priority_score(e: Entry) -> int:
             score = 0

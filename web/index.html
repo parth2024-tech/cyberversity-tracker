@@ -1729,7 +1729,13 @@
       const countryCode = entry.country || (entry.metadata && entry.metadata.country) || 'GLOBAL';
       const flag = countryFlags[countryCode] || '🌐';
       const isChina = (entry.region === 'china' || countryCode === 'CN' || countryCode === 'HK');
-      const hasChinese = /[\u4e00-\u9fa5]/.test(entry.title || '');
+      const meta = entry.metadata || {};
+      const isTranslated = Boolean(meta.is_translated);
+      const origTitle = meta.original_title || '';
+      const origSummary = meta.original_summary || '';
+      const langName = meta.detected_language_name || (meta.detected_language ? meta.detected_language.toUpperCase() : 'Foreign');
+      const langFlag = meta.detected_language_flag || '🌐';
+      const hasNonEnglish = /[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff]/.test(entry.title || '') || isTranslated;
 
       let provenanceBadge = '';
       const provType = (entry.metadata && entry.metadata.provenance_type) || '';
@@ -1773,18 +1779,31 @@
         </div>
 
         <!-- Title -->
-        <h3 class="text-sm font-semibold text-slate-100 hover:text-cyan-300 transition line-clamp-2 leading-snug mb-2">${entry.title}</h3>
+        <h3 id="card-title-${entry.id}" class="text-sm font-semibold text-slate-100 hover:text-cyan-300 transition line-clamp-2 leading-snug mb-2">${entry.title}</h3>
 
-        ${hasChinese ? `
-          <!-- Bilingual Translation Brief -->
-          <div class="mb-2.5 p-2 rounded-lg bg-sky-950/30 border border-sky-500/25 text-[11px] font-mono text-sky-200 flex items-start gap-2">
-            <span class="px-1.5 py-0.5 text-[8.5px] bg-sky-500/20 text-sky-300 font-bold rounded flex-shrink-0 uppercase">EN BRIEF</span>
-            <span class="line-clamp-2">${analysis.risk_assessment || analysis.attack_vector || (analysis.mitigation ? 'Mitigation: ' + analysis.mitigation : 'Sovereign security alert telemetry cataloged by AetherGuard.')}</span>
+        ${isTranslated ? `
+          <!-- Translation Active Badge -->
+          <div class="mb-2.5 p-2 rounded-lg bg-sky-950/40 border border-sky-500/30 text-[10px] font-mono text-sky-300 flex items-center justify-between gap-2 shadow-sm">
+            <span class="flex items-center gap-1.5 font-bold">
+              <span class="px-1.5 py-0.2 bg-sky-500/20 text-sky-200 rounded text-[9px] uppercase tracking-wide">AUTO-TRANSLATED</span>
+              <span>${langFlag} From ${langName}</span>
+            </span>
+            ${origTitle ? `<button onclick="event.stopPropagation(); toggleOriginalText('${entry.id}')" id="trans-btn-${entry.id}" class="text-[9.5px] text-cyan-400 hover:text-cyan-200 underline font-semibold transition cursor-pointer">Show Original</button>` : ''}
           </div>
-        ` : ''}
+        ` : (hasNonEnglish ? `
+          <!-- Untranslated Foreign Text Action -->
+          <div class="mb-2.5 p-2 rounded-lg bg-amber-950/30 border border-amber-500/25 text-[10px] font-mono text-amber-300 flex items-center justify-between gap-2">
+            <span class="flex items-center gap-1.5">
+              <span>🌐 Foreign Script Detected</span>
+            </span>
+            <button onclick="event.stopPropagation(); translateCardOnDemand('${entry.id}')" id="trans-btn-${entry.id}" class="text-[9.5px] bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded font-semibold transition cursor-pointer">
+              Translate to EN →
+            </button>
+          </div>
+        ` : '')}
 
         <!-- Summary -->
-        <p class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-3">${entry.summary || 'No detailed abstract available.'}</p>
+        <p id="card-summary-${entry.id}" class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-3">${entry.summary || 'No detailed abstract available.'}</p>
 
         ${(attackVector || risk) ? `
         <!-- Triage Box -->
@@ -3305,12 +3324,127 @@
     }
 
     // =========================================================================
+    // TRANSLATION ENGINE & BILINGUAL UI CONTROLLER
+    // =========================================================================
+    window.cardTextCache = window.cardTextCache || {};
+
+    async function translateCardOnDemand(entryId) {
+      const btn = document.getElementById(`trans-btn-${entryId}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Translating...';
+      }
+
+      try {
+        const res = await fetch(`/api/translate/entry/${entryId}`, { method: 'POST' });
+        if (!res.ok) throw new Error('Translation failed');
+        const data = await res.json();
+
+        // Update DOM elements
+        const titleEl = document.getElementById(`card-title-${entryId}`);
+        const summaryEl = document.getElementById(`card-summary-${entryId}`);
+        if (titleEl && data.title) titleEl.innerText = data.title;
+        if (summaryEl && data.summary) summaryEl.innerText = data.summary;
+
+        // Cache states for toggle
+        window.cardTextCache[entryId] = {
+          isShowingOriginal: false,
+          translatedTitle: data.title,
+          translatedSummary: data.summary,
+          originalTitle: data.original_title,
+          originalSummary: data.original_summary,
+          languageName: data.detected_language_name,
+          languageFlag: data.detected_language_flag
+        };
+
+        if (btn) {
+          const parent = btn.closest('.mb-2\\.5') || btn.parentElement;
+          if (parent) {
+            parent.className = 'mb-2.5 p-2 rounded-lg bg-sky-950/40 border border-sky-500/30 text-[10px] font-mono text-sky-300 flex items-center justify-between gap-2 shadow-sm';
+            parent.innerHTML = `
+              <span class="flex items-center gap-1.5 font-bold">
+                <span class="px-1.5 py-0.2 bg-sky-500/20 text-sky-200 rounded text-[9px] uppercase tracking-wide">AUTO-TRANSLATED</span>
+                <span>${data.detected_language_flag || '🌐'} From ${data.detected_language_name || 'Foreign'}</span>
+              </span>
+              <button onclick="event.stopPropagation(); toggleOriginalText('${entryId}')" id="trans-btn-${entryId}" class="text-[9.5px] text-cyan-400 hover:text-cyan-200 underline font-semibold transition cursor-pointer">Show Original</button>
+            `;
+          }
+        }
+        playBeep('sonar');
+      } catch (err) {
+        console.error('Translation error:', err);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Retry Translate';
+        }
+      }
+    }
+
+    function toggleOriginalText(entryId) {
+      let state = window.cardTextCache[entryId];
+      const titleEl = document.getElementById(`card-title-${entryId}`);
+      const summaryEl = document.getElementById(`card-summary-${entryId}`);
+      const btn = document.getElementById(`trans-btn-${entryId}`);
+
+      if (!state) {
+        // Look up from allFeedItems
+        const item = (allFeedItems || []).find(x => String(x.id) === String(entryId));
+        if (item && item.metadata) {
+          state = {
+            isShowingOriginal: false,
+            translatedTitle: item.title,
+            translatedSummary: item.summary,
+            originalTitle: item.metadata.original_title || item.title,
+            originalSummary: item.metadata.original_summary || item.summary,
+            languageName: item.metadata.detected_language_name || 'Foreign',
+            languageFlag: item.metadata.detected_language_flag || '🌐'
+          };
+          window.cardTextCache[entryId] = state;
+        }
+      }
+
+      if (!state) return;
+
+      if (!state.isShowingOriginal) {
+        // Switch to Original
+        if (titleEl && state.originalTitle) titleEl.innerText = state.originalTitle;
+        if (summaryEl && state.originalSummary) summaryEl.innerText = state.originalSummary;
+        if (btn) btn.innerText = 'Show English';
+        state.isShowingOriginal = true;
+      } else {
+        // Switch back to Translated English
+        if (titleEl && state.translatedTitle) titleEl.innerText = state.translatedTitle;
+        if (summaryEl && state.translatedSummary) summaryEl.innerText = state.translatedSummary;
+        if (btn) btn.innerText = 'Show Original';
+        state.isShowingOriginal = false;
+      }
+      playBeep('click');
+    }
+
+    async function backfillAllTranslations() {
+      playBeep('sonar');
+      try {
+        const res = await fetch('/api/translate/backfill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 100 })
+        });
+        const data = await res.json();
+        console.log('Backfill result:', data);
+        loadFeed(true);
+      } catch (e) {
+        console.error('Backfill translation error:', e);
+      }
+    }
+
+    // =========================================================================
     // FEATURE 1: SPOTLIGHT COMMAND PALETTE (Cmd+K / Ctrl+K)
     // =========================================================================
     let paletteSelectedIndex = 0;
     let paletteItems = [];
 
     const DEFAULT_PALETTE_ACTIONS = [
+      { id: 'action-translate-all', title: 'Translate All Foreign Intelligence to English', subtitle: 'Auto-detect & translate Chinese, Russian, Japanese & EU feeds', icon: 'languages', badge: 'TRANSLATE', type: 'action', run: backfillAllTranslations },
       { id: 'action-theatre-china', title: 'Switch Theatre to China Intel & AI', subtitle: 'Filter DeepSeek, Qwen, CNNVD & sovereign China threat feeds', icon: 'globe', badge: '🇨🇳 CHINA', type: 'action', run: () => setRegionFilter('china') },
       { id: 'action-export-pdf', title: 'Export Threat Intelligence PDF Dossier', subtitle: 'Download executive multi-page PDF briefing report', icon: 'file-down', badge: 'PDF', type: 'action', run: exportPdfReport },
       { id: 'action-auto-triage', title: 'Run Autonomous Local LLM Triage', subtitle: 'Queue top threats for local Ollama (llama3.1:8b) deep analysis', icon: 'sparkles', badge: 'AI TRIAGE', type: 'action', run: triggerTriageBackfill },

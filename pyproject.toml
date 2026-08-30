@@ -45,6 +45,8 @@ dependencies = [
     "reportlab>=4.0",
     "edge-tts>=7.0.0",
     "gtts>=2.5.0",
+    "deep-translator>=1.11.4",
+    "langdetect>=1.0.9",
 ]
 
 [project.optional-dependencies]

@@ -10,6 +10,7 @@ from ai_security_monitor.presentation.api.routers.sources import sources_router
 from ai_security_monitor.presentation.api.routers.stats import stats_router
 from ai_security_monitor.presentation.api.routers.triage import triage_router
 from ai_security_monitor.presentation.api.routers.watchlist import watchlist_router
+from ai_security_monitor.presentation.api.routers.translation import translation_router
 
 __all__ = [
     "stats_router",
@@ -21,4 +22,5 @@ __all__ = [
     "triage_router",
     "newspaper_router",
     "audio_router",
+    "translation_router",
 ]

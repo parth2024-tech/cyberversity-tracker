@@ -115,6 +115,13 @@ class MonitorService:
                         continue
 
                     try:
+                        # Automatically detect non-English text and translate title/summary to English
+                        try:
+                            from ai_security_monitor.application.services.translation_service import translation_service
+                            translation_service.translate_entry(entry)
+                        except Exception as trans_e:
+                            logger.debug(f"Translation skipped: {trans_e}")
+
                         # Stamp sovereign region, country, and intelligence provenance from source config
                         entry.metadata = entry.metadata or {}
                         entry.metadata['region'] = source.config.get('region', 'global')
