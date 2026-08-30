@@ -41,9 +41,9 @@ class SourceModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
-    entries: Mapped[list["EntryModel"]] = relationship(back_populates="source", lazy="selectin")
-    fetch_logs: Mapped[list["FetchLogModel"]] = relationship(back_populates="source", lazy="selectin")
+    # Relationships (lazy="select" prevents massive eager loads of thousands of entries when querying sources)
+    entries: Mapped[list["EntryModel"]] = relationship(back_populates="source", lazy="select")
+    fetch_logs: Mapped[list["FetchLogModel"]] = relationship(back_populates="source", lazy="select")
 
     __table_args__ = (
         Index("ix_sources_category_enabled", "category", "enabled"),

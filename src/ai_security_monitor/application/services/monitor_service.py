@@ -338,29 +338,35 @@ class MonitorService:
 
 
     async def get_stats(self) -> dict:
-        """Get aggregate system metrics and stats."""
-        async with self._uow_factory() as uow:
-            total_entries = await uow.entries.count()
-            total_sources = len(await uow.sources.list(enabled_only=True))
-            high_velocity = await uow.analyses.count_high_velocity(70)
-            pre_cve_warnings = await uow.analyses.count_pre_cve_warnings()
-            watchlist_rules = len(await uow.watchlist.list())
+        """Get aggregate system metrics and stats using high-performance scalar and group-by queries."""
+        from sqlalchemy import select, func, text
+        from ai_security_monitor.infrastructure.database.models import EntryModel, SourceModel, AnalysisModel, WatchlistRuleModel
 
-            cats = {}
-            for cat in Category:
-                c_count = await uow.entries.count(EntryFilters(category=cat))
-                cats[cat.value] = c_count
+        async with self._uow_factory() as uow:
+            # Fast scalar count queries (single table index scans, no entity conversions)
+            total_entries = (await uow.session.execute(select(func.count(EntryModel.id)))).scalar() or 0
+            total_sources = (await uow.session.execute(select(func.count(SourceModel.id)).where(SourceModel.enabled.is_(True)))).scalar() or 0
+            high_velocity = (await uow.session.execute(select(func.count(AnalysisModel.id)).where(AnalysisModel.threat_velocity >= 70))).scalar() or 0
+            pre_cve_warnings = (await uow.session.execute(select(func.count(AnalysisModel.id)).where(AnalysisModel.is_pre_cve_warning.is_(True)))).scalar() or 0
+            watchlist_rules = (await uow.session.execute(select(func.count(WatchlistRuleModel.id)))).scalar() or 0
+
+            # Single group-by query for all categories (replaces 8 sequential table scans)
+            cat_stmt = select(EntryModel.category, func.count(EntryModel.id)).group_by(EntryModel.category)
+            cat_rows = (await uow.session.execute(cat_stmt)).all()
+            cats = {cat.value: 0 for cat in Category}
+            for c_val, c_cnt in cat_rows:
+                cats[c_val] = c_cnt
 
             recent_logs = await uow.fetch_logs.get_recent(hours=24, limit=15)
 
-            # Compute real affected AI framework exposures from database
+            # Compute affected AI framework exposures from database
             framework_exposure = []
             try:
                 import json
-                from sqlalchemy import text
                 stmt = text(
                     "SELECT affected_ecosystem, blast_radius_score "
-                    "FROM entry_analysis WHERE affected_ecosystem IS NOT NULL AND affected_ecosystem != '[]'"
+                    "FROM entry_analysis WHERE affected_ecosystem IS NOT NULL AND affected_ecosystem != '[]' "
+                    "ORDER BY id DESC LIMIT 500"
                 )
                 raw_rows = (await uow.session.execute(stmt)).fetchall()
                 f_stats: dict[str, dict[str, float]] = {}

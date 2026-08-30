@@ -6,6 +6,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ai_security_monitor.infrastructure.database.unit_of_work import (
@@ -19,29 +20,38 @@ class SourceToggleRequest(BaseModel):
     enabled: bool
 
 
+from ai_security_monitor.infrastructure.cache import response_cache
+
+
 @sources_router.get("")
 @sources_router.get("/")
 async def list_sources(all_sources: bool = True):
-    """List all configured intelligence sources."""
-    async with SqlAlchemyUnitOfWork() as uow:
-        sources = await uow.sources.list(enabled_only=not all_sources)
-        return {
-            "sources": [
-                {
-                    "id": str(s.id),
-                    "name": s.name,
-                    "category": s.category.value,
-                    "type": s.type.value,
-                    "url": s.url,
-                    "enabled": s.enabled,
-                    "rate_limit_seconds": s.rate_limit_seconds,
-                    "last_fetched_at": s.last_fetched_at.isoformat() if s.last_fetched_at else None,
-                    "last_status": s.last_status.value if s.last_status else None,
-                    "last_entries_new": s.last_entries_new,
-                    "config": s.config
-                } for s in sources
-            ]
-        }
+    """List all configured intelligence sources — cached for 30s."""
+    cache_key = f"sources_list_all_{all_sources}"
+
+    async def _fetch():
+        async with SqlAlchemyUnitOfWork() as uow:
+            sources = await uow.sources.list(enabled_only=not all_sources)
+            return {
+                "sources": [
+                    {
+                        "id": str(s.id),
+                        "name": s.name,
+                        "category": s.category.value,
+                        "type": s.type.value,
+                        "url": s.url,
+                        "enabled": s.enabled,
+                        "rate_limit_seconds": s.rate_limit_seconds,
+                        "last_fetched_at": s.last_fetched_at.isoformat() if s.last_fetched_at else None,
+                        "last_status": s.last_status.value if s.last_status else None,
+                        "last_entries_new": s.last_entries_new,
+                        "config": s.config
+                    } for s in sources
+                ]
+            }
+
+    data = await response_cache.get_or_set(cache_key, 30.0, _fetch)
+    return JSONResponse(content=data, headers={"Cache-Control": "public, max-age=30"})
 
 
 @sources_router.post("/{source_id}/toggle")

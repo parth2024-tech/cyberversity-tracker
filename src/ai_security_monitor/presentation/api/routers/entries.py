@@ -101,7 +101,9 @@ async def query_serialized_entries(
     )
     pagination = PaginationParams(limit=limit, offset=offset)
 
-    # Run list + count concurrently using two separate sessions
+    # Cache total count when query has no filters
+    has_custom_filters = bool(cat_enum or search or pre_cve or high_velocity or watchlist_only or since or (region and region != "all"))
+
     async def _list_entries():
         async with SqlAlchemyUnitOfWork() as uow:
             return await uow.entries.list(filters=filters, pagination=pagination)
@@ -110,7 +112,13 @@ async def query_serialized_entries(
         async with SqlAlchemyUnitOfWork() as uow:
             return await uow.entries.count(filters=filters)
 
-    entries, total = await asyncio.gather(_list_entries(), _count_entries())
+    if not has_custom_filters:
+        entries, total = await asyncio.gather(
+            _list_entries(),
+            response_cache.get_or_set("total_unfiltered_count", 30.0, _count_entries)
+        )
+    else:
+        entries, total = await asyncio.gather(_list_entries(), _count_entries())
 
     # If watchlist mode: also need active_rules for matching (fetch if not yet loaded)
     if not watchlist_only:
@@ -145,7 +153,7 @@ async def query_serialized_entries(
                 "threat_velocity": e.analysis.threat_velocity,
                 "severity_index": e.analysis.severity_index,
                 "blast_radius_score": e.analysis.blast_radius_score,
-                "affected_ecosystem": e.analysis.affected_ecosystem,
+                "affected_ecosystem": e.analysis.affected_ecosystem or [],
                 "is_pre_cve_warning": e.analysis.is_pre_cve_warning,
                 "attack_archetype": e.analysis.attack_archetype,
                 "weaponization_potential": e.analysis.weaponization_potential,
@@ -196,28 +204,31 @@ async def list_entries(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ):
-    """Query intelligence entries with pagination, search, watchlist, and feature filters."""
-    serialized_entries, total = await query_serialized_entries(
-        category=category,
-        search=search,
-        pre_cve=bool(pre_cve),
-        high_velocity=bool(high_velocity),
-        watchlist_only=bool(watchlist_only),
-        hours=hours,
-        region=region,
-        sort_by=sort_by,
-        limit=limit,
-        offset=offset,
-    )
+    """Query intelligence entries with pagination, search, watchlist, and feature filters — cached 6s."""
+    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{hours}_{region}_{sort_by}_{limit}_{offset}"
 
-    payload = {
-        "entries": serialized_entries,
-        "total": total if not watchlist_only else len(serialized_entries),
-        "limit": limit,
-        "offset": offset,
-    }
-    # Allow browser to serve stale while revalidating for 10 seconds
-    headers = {"Cache-Control": "public, max-age=10, stale-while-revalidate=30"}
+    async def _fetch():
+        serialized_entries, total = await query_serialized_entries(
+            category=category,
+            search=search,
+            pre_cve=bool(pre_cve),
+            high_velocity=bool(high_velocity),
+            watchlist_only=bool(watchlist_only),
+            hours=hours,
+            region=region,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+        return {
+            "entries": serialized_entries,
+            "total": total if not watchlist_only else len(serialized_entries),
+            "limit": limit,
+            "offset": offset,
+        }
+
+    payload = await response_cache.get_or_set(cache_key, 6.0, _fetch)
+    headers = {"Cache-Control": "public, max-age=5, stale-while-revalidate=20"}
     return JSONResponse(content=payload, headers=headers)
 
 

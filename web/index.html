@@ -1092,47 +1092,46 @@
       lucide.createIcons();
     }
 
-    // Dynamic Canvas Particle Network
+    // Dynamic Canvas Particle Network (High-Performance GPU/CPU Optimized)
     function initCanvasBackground() {
       const canvas = document.getElementById('bg-canvas');
-      const ctx = canvas.getContext('2d');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d', { alpha: true });
       let w = canvas.width = window.innerWidth;
       let h = canvas.height = window.innerHeight;
 
-      window.addEventListener('resize', () => {
-        w = canvas.width = window.innerWidth;
-        h = canvas.height = window.innerHeight;
+      let isVisible = true;
+      document.addEventListener('visibilitychange', () => {
+        isVisible = !document.hidden;
+        if (isVisible) requestAnimationFrame(draw);
       });
 
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          w = canvas.width = window.innerWidth;
+          h = canvas.height = window.innerHeight;
+        }, 150);
+      });
+
+      const count = Math.min(Math.floor(w / 45), 28);
       const particles = [];
-      const count = Math.min(Math.floor(w / 30), 45);
 
       for (let i = 0; i < count; i++) {
         particles.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.25,
-          vy: (Math.random() - 0.5) * 0.25,
-          radius: Math.random() * 0.9 + 0.35,
-          color: Math.random() > 0.6 ? 'rgba(255, 255, 255, 0.3)' : (Math.random() > 0.4 ? 'rgba(56, 189, 248, 0.25)' : 'rgba(167, 139, 250, 0.2)')
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          radius: Math.random() * 0.8 + 0.3,
+          color: Math.random() > 0.6 ? 'rgba(255, 255, 255, 0.25)' : (Math.random() > 0.4 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(167, 139, 250, 0.15)')
         });
       }
 
       function draw() {
+        if (!isVisible) return;
         ctx.clearRect(0, 0, w, h);
-
-        // Ambient celestial lighting
-        const g1 = ctx.createRadialGradient(w * 0.2, h * 0.1, 0, w * 0.2, h * 0.1, 550);
-        g1.addColorStop(0, 'rgba(56, 189, 248, 0.025)');
-        g1.addColorStop(1, 'transparent');
-        ctx.fillStyle = g1;
-        ctx.fillRect(0, 0, w, h);
-
-        const g2 = ctx.createRadialGradient(w * 0.8, h * 0.7, 0, w * 0.8, h * 0.7, 600);
-        g2.addColorStop(0, 'rgba(99, 102, 241, 0.02)');
-        g2.addColorStop(1, 'transparent');
-        ctx.fillStyle = g2;
-        ctx.fillRect(0, 0, w, h);
 
         // Update and draw stardust particles
         for (let i = 0; i < count; i++) {
@@ -1141,24 +1140,27 @@
           p.y += p.vy;
 
           if (p.x < 0) p.x = w;
-          if (p.x > w) p.x = 0;
+          else if (p.x > w) p.x = 0;
           if (p.y < 0) p.y = h;
-          if (p.y > h) p.y = 0;
+          else if (p.y > h) p.y = 0;
 
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
           ctx.fillStyle = p.color;
           ctx.fill();
 
-          // Connect nearby stars with faint hair lines
+          // Connect nearby stars using squared distance (avoids Math.hypot sqrt overhead)
           for (let j = i + 1; j < count; j++) {
             const p2 = particles[j];
-            const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-            if (dist < 110) {
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const distSq = dx * dx + dy * dy;
+            if (distSq < 10000) { // dist < 100
+              const alpha = 0.03 * (1 - distSq / 10000);
               ctx.beginPath();
               ctx.moveTo(p.x, p.y);
               ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = `rgba(255, 255, 255, ${0.04 * (1 - dist / 110)})`;
+              ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
               ctx.lineWidth = 0.5;
               ctx.stroke();
             }
