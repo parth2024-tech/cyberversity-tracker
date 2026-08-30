@@ -1723,9 +1723,25 @@
       const catLabel = (entry.category || '').replace(/_/g, ' ').toUpperCase();
       const pubDate = entry.published_at ? entry.published_at.slice(0, 16).replace('T', ' ') : 'Recent';
       const sourceDisplayName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? (() => { try { return new URL(entry.url).hostname.replace('www.', ''); } catch(e) { return 'Intel'; } })() : 'Global Intel');
-      const countryFlags = {'US':'🇺🇸','CA':'🇨🇦','GB':'🇬🇧','EU':'🇪🇺','FR':'🇫🇷','DE':'🇩🇪','JP':'🇯🇵','AU':'🇦🇺','SG':'🇸🇬','CH':'🇨🇭','IN':'🇮🇳','IL':'🇮🇱','KR':'🇰🇷','NL':'🇳🇱','SE':'🇸🇪','GLOBAL':'🌐'};
+      const countryFlags = {'CN':'🇨🇳','HK':'🇭🇰','US':'🇺🇸','CA':'🇨🇦','GB':'🇬🇧','EU':'🇪🇺','FR':'🇫🇷','DE':'🇩🇪','JP':'🇯🇵','AU':'🇦🇺','SG':'🇸🇬','CH':'🇨🇭','IN':'🇮🇳','IL':'🇮🇱','KR':'🇰🇷','NL':'🇳🇱','SE':'🇸🇪','GLOBAL':'🌐'};
       const countryCode = entry.country || (entry.metadata && entry.metadata.country) || 'GLOBAL';
       const flag = countryFlags[countryCode] || '🌐';
+      const isChina = (entry.region === 'china' || countryCode === 'CN' || countryCode === 'HK');
+      const hasChinese = /[\u4e00-\u9fa5]/.test(entry.title || '');
+
+      let provenanceBadge = '';
+      const provType = (entry.metadata && entry.metadata.provenance_type) || '';
+      if (provType === 'state_cert') {
+        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-blue-300 bg-blue-500/15 border border-blue-500/30 px-1.5 py-0.5 rounded-sm">🏛️ STATE CERT</span>`;
+      } else if (provType === 'threat_intel') {
+        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-red-300 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-sm">🎯 THREAT INTEL</span>`;
+      } else if (provType === 'model_release') {
+        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded-sm">🚀 MODEL RELEASE</span>`;
+      } else if (provType === 'ai_research') {
+        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-1.5 py-0.5 rounded-sm">🔬 AI RESEARCH</span>`;
+      } else if (isChina) {
+        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded-sm">🇨🇳 CN INTEL</span>`;
+      }
 
       const mitreId = analysis.mitre_attack_id || entry.mitre_attack_id;
       const weaponization = analysis.weaponization_potential || entry.weaponization_potential || '';
@@ -1737,6 +1753,7 @@
         <div class="flex items-center justify-between gap-2 mb-2.5">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${catLabel}</span>
+            ${provenanceBadge}
             ${isPreCve ? `<span class="text-[9px] font-mono font-bold text-amber-400 uppercase bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-sm">⚡ PRE-CVE</span>` : ''}
             ${isExploited ? `<span class="text-[9px] font-mono font-bold text-red-400 uppercase bg-red-500/10 border border-red-500/25 px-1.5 py-0.5 rounded-sm animate-pulse">🔴 EXPLOITED</span>` : isPoc ? `<span class="text-[9px] font-mono font-bold text-rose-400 uppercase bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-sm">⚡ PoC</span>` : ''}
             ${mitreId ? `<span class="text-[9px] font-mono text-violet-400 cursor-default" title="${analysis.mitre_technique || entry.mitre_technique || 'MITRE ATT&CK'}">${mitreId} ›</span>` : ''}
@@ -1755,6 +1772,14 @@
 
         <!-- Title -->
         <h3 class="text-sm font-semibold text-slate-100 hover:text-cyan-300 transition line-clamp-2 leading-snug mb-2">${entry.title}</h3>
+
+        ${hasChinese ? `
+          <!-- Bilingual Translation Brief -->
+          <div class="mb-2.5 p-2 rounded-lg bg-sky-950/30 border border-sky-500/25 text-[11px] font-mono text-sky-200 flex items-start gap-2">
+            <span class="px-1.5 py-0.5 text-[8.5px] bg-sky-500/20 text-sky-300 font-bold rounded flex-shrink-0 uppercase">EN BRIEF</span>
+            <span class="line-clamp-2">${analysis.risk_assessment || analysis.attack_vector || (analysis.mitigation ? 'Mitigation: ' + analysis.mitigation : 'Sovereign security alert telemetry cataloged by AetherGuard.')}</span>
+          </div>
+        ` : ''}
 
         <!-- Summary -->
         <p class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-3">${entry.summary || 'No detailed abstract available.'}</p>

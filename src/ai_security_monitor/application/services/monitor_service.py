@@ -115,10 +115,11 @@ class MonitorService:
                         continue
 
                     try:
-                        # Stamp sovereign region and country from source config
+                        # Stamp sovereign region, country, and intelligence provenance from source config
                         entry.metadata = entry.metadata or {}
                         entry.metadata['region'] = source.config.get('region', 'global')
                         entry.metadata['country'] = source.config.get('country', 'GLOBAL')
+                        entry.metadata['provenance_type'] = source.config.get('provenance_type', 'threat_intel')
 
                         added_entry = await uow.entries.add(entry)
                         new_entries_count += 1

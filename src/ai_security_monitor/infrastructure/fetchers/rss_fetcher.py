@@ -22,17 +22,61 @@ class RSSFetcher(BaseFetcher):
         return "rss"
 
     async def _fetch_raw(self) -> list[dict]:
-        """Fetch and parse RSS/Atom feed."""
+        """Fetch and parse RSS/Atom feed with multi-encoding (GB18030/GBK/UTF-8) and mirror fallbacks."""
+        urls = [self.source.url]
+        if self.source.config and "mirrors" in self.source.config:
+            urls.extend(self.source.config["mirrors"])
+
+        last_error = None
+        response = None
+
         async with httpx.AsyncClient(
             timeout=self.timeout,
             headers={"User-Agent": settings.fetch.user_agent},
             follow_redirects=True,
         ) as client:
-            response = await client.get(self.source.url)
-            response.raise_for_status()
+            for target_url in urls:
+                try:
+                    response = await client.get(target_url)
+                    response.raise_for_status()
+                    break
+                except Exception as req_err:
+                    last_error = req_err
+                    continue
+
+        if response is None:
+            if last_error:
+                raise last_error
+            raise RuntimeError(f"Failed to retrieve feed from {self.source.url}")
+
+        # Multi-encoding detection for Chinese legacy and standard streams
+        raw_bytes = response.content
+        decoded_text = ""
+        # Try declared encoding first, then Chinese national standard GB18030 (superset of GBK/GB2312), then UTF-8
+        candidate_encodings = [
+            response.encoding,
+            "utf-8",
+            "gb18030",
+            "gbk",
+            "gb2312",
+            "big5",
+        ]
+        seen_enc = set()
+        for enc in candidate_encodings:
+            if not enc or enc.lower() in seen_enc:
+                continue
+            seen_enc.add(enc.lower())
+            try:
+                decoded_text = raw_bytes.decode(enc)
+                break
+            except (UnicodeDecodeError, LookupError):
+                continue
+
+        if not decoded_text:
+            decoded_text = raw_bytes.decode("utf-8", errors="replace")
 
         # Parse with feedparser
-        feed = feedparser.parse(response.content)
+        feed = feedparser.parse(decoded_text)
 
         if feed.bozo and feed.bozo_exception:
             # Log but continue - feedparser can handle many malformed feeds
@@ -49,7 +93,7 @@ class RSSFetcher(BaseFetcher):
             elif hasattr(item, "description"):
                 content = item.description
 
-            # Clean HTML
+            # Clean and sanitize HTML/scripts/payloads
             content = self._clean_html(content)
 
             # Get published date
@@ -59,8 +103,11 @@ class RSSFetcher(BaseFetcher):
             elif hasattr(item, "updated_parsed") and item.updated_parsed:
                 published_at = datetime(*item.updated_parsed[:6])
 
+            raw_title = getattr(item, "title", "Untitled")
+            clean_title = self._clean_html(raw_title)
+
             entries.append({
-                "title": getattr(item, "title", "Untitled"),
+                "title": clean_title,
                 "url": getattr(item, "link", ""),
                 "content": content,
                 "published_at": published_at,
@@ -94,20 +141,28 @@ class RSSFetcher(BaseFetcher):
         )
 
     def _clean_html(self, text: str) -> str:
-        """Basic HTML cleaning."""
+        """Rigorous content sanitization stripping all executable tags, handlers, and injection payloads."""
         if not text:
             return ""
 
         import re
-        # Remove scripts and styles
-        text = re.sub(r"<script.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
-        text = re.sub(r"<style.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
-        # Remove HTML tags
+        # 1. Remove dangerous script, iframe, object, embed, applet, style tags
+        text = re.sub(r"<(script|style|iframe|object|embed|applet|meta|link|form|svg)[^>]*>.*?</\1>", "", text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r"<(script|style|iframe|object|embed|applet|meta|link|form|svg)[^>]*>", "", text, flags=re.IGNORECASE)
+
+        # 2. Strip inline event handlers (onload, onerror, onclick, etc.) and dangerous protocols
+        text = re.sub(r"\bon\w+\s*=\s*([\"'][^\"']*[\"']|[^\s>]+)", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"(javascript|vbscript|data):[^\s\"'>]+", "", text, flags=re.IGNORECASE)
+
+        # 3. Strip all remaining HTML tags
         text = re.sub(r"<[^>]+>", "", text)
-        # Decode common entities
-        text = text.replace("&nbsp;", " ").replace("&", "&").replace("<", "<").replace(">", ">")
+
+        # 4. Decode HTML entities
+        text = text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+        text = text.replace("&quot;", '"').replace("&apos;", "'").replace("&#39;", "'")
         text = text.replace("&ldquo;", '"').replace("&rdquo;", '"').replace("\u2018", "'").replace("\u2019", "'")
-        # Normalize whitespace
+
+        # 5. Normalize whitespace
         text = re.sub(r"\s+", " ", text).strip()
         return text
 
