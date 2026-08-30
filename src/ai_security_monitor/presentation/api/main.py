@@ -16,6 +16,7 @@ from ai_security_monitor.core.metrics import metrics_middleware
 from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.presentation.api.routers import (
     analysis_router,
+    audio_router,
     digest_router,
     entries_router,
     newspaper_router,
@@ -145,6 +146,7 @@ def create_app() -> FastAPI:
     app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
     app.include_router(triage_router, prefix="/api", tags=["Autonomous Triage"])
     app.include_router(newspaper_router, prefix="/api", tags=["Newspaper"])
+    app.include_router(audio_router, prefix="/api", tags=["Audio"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
     # Quick sweep route alias

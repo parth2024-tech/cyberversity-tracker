@@ -135,8 +135,8 @@ class ArxivFetcher(BaseFetcher):
 
     BASE_URL = "https://export.arxiv.org/api/query"
 
-    def __init__(self, rate_limit_seconds: int = 1800, query: str = "", max_results: int = 50):
-        super().__init__(rate_limit_seconds)
+    def __init__(self, rate_limit_seconds: int = 1800, query: str = "", max_results: int = 50, **kwargs):
+        super().__init__(rate_limit_seconds, **kwargs)
         self.default_query = query
         self.default_max_results = max_results
 
@@ -226,8 +226,8 @@ class HackerNewsFetcher(BaseFetcher):
 
     BASE_URL = "https://hacker-news.firebaseio.com/v0"
 
-    def __init__(self, rate_limit_seconds: int = 600, tags: list[str] = None):
-        super().__init__(rate_limit_seconds)
+    def __init__(self, rate_limit_seconds: int = 600, tags: list[str] = None, **kwargs):
+        super().__init__(rate_limit_seconds, **kwargs)
         self.tags = [t.lower() for t in (tags or [])]
 
     def _get_item(self, item_id: int) -> dict | None:

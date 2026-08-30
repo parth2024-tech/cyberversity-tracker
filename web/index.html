@@ -3335,79 +3335,90 @@
     // ══════════════════════════════════════════════════════════════════════════
     // VOICE RADAR: 100% FREE CLIENT-SIDE AI SPEECH & BRIEFING ENGINE
     // ══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════════
+    // VOICE RADAR: UNIVERSAL NEURAL AI BROADCAST ENGINE (ZERO OS DEPENDENCY)
+    // ══════════════════════════════════════════════════════════════════════════
     const VoiceRadar = {
       speaking: false,
       paused: false,
       rate: 1.0,
-      selectedVoice: null,
+      selectedVoice: 'en-US-GuyNeural',
       playlist: [],
       currentIndex: 0,
-      _activeUtterances: [], // Prevents Chrome V8 Garbage-Collection truncation
-      _chunkIndex: 0,
-      _currentChunks: [],
+      _audio: null,
       _activeCardId: null,
+      _currentOnEnd: null,
+      _voices: [],
 
       init() {
-        if (!('speechSynthesis' in window)) {
-          console.warn("Web Speech API not supported in this browser.");
-          return;
+        if (!this._audio && typeof Audio !== 'undefined') {
+          this._audio = new Audio();
+          this._audio.addEventListener('ended', () => {
+            this._setVisualizer(false);
+            if (this._currentOnEnd) {
+              const cb = this._currentOnEnd;
+              this._currentOnEnd = null;
+              cb();
+            }
+          });
+          this._audio.addEventListener('error', (e) => {
+            console.warn("Neural audio streaming error, attempting fallback...", e);
+            this._setVisualizer(false);
+            if (this._currentOnEnd) {
+              const cb = this._currentOnEnd;
+              this._currentOnEnd = null;
+              cb();
+            }
+          });
+          this._audio.addEventListener('play', () => {
+            this._setVisualizer(true);
+          });
+          this._audio.addEventListener('pause', () => {
+            this._setVisualizer(false);
+          });
         }
 
-        const populateVoices = () => {
-          const voices = window.speechSynthesis.getVoices();
-          const voiceSelect = document.getElementById('hud-voice-select');
-          if (!voiceSelect || voices.length === 0) return;
+        this.loadVoices();
+      },
 
-          const priority = [
-            'Google UK English Female',
-            'Google US English',
-            'Microsoft Jenny Online (Natural)',
-            'Microsoft Guy Online (Natural)',
-            'Microsoft Aria Online (Natural)',
-            'Samantha',
-            'Daniel',
-            'Karen',
-            'Moira'
-          ];
+      async loadVoices() {
+        const voiceSelect = document.getElementById('hud-voice-select');
+        const fallbackVoices = [
+          { id: 'en-US-GuyNeural', name: 'Guy (US Anchor)' },
+          { id: 'en-US-ChristopherNeural', name: 'Christopher (US Executive)' },
+          { id: 'en-US-AriaNeural', name: 'Aria (US Intel)' },
+          { id: 'en-US-JennyNeural', name: 'Jenny (US Natural)' },
+          { id: 'en-GB-SoniaNeural', name: 'Sonia (UK News)' },
+          { id: 'en-IN-PrabhatNeural', name: 'Prabhat (IN Clear)' }
+        ];
 
+        try {
+          const res = await fetch('/api/audio/voices');
+          if (res.ok) {
+            const data = await res.json();
+            this._voices = data.voices || fallbackVoices;
+          } else {
+            this._voices = fallbackVoices;
+          }
+        } catch (e) {
+          this._voices = fallbackVoices;
+        }
+
+        if (voiceSelect) {
           voiceSelect.innerHTML = '';
-          const englishVoices = voices.filter(v => v.lang && v.lang.startsWith('en'));
-          const displayVoices = englishVoices.length > 0 ? englishVoices : voices;
-
-          displayVoices.forEach(v => {
+          this._voices.forEach(v => {
             const opt = document.createElement('option');
-            opt.value = v.name;
-            opt.textContent = `${v.name.replace(/(Microsoft|Google|Apple)\s*/i, '').slice(0, 16)} (${v.lang ? v.lang.slice(0, 2) : 'en'})`;
+            opt.value = v.id;
+            opt.textContent = v.name;
+            if (v.id === this.selectedVoice) opt.selected = true;
             voiceSelect.appendChild(opt);
           });
-
-          for (const name of priority) {
-            const match = voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()));
-            if (match) {
-              this.selectedVoice = match;
-              voiceSelect.value = match.name;
-              break;
-            }
-          }
-          if (!this.selectedVoice && displayVoices.length > 0) {
-            this.selectedVoice = displayVoices[0];
-            voiceSelect.value = displayVoices[0].name;
-          }
-        };
-
-        populateVoices();
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-          window.speechSynthesis.onvoiceschanged = populateVoices;
         }
       },
 
-      setVoice(name) {
-        const voices = window.speechSynthesis.getVoices();
-        const found = voices.find(v => v.name === name);
-        if (found) {
-          this.selectedVoice = found;
-          playBeep('click');
-        }
+      setVoice(voiceId) {
+        this.selectedVoice = voiceId || 'en-US-GuyNeural';
+        playBeep('click');
       },
 
       cycleSpeed() {
@@ -3416,6 +3427,7 @@
         this.rate = rates[(curIdx + 1) % rates.length];
         const btn = document.getElementById('hud-speed-btn');
         if (btn) btn.textContent = this.rate.toFixed(1) + 'x';
+        if (this._audio) this._audio.playbackRate = this.rate;
         playBeep('click');
       },
 
@@ -3441,11 +3453,11 @@
         if (!raw) return '';
         return raw
           .replace(/https?:\/\/[^\s]+/g, '')
-          .replace(/CVE-(\d{4})-(\d+)/gi, (m, y, id) => `C V E ${y}, ${id}`)
+          .replace(/CVE-(\d{4})-(\d+)/gi, (m, y, id) => `CVE ${y} ${id}`)
           .replace(/\bPoC\b/g, 'Proof of Concept')
-          .replace(/\bRAG\b/g, 'R A G')
-          .replace(/\bLLMs\b/g, 'L L Ms')
-          .replace(/\bLLM\b/g, 'L L M')
+          .replace(/\bRAG\b/g, 'RAG')
+          .replace(/\bLLMs\b/g, 'LLMs')
+          .replace(/\bLLM\b/g, 'LLM')
           .replace(/\barXiv\b/gi, 'Archive')
           .replace(/\b0-day\b/gi, 'zero day')
           .replace(/\bzero-day\b/gi, 'zero day')
@@ -3454,84 +3466,60 @@
           .trim();
       },
 
-      // Sentence tokenization: prevents Chrome 15s freeze bug completely
-      splitIntoChunks(text, maxLen = 160) {
-        if (!text) return [];
-        const sentences = text.match(/[^.!?;\r\n]+[.!?;\r\n]+|[^.!?;\r\n]+$/g) || [text];
-        const chunks = [];
-
-        for (let s of sentences) {
-          s = s.trim();
-          if (!s) continue;
-          if (s.length <= maxLen) {
-            chunks.push(s);
-          } else {
-            const words = s.split(' ');
-            let cur = '';
-            for (const w of words) {
-              if ((cur + ' ' + w).length <= maxLen) {
-                cur = cur ? cur + ' ' + w : w;
-              } else {
-                if (cur) chunks.push(cur);
-                cur = w;
-              }
-            }
-            if (cur) chunks.push(cur);
-          }
-        }
-        return chunks;
+      _rateStringToPercent(rate) {
+        if (rate === 1.25) return '+25%';
+        if (rate === 1.5) return '+50%';
+        return '+0%';
       },
 
-      _speakChunks(chunks, onComplete) {
-        if (!('speechSynthesis' in window)) {
-          if (onComplete) onComplete();
-          return;
-        }
-        window.speechSynthesis.cancel();
-        this._currentChunks = chunks;
-        this._chunkIndex = 0;
-        this._activeUtterances = [];
-
-        if (chunks.length === 0) {
+      async _playSpeech(text, onComplete) {
+        if (!text) {
           if (onComplete) onComplete();
           return;
         }
 
-        const playNext = () => {
-          if (!this.speaking) return;
-          if (this._chunkIndex >= this._currentChunks.length) {
-            this._setVisualizer(false);
-            if (onComplete) onComplete();
-            return;
-          }
+        this.init();
+        this._currentOnEnd = onComplete;
+        const rateStr = this._rateStringToPercent(this.rate);
+        const voiceId = this.selectedVoice || 'en-US-GuyNeural';
 
-          const chunkText = this._currentChunks[this._chunkIndex];
-          const utt = new SpeechSynthesisUtterance(chunkText);
-          this._activeUtterances.push(utt); // Store reference to prevent V8 GC
-
-          if (this.selectedVoice) utt.voice = this.selectedVoice;
-          utt.rate = this.rate;
-          utt.pitch = 1.0;
-
-          utt.onstart = () => {
+        // 1. Primary Engine: Server-side Neural TTS Stream (100% OS Independent)
+        if (this._audio) {
+          try {
+            const url = `/api/audio/tts?text=${encodeURIComponent(text.slice(0, 4000))}&voice=${encodeURIComponent(voiceId)}&rate=${encodeURIComponent(rateStr)}`;
+            this._audio.src = url;
+            this._audio.playbackRate = this.rate;
+            await this._audio.play();
             this._setVisualizer(true);
-          };
+            return;
+          } catch (err) {
+            console.warn("HTML5 audio playback error, trying client fallback...", err);
+          }
+        }
 
-          utt.onend = () => {
-            this._chunkIndex++;
-            playNext();
-          };
+        // 2. Client Fallback: SpeechSynthesis (if browser supports and has voices)
+        if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length > 0) {
+          try {
+            window.speechSynthesis.cancel();
+            const utt = new SpeechSynthesisUtterance(text);
+            utt.rate = this.rate;
+            utt.onstart = () => this._setVisualizer(true);
+            utt.onend = () => {
+              this._setVisualizer(false);
+              if (onComplete) onComplete();
+            };
+            utt.onerror = () => {
+              this._setVisualizer(false);
+              if (onComplete) onComplete();
+            };
+            window.speechSynthesis.speak(utt);
+            return;
+          } catch (e) {}
+        }
 
-          utt.onerror = (err) => {
-            console.warn("Speech chunk warning:", err);
-            this._chunkIndex++;
-            playNext();
-          };
-
-          window.speechSynthesis.speak(utt);
-        };
-
-        playNext();
+        // 3. Graceful completion if audio blocked by browser policy
+        this._setVisualizer(false);
+        if (onComplete) onComplete();
       },
 
       _setVisualizer(active) {
@@ -3562,18 +3550,23 @@
         this.stop();
         this.speaking = true;
         this.paused = false;
-        
+
         const hud = document.getElementById('audio-hud');
         if (hud) hud.classList.remove('hidden');
         const headline = document.getElementById('hud-headline');
         const status = document.getElementById('hud-status-text');
+        const counter = document.getElementById('hud-item-counter');
+        const playBtnIcon = document.getElementById('hud-play-icon');
+
+        if (counter) counter.textContent = 'RADIO';
         if (headline) headline.textContent = options.title || "Chronicle Radio Broadcast";
         if (status) status.textContent = "EDITORIAL BROADCAST // ACTIVE";
+        if (playBtnIcon) playBtnIcon.setAttribute('data-lucide', 'pause');
+        lucide.createIcons();
 
         const normalized = this.normalizeSecurityText(rawText);
-        const chunks = this.splitIntoChunks(normalized);
         this.playTacticalChirp();
-        this._speakChunks(chunks, () => {
+        this._playSpeech(normalized, () => {
           this.stop();
         });
       },
@@ -3657,17 +3650,16 @@
           script += `End of intelligence briefing. All monitoring arrays remain active.`;
         }
 
-        const chunks = this.splitIntoChunks(script);
-        this._speakChunks(chunks, () => {
+        this._playSpeech(script, () => {
           if (idx + 1 < this.playlist.length) {
             setTimeout(() => {
               this.playTacticalChirp();
               this._playPlaylistItem(idx + 1, false);
-            }, 600);
+            }, 500);
           } else {
             setTimeout(() => {
               this.stop();
-            }, 1000);
+            }, 800);
           }
         });
       },
@@ -3718,8 +3710,7 @@
           script += `Recommended patch: ${this.normalizeSecurityText(analysis.mitigation)}. `;
         }
 
-        const chunks = this.splitIntoChunks(script);
-        this._speakChunks(chunks, () => {
+        this._playSpeech(script, () => {
           setTimeout(() => this.stop(), 800);
         });
       },
@@ -3731,16 +3722,30 @@
         }
 
         const icon = document.getElementById('hud-play-icon');
-        if (this.paused) {
-          window.speechSynthesis.resume();
-          this.paused = false;
-          this._setVisualizer(true);
-          if (icon) icon.setAttribute('data-lucide', 'pause');
-        } else {
-          window.speechSynthesis.pause();
-          this.paused = true;
-          this._setVisualizer(false);
-          if (icon) icon.setAttribute('data-lucide', 'play');
+        if (this._audio && this._audio.src) {
+          if (this.paused) {
+            this._audio.play();
+            this.paused = false;
+            this._setVisualizer(true);
+            if (icon) icon.setAttribute('data-lucide', 'pause');
+          } else {
+            this._audio.pause();
+            this.paused = true;
+            this._setVisualizer(false);
+            if (icon) icon.setAttribute('data-lucide', 'play');
+          }
+        } else if ('speechSynthesis' in window) {
+          if (this.paused) {
+            window.speechSynthesis.resume();
+            this.paused = false;
+            this._setVisualizer(true);
+            if (icon) icon.setAttribute('data-lucide', 'pause');
+          } else {
+            window.speechSynthesis.pause();
+            this.paused = true;
+            this._setVisualizer(false);
+            if (icon) icon.setAttribute('data-lucide', 'play');
+          }
         }
         lucide.createIcons();
         playBeep('click');
@@ -3767,7 +3772,13 @@
       stop() {
         this.speaking = false;
         this.paused = false;
-        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        if (this._audio) {
+          this._audio.pause();
+          this._audio.currentTime = 0;
+        }
+        if ('speechSynthesis' in window) {
+          try { window.speechSynthesis.cancel(); } catch (e) {}
+        }
         this._setVisualizer(false);
         this._highlightCard(null);
 

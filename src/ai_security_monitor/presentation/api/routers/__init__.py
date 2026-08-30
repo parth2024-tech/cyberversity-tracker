@@ -2,6 +2,7 @@
 API routers export.
 """
 from ai_security_monitor.presentation.api.routers.analysis import analysis_router
+from ai_security_monitor.presentation.api.routers.audio import audio_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router
 from ai_security_monitor.presentation.api.routers.entries import entries_router
 from ai_security_monitor.presentation.api.routers.newspaper import newspaper_router
@@ -19,4 +20,5 @@ __all__ = [
     "watchlist_router",
     "triage_router",
     "newspaper_router",
+    "audio_router",
 ]
