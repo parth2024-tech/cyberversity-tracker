@@ -879,8 +879,11 @@
 
             <!-- Export Hub -->
             <div class="flex items-center gap-2">
+              <button onclick="exportPdfReport()" class="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 hover:border-sky-400 text-sky-200 hover:text-white text-[11px] flex items-center gap-1.5 transition font-semibold" title="Export current/pinned threats to Executive PDF Dossier">
+                <i data-lucide="file-down" class="w-3 h-3 text-sky-400"></i> Export PDF
+              </button>
               <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current/pinned threats to Markdown Brief">
-                <i data-lucide="file-text" class="w-3 h-3 text-sky-400"></i> Export MD
+                <i data-lucide="file-text" class="w-3 h-3 text-slate-400"></i> Export MD
               </button>
               <button onclick="exportStixJson()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export to STIX 2.1 Threat Intel format">
                 <i data-lucide="shield" class="w-3 h-3 text-indigo-400"></i> Export STIX
@@ -2028,6 +2031,9 @@
               <button onclick="enqueueEntryForTriage('${entry.id}')" class="px-4 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-200 font-medium text-xs font-mono tracking-wider flex items-center gap-1.5 transition">
                 <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i> Deep LLM Triage
               </button>
+              <button onclick="downloadSingleEntryPdf('${entry.id}')" class="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-200 font-medium text-xs font-mono tracking-wider flex items-center gap-1.5 transition" title="Download formatted single-threat dossier PDF">
+                <i data-lucide="file-down" class="w-3.5 h-3.5 text-sky-400"></i> Download PDF
+              </button>
               <button onclick="copySingleEntryMarkdown('${entry.id}')" id="modal-copy-btn" class="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white font-medium text-xs font-mono tracking-wider flex items-center gap-1.5 transition">
                 <i data-lucide="copy" class="w-3.5 h-3.5 text-sky-400"></i> Copy Markdown Brief
               </button>
@@ -3085,8 +3091,37 @@
       });
     }
 
+    function downloadSingleEntryPdf(id) {
+      playBeep('alert');
+      showToast("Generating Executive Incident PDF Dossier...", "info");
+      const now = new Date().toISOString().slice(0, 10);
+
+      fetch('/api/entries/export/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: [id],
+          title: 'AetherGuard Single-Threat Incident Dossier',
+          subtitle: 'Deep Technical & AI Blast Radius Analysis'
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.blob();
+      })
+      .then(blob => {
+        downloadBlobFile(`aether-incident-${id.slice(0, 8)}-${now}.pdf`, blob);
+        showToast("PDF Dossier downloaded successfully!", "success");
+      })
+      .catch(err => {
+        console.error("Single PDF export error:", err);
+        showToast("Opening direct PDF stream...", "alert");
+        window.open('/api/entries/export/pdf?limit=1', '_blank');
+      });
+    }
+
     // =========================================================================
-    // FEATURE 5: 1-CLICK EXPORT HUB (Markdown & STIX 2.1 JSON)
+    // FEATURE 5: 1-CLICK EXPORT HUB (PDF, Markdown & STIX 2.1 JSON)
     // =========================================================================
     function getExportThreatList() {
       const pinnedIds = new Set(getPinnedThreatIds());
@@ -3094,7 +3129,63 @@
         const pinnedList = allFeedItems.filter(e => pinnedIds.has(e.id));
         if (pinnedList.length > 0) return pinnedList;
       }
-      return allFeedItems.slice(0, 20);
+      return allFeedItems.slice(0, 25);
+    }
+
+    function exportPdfReport() {
+      playBeep('alert');
+      const pinnedIds = getPinnedThreatIds();
+      const now = new Date().toISOString().slice(0, 10);
+
+      if (pinnedIds && pinnedIds.length > 0) {
+        showToast("Generating Scoped PDF Dossier from Pinned Board...", "info");
+        fetch('/api/entries/export/pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ids: pinnedIds,
+            title: 'AetherGuard Threat Intelligence Dossier',
+            subtitle: `Active Investigation Pinboard (${pinnedIds.length} Pinned Advisories)`
+          })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.blob();
+        })
+        .then(blob => {
+          downloadBlobFile(`aether-threat-dossier-${now}.pdf`, blob);
+          showToast("PDF Dossier downloaded successfully!", "success");
+        })
+        .catch(err => {
+          console.error("PDF export error:", err);
+          showToast("Retrying via direct PDF stream...", "alert");
+          window.open('/api/entries/export/pdf?limit=30', '_blank');
+        });
+      } else {
+        const sortMode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'velocity';
+        let url = `/api/entries/export/pdf?sort_by=${sortMode}&limit=30`;
+        if (currentCategory !== 'all') url += `&category=${currentCategory}`;
+        if (currentRegion !== 'all') url += `&region=${currentRegion}`;
+        if (currentTimeHorizon > 0) url += `&hours=${currentTimeHorizon}`;
+        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+
+        showToast("Generating Executive Threat Intelligence PDF...", "info");
+        window.open(url, '_blank');
+      }
+    }
+
+    function downloadBlobFile(filename, blob) {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      }, 1000);
     }
 
     function exportMarkdownReport() {
@@ -3179,6 +3270,7 @@
     let paletteItems = [];
 
     const DEFAULT_PALETTE_ACTIONS = [
+      { id: 'action-export-pdf', title: 'Export Threat Intelligence PDF Dossier', subtitle: 'Download executive multi-page PDF briefing report', icon: 'file-down', badge: 'PDF', type: 'action', run: exportPdfReport },
       { id: 'action-auto-triage', title: 'Run Autonomous Local LLM Triage', subtitle: 'Queue top threats for local Ollama (llama3.1:8b) deep analysis', icon: 'sparkles', badge: 'AI TRIAGE', type: 'action', run: triggerTriageBackfill },
       { id: 'action-scan', title: 'Trigger Real-Time Intelligence Sweep', subtitle: 'Ingest latest CVEs, arXiv papers & GitHub advisories', icon: 'refresh-cw', badge: 'RADAR', type: 'action', run: triggerScan },
       { id: 'action-3d', title: 'Toggle 3D Holographic Globe Radar', subtitle: 'View or hide Three.js spatial threat matrix', icon: 'globe', badge: '3D WEBGL', type: 'action', run: toggle3DGlobe },

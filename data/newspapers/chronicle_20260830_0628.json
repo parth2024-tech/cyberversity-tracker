@@ -1,0 +1,16 @@
+{
+  "edition_id": "chronicle_20260830_0628",
+  "edition_number": 1258,
+  "title": "The Cyber Intelligence Chronicle \u2014 Edition #1258",
+  "generated_at": "2026-08-30T06:28:58.009369",
+  "window_hours": 5,
+  "total_threats": 40,
+  "lead_story": "Trending: NVIDIA/cutlass",
+  "pre_cve_count": 0,
+  "cve_count": 0,
+  "ai_lab_count": 0,
+  "md_path": "data/newspapers/chronicle_20260830_0628.md",
+  "html_path": "data/newspapers/chronicle_20260830_0628.html",
+  "pdf_path": "data/newspapers/chronicle_20260830_0628.pdf",
+  "has_pdf": true
+}

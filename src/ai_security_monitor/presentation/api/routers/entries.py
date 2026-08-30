@@ -50,30 +50,28 @@ async def _get_active_watchlist_rules() -> list:
 
 
 # ---------------------------------------------------------------------------
-# Route
+# Core Query Helper
 # ---------------------------------------------------------------------------
 
-@entries_router.get("")
-@entries_router.get("/")
-async def list_entries(
-    category: str | None = Query(None),
-    search: str | None = Query(None),
-    pre_cve: bool | None = Query(False),
-    high_velocity: bool | None = Query(False),
-    watchlist_only: bool | None = Query(False),
-    hours: int | None = Query(None),
-    region: str | None = Query(None),
-    sort_by: str = Query("newest"),
-    limit: int = Query(50, ge=1, le=200),
-    offset: int = Query(0, ge=0),
-):
-    """Query intelligence entries with pagination, search, watchlist, and feature filters."""
+async def query_serialized_entries(
+    category: str | None = None,
+    search: str | None = None,
+    pre_cve: bool = False,
+    high_velocity: bool = False,
+    watchlist_only: bool = False,
+    hours: int | None = None,
+    region: str | None = None,
+    sort_by: str = "newest",
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """Internal helper to retrieve and serialize filtered entries."""
     since = None
-    if hours:
+    if hours and isinstance(hours, int):
         since = datetime.utcnow() - timedelta(hours=hours)
 
     cat_enum = None
-    if category and category != "all":
+    if category and category != "all" and isinstance(category, str):
         try:
             cat_enum = Category(category)
         except ValueError:
@@ -93,18 +91,17 @@ async def list_entries(
 
     filters = EntryFilters(
         category=cat_enum,
-        search=search,
+        search=search if isinstance(search, str) else None,
         keywords=wl_keywords,
-        pre_cve_only=pre_cve or False,
-        high_velocity_only=high_velocity or False,
+        pre_cve_only=bool(pre_cve),
+        high_velocity_only=bool(high_velocity),
         since=since,
-        sort_by=sort_by,
-        region=region if region and region != "all" else None,
+        sort_by=sort_by if isinstance(sort_by, str) else "newest",
+        region=region if region and region != "all" and isinstance(region, str) else None,
     )
     pagination = PaginationParams(limit=limit, offset=offset)
 
     # Run list + count concurrently using two separate sessions
-    # (SQLAlchemy async sessions are not concurrency-safe within the same connection)
     async def _list_entries():
         async with SqlAlchemyUnitOfWork() as uow:
             return await uow.entries.list(filters=filters, pagination=pagination)
@@ -117,7 +114,6 @@ async def list_entries(
 
     # If watchlist mode: also need active_rules for matching (fetch if not yet loaded)
     if not watchlist_only:
-        # For matched_watchlist_rules field — only load rules when they exist in cache already
         cached_rules = response_cache._CACHE.get("watchlist_rules_active")
         active_rules = cached_rules[1] if cached_rules else []
 
@@ -179,6 +175,41 @@ async def list_entries(
             }
         )
 
+    return serialized_entries, total
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+@entries_router.get("")
+@entries_router.get("/")
+async def list_entries(
+    category: str | None = Query(None),
+    search: str | None = Query(None),
+    pre_cve: bool | None = Query(False),
+    high_velocity: bool | None = Query(False),
+    watchlist_only: bool | None = Query(False),
+    hours: int | None = Query(None),
+    region: str | None = Query(None),
+    sort_by: str = Query("newest"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    """Query intelligence entries with pagination, search, watchlist, and feature filters."""
+    serialized_entries, total = await query_serialized_entries(
+        category=category,
+        search=search,
+        pre_cve=bool(pre_cve),
+        high_velocity=bool(high_velocity),
+        watchlist_only=bool(watchlist_only),
+        hours=hours,
+        region=region,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset,
+    )
+
     payload = {
         "entries": serialized_entries,
         "total": total if not watchlist_only else len(serialized_entries),
@@ -188,3 +219,101 @@ async def list_entries(
     # Allow browser to serve stale while revalidating for 10 seconds
     headers = {"Cache-Control": "public, max-age=10, stale-while-revalidate=30"}
     return JSONResponse(content=payload, headers=headers)
+
+
+@entries_router.get("/export/pdf")
+async def export_entries_pdf(
+    category: str | None = Query(None),
+    search: str | None = Query(None),
+    pre_cve: bool | None = Query(False),
+    high_velocity: bool | None = Query(False),
+    watchlist_only: bool | None = Query(False),
+    hours: int | None = Query(None),
+    region: str | None = Query(None),
+    sort_by: str = Query("velocity"),
+    limit: int = Query(30, ge=1, le=100),
+):
+    """Generate and download executive PDF threat dossier for queried intelligence entries."""
+    from ai_security_monitor.application.services.pdf_export_service import (
+        PdfExportService,
+    )
+
+    entries_list, _ = await query_serialized_entries(
+        category=category,
+        search=search,
+        pre_cve=bool(pre_cve),
+        high_velocity=bool(high_velocity),
+        watchlist_only=bool(watchlist_only),
+        hours=hours,
+        region=region,
+        sort_by=sort_by,
+        limit=limit,
+        offset=0,
+    )
+
+    cat_label = f" // {category.upper()}" if category and category != "all" else ""
+    title = f"AetherGuard Threat Dossier{cat_label}"
+    pdf_bytes = PdfExportService.generate_dossier_pdf(
+        entries=entries_list,
+        title=title,
+        subtitle=f"Scoped Threat Intelligence Analysis ({len(entries_list)} Incidents)",
+    )
+
+    timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M")
+    filename = f"threat_dossier_{timestamp_str}.pdf"
+
+    from fastapi.responses import Response
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+from pydantic import BaseModel, Field
+
+
+class ExportPdfRequest(BaseModel):
+    ids: list[str] | None = Field(default=None, description="Specific threat IDs to include")
+    title: str | None = Field(default="AetherGuard Threat Intelligence Dossier")
+    subtitle: str | None = Field(default="Tactical Zero-Day & AI Blast Radius Analysis")
+
+
+@entries_router.post("/export/pdf")
+async def export_selected_entries_pdf(payload: ExportPdfRequest):
+    """Generate executive PDF dossier from a specific list of threat IDs (e.g. pinned board)."""
+    from ai_security_monitor.application.services.pdf_export_service import (
+        PdfExportService,
+    )
+
+    all_entries, _ = await query_serialized_entries(limit=150, offset=0, sort_by="velocity")
+
+    if payload.ids:
+        target_ids = set(payload.ids)
+        filtered = [e for e in all_entries if e["id"] in target_ids]
+    else:
+        filtered = all_entries[:25]
+
+    pdf_bytes = PdfExportService.generate_dossier_pdf(
+        entries=filtered,
+        title=payload.title or "AetherGuard Threat Intelligence Dossier",
+        subtitle=payload.subtitle or f"Custom Executive Threat Brief ({len(filtered)} items)",
+    )
+
+    timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M")
+    filename = f"threat_dossier_{timestamp_str}.pdf"
+
+    from fastapi.responses import Response
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
