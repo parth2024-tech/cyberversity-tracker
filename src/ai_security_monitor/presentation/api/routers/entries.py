@@ -145,7 +145,15 @@ async def query_serialized_entries(
         )
 
         analysis_dict = None
+        severity = 0
+        blast_radius = 0
+        mitigation = None
+        attack_archetype = None
         if e.analysis:
+            severity = e.analysis.severity_index
+            blast_radius = e.analysis.blast_radius_score
+            mitigation = e.analysis.mitigation
+            attack_archetype = e.analysis.attack_archetype
             analysis_dict = {
                 "attack_vector": e.analysis.attack_vector,
                 "risk_assessment": e.analysis.risk_assessment,
@@ -167,6 +175,7 @@ async def query_serialized_entries(
                 "id": str(e.id),
                 "source_id": str(e.source_id),
                 "source_name": src_name,
+                "source": src_name,
                 "region": src_region,
                 "country": src_country,
                 "title": e.title,
@@ -180,6 +189,10 @@ async def query_serialized_entries(
                 "metadata": e.metadata,
                 "matched_watchlist_rules": matched_rules,
                 "analysis": analysis_dict,
+                "severity": severity,
+                "blast_radius": blast_radius,
+                "mitigation": mitigation,
+                "attack_archetype": attack_archetype,
             }
         )
 
@@ -200,12 +213,14 @@ async def list_entries(
     watchlist_only: bool | None = Query(False),
     hours: int | None = Query(None),
     region: str | None = Query(None),
+    sort: str | None = Query(None),
     sort_by: str = Query("newest"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ):
     """Query intelligence entries with pagination, search, watchlist, and feature filters — cached 6s."""
-    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{hours}_{region}_{sort_by}_{limit}_{offset}"
+    effective_sort = sort or sort_by
+    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{hours}_{region}_{effective_sort}_{limit}_{offset}"
 
     async def _fetch():
         serialized_entries, total = await query_serialized_entries(
@@ -216,7 +231,7 @@ async def list_entries(
             watchlist_only=bool(watchlist_only),
             hours=hours,
             region=region,
-            sort_by=sort_by,
+            sort_by=effective_sort,
             limit=limit,
             offset=offset,
         )
