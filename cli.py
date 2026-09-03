@@ -145,6 +145,68 @@ def cmd_digest(args):
         sys.exit(1)
 
 
+def cmd_newspaper(args):
+    """Generate and optionally send the 5-hour newspaper/newsletter."""
+    import asyncio
+    from ai_security_monitor.application.services.newspaper_service import NewspaperService
+    from ai_security_monitor.infrastructure.delivery.base import delivery_registry
+    from ai_security_monitor.config.settings import settings
+
+    service = NewspaperService()
+    print(f"Generating newspaper edition for window {args.window_hours} hours...")
+    meta = asyncio.run(service.generate_edition(window_hours=args.window_hours))
+    print(f"✓ Edition #{meta['edition_number']} compiled: {meta['total_threats']} threats analyzed.")
+    print(f"  Markdown: {meta['md_path']}")
+    print(f"  HTML:     {meta['html_path']}")
+    print(f"  PDF:      {meta['pdf_path']}")
+
+    # Telegram dispatch
+    if args.telegram:
+        bot_token = args.telegram_token or settings.delivery.telegram_bot_token or "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
+        chat_id = args.telegram_chat or settings.delivery.telegram_chat_id or "1650972026"
+        print(f"Dispatching newspaper PDF to Telegram chat {chat_id}...")
+        tg_delivery = delivery_registry.create("telegram", {"bot_token": bot_token, "chat_id": chat_id})
+        pdf_path = meta.get("pdf_path")
+        if pdf_path:
+            res = asyncio.run(tg_delivery.send_newspaper_document(
+                pdf_path=pdf_path,
+                edition_number=meta["edition_number"],
+                lead_story=meta.get("lead_story", ""),
+                total_threats=meta.get("total_threats", 0),
+            ))
+            if res.success:
+                print(f"✓ Telegram dispatch succeeded: {res.message}")
+            else:
+                print(f"✗ Telegram dispatch failed: {res.error}")
+
+    # Email dispatch
+    if args.email:
+        to_email = args.email
+        print(f"Dispatching newspaper PDF to email {to_email}...")
+        email_cfg = {
+            "smtp_server": args.smtp_server or settings.delivery.email_smtp_server,
+            "smtp_port": args.smtp_port or settings.delivery.email_smtp_port,
+            "username": args.email_user or settings.delivery.email_username or "",
+            "password": args.email_pass or settings.delivery.email_password or "",
+            "from_email": args.from_email or settings.delivery.email_from or "noreply@aetherguard.ai",
+            "to_email": to_email,
+        }
+        email_delivery = delivery_registry.create("email", email_cfg)
+        pdf_path = meta.get("pdf_path")
+        if pdf_path:
+            res = asyncio.run(email_delivery.send_newspaper_pdf(
+                pdf_path=pdf_path,
+                edition_number=meta["edition_number"],
+                to_email=to_email,
+                lead_story=meta.get("lead_story", ""),
+                total_threats=meta.get("total_threats", 0),
+            ))
+            if res.success:
+                print(f"✓ Email dispatch succeeded: {res.message}")
+            else:
+                print(f"✗ Email dispatch failed: {res.error}")
+
+
 def cmd_stats(args):
     """Show database statistics."""
     monitor = AISecurityMonitor(args.config)
@@ -575,6 +637,19 @@ Examples:
     enriched_parser.add_argument('--telegram-token', help='Telegram bot token')
     enriched_parser.add_argument('--telegram-chat', help='Telegram chat ID')
 
+    # newspaper / chronicle
+    newspaper_parser = subparsers.add_parser('newspaper', help='Generate and dispatch 5-hour newspaper/newsletter edition')
+    newspaper_parser.add_argument('--window-hours', type=int, default=5, help='Threat intelligence time window in hours (default: 5)')
+    newspaper_parser.add_argument('--telegram', action='store_true', help='Dispatch PDF edition to Telegram')
+    newspaper_parser.add_argument('--telegram-token', help='Telegram bot token')
+    newspaper_parser.add_argument('--telegram-chat', help='Telegram chat ID')
+    newspaper_parser.add_argument('--email', help='Recipient email address to dispatch PDF')
+    newspaper_parser.add_argument('--smtp-server', help='SMTP server (default from config)')
+    newspaper_parser.add_argument('--smtp-port', type=int, help='SMTP port (default from config)')
+    newspaper_parser.add_argument('--email-user', help='SMTP username')
+    newspaper_parser.add_argument('--email-pass', help='SMTP password')
+    newspaper_parser.add_argument('--from-email', help='Sender email address')
+
     # test-delivery
     test_parser = subparsers.add_parser('test-delivery', help='Test delivery method')
     test_parser.add_argument('--method', choices=['console', 'email', 'slack', 'telegram'],
@@ -643,6 +718,7 @@ Examples:
         'init': cmd_init,
         'fetch': cmd_fetch,
         'digest': cmd_digest,
+        'newspaper': cmd_newspaper,
         'stats': cmd_stats,
         'sources': cmd_sources,
         'cleanup': cmd_cleanup,

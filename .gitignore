@@ -26,3 +26,5 @@ htmlcov/
 .DS_Store
 *.swp
 *.egg-info/
+.env
+.env.*
