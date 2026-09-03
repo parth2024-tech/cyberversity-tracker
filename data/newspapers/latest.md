@@ -1,7 +1,7 @@
 ```
 ================================================================================
                      THE CYBER INTELLIGENCE CHRONICLE                           
-          Edition #1278  |  Thursday, September 03, 2026 • 10:28 UTC  |  5-Hour Digest          
+          Edition #1278  |  Thursday, September 03, 2026 • 10:32 UTC  |  5-Hour Digest          
              Global Threat Defcon: 3 (ELEVATED)  |  AetherGuard Radar           
 ================================================================================
 ```
@@ -49,10 +49,10 @@ Over the last **5 hours**, AetherGuard telemetry ingested and triaged **30 urgen
 
 *Dedicated intelligence stream covering DeepSeek, Qwen, CNNVD advisories, and sovereign Chinese labs:*
 
-- **Mr_Rot13, a mystery hacking group with 6 years of clandestine activities, is deploying a backdoor Trojan using a high-risk vulnerability in cPanel** (Velocity: `100/100`)
+- **The mysterious hacker group Mr_Rot13, which has been operating secretly for 6 years, is exploiting cPanel high-risk vulnerabilities to deploy backdoor Trojans** (Velocity: `100/100`)
   Original Qi’anxin X Lab 2026-05-11 15:42 Beijing Background CVE-2026-41940 is a high-risk unauthorized authentication bypass vulnerability affecting cPanel & WHM. Background CVE-2026-41940 is a high-severity unauthorized...
   *Dispatch*: [Open Source](https://mp.weixin.qq.com/s?__biz=MzkxMDYzODQxNA==&mid=2247484541&idx=1&sn=cd060e133650e85bb3ec04e3ad4fa731)
-- **VMware ESXi CVE-2024-37085 Vulnerability Validation Analysis** (Velocity: `100/100`)
+- **VMware ESXi CVE-2024-37085 vulnerability verification analysis** (Velocity: `100/100`)
   Venus 2024-08-08 17:38 Beijing Recently, Microsoft disclosed an in-field attack report of an ESXi vulnerability (CVE-2024-37085). This vulnerability is an authentication bypass vulnerability in VMware ESXi and has been e...
   *Dispatch*: [Open Source](https://mp.weixin.qq.com/s?__biz=MzAwNTI1NDI3MQ==&mid=2649619550&idx=1&sn=a751128726875a90e9107764b6a4f4f3&chksm=8306214eb471a8587a8054c43873cb1e5814242a375db72abc83c7e76aa3595bc3c594e0a52c&scene=58&subscene=0#rd)
 - **Antiy Mobile’s recent threat intelligence inventory (July 14-July 29)** (Velocity: `100/100`)

@@ -1,16 +1,16 @@
 {
-  "edition_id": "chronicle_20260903_1028",
+  "edition_id": "chronicle_20260903_1032",
   "edition_number": 1278,
   "title": "The Cyber Intelligence Chronicle \u2014 Edition #1278",
-  "generated_at": "2026-09-03T10:28:08.280570",
+  "generated_at": "2026-09-03T10:32:36.255013",
   "window_hours": 5,
   "total_threats": 30,
   "lead_story": "CISA KEV: CVE-2023-4966 - Citrix NetScaler ADC and NetScaler Gateway Buffer Overflow Vulnerability",
   "pre_cve_count": 0,
   "cve_count": 8,
   "ai_lab_count": 0,
-  "md_path": "data/newspapers/chronicle_20260903_1028.md",
-  "html_path": "data/newspapers/chronicle_20260903_1028.html",
-  "pdf_path": "data/newspapers/chronicle_20260903_1028.pdf",
+  "md_path": "data/newspapers/chronicle_20260903_1032.md",
+  "html_path": "data/newspapers/chronicle_20260903_1032.html",
+  "pdf_path": "data/newspapers/chronicle_20260903_1032.pdf",
   "has_pdf": true
 }

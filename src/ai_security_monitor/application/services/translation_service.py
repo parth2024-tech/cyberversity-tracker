@@ -182,7 +182,7 @@ class TranslationService:
         except Exception as e:
             logger.debug(f"GoogleTranslator error for '{text[:30]}...': {e}")
 
-        # 2. Fallback: MyMemoryTranslator
+        # 2. Fallback: MyMemoryTranslator (chunks text into <500 char pieces)
         try:
             from deep_translator import MyMemoryTranslator
             mymemory_map = {
@@ -194,9 +194,21 @@ class TranslationService:
             src_locale = mymemory_map.get(source_lang.lower(), source_lang)
             target_locale = "en-US" if target == "en" else target
             mm = MyMemoryTranslator(source=src_locale, target=target_locale)
-            result = mm.translate(text)
-            if result and not result.startswith("MYMEMORY WARNING"):
-                return html.unescape(result)
+            
+            # Chunk long texts to respect 500-char limit
+            if len(text) > 480:
+                chunks = [text[i:i+450] for i in range(0, min(len(text), 1500), 450)]
+                translated_parts = []
+                for c in chunks:
+                    res = mm.translate(c)
+                    if res and not res.startswith("MYMEMORY WARNING"):
+                        translated_parts.append(res)
+                if translated_parts:
+                    return html.unescape(" ".join(translated_parts))
+            else:
+                result = mm.translate(text)
+                if result and not result.startswith("MYMEMORY WARNING"):
+                    return html.unescape(result)
         except Exception as e:
             logger.debug(f"MyMemoryTranslator fallback error: {e}")
 
