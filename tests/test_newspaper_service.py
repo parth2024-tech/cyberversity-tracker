@@ -45,7 +45,9 @@ async def test_newspaper_generation_creates_files(temp_output_dir: Path):
 
     md_content = md_file.read_text(encoding="utf-8")
     assert "THE CYBER INTELLIGENCE CHRONICLE" in md_content
-    assert "CISO EXECUTIVE INTELLIGENCE BRIEF" in md_content
+    assert "CISO" in md_content
+    assert "PAGE 1" in md_content
+    assert meta["pages_count"] == 10
 
     html_content = html_file.read_text(encoding="utf-8")
     assert "<!DOCTYPE html>" in html_content

@@ -73,13 +73,16 @@ class DatabaseManager:
             def set_sqlite_pragma(dbapi_connection, connection_record):
                 cursor = dbapi_connection.cursor()
                 cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA busy_timeout=5000")
+                cursor.execute("PRAGMA busy_timeout=30000")
                 cursor.execute("PRAGMA synchronous=NORMAL")
                 # Performance tuning
                 cursor.execute("PRAGMA cache_size=-16000")      # 16MB page cache
                 cursor.execute("PRAGMA temp_store=MEMORY")      # temp tables in RAM
                 cursor.execute("PRAGMA mmap_size=268435456")    # 256MB memory-mapped I/O
-                cursor.execute("PRAGMA optimize")               # auto-analyze statistics
+                try:
+                    cursor.execute("PRAGMA optimize")
+                except Exception:
+                    pass
                 cursor.close()
 
         return engine
