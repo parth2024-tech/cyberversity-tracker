@@ -76,8 +76,19 @@ class GitHubTrendingFetcher(BaseFetcher):
 
                 content = "\n".join(content_parts)
 
+                # Only accept security-relevant or AI-security repositories
+                combined_info = f"{repo_name} {description}".lower()
+                sec_terms = (
+                    "security", "exploit", "cve", "poc", "vulnerability", "hack", "payload",
+                    "malware", "ransomware", "reverse", "audit", "pentest", "redteam", "blueteam",
+                    "jailbreak", "prompt-injection", "adversarial", "defense", "auth", "bypass",
+                    "sandbox", "agent", "llm", "deepseek", "qwen"
+                )
+                if not any(term in combined_info for term in sec_terms):
+                    continue
+
                 entries.append({
-                    "title": f"Trending: {repo_name}",
+                    "title": f"Security Tool / PoC: {repo_name}",
                     "url": repo_url,
                     "content": content,
                     "published_at": datetime.utcnow(),
