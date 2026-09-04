@@ -1,27 +1,34 @@
 # 📰 THE CYBER INTELLIGENCE CHRONICLE
-**Autonomous 10-Page Comprehensive Intelligence Broadsheet Dossier • Edition #2180**  
-*Date: Thursday, September 03, 2026 • 23:25 UTC • Monitoring Horizon: 5 Hours • Verified Across 92 Sensing Arrays*
+**Autonomous 10-Page Comprehensive Intelligence Broadsheet Dossier • Edition #2182**  
+*Date: Friday, September 04, 2026 • 08:31 UTC • Monitoring Horizon: 5 Hours • Verified Across 92 Sensing Arrays*
 
 ---
 
 ## 🏛️ [PAGE 1] FRONT PAGE: BREAKING ZERO-DAY & GLOBAL LEAD INVESTIGATION
-### 🚨 Security Tool / PoC: siyuan-note/siyuan
-- **Threat Velocity Index**: `30/100` | **Severity Score**: `15/100` | **Blast Radius**: `10/100`
-- **Exploitation Vector**: Attack archetype: Standard Vulnerability - Standard vulnerability exploitation
+### 🚨 CISA KEV: CVE-2023-4966 - Citrix NetScaler ADC and NetScaler Gateway Buffer Overflow Vulnerability
+- **Threat Velocity Index**: `100/100` | **Severity Score**: `100/100` | **Blast Radius**: `10/100`
+- **Exploitation Vector**: Attack archetype: Standard Vulnerability - Memory corruption via buffer overflow
 - **Direct Remediation Directive**: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior
 
-SiYuan is a privacy-first personal knowledge management system, supporting fine-grained block-level reference and Markdown WYSIWYG. To learn more, read the online user guide or join the SiYuan English Discussion Forum . Most features are free, even for commercial use. Some features are only available to paid members, for more details please refer to Pricing . It is recommended to give priority to installing through the application market on desktop and mobile, so that you can upgrade the version with one click in the future.
+Citrix NetScaler ADC and NetScaler Gateway contain a buffer overflow vulnerability that allows for sensitive information disclosure when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server.
 
-### ⚡ SECONDARY ANCHOR DISPATCH: Security Tool / PoC: activepieces/activepieces
-Documentation 🌪️ Create a Piece 🖉 Deploy 🔥 Join Discord All-in-one AI automation designed to be extensible through a type-safe pieces framework written in TypeScript . When you contribute pieces to Activepieces they become automatically available as MCP servers that you can use with LLMs through Claude Desktop, Cursor or Windsurf! 🌐 Open Ecosystem: All pieces are open source and available on npmjs.com, 60% of the pieces are contributed by the community . 🛠️ Largest open source MCP toolkit : All our pieces (280+) are available as MCP that you can use with LLMs on Claude Desktop, Cursor or Windsurf. 🛠️ Pieces are written in Typescript : Pieces are npm packages in TypeScript, offering full customization with the best developer experience, including hot reloading for local piece development on your machine. 😎
+Required Action: Apply mitigations and kill all active and persistent sessions per vendor instructions [https://www.netscaler.com/blog/news/cve-2023-4966-critical-security-update-now-available-for-netscaler-adc-and-netscaler-gateway/] OR discontinue use of the produ A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
+
+### ⚡ SECONDARY ANCHOR DISPATCH: CISA KEV: CVE-2020-12271 - Sophos SFOS SQL Injection Vulnerability
+Sophos Firewall operating system (SFOS) firmware contains a SQL injection vulnerability when configured with either the administration (HTTPS) service or the User Portal is exposed on the WAN zone. Successful exploitation may cause remote code execution to exfiltrate usernames and hashed passwords for the local device admin(s), portal admins, and user accounts used for remote access (but not external Active Directory or LDAP passwords).
+
+Required Action: Apply updates per vendor instructions.
+Du A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Implement parameterized queries and input sanitization; Apply official vendor patches immediately; Restrict network ingress and isolate affected components. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
 
 #### Top Flash Bulletins
-- **Security Tool / PoC: slackhq/nebula** (VEL `30`) — Nebula is a scalable overlay networking tool with a focus on performance, simplicity and security. It lets you seamlessly connect computers anywhere in the world. Nebula is portable, and runs on Linux, OSX, Windows, iOS, and Android. It can be used to connect a small number of computers, but is also able to connect tens of thousands of computers. Nebula incorporates a number of existing concepts like encryption, security groups, certificates, and tunneling. What makes Nebula different to existing offerings is that it brings all of these ideas together, resulting in a sum that is greater than its individual parts. You can read more about Nebula here . You can also join the NebulaOSS Slack group here . Check the releases page for downloads or see the Distribution Packages section.
-- **Security Tool / PoC: khoj-ai/khoj** (VEL `30`) — 📑 Docs • 🌐 Web • 🔥 App • 💬 Discord • ✍🏽 Blog Khoj is a personal AI app to extend your capabilities. It smoothly scales up from an on-device personal AI to a cloud-scale enterprise AI. You can see the full feature list here . To get started with self-hosting Khoj, read the docs . Khoj is available as a cloud service, on-premises, or as a hybrid solution. To learn more about Khoj Enterprise, visit our website .
-- **Security Tool / PoC: siyuan-note/siyuan** (VEL `30`) — SiYuan is a privacy-first personal knowledge management system, supporting fine-grained block-level reference and Markdown WYSIWYG. To learn more, read the online user guide or join the SiYuan English Discussion Forum . Most features are free, even for commercial use. Some features are only available to paid members, for more details please refer to Pricing . It is recommended to give priority to installing through the application market on desktop and mobile, so that you can upgrade the version with one click in the future.
-- **Security Tool / PoC: activepieces/activepieces** (VEL `30`) — AI Agents & MCPs & AI Workflow Automation • (~400 MCP servers for AI agents) • AI Automation / AI Agent with MCPs • AI Workflows & AI Agents • MCPs for AI Agents
-Language: TypeScript
-Stars: 20 stars today
+- **CISA KEV: CVE-2025-20352 - Cisco IOS and IOS XE Software SNMP Denial of Service and Remote Code Execution Vulnerability** (VEL `100`) — Cisco IOS and IOS XE contains a stack-based buffer overflow vulnerability in the Simple Network Management Protocol (SNMP) subsystem that could allow for denial of service or remote code execution. A successful exploit could allow a low-privileged attacker to cause the affected system to reload, resulting in a DoS condition, or allow a high-privileged attacker to execute arbitrary code as the root user and obtain full control of the affected system.
+
+Required Action: Apply mitigations per vendor A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
+- **CISA KEV: CVE-2008-0015 -  Microsoft Windows Video ActiveX Control Remote Code Execution Vulnerability** (VEL `95`) — Microsoft Windows Video ActiveX Control contains a remote code execution vulnerability. An attacker could exploit the vulnerability by constructing a specially crafted Web page. When a user views the Web page, the vulnerability could allow remote code execution. An attacker who successfully exploited this vulnerability could gain the same user rights as the logged-on user.
+
+Required Action: Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or dis A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
+- **CISA KEV: CVE-2013-3918 - Microsoft Windows Out-of-Bounds Write Vulnerability** (VEL `95`) — Microsoft Windows contains an out-of-bounds write vulnerability in the InformationCardSigninHelper Class ActiveX control, icardie.dll. An attacker could exploit the vulnerability by constructing a specially crafted webpage. When a user views the webpage, the vulnerability could allow remote code execution. An attacker who successfully exploited this vulnerability could gain the same user rights as the current user. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). User A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
+- **CVE-2026-63520: Microsoft SharePoint Remote Code Execution (FIXED)** (VEL `100`) — OverviewRapid7 Labs conducted a zero-day research project against Microsoft SharePoint, resulting in the discovery of two new vulnerabilities that, when chained together, achieve unauthenticated remote code execution (RCE) against a vulnerable SharePoint server. Today, both Rapid7 and Microsoft are disclosing the second vulnerability in this chain, the RCE vulnerability CVE-2026-63520. The first vulnerability in the chain, CVE-2026-55040, was disclosed by Rapid7 and Microsoft last month.Our full
 
 ---
 
@@ -39,38 +46,40 @@ The global threat environment remains in an elevated DEFCON 3 posture. Telemetry
 | **Software Supply Chain** | High | Build Pipeline Poisoning| CycloneDX SBOM verification | Enforce signed commits & package pinning |
 
 ### Prioritized 24-Hour Executive Directives
-1. **Security Tool / PoC: slackhq/nebula**: Verify immediate patch compliance and validate identity logs.
-1. **Security Tool / PoC: khoj-ai/khoj**: Verify immediate patch compliance and validate identity logs.
-1. **HPE patches critical ArubaOS-CX remote code execution flaw**: Verify immediate patch compliance and validate identity logs.
-1. **GHSA: GHSA-79wm-x847-7cvg - Claude Code Templates: Unauthenticated OS command injection (RCE) in Claude Code Studio server (--studio)**: Verify immediate patch compliance and validate identity logs.
-1. **GHSA: GHSA-fg9p-mrxr-hvq7 - Orval: RCE via OpenAPI path -> unescaped request-URL template literal (backtick breakout)**: Verify immediate patch compliance and validate identity logs.
+1. **CISA KEV: CVE-2025-53690 - Sitecore Multiple Products Deserialization of Untrusted Data Vulnerability**: Verify immediate patch compliance and validate identity logs.
+1. **CISA KEV: CVE-2020-14644 - Oracle WebLogic Server Remote Code Execution Vulnerability**: Verify immediate patch compliance and validate identity logs.
+1. **CISA KEV: CVE-2020-0618 - Microsoft SQL Server Reporting Services Remote Code Execution Vulnerability**: Verify immediate patch compliance and validate identity logs.
+1. **Researcher Releases FalconFlank PoC Showing Privilege Escalation in CrowdStrike Falcon**: Verify immediate patch compliance and validate identity logs.
+1. **Critical SonicWall SMA1000 Vulnerabilities CVE-2026-83548, CVE-2026-83549 Exploited in the Wild**: Verify immediate patch compliance and validate identity logs.
 
 ---
 
 ## 🔬 [PAGE 3] AI FRONTIER, LLM VULNERABILITIES & PRE-CVE EARLY WARNINGS
 ### The Autonomous Agent Attack Surface
 As enterprises deploy autonomous agents endowed with tool-use capabilities, untrusted input boundaries become porous. Adversaries embed malicious prompt injection sequences into web pages, documents, and RAG vector stores. When an agent processes this untrusted data, the injection hijacks execution context, forcing unauthorized file reads, shell commands, or database exfiltration.
-### ⚡ Security Tool / PoC: slackhq/nebula
-- **Velocity**: `30/100` | **Source**: `github.com`
+### ⚡ CISA KEV: CVE-2025-20352 - Cisco IOS and IOS XE Software SNMP Denial of Service and Remote Code Execution Vulnerability
+- **Velocity**: `100/100` | **Source**: `nvd.nist.gov`
 
-Nebula is a scalable overlay networking tool with a focus on performance, simplicity and security. It lets you seamlessly connect computers anywhere in the world. Nebula is portable, and runs on Linux, OSX, Windows, iOS, and Android. It can be used to connect a small number of computers, but is also able to connect tens of thousands of computers. Nebula incorporates a number of existing concepts like encryption, security groups, certificates, and tunneling. What makes Nebula different to existing offerings is that it brings all of these ideas together, resulting in a sum that is greater than its individual parts. You can read more about Nebula here . You can also join the NebulaOSS Slack group here . Check the releases page for downloads or see the Distribution Packages section.
+Cisco IOS and IOS XE contains a stack-based buffer overflow vulnerability in the Simple Network Management Protocol (SNMP) subsystem that could allow for denial of service or remote code execution. A successful exploit could allow a low-privileged attacker to cause the affected system to reload, resulting in a DoS condition, or allow a high-privileged attacker to execute arbitrary code as the root user and obtain full control of the affected system.
 
-### ⚡ Security Tool / PoC: khoj-ai/khoj
-- **Velocity**: `30/100` | **Source**: `github.com`
+Required Action: Apply mitigations per vendor A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
 
-📑 Docs • 🌐 Web • 🔥 App • 💬 Discord • ✍🏽 Blog Khoj is a personal AI app to extend your capabilities. It smoothly scales up from an on-device personal AI to a cloud-scale enterprise AI. You can see the full feature list here . To get started with self-hosting Khoj, read the docs . Khoj is available as a cloud service, on-premises, or as a hybrid solution. To learn more about Khoj Enterprise, visit our website .
+### ⚡ CISA KEV: CVE-2008-0015 -  Microsoft Windows Video ActiveX Control Remote Code Execution Vulnerability
+- **Velocity**: `95/100` | **Source**: `nvd.nist.gov`
 
-### ⚡ Security Tool / PoC: siyuan-note/siyuan
-- **Velocity**: `30/100` | **Source**: `github.com`
+Microsoft Windows Video ActiveX Control contains a remote code execution vulnerability. An attacker could exploit the vulnerability by constructing a specially crafted Web page. When a user views the Web page, the vulnerability could allow remote code execution. An attacker who successfully exploited this vulnerability could gain the same user rights as the logged-on user.
 
-SiYuan is a privacy-first personal knowledge management system, supporting fine-grained block-level reference and Markdown WYSIWYG. To learn more, read the online user guide or join the SiYuan English Discussion Forum . Most features are free, even for commercial use. Some features are only available to paid members, for more details please refer to Pricing . It is recommended to give priority to installing through the application market on desktop and mobile, so that you can upgrade the version with one click in the future.
+Required Action: Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or dis A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
 
-### ⚡ Security Tool / PoC: activepieces/activepieces
-- **Velocity**: `30/100` | **Source**: `github.com`
+### ⚡ CISA KEV: CVE-2013-3918 - Microsoft Windows Out-of-Bounds Write Vulnerability
+- **Velocity**: `95/100` | **Source**: `nvd.nist.gov`
 
-AI Agents & MCPs & AI Workflow Automation • (~400 MCP servers for AI agents) • AI Automation / AI Agent with MCPs • AI Workflows & AI Agents • MCPs for AI Agents
-Language: TypeScript
-Stars: 20 stars today
+Microsoft Windows contains an out-of-bounds write vulnerability in the InformationCardSigninHelper Class ActiveX control, icardie.dll. An attacker could exploit the vulnerability by constructing a specially crafted webpage. When a user views the webpage, the vulnerability could allow remote code execution. An attacker who successfully exploited this vulnerability could gain the same user rights as the current user. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). User A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
+
+### ⚡ CVE-2026-63520: Microsoft SharePoint Remote Code Execution (FIXED)
+- **Velocity**: `100/100` | **Source**: `rapid7.com`
+
+OverviewRapid7 Labs conducted a zero-day research project against Microsoft SharePoint, resulting in the discovery of two new vulnerabilities that, when chained together, achieve unauthenticated remote code execution (RCE) against a vulnerable SharePoint server. Today, both Rapid7 and Microsoft are disclosing the second vulnerability in this chain, the RCE vulnerability CVE-2026-63520. The first vulnerability in the chain, CVE-2026-55040, was disclosed by Rapid7 and Microsoft last month.Our full
 
 
 ---
@@ -78,25 +87,25 @@ Stars: 20 stars today
 ## 🇨🇳 [PAGE 4] SOVEREIGN NATION-STATE & CHINA CYBER RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
 ### Sovereign Vulnerability Governance & Asian Threat Matrix
 Under China's *Regulations on the Management of Network Product Security Vulnerabilities*, zero-day disclosures must be submitted to the Ministry of Industry and Information Technology (MIIT) prior to public release. This sovereign window provides regional offensive research teams lead time before international NVD assignments.
-### 🌐 Increasing active parameters per token in MOE (Qwen 35B A4B+) reduce reasoning token by 8.5% - and you don't need to train or finetune!
-- **Sovereign Source**: `reddit.com`
+### 🌐 VMware ESXi CVE-2024-37085 vulnerability verification analysis
+- **Sovereign Source**: `mp.weixin.qq.com`
 
-I want to share a short paper just published exploring a simple but surprisingly effective optimization for sparse MoE reasoning models. The idea: Instead of retraining anything, we just tweak the router at runtime. Specifically, we expand the expert selection budget (N≥KN≥K) only in the late transformer layers, with a linear decay factor applied to the extra experts. Early layers stay untouched. So Qwen 3.6 35B A3B becomes Qwen 3.6 35B A4B+ ! What we found — "Succinct Convergence": When you giv
+Qiming Xingchen 2024-08-08 17:38 Beijing Recently, Microsoft disclosed a report of an ESXi vulnerability (CVE-2024-37085) in the field attack. The vulnerability is a certification bypass vulnerability in VMware ESXi that has been exploited by multiple ransomware programs. Through this vulnerability, the attacker can gain full operational permission to join the ESXi of the AD domain. For more security information and analysis articles on controlling the virtual machine contained in the ESXi, please pay attention to Qiming Xingchen ADLab WeChat Official Account and the official website (adlab.venustech.com.cn) 01 Vulnerability Overview Recently, Microsoft disclosed an ESXi vulnerability (number CVE-2024-37085) in-field attack report [1]. The vulnerability is a certification bypass vulnerability in VMware ESXi that has been exploited by multiple ransomware programs. Through this vulnerability, an attacker can gain full operational rights to join the ESXi of the AD domain, control the virtual machines contained in the ESXi, and so on. The NVD of the vulnerability is described as [2]: VMware ESXi contains an authentication bypass vulnerability. A malicious actor with sufficient Acti ve Directory (AD) permissions can gain full access
 
-### 🌐 High Threat Security Alert (A23-04-06): Multiple Vulnerabilities in Microsoft Products (April 2023)
-- **Sovereign Source**: `govcert.gov.hk`
+### 🌐 Mr_Rot13, a mystery hacking group with 6 years of clandestine activities, is deploying a backdoor Trojan using a high-risk vulnerability in cPanel
+- **Sovereign Source**: `mp.weixin.qq.com`
 
-Microsoft has released security updates addressing multiple vulnerabilities which affect several Microsoft products or components. The list of security updates can be found at: https://msrc.microsoft.com/update-guide/releaseNote/2023-Apr Reports indicated that an elevation of privilege vulnerability (CVE-2023-28252) in Microsoft Windows and Server is being exploited in the wild. In addition, multiple remote code execution vulnerabilities (CVE-2023-21554, CVE-2023-28219, CVE-2023-28220, CVE-2023-28231, CVE-2023-28232, CVE-2023-28250 and CVE-2023-28291) are also at a high risk of exploitation. System administrators and users are advised to take immediate action to patch your affected systems to mitigate the elevated risk of cyber attacks. Depending on the vulnerability exploited, a successful attack could lead to remote code execution, denial of service, elevation of privilege, information disclosure, security feature bypass and spoofing. Patches for affected products are available from the Windows Update / Microsoft Update Catalog. System administrators and users of affected systems should follow the recommendations provided by the product vendor and take immediate actions to mitigate the risk.
+Original Qi’anxin X Lab 2026-05-11 15:42 Beijing Background CVE-2026-41940 is a high-risk unauthorized authentication bypass vulnerability affecting cPanel & WHM. Background CVE-2026-41940 is a high-severity unauthorized authentication bypass vulnerability affecting cPanel & WHM. This product is widely used in Linux server operation and maintenance and virtual host management. The vulnerability has a CVSS score of 9.8 (Critical) and allows an attacker to remotely bypass authentication and take over the cPanel/WHM control panel without providing an account or password, allowing an unauthenticated remote attacker to gain administrator rights on the affected server. Since the vulnerability was publicly disclosed on April 28, 2026, the XLab network threat awareness system has continuously monitored that a large number of black and gray organizations are actively using this vulnerability to carry out network attacks. Related behaviors include mining, extortion, botnet proliferation, backdoor implantation and other malicious activities. Monitoring data shows that there are currently more than 2,000 attack source IPs from around the world involved in automated attacks and cybercriminal activities targeting this vulnerability. These IPs are distributed in many regions around the world, mainly from Germany, the United States, Brazil, the Netherlands and other regions. On May 2, the security community revealed that hackers had used this vulnerability to successfully invade Southeast Asian government and military institutions and steal approximately 4.37G of sensitive files. 5
 
-### 🌐 High Threat Security Alert (A23-04-06): Multiple Vulnerabilities in Microsoft Products (April 2023)
-- **Sovereign Source**: `govcert.gov.hk`
+### 🌐 Antian Mobile Recent Threat Intelligence Inventory (July 14 - July 29)
+- **Sovereign Source**: `mp.weixin.qq.com`
 
-Microsoft has released security updates addressing multiple vulnerabilities which affect several Microsoft products or components.
+AVL Threat Intelligence Team 2025-07-30 09:50 Sichuan A quick overview of recent threat intelligence! In this issue: Mobile Security● Konfety is back, evolving with ZIP manipulation and dynamic loading● New Android malware attacks: 607 domains used to spread fake Telegram apps● SarangTrap ransomware campaign: Fake dating apps target Android and iOS users● Malicious Android apps imitate popular Indian banking apps to steal login credentials● Major evolution in the mobile threat landscape: Renting Android malware with 2FA blocking and AV bypass capabilities becomes cheaper APT incident● Iranian APT exploits DCHSpy during the Israel-Iraq conflict Android monitoring software ● APT36 targets BOSS Linux to steal critical data ● Elephant APT group attacks Turkish military industrial enterprises ● LameHug, the first AI-driven malware, is released and is related to the Russian APT28 group ● APT-C-06 (DarkHotel) attacks using malware as bait Vulnerability news ● Dahua IP camera buffer overflow vulnerability causes devices to suffer RCE ● LG Innotek camera vulnerability allows attackers to gain administrator access ● CVE-2025-7503: Domestic IP cameras have hidden backdoors that allow attackers to obtain Root permissions
 
-### 🌐 Security Alert (A23-04-07): Multiple Vulnerabilities in Fortinet Products
-- **Sovereign Source**: `govcert.gov.hk`
+### 🌐 Information Security Vulnerability Monthly Report (July 2026)
+- **Sovereign Source**: `mp.weixin.qq.com`
 
-Fortinet released security advisories to address multiple vulnerabilities in Fortinet products.
+Original CNNVD 2026-08-06 16:58 Beijing According to statistics from the National Information Security Vulnerability Database (CNNVD), 9,702 vulnerabilities were collected in July 2026. Click the blue text to follow our vulnerability situation. Vulnerability situation According to statistics from the National Information Security Vulnerability Database (CNNVD), 9,702 vulnerabilities were collected in July 2026. This month, 3,254 vulnerabilities were reported, including 3,196 information technology product vulnerabilities (general vulnerabilities) and 58 network information system vulnerabilities (event-type vulnerabilities). The vulnerability platform pushed 18,374 vulnerabilities. Major vulnerability notification Alibaba FASTJSON 2 input validation error vulnerability (CNNVD-2026-48284621/CVE-2026-16723): There is a security vulnerability in Alibaba FASTJSON 2 versions 1.2.68 to 1.2.83. This vulnerability is caused by input validation errors and deserialization injection issues. It can be exploited without enabling AutoType or classpath gadgets in the default configuration, which may lead to remote code execution. Currently, the manufacturer has released an upgrade patch to fix this security issue. The link to obtain the patch is: https://github.com/alibaba/fastjson2/wiki/Security-Advisory:-Remote-Code-Execution-in-fastjso
 
 
 ---
@@ -104,52 +113,30 @@ Fortinet released security advisories to address multiple vulnerabilities in For
 ## 🔴 [PAGE 5] HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV CATALOG
 ### Active In-The-Wild Exploits
 Adversaries prioritize unauthenticated remote code execution and session token forgery. Recent threat actor activity demonstrates automated mass scanning of public IP ranges within hours of advisory disclosures.
-### 🛡️ HPE patches critical ArubaOS-CX remote code execution flaw
-- **Severity**: `75/100` | **Reference**: https://www.bleepingcomputer.com/news/security/hpe-patches-critical-arubaos-cx-remote-code-execution-flaw/
+### 🛡️ Critical SonicWall SMA1000 Vulnerabilities CVE-2026-83548, CVE-2026-83549 Exploited in the Wild
+- **Severity**: `100/100` | **Reference**: https://www.rapid7.com/blog/post/etr-critical-sonicwall-sma1000-vulnerabilities-cve-2026-83548-cve-2026-83549-exploited-in-the-wild
 
-Hewlett Packard Enterprise (HPE) has patched a critical vulnerability in the ArubaOS-CX network operating system that could lead to remote code execution. [...]
+OverviewOn September 1, 2026, SonicWall disclosed two vulnerabilities affecting SonicWall SMA1000 appliances that the vendor says are being actively exploited in the wild. The vulnerabilities, CVE-2026-83548 and CVE-2026-83549, can be chained to achieve unauthenticated remote code execution (RCE) on affected appliances.CVE-2026-83548 is a critical pre-authentication server-side request forgery (SSRF) vulnerability in the SMA1000 Appliance Work Place interface. The flaw has a CVSS v3.1 base score
 
-### 🛡️ GHSA: GHSA-fg9p-mrxr-hvq7 - Orval: RCE via OpenAPI path -> unescaped request-URL template literal (backtick breakout)
-- **Severity**: `30/100` | **Reference**: https://github.com/advisories/GHSA-fg9p-mrxr-hvq7
+### 🛡️ CVE-2026-19490: Critical Vulnerability Affecting Citrix NetScaler ADC and NetScaler Gateway
+- **Severity**: `100/100` | **Reference**: https://www.rapid7.com/blog/post/etr-cve-2026-19490-critical-vulnerability-affecting-citrix-netscaler-adc-and-netscaler-gateway
 
-### Summary
+OverviewOn August 19, 2026, a security advisory was published for CVE-2026-19490, a critical authentication bypass vulnerability affecting Citrix NetScaler ADC and NetScaler Gateway. The vulnerability carries a CVSS v4.0 base score of 9.3 and can be exploited remotely by an unauthenticated attacker over the network without user interaction or elevated privileges.NetScaler ADC and NetScaler Gateway are widely deployed enterprise networking products commonly positioned at or near the network perim
 
-Orval emits the OpenAPI path into the generated request URL as a TEMPLATE LITERAL (`` `/users/...` ``) without escaping the backtick character. A path containing a backtick closes the template literal and injects a concatenation expression that is evaluated when the generated URL/request/key function is called, executing attacker-controlled code. Affects the axios, fetch, react-query, and swr clients. Verified on Orval 8.19.0; survives Orval's default OpenAPI validation.
+### 🛡️ Rapid7 Analysis: Unauthenticated Remote Code Execution in JetBrains TeamCity (CVE-2026-63077)
+- **Severity**: `100/100` | **Reference**: https://www.rapid7.com/blog/post/ra-unauthenticated-rce-in-jetbrains-teamcity-cve-2026-63077
 
-### Detail
+OverviewOn July 27, 2026, JetBrains published a security advisory for CVE-2026-63077, a critical unsafe deserialization vulnerability affecting JetBrains TeamCity. An attacker who can reach a TeamCity server over HTTP or HTTPS can exploit the agent polling protocol without credentials and execute operating system commands with the privileges of the TeamCity server process.JetBrains reported no known active exploitation when it disclosed the vulnerability. However, on August 5, 2026, CISA added C
 
-### 🛡️ GHSA: GHSA-88f2-fpv8-89q2 - Orval: RCE via servers[].url -> unescaped request-URL template literal (with getBaseUrlFromSpecification)
-- **Severity**: `30/100` | **Reference**: https://github.com/advisories/GHSA-88f2-fpv8-89q2
+### 🛡️ KindaRails2Shell: CVE-2026-66066, Critical Arbitrary File Read and Possible Remote Code Execution in Ruby on Rails
+- **Severity**: `100/100` | **Reference**: https://www.rapid7.com/blog/post/etr-kindarails2shell-cve-2026-66066-critical-arbitrary-file-read-and-possible-remote-code-execution-in-ruby-on-rails
 
-### Summary
+OverviewOn July 29, 2026, the Ruby on Rails project published a security advisory for CVE-2026-66066, a critical vulnerability affecting Active Storage image processing when used in conjunction with the libvips image processing library. The vulnerability has a CVSSv4 score of 9.5 and is classified as Initialization of a Resource with an Insecure Default (CWE-1188). An unauthenticated attacker may be able to leverage CVE-2026-66066 and read files accessible to the Rails application process, poten
 
-When Orval is configured with `output.baseUrl.getBaseUrlFromSpecification: true`, it bakes the spec's `servers[0].url` into the generated request URL as a template literal without escaping the backtick. A server URL containing a backtick closes the template literal and injects a concatenation expression evaluated when the generated URL/request function is called, executing attacker-controlled code. Verified on Orval 8.19.0 (fetch client); survives default OpenAPI validation.
+### 🛡️ CISA KEV: CVE-2025-32433 - Erlang Erlang/OTP SSH Server Missing Authentication for Critical Function Vulnerability
+- **Severity**: `80/100` | **Reference**: https://nvd.nist.gov/vuln/detail/CVE-2025-32433
 
-### De
-
-### 🛡️ GHSA: GHSA-w727-8j6c-2rj4 - Orval: Import-time RCE via default schema -> zod module-level template literal
-- **Severity**: `30/100` | **Reference**: https://github.com/advisories/GHSA-w727-8j6c-2rj4
-
-### Summary
-
-Orval's zod schema generation emits a schema's `default` value as a module-level template literal (`export const …Default = `<default>`;`) without escaping `${` or the backtick. A default of the form `v${<code>}w` injects a live JavaScript expression that is evaluated when the generated zod schema module is imported, executing attacker-controlled code at import — no request or function call needed. Verified on Orval 8.19.0; survives default OpenAPI validation.
-
-### Details
-
-```ts
-ex
-
-### 🛡️ GHSA: GHSA-2h9g-j24r-h63g - Orval: Import-time RCE via array-items default -> zod module-level template literal
-- **Severity**: `30/100` | **Reference**: https://github.com/advisories/GHSA-2h9g-j24r-h63g
-
-### Summary
-
-Orval's zod schema generation emits the **array-items** `default` value as a module-level template literal (`export const …Default = `<default>`;`) without escaping `${` or the backtick. A default of the form `v${<code>}w` injects a live JavaScript expression evaluated when the generated zod schema module is imported, executing attacker-controlled code at import — no request or function call needed. Verified on Orval 8.19.0; survives default OpenAPI validation.
-
-### Details
-
-```ts
-e
+Erlang Erlang/OTP SSH server contains a missing authentication for critical function vulnerability. This could allow an attacker to execute arbitrary commands without valid credentials, potentially leading to unauthenticated remote code execution (RCE). By exploiting a flaw in how SSH protocol messages are handled, a malicious actor could gain unauthorized access to affected systems. This vulnerability could affect various products that implement Erlang/OTP SSH server, including—but not limited 
 
 
 ---
@@ -157,27 +144,29 @@ e
 ## ⚡ [PAGE 6] VERIFIED PROOF-OF-CONCEPTS (POCs) & RED TEAM EXPLOIT REPOSITORIES
 ### Exploit Weaponization Velocity
 Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub repositories have drastically compressed enterprise patch windows. Defending teams must deploy proactive network signatures before weaponized modules are integrated into automated attack frameworks like Metasploit and Nuclei.
-### 💥 Security Tool / PoC: slackhq/nebula
-- **Source**: `github.com`
+### 💥 CISA KEV: CVE-2025-20352 - Cisco IOS and IOS XE Software SNMP Denial of Service and Remote Code Execution Vulnerability
+- **Source**: `nvd.nist.gov`
 
-Nebula is a scalable overlay networking tool with a focus on performance, simplicity and security. It lets you seamlessly connect computers anywhere in the world. Nebula is portable, and runs on Linux, OSX, Windows, iOS, and Android. It can be used to connect a small number of computers, but is also able to connect tens of thousands of computers. Nebula incorporates a number of existing concepts like encryption, security groups, certificates, and tunneling. What makes Nebula different to existing offerings is that it brings all of these ideas together, resulting in a sum that is greater than its individual parts. You can read more about Nebula here . You can also join the NebulaOSS Slack group here . Check the releases page for downloads or see the Distribution Packages section.
+Cisco IOS and IOS XE contains a stack-based buffer overflow vulnerability in the Simple Network Management Protocol (SNMP) subsystem that could allow for denial of service or remote code execution. A successful exploit could allow a low-privileged attacker to cause the affected system to reload, resulting in a DoS condition, or allow a high-privileged attacker to execute arbitrary code as the root user and obtain full control of the affected system.
 
-### 💥 Security Tool / PoC: khoj-ai/khoj
-- **Source**: `github.com`
+Required Action: Apply mitigations per vendor A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
 
-📑 Docs • 🌐 Web • 🔥 App • 💬 Discord • ✍🏽 Blog Khoj is a personal AI app to extend your capabilities. It smoothly scales up from an on-device personal AI to a cloud-scale enterprise AI. You can see the full feature list here . To get started with self-hosting Khoj, read the docs . Khoj is available as a cloud service, on-premises, or as a hybrid solution. To learn more about Khoj Enterprise, visit our website .
+### 💥 CISA KEV: CVE-2008-0015 -  Microsoft Windows Video ActiveX Control Remote Code Execution Vulnerability
+- **Source**: `nvd.nist.gov`
 
-### 💥 Security Tool / PoC: siyuan-note/siyuan
-- **Source**: `github.com`
+Microsoft Windows Video ActiveX Control contains a remote code execution vulnerability. An attacker could exploit the vulnerability by constructing a specially crafted Web page. When a user views the Web page, the vulnerability could allow remote code execution. An attacker who successfully exploited this vulnerability could gain the same user rights as the logged-on user.
 
-SiYuan is a privacy-first personal knowledge management system, supporting fine-grained block-level reference and Markdown WYSIWYG. To learn more, read the online user guide or join the SiYuan English Discussion Forum . Most features are free, even for commercial use. Some features are only available to paid members, for more details please refer to Pricing . It is recommended to give priority to installing through the application market on desktop and mobile, so that you can upgrade the version with one click in the future.
+Required Action: Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or dis A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
 
-### 💥 Security Tool / PoC: activepieces/activepieces
-- **Source**: `github.com`
+### 💥 CISA KEV: CVE-2013-3918 - Microsoft Windows Out-of-Bounds Write Vulnerability
+- **Source**: `nvd.nist.gov`
 
-AI Agents & MCPs & AI Workflow Automation • (~400 MCP servers for AI agents) • AI Automation / AI Agent with MCPs • AI Workflows & AI Agents • MCPs for AI Agents
-Language: TypeScript
-Stars: 20 stars today
+Microsoft Windows contains an out-of-bounds write vulnerability in the InformationCardSigninHelper Class ActiveX control, icardie.dll. An attacker could exploit the vulnerability by constructing a specially crafted webpage. When a user views the webpage, the vulnerability could allow remote code execution. An attacker who successfully exploited this vulnerability could gain the same user rights as the current user. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). User A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees. Remediation Directive: Apply official vendor patches immediately; Restrict network ingress and isolate affected components; Monitor execution logs for anomalous behavior. Organizations are advised to restrict ingress network access, implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs).
+
+### 💥 CVE-2026-63520: Microsoft SharePoint Remote Code Execution (FIXED)
+- **Source**: `rapid7.com`
+
+OverviewRapid7 Labs conducted a zero-day research project against Microsoft SharePoint, resulting in the discovery of two new vulnerabilities that, when chained together, achieve unauthenticated remote code execution (RCE) against a vulnerable SharePoint server. Today, both Rapid7 and Microsoft are disclosing the second vulnerability in this chain, the RCE vulnerability CVE-2026-63520. The first vulnerability in the chain, CVE-2026-55040, was disclosed by Rapid7 and Microsoft last month.Our full
 
 
 ---
@@ -185,23 +174,33 @@ Stars: 20 stars today
 ## ☁️ [PAGE 7] CLOUD INFRASTRUCTURE, KUBERNETES & SUPPLY CHAIN DEFENSE
 ### Multi-Cloud IAM Escalation & Container Breakouts
 Container escapes and IAM permission chaining remain primary avenues for cloud tenant compromise. Attackers compromise misconfigured Kubernetes admission controllers or unpatched container runtimes to access host node namespaces.
-### ☁️ GHSA: GHSA-x67c-8pwr-m8g3 - SiYuan: Second-order SSTI to arbitrary SQL via attribute-view template column (queryBlocks): malicious imported package executes SQL on victim kernel
+### ☁️ CISA KEV: CVE-2024-1708 - ConnectWise ScreenConnect Path Traversal Vulnerability
 
-**CVE:** This vulnerability corresponds to [CVE-2026-72807](https://nvd.nist.gov/vuln/detail/CVE-2026-72807).
+ConnectWise ScreenConnect contains a path traversal vulnerability which could allow an attacker to execute remote code or directly impact confidential data and critical systems.
 
-### Summary
+Required Action: Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.
+Due Date: 2026-05-12
 
-Attribute-view (AV) template columns are live-evaluated on every render and expose the `queryBlocks` template function, which runs raw SQL on the read-write database handle (`SelectBlocksRawStmt`, using `?`→argument string substitution rather than parameter binding). AV mutations are admin-gated, so this is not directly reader-injectable but it is a second-order vector: an 
+### ☁️ CISA KEV: CVE-2025-40551 - SolarWinds Web Help Desk Deserialization of Untrusted Data Vulnerability
 
-### ☁️ GHSA: GHSA-fph3-ghq9-vw66 - SiYuan: Unauthenticated SQL execution and REGEXP injection via fullTextSearchAssetContent (publish mode): reader-reachable raw SQL (method 2) and unescaped REGEXP (method 3) on read-write asset-conten
+SolarWinds Web Help Desk contains a deserialization of untrusted data vulnerability that could lead to remote code execution, which would allow an attacker to run commands on the host machine. This could be exploited without authentication.
 
-**CVE:** This vulnerability corresponds to [CVE-2026-69083](https://nvd.nist.gov/vuln/detail/CVE-2026-69083).
+Required Action: Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.
+Due Date: 2026-02-06
 
-### Summary
+### ☁️ CISA KEV: CVE-2026-9082 - Drupal Core SQL Injection Vulnerability
 
-The `/api/search/fullTextSearchAssetContent` endpoint exposes two SQL flaws on the asset-content database, both reachable by the publish `RoleReader` token and by the anonymous account when `Publish.Auth.Enable` is `false`:
+Drupal Core contains a SQL injection vulnerability that could allow for privilege escalation and remote code execution via specially crafted requests sent with the database abstraction API.
 
-1. **method 2** passes a client-supplied SQL statement to the read-write asset-content DB with no single-statement or read-only guard, and without the 
+Required Action: Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.
+Due Date: 2026-05-27
+
+### ☁️ CISA KEV: CVE-2025-57819 - Sangoma FreePBX Authentication Bypass Vulnerability
+
+Sangoma FreePBX contains an authentication bypass vulnerability due to insufficiently sanitized user-supplied data allows unauthenticated access to FreePBX Administrator leading to arbitrary database manipulation and remote code execution.
+
+Required Action: Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.
+Due Date: 2025-09-19
 
 
 ---
@@ -209,41 +208,37 @@ The `/api/search/fullTextSearchAssetContent` endpoint exposes two SQL flaws on t
 ## 🌍 [PAGE 8] GLOBAL CERT BULLETINS & SECTOR IMPACT ADVISORIES
 ### Cross-Border Threat Telemetry & Critical Infrastructure Warnings
 National CERT agencies emphasize heightened resilience across energy grids, financial payment rails, and healthcare diagnostic systems. Coordinated defense alerts require cross-sector intelligence sharing.
-### 🌐 GHSA: GHSA-x67c-8pwr-m8g3 - SiYuan: Second-order SSTI to arbitrary SQL via attribute-view template column (queryBlocks): malicious imported package executes SQL on victim kernel
-- **Agency**: `github.com`
+### 🌐 CISA KEV: CVE-2023-42793 - JetBrains TeamCity Authentication Bypass Vulnerability
+- **Agency**: `nvd.nist.gov`
 
-**CVE:** This vulnerability corresponds to [CVE-2026-72807](https://nvd.nist.gov/vuln/detail/CVE-2026-72807).
+JetBrains TeamCity contains an authentication bypass vulnerability that allows for remote code execution on TeamCity Server.
 
-### Summary
+Required Action: Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.
+Due Date: 2023-10-25
 
-Attribute-view (AV) template columns are live-evaluated on every render and expose the `queryBlocks` template function, which runs raw SQL on the read-write database handle (`SelectBlocksRawStmt`, using `?`→argument string substitution rather than parameter binding). AV mutations are admin-gated, so this is not directly reader-injectable but it is a second-order vector: an 
+### 🌐 CISA KEV: CVE-2023-33009 - Zyxel Multiple Firewalls Buffer Overflow Vulnerability
+- **Agency**: `nvd.nist.gov`
 
-### 🌐 GHSA: GHSA-v7ph-r5r6-4jcj - SiYuan: Missing publish-access filter on getFileAnnotation discloses private PDF annotations of forbidden/protected documents (publish mode)
-- **Agency**: `github.com`
+Zyxel ATP, USG FLEX, USG FLEX 50(W), USG20(W)-VPN, VPN, and ZyWALL/USG firewalls contain a buffer overflow vulnerability in the notification function that could allow an unauthenticated attacker to cause denial-of-service (DoS) conditions and remote code execution on an affected device.
 
-**CVE:** This vulnerability corresponds to [CVE-2026-72808](https://nvd.nist.gov/vuln/detail/CVE-2026-72808).
+Required Action: Apply updates per vendor instructions.
+Due Date: 2023-06-26
 
-### Summary
+### 🌐 CISA KEV: CVE-2023-33010 - Zyxel Multiple Firewalls Buffer Overflow Vulnerability
+- **Agency**: `nvd.nist.gov`
 
-The `/api/asset/getFileAnnotation` endpoint returns the content of `.sya` PDF-annotation files with no publish-access check. It is gated by `CheckAuth` only, so it is reachable by the publish `RoleReader` token and by the anonymous account when `Publish.Auth.Enable` is `false`. Its sibling, the `/assets/*` asset route does enforce publish access, including the publish passw
+Zyxel ATP, USG FLEX, USG FLEX 50(W), USG20(W)-VPN, VPN, and ZyWALL/USG firewalls contain a buffer overflow vulnerability in the ID processing function that could allow an unauthenticated attacker to cause denial-of-service (DoS) conditions and remote code execution on an affected device.
 
-### 🌐 GHSA: GHSA-wgwx-479j-23vq - SiYuan: Missing authorization on refreshBacklink allows anonymous readers to trigger persistent server-side writes and unauthenticated resource amplification (publish mode)
-- **Agency**: `github.com`
+Required Action: Apply updates per vendor instructions.
+Due Date: 2023-06-26
 
-**CVE:** This vulnerability corresponds to [CVE-2026-72812](https://nvd.nist.gov/vuln/detail/CVE-2026-72812).
+### 🌐 CISA KEV: CVE-2022-24112 - Apache APISIX Authentication Bypass Vulnerability
+- **Agency**: `nvd.nist.gov`
 
-### Summary
+Apache APISIX contains an authentication bypass vulnerability that allows for remote code execution.
 
-The `/api/ref/refreshBacklink` endpoint is gated by `CheckAuth` only. Unlike its mutating siblings, it carries no `CheckAdminRole`, no `CheckReadonly`, and no inline reader-role guard so it falls through all three authorization mechanisms the codebase uses to protect write operations. A publish `RoleReader` or the anonymous account when `Publish.Auth.Enable` is `false` can 
-
-### 🌐 GHSA: GHSA-pm3w-vxp9-ccwc - SiYuan: Cross-boundary metadata disclosure via getBlockInfo (publish mode): reader-reachable document title/root info for publish-forbidden docs; sibling getDocInfo is filtered
-- **Agency**: `github.com`
-
-**CVE:** This vulnerability corresponds to [CVE-2026-68585](https://nvd.nist.gov/vuln/detail/CVE-2026-68585).
-
-### Summary
-
-The `/api/block/getBlockInfo` endpoint returns document root metadata including the document title (`rootTitle`) for a block in a publish-forbidden document, with no publish-access check. Its sibling `/api/block/getDocInfo` applies the publish-access filter, `getBlockInfo` does not. Both are gated by `CheckAuth` only, so `getBlockInfo` is reachable by the publish `RoleReade
+Required Action: Apply updates per vendor instructions.
+Due Date: 2022-09-15
 
 
 ---
@@ -270,4 +265,4 @@ The `/api/block/getBlockInfo` endpoint returns document root metadata including 
 - Disallow external access to internal administration ports (SSH, RDP, Kubernetes API).
 - Block known Tor exit nodes and anomalous cloud egress destinations.
 
-*Imprimatur: The Cyber Intelligence Chronicle • AetherGuard Autonomous SecIntel Engine • Edition #2180*
+*Imprimatur: The Cyber Intelligence Chronicle • AetherGuard Autonomous SecIntel Engine • Edition #2182*

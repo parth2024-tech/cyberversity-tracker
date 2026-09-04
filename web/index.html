@@ -414,7 +414,7 @@
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white" id="newspaper-modal-title">The Cyber Intelligence Chronicle</h2>
+              <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white" id="newspaper-modal-title">The Aether Guard — AI & Cyber Threat Gazette</h2>
               <span id="newspaper-edition-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-bold">5-HOUR CYCLE</span>
             </div>
             <p class="text-xs text-slate-400 font-mono mt-0.5" id="newspaper-modal-date">Autonomous Editorial Document // Loading...</p>
@@ -2445,7 +2445,7 @@
           const dateEl = document.getElementById('newspaper-modal-date');
           const mdView = document.getElementById('newspaper-markdown-view');
 
-          if (titleEl) titleEl.textContent = `The Cyber Intelligence Chronicle`;
+          if (titleEl) titleEl.textContent = `The Aether Guard — AI & Cyber Threat Gazette`;
           if (badgeEl) badgeEl.textContent = `EDITION #${data.edition_number || '100'}`;
           if (dateEl) {
             const dt = data.generated_at ? new Date(data.generated_at).toLocaleString() : 'Recent';

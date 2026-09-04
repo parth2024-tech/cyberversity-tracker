@@ -6,16 +6,19 @@
 <title>THE AETHER GUARD — AI & Cyber Threat Gazette</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#f4ecd8;
   --paper-dark:#e8dfc7;
+  --paper-darker:#ded3b4;
   --ink:#1a1a1a;
   --ink-light:#4a4a44;
   --rule:#1a1a1a;
   --accent:#8b0000;
   --accent2:#1c3a5e;
+  --accent-gold:#785818;
+  --accent-green:#215e2b;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
@@ -23,38 +26,89 @@ body{
   color:var(--ink);
   font-family:'Georgia','Times New Roman',serif;
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(0,0,0,0.02) 0%, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(0,0,0,0.02) 0%, transparent 40%);
+    radial-gradient(circle at 20% 30%, rgba(0,0,0,0.025) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(0,0,0,0.025) 0%, transparent 40%);
+  line-height:1.5;
 }
-.wrap{max-width:1200px;margin:0 auto;padding:20px;}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 20px;}
 
 /* Masthead */
 .masthead{
   text-align:center;
   border-bottom:6px double var(--rule);
   padding-bottom:12px;
-  margin-bottom:10px;
+  margin-bottom:12px;
 }
 .masthead .date-row{
-  display:flex;justify-content:space-between;
+  display:flex;justify-content:space-between;align-items:center;
   font-size:12px;letter-spacing:1px;text-transform:uppercase;
   border-bottom:1px solid var(--rule);
   padding-bottom:6px;margin-bottom:10px;
 }
 .masthead h1{
   font-family:'Playfair Display', Georgia, serif;
-  font-size:64px;
+  font-size:62px;
   letter-spacing:2px;
   font-weight:900;
   text-transform:uppercase;
+  line-height:1.05;
 }
 .masthead .sub{
   font-size:13px;
   font-style:italic;
-  letter-spacing:3px;
+  letter-spacing:2.5px;
   text-transform:uppercase;
-  margin-top:4px;
+  margin-top:6px;
   color:var(--ink-light);
+}
+
+/* Action & Telegraph Bar */
+.action-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:8px 0;
+  margin-bottom:14px;
+  border-top:1px solid var(--rule);
+  border-bottom:2px solid var(--rule);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+.action-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.action-btn{
+  background:var(--paper-dark);
+  border:1px solid var(--rule);
+  color:var(--ink);
+  padding:5px 12px;
+  font-family:'Georgia',serif;
+  font-size:11px;
+  font-weight:bold;
+  text-decoration:none;
+  cursor:pointer;
+  transition:background 0.15s ease, transform 0.1s ease;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+.action-btn:hover{
+  background:var(--paper-darker);
+  transform:translateY(-1px);
+}
+.action-btn.primary{
+  background:var(--accent);
+  color:var(--paper);
+  border-color:var(--accent);
+}
+.action-btn.primary:hover{
+  background:#6e0000;
+}
+.action-btn.secondary{
+  background:var(--accent2);
+  color:var(--paper);
+  border-color:var(--accent2);
 }
 
 /* Ticker */
@@ -64,14 +118,14 @@ body{
   padding:8px 0;
   overflow:hidden;
   white-space:nowrap;
-  margin-bottom:20px;
+  margin-bottom:18px;
   border-top:2px solid var(--accent);
   border-bottom:2px solid var(--accent);
 }
 .ticker span{
   display:inline-block;
   padding-left:100%;
-  animation:scroll 30s linear infinite;
+  animation:scroll 32s linear infinite;
   font-size:13px;
   letter-spacing:0.5px;
 }
@@ -80,22 +134,86 @@ body{
   100%{transform:translateX(-100%);}
 }
 
+/* Filter & Search Ribbon */
+.filter-search-ribbon{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:10px 12px;
+  margin-bottom:22px;
+  background:var(--paper-dark);
+  border:1px solid var(--rule);
+}
+.filter-tabs{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.tab-btn{
+  background:transparent;
+  border:1px solid #8e8672;
+  color:var(--ink);
+  padding:4px 10px;
+  font-size:11px;
+  font-weight:bold;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.tab-btn:hover{
+  border-color:var(--ink);
+  background:rgba(0,0,0,0.05);
+}
+.tab-btn.active{
+  background:var(--ink);
+  color:var(--paper);
+  border-color:var(--ink);
+}
+.search-box{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.search-box input{
+  background:var(--paper);
+  border:1px solid var(--rule);
+  color:var(--ink);
+  padding:5px 10px;
+  font-family:'Georgia',serif;
+  font-size:12px;
+  width:230px;
+  outline:none;
+}
+.search-box input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--accent);
+}
+
 /* Layout */
 .grid{
   display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:30px;
+  grid-template-columns:2.1fr 1fr;
+  gap:32px;
 }
 .headline{
   border-bottom:2px solid var(--rule);
-  padding-bottom:20px;
-  margin-bottom:20px;
+  padding-bottom:22px;
+  margin-bottom:22px;
+  cursor:pointer;
+  transition:opacity 0.15s ease;
+}
+.headline:hover h2{
+  color:var(--accent);
 }
 .headline h2{
   font-family:'Playfair Display', Georgia, serif;
   font-size:38px;
-  line-height:1.1;
+  line-height:1.12;
   margin-bottom:10px;
+  letter-spacing:-0.2px;
 }
 .headline .kicker{
   color:var(--accent);
@@ -104,16 +222,20 @@ body{
   font-size:12px;
   letter-spacing:2px;
   margin-bottom:6px;
-  display:block;
+  display:flex;
+  align-items:center;
+  gap:6px;
 }
 .headline .meta{
-  font-size:12px;color:var(--ink-light);margin-bottom:10px;
+  font-size:12px;color:var(--ink-light);margin-bottom:12px;
   font-style:italic;
+  border-bottom:1px dotted #999;
+  padding-bottom:6px;
 }
 .headline .body{
   columns:2;
-  column-gap:24px;
-  font-size:15px;
+  column-gap:26px;
+  font-size:14.5px;
   line-height:1.6;
   text-align:justify;
 }
@@ -127,16 +249,25 @@ body{
   font-family:'Playfair Display', Georgia, serif;
 }
 
-.article-list{border-bottom:1px solid var(--rule);}
+/* Article List */
+.article-list{border-bottom:2px solid var(--rule);margin-bottom:28px;}
 .article{
   padding:16px 0;
   border-top:1px solid #c9bfa3;
   display:grid;
-  grid-template-columns:80px 1fr;
-  gap:14px;
+  grid-template-columns:82px 1fr;
+  gap:16px;
+  cursor:pointer;
+  transition:background 0.15s ease;
+}
+.article:hover{
+  background:rgba(0,0,0,0.02);
+}
+.article:hover h3{
+  color:var(--accent);
 }
 .article .score{
-  width:60px;height:60px;
+  width:64px;height:64px;
   border:2px solid var(--ink);
   border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -145,8 +276,8 @@ body{
   font-size:20px;
   background:var(--paper-dark);
 }
-.article .score small{font-size:8px;text-transform:uppercase;font-weight:normal;}
-.article h3{font-size:19px;line-height:1.25;margin-bottom:4px;}
+.article .score small{font-size:8px;text-transform:uppercase;font-weight:normal;letter-spacing:0.5px;}
+.article h3{font-size:18px;line-height:1.25;margin-bottom:5px;font-family:'Playfair Display', Georgia, serif;}
 .article .tag{
   display:inline-block;
   font-size:10px;
@@ -158,13 +289,97 @@ body{
 }
 .article .tag.crit{background:var(--accent);color:var(--paper);border-color:var(--accent);}
 .article .tag.ai{background:var(--accent2);color:var(--paper);border-color:var(--accent2);}
+.article .tag.poc{background:var(--accent-gold);color:var(--paper);border-color:var(--accent-gold);}
 .article p{font-size:13.5px;color:var(--ink-light);margin-top:6px;}
+
+/* MITRE Threat Matrix Section */
+.matrix-section{
+  border-top:3px double var(--rule);
+  padding-top:18px;
+  margin-top:24px;
+  margin-bottom:28px;
+}
+.matrix-section h3{
+  font-family:'Playfair Display', Georgia, serif;
+  font-size:22px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.matrix-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  text-align:left;
+  border:1px solid var(--rule);
+}
+.matrix-table th{
+  background:var(--ink);
+  color:var(--paper);
+  padding:6px 10px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  font-weight:bold;
+  border:1px solid var(--rule);
+}
+.matrix-table td{
+  padding:7px 10px;
+  border:1px solid #c4b899;
+  vertical-align:top;
+}
+.matrix-table tr:nth-child(even){background:rgba(0,0,0,0.03);}
+.badge-def{
+  display:inline-block;
+  padding:1px 5px;
+  font-size:10px;
+  font-weight:bold;
+  border-radius:2px;
+  text-transform:uppercase;
+}
+.badge-def.red{background:var(--accent);color:#fff;}
+.badge-def.amber{background:var(--accent-gold);color:#fff;}
+.badge-def.blue{background:var(--accent2);color:#fff;}
+
+/* Frontier AI Safety Wire */
+.frontier-wire{
+  border-top:2px solid var(--rule);
+  padding-top:18px;
+  margin-bottom:28px;
+}
+.frontier-wire h3{
+  font-family:'Playfair Display', Georgia, serif;
+  font-size:20px;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+.frontier-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.frontier-card{
+  border:1px solid var(--rule);
+  background:var(--paper-dark);
+  padding:12px;
+  font-size:13px;
+}
+.frontier-card h5{
+  font-size:14px;
+  text-transform:uppercase;
+  font-weight:bold;
+  margin-bottom:4px;
+  color:var(--accent2);
+}
 
 /* Sidebar */
 .sidebar-box{
   border:2px solid var(--rule);
-  padding:14px;
-  margin-bottom:20px;
+  padding:16px;
+  margin-bottom:22px;
+  background:var(--paper);
 }
 .sidebar-box h4{
   font-family:'Playfair Display', Georgia, serif;
@@ -172,28 +387,76 @@ body{
   text-transform:uppercase;
   border-bottom:2px solid var(--rule);
   padding-bottom:6px;
-  margin-bottom:10px;
+  margin-bottom:12px;
   letter-spacing:1px;
 }
 .stat-row{
-  display:flex;justify-content:space-between;
+  display:flex;justify-content:space-between;align-items:center;
   font-size:13px;padding:6px 0;
   border-bottom:1px dotted #999;
 }
-.stat-row b{font-size:16px;}
+.stat-row b{font-size:16px;font-family:'Georgia',serif;}
 
-.brief-item{padding:8px 0;border-bottom:1px dotted #999;font-size:13px;}
-.brief-item b{display:block;font-size:14px;margin-bottom:2px;}
+/* Cyber Weather Box */
+.weather-box{
+  background:var(--paper-dark);
+  border:2px solid var(--rule);
+  padding:14px;
+  margin-bottom:22px;
+  font-size:12.5px;
+}
+.weather-box h4{
+  font-family:'Playfair Display', Georgia, serif;
+  font-size:15px;
+  text-transform:uppercase;
+  border-bottom:2px solid var(--rule);
+  padding-bottom:5px;
+  margin-bottom:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.weather-defcon{
+  display:inline-block;
+  background:var(--accent);
+  color:var(--paper);
+  font-size:10px;
+  font-weight:bold;
+  padding:2px 6px;
+  border-radius:2px;
+}
+.weather-item{margin-bottom:8px;line-height:1.4;}
+.weather-item b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);}
+
+.brief-item{padding:9px 0;border-bottom:1px dotted #999;font-size:13px;cursor:pointer;}
+.brief-item:hover b{color:var(--accent);}
+.brief-item b{display:block;font-size:13.5px;margin-bottom:2px;line-height:1.3;}
+.brief-item span{font-size:11px;color:var(--ink-light);font-style:italic;}
 
 .pull-quote{
   font-family:'Playfair Display', Georgia, serif;
-  font-size:22px;
+  font-size:21px;
   font-style:italic;
   text-align:center;
-  padding:20px 10px;
+  padding:18px 12px;
   border-top:3px solid var(--rule);
   border-bottom:3px solid var(--rule);
-  margin:20px 0;
+  margin:22px 0;
+  line-height:1.35;
+}
+
+/* Classifieds */
+.classified-entry{
+  padding:8px 0;
+  border-bottom:1px dotted #a3987e;
+  font-size:12px;
+  line-height:1.45;
+}
+.classified-entry b{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  color:var(--accent2);
 }
 
 footer{
@@ -202,7 +465,7 @@ footer{
   font-size:11px;
   color:var(--ink-light);
   border-top:6px double var(--rule);
-  padding-top:14px;
+  padding-top:16px;
   text-transform:uppercase;
   letter-spacing:1px;
 }
@@ -215,172 +478,646 @@ footer{
 }
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
-@media(max-width:800px){
+/* Detail Modal Overlay */
+.modal-overlay{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:rgba(15,20,26,0.75);
+  backdrop-filter:blur(3px);
+  z-index:9999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.modal-overlay.active{display:flex;}
+.modal-card{
+  background:var(--paper);
+  border:4px double var(--rule);
+  box-shadow:0 25px 60px rgba(0,0,0,0.5);
+  max-width:760px;
+  width:100%;
+  max-height:90vh;
+  overflow-y:auto;
+  padding:30px;
+  position:relative;
+}
+.modal-close{
+  position:absolute;
+  top:16px;
+  right:18px;
+  font-size:24px;
+  font-weight:bold;
+  background:none;
+  border:none;
+  color:var(--ink);
+  cursor:pointer;
+}
+.modal-header{
+  border-bottom:2px solid var(--rule);
+  padding-bottom:12px;
+  margin-bottom:16px;
+}
+.modal-header h3{
+  font-family:'Playfair Display', Georgia, serif;
+  font-size:28px;
+  line-height:1.2;
+}
+.modal-meta{
+  font-size:12px;
+  color:var(--ink-light);
+  font-style:italic;
+  margin-top:4px;
+}
+.modal-body{
+  font-size:14.5px;
+  line-height:1.65;
+  text-align:justify;
+  margin-bottom:20px;
+}
+.modal-box{
+  background:var(--paper-dark);
+  border-left:4px solid var(--accent);
+  padding:12px 14px;
+  font-size:13px;
+  margin:14px 0;
+}
+.modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  border-top:1px solid #c4b899;
+  padding-top:14px;
+}
+
+@media(max-width:860px){
   .grid{grid-template-columns:1fr;}
-  .masthead h1{font-size:36px;}
+  .masthead h1{font-size:38px;}
   .headline .body{columns:1;}
+  .frontier-grid{grid-template-columns:1fr;}
+  .filter-search-ribbon{flex-direction:column;align-items:stretch;}
+  .search-box input{width:100%;}
+}
+
+@media print {
+  body{background:white;color:black;}
+  .action-bar, .filter-search-ribbon, .modal-overlay{display:none !important;}
+  .wrap{max-width:100%;padding:0;}
+  .grid{display:block;}
+  .headline .body{columns:2;}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+  <!-- Masthead -->
   <div class="masthead">
     <div class="date-row">
       <span id="editionDate">—</span>
-      <span>VOL. II — DAILY EDITION</span>
-      <span><span class="live-dot"></span><span id="connStatus">LIVE FEED</span></span>
+      <span>VOL. II — DAILY BROADSHEET • DEFCON 3 (ELEVATED) • AETHERGUARD</span>
+      <span><span class="live-dot"></span><span id="connStatus">CONNECTING WIRE</span></span>
     </div>
     <h1>The Aether Guard</h1>
-    <div class="sub">AI Security & Cyber Threat Gazette — All Threats Fit to Print</div>
+    <div class="sub">AI Security & Cyber Threat Gazette — All Threats Fit to Print | The Cyber Intelligence Chronicle</div>
   </div>
 
-  <div class="ticker"><span id="tickerText">Loading latest intelligence feed…</span></div>
+  <!-- Action & Telegraph Audio Bar -->
+  <div class="action-bar">
+    <div class="action-group">
+      <button class="action-btn primary" onclick="toggleRadioSpeech()" id="radioBtn">
+        📻 <span>Listen to Wire Radio</span>
+      </button>
+      <button class="action-btn" onclick="window.print()">
+        🖨️ <span>Print Broadsheet</span>
+      </button>
+      <a href="/api/newspaper/download?format=pdf" class="action-btn secondary" target="_blank">
+        📥 <span>10-Page PDF Dossier</span>
+      </a>
+      <a href="/api/newspaper/download?format=md" class="action-btn" target="_blank">
+        📄 <span>Markdown</span>
+      </a>
+    </div>
+    <div class="action-group">
+      <button class="action-btn" onclick="dispatchTelegramNewspaper()" id="tgBtn">
+        ✈️ <span>Telegram Dispatch</span>
+      </button>
+      <button class="action-btn" onclick="loadFeed(true)">
+        🔄 <span>Refresh Telegraph</span>
+      </button>
+    </div>
+  </div>
 
+  <!-- Dynamic Intelligence Ticker -->
+  <div class="ticker"><span id="tickerText">Loading latest intelligence sweep from global sensor telemetry…</span></div>
+
+  <!-- Filter & Search Ribbon -->
+  <div class="filter-search-ribbon">
+    <div class="filter-tabs" id="filterTabs">
+      <button class="tab-btn active" onclick="setCategoryFilter('all')">★ All Intel (<span id="countAll">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('critical')">🚨 Critical 80+ (<span id="countCrit">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('ai')">🤖 Frontier AI (<span id="countAi">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('exploits')">⚡ Exploits & PoCs (<span id="countPoc">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('china')">🌐 Sovereign & China (<span id="countChina">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('cloud')">☁️ Cloud & Infra (<span id="countCloud">0</span>)</button>
+    </div>
+    <div class="search-box">
+      <input type="text" id="wireSearch" placeholder="Search dispatches, CVEs, tools…" oninput="handleSearch(this.value)">
+    </div>
+  </div>
+
+  <!-- Main Newspaper Grid -->
   <div class="grid">
+    <!-- Left Broad Column: Lead Story & Articles & Threat Matrix -->
     <div>
-      <div class="headline" id="leadStory">
-        <span class="kicker">Breaking — Top Story</span>
+      <!-- Lead Feature Story -->
+      <div class="headline" id="leadStory" onclick="openLeadModal()">
+        <span class="kicker">⚡ Breaking Global Investigation — Front Page Feature</span>
         <h2 id="leadTitle">Awaiting latest intelligence sweep…</h2>
-        <div class="meta" id="leadMeta"></div>
+        <div class="meta" id="leadMeta">Connecting to 92 authoritative threat nodes…</div>
         <div class="body" id="leadBody"><p>Fetching data from the wire…</p></div>
       </div>
 
+      <!-- Secondary Dispatches / Article List -->
       <div class="article-list" id="articleList">
-        <!-- articles injected here -->
+        <!-- articles injected dynamically -->
+      </div>
+
+      <!-- MITRE ATT&CK & ATLAS Enterprise Matrix Section -->
+      <div class="matrix-section">
+        <h3>
+          <span>Enterprise TTP Threat Matrix</span>
+          <span style="font-size:12px;font-family:Georgia,serif;font-style:italic;color:var(--ink-light);">MITRE ATT&CK & ATLAS Mappings</span>
+        </h3>
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th style="width:18%;">Technique</th>
+              <th style="width:30%;">TTP Description</th>
+              <th style="width:14%;">Risk Rating</th>
+              <th style="width:38%;">Defensive Mandate</th>
+            </tr>
+          </thead>
+          <tbody id="matrixTableBody">
+            <tr>
+              <td><b>T1190</b><br><small>Exploit Perimeter</small></td>
+              <td>Pre-auth RCE and SSRF against edge gateways (Ivanti, SonicWall, Fortinet).</td>
+              <td><span class="badge-def red">CRITICAL</span></td>
+              <td>Enforce zero-trust ingress; patch CVE within 4 hours.</td>
+            </tr>
+            <tr>
+              <td><b>AML.T0054</b><br><small>LLM Prompt Inject</small></td>
+              <td>Context window pollution forcing autonomous agents to execute unauthorized tools.</td>
+              <td><span class="badge-def amber">HIGH</span></td>
+              <td>Enforce strict tool parameter validation schemas & guardrails.</td>
+            </tr>
+            <tr>
+              <td><b>T1078</b><br><small>Valid Accounts</small></td>
+              <td>Compromised OAuth session tokens & cloud IdP service principal abuse.</td>
+              <td><span class="badge-def red">CRITICAL</span></td>
+              <td>Enforce FIDO2 hardware MFA; shorten session token TTLs to 60m.</td>
+            </tr>
+            <tr>
+              <td><b>AML.T0043</b><br><small>RAG Poisoning</small></td>
+              <td>Corrupting enterprise vector embeddings to steer retrieval outputs.</td>
+              <td><span class="badge-def blue">ELEVATED</span></td>
+              <td>Cryptographically sign ingested knowledge corpus documents.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Frontier AI Model Safety Observatory -->
+      <div class="frontier-wire">
+        <h3>Frontier AI Model Safety Observatory</h3>
+        <div class="frontier-grid">
+          <div class="frontier-card">
+            <h5>DeepSeek V3 / R1 Security Posture</h5>
+            <p>Sovereign model weight distribution inspected. Guardrails against jailbreaks rated resilient against automated token evasion; sandbox tool execution requires container confinement.</p>
+          </div>
+          <div class="frontier-card">
+            <h5>OpenAI & Anthropic Red-Team Wire</h5>
+            <p>Zero-day system prompt extraction resistance updated. Autonomous agent multi-step goal divergence monitored under NIST AI Risk Management Framework.</p>
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- Right Column: Threat Desk, Barometer, Briefs, Classifieds -->
     <div>
+      <!-- Threat Desk Statistics Box -->
       <div class="sidebar-box">
         <h4>Threat Desk — At a Glance</h4>
-        <div class="stat-row"><span>Entries Today</span><b id="statEntries">0</b></div>
-        <div class="stat-row"><span>Critical Alerts</span><b id="statCritical">0</b></div>
-        <div class="stat-row"><span>Avg. Blast Radius</span><b id="statBlast">0</b></div>
-        <div class="stat-row"><span>Sources Online</span><b id="statSources">0</b></div>
+        <div class="stat-row"><span>Entries Monitored</span><b id="statEntries">0</b></div>
+        <div class="stat-row"><span>Critical (80+ Index)</span><b id="statCritical" style="color:var(--accent);">0</b></div>
+        <div class="stat-row"><span>Avg. Blast Radius</span><b id="statBlast">0 / 100</b></div>
+        <div class="stat-row"><span>Active Wire Sources</span><b id="statSources">0</b></div>
       </div>
 
-      <div class="sidebar-box">
-        <h4>Wire Briefs</h4>
-        <div id="briefsList">
-          <div class="brief-item">Standing by for feed…</div>
+      <!-- Cyber Meteorological Weather & DEFCON Barometer -->
+      <div class="weather-box">
+        <h4>
+          <span>Cyber Barometer</span>
+          <span class="weather-defcon">DEFCON 3</span>
+        </h4>
+        <div class="weather-item">
+          <b>Atmospheric Condition</b>
+          Severe barometric pressure on external perimeter gateways; intense scan gale forces detected across port 443.
+        </div>
+        <div class="weather-item">
+          <b>Storm Warning</b>
+          Active pre-CVE weaponization tracking on enterprise VPNs. Heavy cloud identity credential showers reported in US-East & EU-West.
+        </div>
+        <div class="weather-item">
+          <b>24-Hour Defensive Outlook</b>
+          Fair to turbulent. High probability of rogue dependency injections targeting PyPI and HuggingFace repositories.
         </div>
       </div>
 
-      <div class="pull-quote" id="pullQuote">"The blast radius of a single unpatched dependency now spans the entire AI stack."</div>
-
+      <!-- Wire Flash Briefs -->
       <div class="sidebar-box">
-        <h4>Classifieds — Sources Watched</h4>
-        <div id="sourcesList" style="font-size:13px;line-height:1.8;"></div>
+        <h4>Wire Briefs — Rapid Dispatches</h4>
+        <div id="briefsList">
+          <div class="brief-item">Standing by for telegraph feed…</div>
+        </div>
+      </div>
+
+      <!-- Broadsheet Pull Quote -->
+      <div class="pull-quote" id="pullQuote">
+        "The blast radius of a single unpatched dependency now spans the entire autonomous AI stack."
+      </div>
+
+      <!-- Classifieds & Bounties Notice Board -->
+      <div class="sidebar-box">
+        <h4>Classifieds & Notices</h4>
+        <div class="classified-entry">
+          <b>[WANTED]</b> High-entropy API keys leaking in public Git repositories. Responsible disclosure rewarded in cryptographic credits.
+        </div>
+        <div class="classified-entry">
+          <b>[NOTICE TO CISOS]</b> Mandatory migration to phishing-resistant FIDO2 hardware keys effective this publishing cycle.
+        </div>
+        <div class="classified-entry">
+          <b>[SITUATION OFFERED]</b> Autonomous LLM Triage Engine monitoring 92 sensor nodes at zero latency.
+        </div>
+        <div class="classified-entry">
+          <b>[TELEMETRY SOURCES WATCHED]</b>
+          <div id="sourcesList" style="font-size:11.5px;line-height:1.6;margin-top:6px;max-height:150px;overflow-y:auto;">Loading directory…</div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Colophon & Footer -->
   <footer>
-    Aether Guard Gazette &copy; <span id="year"></span> — Autonomous Intelligence Desk — Printed on Recycled Electrons
+    The Aether Guard Gazette &copy; <span id="year"></span> — Autonomous Threat Intelligence Broadsheet — Printed on Recycled Electrons
   </footer>
+</div>
+
+<!-- Threat Dossier Modal Overlay -->
+<div class="modal-overlay" id="dispatchModal" onclick="closeModalOnBackdrop(event)">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeDispatchModal()">&times;</button>
+    <div class="modal-header">
+      <span class="kicker" id="modalKicker">INTELLIGENCE DOSSIER</span>
+      <h3 id="modalTitle">Article Headline</h3>
+      <div class="modal-meta" id="modalMeta">Source · Date · Severity</div>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Injected full body -->
+    </div>
+    <div class="modal-box" id="modalAdvisory">
+      <strong>RECOMMENDED DEFENSIVE MANDATE:</strong>
+      <p id="modalMitigation" style="margin-top:4px;">Apply official vendor patches immediately.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="action-btn" onclick="speakCurrentModal()">📻 Read Aloud</button>
+      <a href="#" target="_blank" id="modalSourceLink" class="action-btn primary">Open Original Wire ↗</a>
+      <button class="action-btn" onclick="closeDispatchModal()">Close Dispatch</button>
+    </div>
+  </div>
 </div>
 
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
-document.getElementById('editionDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+document.getElementById('editionDate').textContent = new Date().toLocaleDateString('en-US', {
+  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
 
 const API_BASE = '/api';
+let allEntries = [];
+let filteredEntries = [];
+let currentCategory = 'all';
+let currentSearch = '';
+let currentLeadEntry = null;
+let currentModalEntry = null;
+let isSpeaking = false;
 
-function scoreClass(v){
-  if(v>=80) return 'crit';
+function scoreClass(v) {
+  if (v >= 80) return 'crit';
+  if (v >= 50) return 'poc';
   return 'ai';
 }
 
-function renderArticle(e){
+function renderArticle(e) {
   const score = e.severity ?? (e.analysis && e.analysis.severity_index) ?? e.blast_radius ?? (e.analysis && e.analysis.blast_radius_score) ?? 0;
   const source = e.source || e.source_name || 'Wire';
   const category = e.category || 'INTEL';
   const archetype = e.attack_archetype || (e.analysis && e.analysis.attack_archetype);
-  const text = e.summary || e.description || (e.analysis && e.analysis.risk_assessment) || '';
+  const text = e.summary || e.description || (e.analysis && (e.analysis.risk_assessment || e.analysis.attack_vector)) || '';
+  
   return `
-    <div class="article">
+    <div class="article" onclick="openArticleModal('${e.id}')">
       <div class="score">${score}<small>score</small></div>
       <div>
         <span class="tag ${scoreClass(score)}">${category}</span>
         ${archetype ? `<span class="tag">${archetype}</span>` : ''}
+        <span class="tag" style="background:#f4ecd8;color:#555;">${source}</span>
         <h3>${e.title || 'Untitled entry'}</h3>
-        <p>${text.slice(0,220)}${text.length>220?'…':''}</p>
+        <p>${text.slice(0, 240)}${text.length > 240 ? '…' : ''}</p>
       </div>
     </div>`;
 }
 
-async function loadFeed(){
-  try{
-    const res = await fetch(`${API_BASE}/entries?limit=20&sort=severity`);
-    if(!res.ok) throw new Error('feed unavailable');
+function renderCurrentView() {
+  if (!allEntries || allEntries.length === 0) return;
+
+  // Apply category and search filter
+  filteredEntries = allEntries.filter(e => {
+    // Category match
+    if (currentCategory === 'critical') {
+      const s = e.severity ?? (e.analysis && e.analysis.severity_index) ?? 0;
+      if (s < 80) return false;
+    } else if (currentCategory === 'ai') {
+      const cat = (e.category || '').toLowerCase();
+      const title = (e.title || '').toLowerCase();
+      if (!cat.includes('ai') && !cat.includes('model') && !title.includes('ai') && !title.includes('llm') && !title.includes('model')) return false;
+    } else if (currentCategory === 'exploits') {
+      const cat = (e.category || '').toLowerCase();
+      const title = (e.title || '').toLowerCase();
+      if (!cat.includes('exploit') && !title.includes('poc') && !title.includes('cve-') && !title.includes('rce')) return false;
+    } else if (currentCategory === 'china') {
+      const region = (e.region || '').toLowerCase();
+      const country = (e.country || '').toLowerCase();
+      const title = (e.title || '').toLowerCase();
+      if (region !== 'china' && country !== 'cn' && !title.includes('china') && !title.includes('cert')) return false;
+    } else if (currentCategory === 'cloud') {
+      const title = (e.title || '').toLowerCase();
+      const cat = (e.category || '').toLowerCase();
+      if (!title.includes('cloud') && !title.includes('aws') && !title.includes('k8s') && !title.includes('kubernetes') && !cat.includes('cloud')) return false;
+    }
+
+    // Search query match
+    if (currentSearch.trim()) {
+      const q = currentSearch.toLowerCase();
+      const title = (e.title || '').toLowerCase();
+      const summary = (e.summary || e.description || '').toLowerCase();
+      const src = (e.source || e.source_name || '').toLowerCase();
+      if (!title.includes(q) && !summary.includes(q) && !src.includes(q)) return false;
+    }
+
+    return true;
+  });
+
+  const displayList = filteredEntries.length > 0 ? filteredEntries : allEntries;
+  const lead = displayList[0];
+  currentLeadEntry = lead;
+  const rest = displayList.slice(1, 15);
+
+  // Update Lead Story
+  const leadScore = lead.severity ?? (lead.analysis && lead.analysis.severity_index) ?? '—';
+  const leadBlast = lead.blast_radius ?? (lead.analysis && lead.analysis.blast_radius_score) ?? '—';
+  const leadSource = lead.source || lead.source_name || 'Wire';
+  const leadSummary = lead.summary || lead.description || (lead.analysis && (lead.analysis.risk_assessment || lead.analysis.attack_vector)) || 'Comprehensive analysis in progress across authoritative nodes.';
+  const leadMitigation = lead.mitigation || (lead.analysis && lead.analysis.mitigation);
+
+  document.getElementById('leadTitle').textContent = lead.title || 'Global Threat Advisory';
+  document.getElementById('leadMeta').textContent =
+    `Wire: ${leadSource} · Threat Severity: ${leadScore}/100 · Blast Radius: ${leadBlast}/100`;
+  document.getElementById('leadBody').innerHTML =
+    `<p>${leadSummary}</p>` +
+    (leadMitigation ? `<p><strong>Defensive Mandate:</strong> ${leadMitigation}</p>` : '');
+
+  // Update Article List
+  document.getElementById('articleList').innerHTML = rest.length > 0 
+    ? rest.map(renderArticle).join('')
+    : '<div style="padding:20px;text-align:center;font-style:italic;">No dispatches match the active telegraph filter.</div>';
+
+  // Update Ticker
+  document.getElementById('tickerText').textContent =
+    allEntries.slice(0, 10).map(e => `⚠ ${e.title}`).join('     ///     ');
+
+  // Update Briefs
+  document.getElementById('briefsList').innerHTML = allEntries.slice(10, 16).map(e => `
+    <div class="brief-item" onclick="openArticleModal('${e.id}')">
+      <b>${e.title}</b>
+      <span>${e.source || e.source_name || 'Wire'} · Severity ${e.severity ?? (e.analysis?.severity_index) ?? '—'}</span>
+    </div>
+  `).join('');
+
+  // Update Counts
+  document.getElementById('countAll').textContent = allEntries.length;
+  document.getElementById('countCrit').textContent = allEntries.filter(e => (e.severity ?? e.analysis?.severity_index ?? 0) >= 80).length;
+  document.getElementById('countAi').textContent = allEntries.filter(e => ((e.category||'') + (e.title||'')).toLowerCase().includes('ai')).length;
+  document.getElementById('countPoc').textContent = allEntries.filter(e => ((e.category||'') + (e.title||'')).toLowerCase().includes('exploit') || (e.title||'').toLowerCase().includes('poc')).length;
+  document.getElementById('countChina').textContent = allEntries.filter(e => (e.region === 'china' || e.country === 'CN' || (e.title||'').toLowerCase().includes('china'))).length;
+  document.getElementById('countCloud').textContent = allEntries.filter(e => (e.title||'').toLowerCase().includes('cloud') || (e.title||'').toLowerCase().includes('k8s')).length;
+
+  // Update Statistics Box
+  document.getElementById('statEntries').textContent = allEntries.length;
+  document.getElementById('statCritical').textContent = allEntries.filter(e => (e.severity ?? e.analysis?.severity_index ?? 0) >= 80).length;
+  const avgBlast = allEntries.reduce((s, e) => s + (e.blast_radius || (e.analysis && e.analysis.blast_radius_score) || 0), 0) / (allEntries.length || 1);
+  document.getElementById('statBlast').textContent = Math.round(avgBlast) + ' / 100';
+}
+
+async function loadFeed(force = false) {
+  try {
+    document.getElementById('connStatus').textContent = 'SWEEPING WIRE';
+    const res = await fetch(`${API_BASE}/entries?limit=50&sort=severity${force ? '&_t=' + Date.now() : ''}`);
+    if (!res.ok) throw new Error('Telegraph wire unavailable');
     const data = await res.json();
-    const entries = data.entries || data || [];
-    if(entries.length === 0) return;
+    allEntries = data.entries || data || [];
+    if (allEntries.length === 0) return;
 
-    const [lead, ...rest] = entries;
-    const leadScore = lead.severity ?? (lead.analysis && lead.analysis.severity_index) ?? '—';
-    const leadBlast = lead.blast_radius ?? (lead.analysis && lead.analysis.blast_radius_score) ?? '—';
-    const leadSource = lead.source || lead.source_name || 'Wire';
-    const leadSummary = lead.summary || lead.description || (lead.analysis && (lead.analysis.risk_assessment || lead.analysis.attack_vector)) || 'No summary available.';
-    const leadMitigation = lead.mitigation || (lead.analysis && lead.analysis.mitigation);
-
-    document.getElementById('leadTitle').textContent = lead.title || 'Untitled';
-    document.getElementById('leadMeta').textContent =
-      `${leadSource} · Severity ${leadScore} · Blast Radius ${leadBlast}`;
-    document.getElementById('leadBody').innerHTML =
-      `<p>${leadSummary}</p>` +
-      (leadMitigation ? `<p><strong>Mitigation:</strong> ${leadMitigation}</p>` : '');
-
-    document.getElementById('articleList').innerHTML = rest.map(renderArticle).join('');
-
-    document.getElementById('tickerText').textContent =
-      entries.slice(0,8).map(e => `⚠ ${e.title}`).join('     ///     ');
-
-    document.getElementById('briefsList').innerHTML = entries.slice(8,13).map(e =>
-      `<div class="brief-item"><b>${e.title}</b>${e.source || e.source_name || ''}</div>`
-    ).join('');
-
-    document.getElementById('statEntries').textContent = entries.length;
-    document.getElementById('statCritical').textContent =
-      entries.filter(e => (e.severity ?? (e.analysis && e.analysis.severity_index) ?? 0) >= 80).length;
-    const avgBlast = entries.reduce((s,e)=>s+(e.blast_radius || (e.analysis && e.analysis.blast_radius_score) || 0),0) / (entries.length||1);
-    document.getElementById('statBlast').textContent = Math.round(avgBlast);
-
-    document.getElementById('connStatus').textContent = 'LIVE FEED';
-  }catch(err){
-    document.getElementById('connStatus').textContent = 'FEED OFFLINE';
-    document.getElementById('leadTitle').textContent = 'Unable to reach the wire.';
+    renderCurrentView();
+    document.getElementById('connStatus').textContent = 'LIVE WIRE FEED';
+  } catch (err) {
+    document.getElementById('connStatus').textContent = 'WIRE OFFLINE';
+    document.getElementById('leadTitle').textContent = 'Unable to reach the telegraph wire.';
     document.getElementById('leadBody').innerHTML = `<p>${err.message}</p>`;
   }
 }
 
-async function loadSources(){
-  try{
+async function loadSources() {
+  try {
     const res = await fetch(`${API_BASE}/sources`);
-    if(!res.ok) return;
+    if (!res.ok) return;
     const data = await res.json();
     const sources = data.sources || data || [];
-    document.getElementById('statSources').textContent =
-      sources.filter(s => s.enabled !== false).length;
+    const activeSources = sources.filter(s => s.enabled !== false);
+    document.getElementById('statSources').textContent = activeSources.length;
     document.getElementById('sourcesList').innerHTML =
-      sources.map(s => `${s.enabled === false ? '☒' : '☑'} ${s.name}`).join('<br>');
-  }catch(e){}
+      sources.slice(0, 18).map(s => `${s.enabled === false ? '☒' : '☑'} ${s.name}`).join('<br>');
+  } catch (e) {}
 }
 
-function connectWS(){
-  try{
+function setCategoryFilter(cat) {
+  currentCategory = cat;
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(t => t.classList.remove('active'));
+  if (event && event.target) {
+    event.target.classList.add('active');
+  }
+  renderCurrentView();
+}
+
+let searchTimer;
+function handleSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentSearch = val;
+    renderCurrentView();
+  }, 180);
+}
+
+// Modal Interaction
+function openArticleModal(id) {
+  const entry = allEntries.find(e => e.id === id);
+  if (!entry) return;
+  currentModalEntry = entry;
+
+  const score = entry.severity ?? entry.analysis?.severity_index ?? '—';
+  const blast = entry.blast_radius ?? entry.analysis?.blast_radius_score ?? '—';
+  const src = entry.source || entry.source_name || 'Wire';
+  const bodyText = entry.summary || entry.description || (entry.analysis && entry.analysis.risk_assessment) || 'Full technical details available on the original publisher wire.';
+  const mitigation = entry.mitigation || entry.analysis?.mitigation || 'Isolate affected perimeter nodes and apply vendor security advisory.';
+  const archetype = entry.attack_archetype || entry.analysis?.attack_archetype || 'Exploit Public-Facing Application';
+
+  document.getElementById('modalKicker').textContent = `${(entry.category || 'INTEL').toUpperCase()} • ${archetype.toUpperCase()}`;
+  document.getElementById('modalTitle').textContent = entry.title || 'Intelligence Dispatch';
+  document.getElementById('modalMeta').textContent = `Wire Origin: ${src} · Threat Index: ${score}/100 · Blast Radius: ${blast}/100`;
+  document.getElementById('modalBody').innerHTML = `
+    <p>${bodyText}</p>
+    ${entry.analysis?.attack_vector ? `<p style="margin-top:10px;"><strong>Attack Vector:</strong> ${entry.analysis.attack_vector}</p>` : ''}
+    ${entry.analysis?.affected_ecosystem && entry.analysis.affected_ecosystem.length ? `<p style="margin-top:8px;"><strong>Affected Ecosystems:</strong> ${entry.analysis.affected_ecosystem.join(', ')}</p>` : ''}
+  `;
+  document.getElementById('modalMitigation').textContent = mitigation;
+  
+  const linkEl = document.getElementById('modalSourceLink');
+  if (entry.url) {
+    linkEl.href = entry.url;
+    linkEl.style.display = 'inline-flex';
+  } else {
+    linkEl.style.display = 'none';
+  }
+
+  document.getElementById('dispatchModal').classList.add('active');
+}
+
+function openLeadModal() {
+  if (currentLeadEntry) {
+    openArticleModal(currentLeadEntry.id);
+  }
+}
+
+function closeDispatchModal() {
+  document.getElementById('dispatchModal').classList.remove('active');
+  if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+function closeModalOnBackdrop(e) {
+  if (e.target.id === 'dispatchModal') {
+    closeDispatchModal();
+  }
+}
+
+// Telegraph Radio Audio Speech
+function toggleRadioSpeech() {
+  if (!('speechSynthesis' in window)) {
+    alert('Web Speech API is not supported in this browser.');
+    return;
+  }
+
+  const radioBtn = document.getElementById('radioBtn');
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    radioBtn.innerHTML = '📻 <span>Listen to Wire Radio</span>';
+    isSpeaking = false;
+    return;
+  }
+
+  if (!currentLeadEntry) return;
+
+  const textToSpeak = `This is The Aether Guard Wire Radio broadcast. Top story: ${currentLeadEntry.title}. Details: ${currentLeadEntry.summary || currentLeadEntry.description || 'Details compiling on the wire'}. Mandate: ${currentLeadEntry.mitigation || 'Apply security patches immediately'}.`;
+  const utterance = new SpeechSynthesisUtterance(textToSpeak);
+  utterance.rate = 0.95;
+  utterance.pitch = 0.95;
+
+  utterance.onstart = () => {
+    isSpeaking = true;
+    radioBtn.innerHTML = '⏹️ <span>Halt Radio Broadcast</span>';
+  };
+  utterance.onend = () => {
+    isSpeaking = false;
+    radioBtn.innerHTML = '📻 <span>Listen to Wire Radio</span>';
+  };
+  utterance.onerror = () => {
+    isSpeaking = false;
+    radioBtn.innerHTML = '📻 <span>Listen to Wire Radio</span>';
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function speakCurrentModal() {
+  if (!currentModalEntry || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const text = `${currentModalEntry.title}. ${currentModalEntry.summary || currentModalEntry.description || ''}. Mitigation: ${currentModalEntry.mitigation || ''}`;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.95;
+  window.speechSynthesis.speak(u);
+}
+
+async function dispatchTelegramNewspaper() {
+  const btn = document.getElementById('tgBtn');
+  btn.innerHTML = '⏳ <span>Sending...</span>';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/newspaper/telegram`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`📰 Telegram Broadcast Dispatched!\n${data.message || 'Sent successfully.'}`);
+      btn.innerHTML = '✅ <span>Sent to Telegram</span>';
+    } else {
+      alert(`Failed to send to Telegram: ${data.detail || 'Unknown error'}`);
+      btn.innerHTML = '⚠️ <span>Telegram Failed</span>';
+    }
+  } catch (err) {
+    alert(`Telegram dispatch error: ${err.message}`);
+    btn.innerHTML = '⚠️ <span>Telegram Error</span>';
+  } finally {
+    setTimeout(() => {
+      btn.innerHTML = '✈️ <span>Telegram Dispatch</span>';
+      btn.disabled = false;
+    }, 4000);
+  }
+}
+
+function connectWS() {
+  try {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const ws = new WebSocket(`${proto}://${location.host}/ws`);
     ws.onmessage = () => loadFeed();
-    ws.onclose = () => setTimeout(connectWS, 5000);
-  }catch(e){}
+    ws.onclose = () => setTimeout(connectWS, 6000);
+  } catch (e) {}
 }
 
 loadFeed();
 loadSources();
 connectWS();
-setInterval(loadFeed, 60000);
+setInterval(() => loadFeed(), 60000);
 </script>
 </body>
 </html>

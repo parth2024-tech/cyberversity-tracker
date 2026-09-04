@@ -163,7 +163,13 @@ class NewspaperService:
         md_file.write_text(markdown_content, encoding="utf-8")
         html_file.write_text(html_content, encoding="utf-8")
         latest_md.write_text(markdown_content, encoding="utf-8")
-        latest_html.write_text(html_content, encoding="utf-8")
+
+        # Synchronize latest.html with The Aether Guard Gazette broadsheet
+        gazette_template = Path("web/gazette.html")
+        if gazette_template.exists():
+            latest_html.write_text(gazette_template.read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            latest_html.write_text(html_content, encoding="utf-8")
 
         # Generate 10-Page PDF Document
         try:
