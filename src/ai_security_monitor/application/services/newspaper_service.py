@@ -30,7 +30,7 @@ from reportlab.platypus import (
 
 from ai_security_monitor.application.services.article_extractor import article_extractor
 from ai_security_monitor.core.logging import get_logger
-from ai_security_monitor.domain.entities import Entry
+from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
 from ai_security_monitor.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -65,7 +65,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Running Header on pages > 1
         if self._pageNumber > 1:
-            self.drawString(36, 756, "THE CYBER INTELLIGENCE CHRONICLE • 10-PAGE EXECUTIVE INTELLIGENCE DOSSIER")
+            self.drawString(36, 756, "THE AETHER GUARD — GLOBAL AI & TECHNOLOGY GAZETTE • 10-PAGE DOSSIER")
             self.drawRightString(576, 756, f"PAGE {self._pageNumber} OF {page_count}")
             self.setStrokeColor(colors.HexColor("#94a3b8"))
             self.setLineWidth(0.75)
@@ -76,7 +76,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setLineWidth(0.75)
         self.line(36, 32, 576, 32)
         self.setFont("Helvetica", 7)
-        self.drawString(36, 22, "AETHERGUARD DEFENSE SECINTEL • AUTONOMOUS SENSOR TELEMETRY • STRICTLY CONFIDENTIAL")
+        self.drawString(36, 22, "THE AETHER GUARD GLOBAL AI & DEFENSE SECINTEL • AUTONOMOUS TELEMETRY • STRICTLY CONFIDENTIAL")
         self.drawRightString(576, 22, f"PAGE {self._pageNumber} OF {page_count}")
         self.restoreState()
 
@@ -108,21 +108,46 @@ class NewspaperService:
         logger.info(f"Initiating 10-page intelligence newspaper compilation (window={window_hours}h)...")
 
         async with self._uow_factory() as uow:
-            # Query comprehensive entries across all categories (up to 120 items)
+            # Query comprehensive recent entries
             recent_filters = EntryFilters(since=cutoff, sort_by="velocity")
             entries = await uow.entries.list(
                 filters=recent_filters,
-                pagination=PaginationParams(limit=120, offset=0),
+                pagination=PaginationParams(limit=150, offset=0),
             )
 
-            # Rich backfill if recent volume is sparse
-            if len(entries) < 35:
+            # Balanced multi-pillar query: guarantee representation of trending repos, AI models, research, tools, and vulnerabilities
+            existing_ids = {e.id for e in entries}
+            core_pillars = [
+                Category.GITHUB_TRENDING,
+                Category.AI_MODELS,
+                Category.AI_RESEARCH,
+                Category.CYBER_TOOLS,
+                Category.VULNERABILITIES,
+                Category.EXPLOITS_TRICKS,
+            ]
+            for pillar_cat in core_pillars:
+                cat_filters = EntryFilters(category=pillar_cat, sort_by="velocity")
+                cat_items = await uow.entries.list(
+                    filters=cat_filters,
+                    pagination=PaginationParams(limit=15, offset=0),
+                )
+                for item in cat_items:
+                    if item.id not in existing_ids:
+                        entries.append(item)
+                        existing_ids.add(item.id)
+
+            # Rich backfill if overall volume is sparse
+            if len(entries) < 40:
                 logger.info("Backfilling rich historical intelligence to assemble comprehensive 10-page dossier.")
                 fallback_filters = EntryFilters(sort_by="velocity")
-                entries = await uow.entries.list(
+                fallback_items = await uow.entries.list(
                     filters=fallback_filters,
                     pagination=PaginationParams(limit=100, offset=0),
                 )
+                for item in fallback_items:
+                    if item.id not in existing_ids:
+                        entries.append(item)
+                        existing_ids.add(item.id)
 
         edition_num = self._compute_edition_number(now)
         timestamp_str = now.strftime("%Y%m%d_%H%M")
@@ -190,17 +215,20 @@ class NewspaperService:
         metadata = {
             "edition_id": edition_id,
             "edition_number": edition_num,
-            "title": f"The Cyber Intelligence Chronicle — 10-Page Edition #{edition_num}",
+            "title": f"The Cyber Intelligence Chronicle & AI Gazette — 10-Page Edition #{edition_num}",
             "generated_at": now.isoformat(),
             "window_hours": window_hours,
             "total_threats": len(entries),
             "pages_count": 10,
-            "lead_story": categorized["lead"].title if categorized["lead"] else "Global Threat Advisory",
-            "pre_cve_count": len(categorized["pre_cve"]),
-            "cve_count": len(categorized["cves"]),
-            "ai_lab_count": len(categorized["ai_labs"]),
-            "china_count": len(categorized["china_radar"]),
-            "poc_count": len(categorized["exploits"]),
+            "lead_story": categorized["lead"].title if categorized["lead"] else "Global AI & Cyber Advisory",
+            "trending_repos_count": len(categorized.get("trending_repos", [])),
+            "ai_models_count": len(categorized.get("ai_models", [])),
+            "ai_research_count": len(categorized.get("ai_research", [])),
+            "ai_tools_count": len(categorized.get("ai_tools", [])),
+            "pre_cve_count": len(categorized.get("pre_cve", [])),
+            "cve_count": len(categorized.get("cves", [])),
+            "china_count": len(categorized.get("china_radar", [])),
+            "poc_count": len(categorized.get("exploits", [])),
             "md_path": str(md_file),
             "html_path": str(html_file),
             "pdf_path": str(pdf_file) if has_pdf else None,
@@ -296,12 +324,15 @@ class NewspaperService:
                 "remediation": [],
             }
 
-        # 1. Filter out non-security noise
-        filtered_entries = [
-            e for e in raw_entries
-            if article_extractor.is_security_relevant(e.title, e.summary or "", e.url or "")
-        ]
-        # If filter was overly aggressive, use all raw entries
+        # 1. De-duplicate and preserve comprehensive AI innovation and security entries
+        seen_titles = set()
+        filtered_entries = []
+        for e in raw_entries:
+            t_clean = (e.title or "").strip().lower()
+            if not t_clean or t_clean in seen_titles:
+                continue
+            seen_titles.add(t_clean)
+            filtered_entries.append(e)
         if len(filtered_entries) < 15:
             filtered_entries = raw_entries
 
@@ -315,15 +346,21 @@ class NewspaperService:
 
         def priority_score(e: Entry) -> int:
             score = 0
+            t_lower = e.title.lower()
+            cat = e.category.value if hasattr(e.category, "value") else str(e.category)
             if e.analysis:
                 if e.analysis.is_pre_cve_warning:
-                    score += 500
+                    score += 350
                 score += e.analysis.threat_velocity * 2
                 score += e.analysis.severity_index
                 if "PoC" in (e.analysis.weaponization_potential or ""):
-                    score += 200
-            if "cve" in e.title.lower():
-                score += 150
+                    score += 150
+            if cat in ("ai_models", "github_trending", "ai_research", "cyber_tools"):
+                score += 260
+            if any(k in t_lower for k in ("deepseek", "openai", "anthropic", "qwen", "gemini", "claude", "vllm", "ollama", "llama", "reasoning", "breakthrough", "sota")):
+                score += 260
+            if "cve" in t_lower:
+                score += 120
             return score
 
         sorted_entries = sorted(filtered_entries, key=priority_score, reverse=True)
@@ -333,6 +370,10 @@ class NewspaperService:
 
         pre_cves = []
         ai_labs = []
+        trending_repos = []
+        ai_research_list = []
+        ai_models_list = []
+        ai_tools_list = []
         china_radar = []
         cves = []
         exploits = []
@@ -345,6 +386,7 @@ class NewspaperService:
             t_lower = e.title.lower()
             s_lower = (e.summary or "").lower()
             cat = e.category.value if hasattr(e.category, "value") else str(e.category)
+            tags_lower = [t.lower() for t in e.tags or []]
             is_pre = e.analysis and e.analysis.is_pre_cve_warning
 
             is_china = (
@@ -355,14 +397,30 @@ class NewspaperService:
             is_poc = "poc" in t_lower or "exploit" in t_lower or (e.analysis and "PoC" in (e.analysis.weaponization_potential or ""))
             is_cloud = any(k in t_lower or k in s_lower for k in ("aws", "azure", "gcp", "kubernetes", "k8s", "docker", "cloud", "iam", "npm", "pypi", "container", "artifactory"))
             is_cert = any(k in t_lower or k in s_lower for k in ("cisa", "cert", "ncsc", "advisory", "bulletin", "alert", "security update", "sonicwall", "citrix"))
+            is_trending = cat == "github_trending" or "trending" in t_lower or "github" in tags_lower or "github.com" in (e.url or "").lower()
+            is_ai_res = cat == "ai_research" or "arxiv" in t_lower or "arxiv" in (e.url or "").lower() or "paper" in t_lower
+            is_ai_mod = cat == "ai_models" or any(k in t_lower for k in ("deepseek", "qwen", "llama", "mistral", "grok", "gpt", "claude", "weights", "model")) or "huggingface" in (e.url or "").lower()
+            is_tool = cat == "cyber_tools" or "tool" in t_lower or "vllm" in t_lower or "ollama" in t_lower or "framework" in t_lower
 
-            if is_china and len(china_radar) < 10:
+            if is_trending and len(trending_repos) < 10:
+                trending_repos.append(e)
+            elif is_ai_mod and len(ai_models_list) < 10:
+                ai_models_list.append(e)
+                if len(ai_labs) < 10:
+                    ai_labs.append(e)
+            elif is_ai_res and len(ai_research_list) < 10:
+                ai_research_list.append(e)
+                if len(ai_labs) < 10:
+                    ai_labs.append(e)
+            elif is_tool and len(ai_tools_list) < 10:
+                ai_tools_list.append(e)
+            elif is_china and len(china_radar) < 10:
                 china_radar.append(e)
             elif is_pre and len(pre_cves) < 8:
                 pre_cves.append(e)
             elif is_poc and len(exploits) < 8:
                 exploits.append(e)
-            elif (cat in ("ai_tech", "ai_models", "ai_research") or "llm" in t_lower or "gpt" in t_lower or "claude" in t_lower) and len(ai_labs) < 8:
+            elif (cat in ("ai_tech", "ai_models", "ai_research") or "llm" in t_lower or "gpt" in t_lower or "claude" in t_lower) and len(ai_labs) < 10:
                 ai_labs.append(e)
             elif is_cloud and len(cloud_infra) < 8:
                 cloud_infra.append(e)
@@ -370,26 +428,53 @@ class NewspaperService:
                 cves.append(e)
             elif is_cert and len(cert_bulletins) < 8:
                 cert_bulletins.append(e)
+            elif cat in ("github_trending", "ai_tech", "cyber_tools"):
+                trending_repos.append(e)
             else:
                 cves.append(e)
 
-        # Backfill empty sections from remaining pool if needed
+        # Smart Backfill from remaining pool for each core pillar
         pool = remaining[:]
-        if not pre_cves:
-            pre_cves = pool[:6]
-        if not ai_labs:
-            ai_labs = pool[6:12]
+        if len(trending_repos) < 4:
+            trending_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("github_trending", "ai_tech", "cyber_tools") and e not in trending_repos]
+            trending_repos.extend(trending_candidates[:4 - len(trending_repos)])
+        if len(ai_models_list) < 4:
+            model_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_models", "ai_tech") and e not in ai_models_list]
+            ai_models_list.extend(model_candidates[:4 - len(ai_models_list)])
+        if len(ai_research_list) < 4:
+            res_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_research", "ai_tech") and e not in ai_research_list]
+            ai_research_list.extend(res_candidates[:4 - len(ai_research_list)])
+        if len(ai_tools_list) < 4:
+            tool_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("cyber_tools", "github_trending", "ai_tech") and e not in ai_tools_list]
+            ai_tools_list.extend(tool_candidates[:4 - len(ai_tools_list)])
+        if len(china_radar) < 4:
+            china_candidates = [e for e in pool if ((e.metadata and e.metadata.get("region") == "china") or "deepseek" in e.title.lower() or "qwen" in e.title.lower()) and e not in china_radar]
+            china_radar.extend(china_candidates[:4 - len(china_radar)])
+        if len(cves) < 4:
+            cve_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("vulnerabilities", "cybersecurity") and e not in cves]
+            cves.extend(cve_candidates[:4 - len(cves)])
+        if len(exploits) < 4:
+            poc_candidates = [e for e in pool if ("poc" in e.title.lower() or "exploit" in e.title.lower() or (e.category.value if hasattr(e.category, 'value') else str(e.category)) == "exploits_tricks") and e not in exploits]
+            exploits.extend(poc_candidates[:4 - len(exploits)])
+
+        # Final safety backfill so no section is ever empty
+        if not trending_repos:
+            trending_repos = pool[:4]
+        if not ai_models_list:
+            ai_models_list = pool[4:8]
+        if not ai_research_list:
+            ai_research_list = pool[8:12]
+        if not ai_tools_list:
+            ai_tools_list = pool[12:16]
         if not china_radar:
-            china_radar = pool[12:18]
+            china_radar = pool[16:20]
+        if not cves:
+            cves = pool[20:24]
         if not exploits:
-            exploits = pool[18:24]
-        if not cloud_infra:
-            cloud_infra = pool[24:30]
-        if not cert_bulletins:
-            cert_bulletins = pool[30:36]
+            exploits = pool[24:28]
 
         # 3. Deep Extract / Enrich Content for Key Featured Stories
-        featured_entries = [lead, secondary_anchor] + pre_cves[:3] + exploits[:2] + china_radar[:2]
+        featured_entries = [lead, secondary_anchor] + trending_repos[:2] + ai_models_list[:2] + pre_cves[:2]
         extract_tasks = [
             article_extractor.extract_article_content(item)
             for item in featured_entries if item
@@ -409,6 +494,10 @@ class NewspaperService:
             "secondary_anchor": secondary_anchor,
             "front_page_briefs": remaining[:4],
             "ciso_briefs": remaining[4:10],
+            "trending_repos": trending_repos,
+            "ai_models": ai_models_list,
+            "ai_research": ai_research_list,
+            "ai_tools": ai_tools_list,
             "pre_cve": pre_cves,
             "ai_labs": ai_labs,
             "china_radar": china_radar,
@@ -442,67 +531,126 @@ class NewspaperService:
         lead_vec = lead.analysis.attack_vector if lead and lead.analysis else "Network perimeter exploitation"
         lead_mit = lead.analysis.mitigation if lead and lead.analysis else "Apply emergency vendor patches"
 
-        md = f"""# 📰 THE CYBER INTELLIGENCE CHRONICLE
+        md = f"""# 📰 THE CYBER INTELLIGENCE CHRONICLE & GLOBAL AI GAZETTE
 **Autonomous 10-Page Comprehensive Intelligence Broadsheet Dossier • Edition #{edition_num}**  
 *Date: {date_str} • Monitoring Horizon: {window_hours} Hours • Verified Across 92 Sensing Arrays*
 
 ---
 
-## 🏛️ [PAGE 1] FRONT PAGE: BREAKING ZERO-DAY & GLOBAL LEAD INVESTIGATION
+## 🏛️ [PAGE 1] FRONT PAGE: BREAKING GLOBAL AI & CYBER INTELLIGENCE
 ### 🚨 {lead_title}
-- **Threat Velocity Index**: `{lead_vel}/100` | **Severity Score**: `{lead_sev}/100` | **Blast Radius**: `{lead_blast}/100`
-- **Exploitation Vector**: {lead_vec}
-- **Direct Remediation Directive**: {lead_mit}
+- **Threat Velocity Index**: `{lead_vel}/100` | **Severity / Impact Score**: `{lead_sev}/100` | **Blast Radius**: `{lead_blast}/100`
+- **Exploitation / Focus Vector**: {lead_vec}
+- **Remediation / Deployment Directive**: {lead_mit}
 
 {lead_summary}
 
-### ⚡ SECONDARY ANCHOR DISPATCH: {secondary.title if secondary else 'Critical Infrastructure Alert'}
-{secondary.summary if secondary else 'Global defense nodes confirm heightened nation-state reconnaissance.'}
+### ⚡ SECONDARY ANCHOR DISPATCH: {secondary.title if secondary else 'Frontier AI & Critical Infrastructure Alert'}
+{secondary.summary if secondary else 'Global intelligence feeds confirm heightened sovereign AI deployment and threat telemetry.'}
 
 #### Top Flash Bulletins
 """
         for item in categorized.get("front_page_briefs", [])[:4]:
             vel = item.analysis.threat_velocity if item.analysis else 35
-            md += f"- **{item.title}** (VEL `{vel}`) — {item.summary or 'Active indicator.'}\n"
+            md += f"- **{item.title}** (VEL `{vel}`) — {item.summary or 'Active telemetry update.'}\n"
 
         md += f"""
 ---
 
 ## 👔 [PAGE 2] CISO & EXECUTIVE BOARD STRATEGIC BRIEFING
-### Macro Threat Posture & Geopolitical Cyber Landscape
-The global threat environment remains in an elevated DEFCON 3 posture. Telemetry across 92 authoritative sensor nodes records an aggressive convergence of nation-state advanced persistent threat (APT) actors and financially motivated ransomware cartels. Perimeter boundary devices, VPN gateways, and cloud IAM identity fabrics continue to represent the primary initial access vector. Furthermore, autonomous prompt injection against enterprise LLM architectures has transitioned from theoretical research into active weaponization.
+### Macro AI Horizons, Sovereign Compute & Geopolitical Cyber Landscape
+The global technological landscape is marked by rapid sovereign AI model adoption and mission-critical cyber defense mobilization. Enterprise leadership must navigate autonomous agent integration while defending identity fabrics against automated exploitation. As frontier labs accelerate model reasoning benchmarks, adversaries simultaneously weaponize perimeter zero-days within hours of public disclosure.
 
-### Enterprise Attack Surface Exposure Matrix
+### Enterprise Attack Surface & AI Exposure Matrix
 | Vector / Boundary | Likelihood | Enterprise Impact | Primary Detection Control | Executive Mandate |
 | :--- | :--- | :--- | :--- | :--- |
 | **Cloud Identity & IdP** | High | Full Tenant Takeover | Conditional Access & FIDO2 | Mandate phishing-resistant hardware keys |
 | **Kubernetes & Containers** | Critical | Lateral Pod Escape | eBPF runtime inspection | Enforce read-only root filesystems |
-| **Generative AI & Agent APIs** | High | Prompt/Tool Injection | System prompt sandboxing | Enforce strict parameter type constraints |
-| **Edge Perimeter Gateways** | Critical | Unauthenticated RCE | Ingress WAF & NetFlow | Disallow direct admin internet exposure |
-| **Software Supply Chain** | High | Build Pipeline Poisoning| CycloneDX SBOM verification | Enforce signed commits & package pinning |
+| **Autonomous AI Agents** | High | Prompt & Tool Injection | Parameter schema validation | Enforce strict firewalled runtime sandboxes |
+| **Edge Perimeter Gateways** | Critical | Unauthenticated RCE | Ingress WAF & NetFlow | Disallow direct internet admin exposure |
+| **Software Supply Chain** | High | Pipeline Poisoning | CycloneDX SBOM verification | Enforce signed commits & package pinning |
 
 ### Prioritized 24-Hour Executive Directives
 """
         for item in categorized.get("ciso_briefs", [])[:5]:
-            md += f"1. **{item.title}**: Verify immediate patch compliance and validate identity logs.\n"
+            md += f"1. **{item.title}**: Verify immediate operational compliance and review access logs.\n"
 
         md += f"""
 ---
 
-## 🔬 [PAGE 3] AI FRONTIER, LLM VULNERABILITIES & PRE-CVE EARLY WARNINGS
-### The Autonomous Agent Attack Surface
-As enterprises deploy autonomous agents endowed with tool-use capabilities, untrusted input boundaries become porous. Adversaries embed malicious prompt injection sequences into web pages, documents, and RAG vector stores. When an agent processes this untrusted data, the injection hijacks execution context, forcing unauthorized file reads, shell commands, or database exfiltration.
+## 🚀 [PAGE 3] TRENDING OPEN-SOURCE AI & GITHUB INNOVATIONS
+### Global Developer Community Velocity & Codebase Momentum
+Open-source generative AI development on GitHub is surging at unprecedented velocity. From agentic orchestration runtimes to quantized local inference engines, community repositories empower autonomous intelligence across distributed environments.
+
+| Repository / Project | Focus Area | Ecosystem Impact | Community Momentum |
+| :--- | :--- | :--- | :--- |
+| **vllm-project / vllm** | High-Throughput Inference | PagedAttention GPU Serving | ★ 35k+ Stars • Industry Standard |
+| **ollama / ollama** | Local Model Execution | Zero-Config CLI / Desktop | ★ 95k+ Stars • Local AI Baseline |
+| **run-llama / llama_index**| Agentic RAG Framework | Enterprise Data Connectors | ★ 38k+ Stars • Production Retrieval |
+| **langchain-ai / langgraph**| Multi-Agent Cyclic Graphs | State Machine Coordination | ★ 12k+ Stars • Autonomous Swarms |
+| **deepseek-ai / DeepSeek-V3**| MoE Reasoning Architecture| Multi-Head Latent Attention | ★ 60k+ Stars • Frontier Open-Weight |
+
+### Featured Trending Repositories
 """
-        for p in categorized.get("pre_cve", [])[:4]:
-            vel = p.analysis.threat_velocity if p.analysis else 30
-            md += f"### ⚡ {p.title}\n- **Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(p)}`\n\n{p.summary or ''}\n\n"
+        for r in categorized.get("trending_repos", [])[:4]:
+            vel = r.analysis.threat_velocity if r.analysis else 85
+            md += f"### 🚀 {r.title}\n- **Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(r)}`\n\n{r.summary or ''}\n\n"
 
         md += f"""
 ---
 
-## 🇨🇳 [PAGE 4] SOVEREIGN NATION-STATE & CHINA CYBER RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
-### Sovereign Vulnerability Governance & Asian Threat Matrix
-Under China's *Regulations on the Management of Network Product Security Vulnerabilities*, zero-day disclosures must be submitted to the Ministry of Industry and Information Technology (MIIT) prior to public release. This sovereign window provides regional offensive research teams lead time before international NVD assignments.
+## 🤖 [PAGE 4] FRONTIER AI MODELS & AUTONOMOUS AGENTS
+### Sovereign Architectures, Reasoning Breakthroughs & Model Benchmarks
+Frontier AI research is defined by post-training reinforcement learning, test-time compute scaling, and mixture-of-experts (MoE) efficiency. Models demonstrate emergent reasoning across mathematical olympiads, code synthesis, and autonomous decision pipelines.
+
+| Model | Organization | Parameter Scale | Context Window | Key Innovation |
+| :--- | :--- | :--- | :--- | :--- |
+| **DeepSeek-R1** | DeepSeek | 671B (37B active) | 128k Tokens | Pure RL reasoning, open weights |
+| **Claude 3.7 Sonnet** | Anthropic | Proprietary | 200k Tokens | Hybrid instant & extended thinking |
+| **OpenAI o3-mini** | OpenAI | Proprietary | 200k Tokens | Cost-effective mathematical reasoning |
+| **Qwen-2.5-Max** | Alibaba Cloud | Proprietary / MoE | 128k Tokens | Bilingual reasoning & STEM benchmark leader |
+| **Llama 3.3 70B** | Meta AI | 70B Dense | 128k Tokens | Open-weight foundation with 405B parity |
+
+### Frontier Model Dispatches
+"""
+        for m in categorized.get("ai_models", [])[:4]:
+            vel = m.analysis.threat_velocity if m.analysis else 90
+            md += f"### 🤖 {m.title}\n- **Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(m)}`\n\n{m.summary or ''}\n\n"
+
+        md += f"""
+---
+
+## 🔬 [PAGE 5] TOP AI RESEARCH PAPERS & ARXIV BREAKTHROUGHS
+### Scientific Inquiries, Test-Time Compute & Emergent Capabilities
+Academic and industrial research published across arXiv reveals transformative paradigms in agent verification, latent alignment, and multi-modal sensory synthesis.
+
+### Seminal Research Papers
+"""
+        for paper in categorized.get("ai_research", [])[:4]:
+            vel = paper.analysis.threat_velocity if paper.analysis else 80
+            md += f"### 🔬 {paper.title}\n- **Research Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(paper)}`\n\n{paper.summary or ''}\n\n"
+
+        md += f"""
+---
+
+## 🛠️ [PAGE 6] DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE
+### Local Inference Runtimes, Evaluation Harnesses & Tooling Ecosystem
+The infrastructure layer powering modern artificial intelligence has transitioned towards specialized inference kernels, synthetic dataset pipelines, and zero-trust agent sandboxes.
+
+### Core Tooling Dispatches
+"""
+        for tool in categorized.get("ai_tools", [])[:4]:
+            vel = tool.analysis.threat_velocity if tool.analysis else 75
+            md += f"### 🛠️ {tool.title}\n- **Adoption Index**: `{vel}/100` | **Source**: `{self._get_source_name(tool)}`\n\n{tool.summary or ''}\n\n"
+
+        md += f"""
+---
+
+## 🇨🇳 [PAGE 7] SOVEREIGN AI & GLOBAL NATION-STATE RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
+### Sovereign AI Initiatives, State Vulnerability Governance & Regional Wire
+Sovereign models (DeepSeek, Qwen, GLM, InternLM) and regional vulnerability mandates (China MIIT disclosure rules) form an interconnected geopolitical landscape. Telemetry synthesizes bilingual dispatches from major research institutes and state coordination centers.
+
+### Sovereign Wire Dispatches
 """
         for ch in categorized.get("china_radar", [])[:4]:
             md += f"### 🌐 {ch.title}\n- **Sovereign Source**: `{self._get_source_name(ch)}`\n\n{ch.summary or ''}\n\n"
@@ -510,9 +658,11 @@ Under China's *Regulations on the Management of Network Product Security Vulnera
         md += f"""
 ---
 
-## 🔴 [PAGE 5] HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV CATALOG
-### Active In-The-Wild Exploits
+## 🔴 [PAGE 8] HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV CATALOG
+### Active In-The-Wild Exploits & Critical Infrastructure Zero-Days
 Adversaries prioritize unauthenticated remote code execution and session token forgery. Recent threat actor activity demonstrates automated mass scanning of public IP ranges within hours of advisory disclosures.
+
+### Critical Vulnerabilities
 """
         for c in categorized.get("cves", [])[:5]:
             md += f"### 🛡️ {c.title}\n- **Severity**: `{c.analysis.severity_index if c.analysis else 50}/100` | **Reference**: {c.url}\n\n{c.summary or ''}\n\n"
@@ -520,9 +670,19 @@ Adversaries prioritize unauthenticated remote code execution and session token f
         md += f"""
 ---
 
-## ⚡ [PAGE 6] VERIFIED PROOF-OF-CONCEPTS (POCs) & RED TEAM EXPLOIT REPOSITORIES
-### Exploit Weaponization Velocity
-Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub repositories have drastically compressed enterprise patch windows. Defending teams must deploy proactive network signatures before weaponized modules are integrated into automated attack frameworks like Metasploit and Nuclei.
+## ⚡ [PAGE 9] VERIFIED PROOF-OF-CONCEPTS & RED TEAM REPOSITORIES
+### Exploit Weaponization Velocity & MITRE ATLAS Threat Matrix
+Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub repositories have drastically compressed enterprise patch windows. Defensive teams must deploy proactive network signatures before weaponized modules are integrated into automated attack frameworks.
+
+| Technique / ID | Target Entity | Threat Level | Recommended Telemetry Control |
+| :--- | :--- | :--- | :--- |
+| **T1190 Exploit Public-Facing App** | Web & API Gateways | Critical | WAF inspection, ingress rate-limiting |
+| **T1059 Command and Scripting** | Host & Container | High | Auditd, Sysmon process telemetry |
+| **T1078 Valid Accounts** | Cloud IAM & IdP | High | Enforce FIDO2 MFA, rotate session tokens |
+| **AML.T0054 LLM Prompt Injection** | Autonomous AI Agents | High | Enforce system prompt boundaries |
+| **AML.T0043 Model Weights Exfiltration**| ML Inference Clusters| Critical | Encrypt model artifacts at rest and in transit |
+
+### Actionable Proof-of-Concepts
 """
         for exp in categorized.get("exploits", [])[:4]:
             md += f"### 💥 {exp.title}\n- **Source**: `{self._get_source_name(exp)}`\n\n{exp.summary or ''}\n\n"
@@ -530,49 +690,18 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
         md += f"""
 ---
 
-## ☁️ [PAGE 7] CLOUD INFRASTRUCTURE, KUBERNETES & SUPPLY CHAIN DEFENSE
-### Multi-Cloud IAM Escalation & Container Breakouts
-Container escapes and IAM permission chaining remain primary avenues for cloud tenant compromise. Attackers compromise misconfigured Kubernetes admission controllers or unpatched container runtimes to access host node namespaces.
-"""
-        for cld in categorized.get("cloud_infra", [])[:4]:
-            md += f"### ☁️ {cld.title}\n\n{cld.summary or ''}\n\n"
-
-        md += f"""
----
-
-## 🌍 [PAGE 8] GLOBAL CERT BULLETINS & SECTOR IMPACT ADVISORIES
-### Cross-Border Threat Telemetry & Critical Infrastructure Warnings
-National CERT agencies emphasize heightened resilience across energy grids, financial payment rails, and healthcare diagnostic systems. Coordinated defense alerts require cross-sector intelligence sharing.
-"""
-        for cert in categorized.get("cert_bulletins", [])[:4]:
-            md += f"### 🌐 {cert.title}\n- **Agency**: `{self._get_source_name(cert)}`\n\n{cert.summary or ''}\n\n"
-
-        md += f"""
----
-
-## 🎯 [PAGE 9] MITRE ATT&CK & ATLAS ENTERPRISE THREAT MATRIX
-| Technique / ID | Target Entity | Threat Level | Recommended SOC Telemetry |
-| :--- | :--- | :--- | :--- |
-| **T1190 Exploit Public-Facing App** | Web & API Gateways | Critical | WAF inspection, ingress rate-limiting |
-| **T1059 Command and Scripting** | Host & Container | High | Auditd, Sysmon process telemetry |
-| **T1078 Valid Accounts** | Cloud IAM & IdP | High | Enforce FIDO2 MFA, rotate session tokens |
-| **T1486 Data Encrypted for Impact** | Distributed Storage | Critical | Immutable offline backups & shadow copies |
-| **AML.T0054 LLM Prompt Injection** | Autonomous AI Agents | High | Enforce system prompt boundaries |
-| **AML.T0043 Model Weights Exfiltration**| ML Inference Clusters| Critical | Encrypt model artifacts at rest and in transit |
-
----
-
-## 🛡️ [PAGE 10] 24-HOUR DEFENSIVE PLAYBOOK & SECOPS ACTION PLAN
+## 🛡️ [PAGE 10] 24-HOUR DEFENSIVE PLAYBOOK & OPERATIONAL ACTION PLAN
 ### Remediation SLA Hierarchy
 1. **P0 Emergency (< 4 Hours)**: Patch active CISA KEV catalog entries and public perimeter RCE flaws.
 2. **P1 Critical (< 24 Hours)**: Remediate high-velocity CVEs (CVSS >= 8.5) and rotate compromised cloud tokens.
 3. **P2 High (< 72 Hours)**: Audit AI agent tool permissions and apply non-critical OS dependency updates.
 
-### Tactical Firewall & Ingress Hardening Directives
-- Disallow external access to internal administration ports (SSH, RDP, Kubernetes API).
-- Block known Tor exit nodes and anomalous cloud egress destinations.
+### Tactical AI & Infrastructure Hardening Directives
+- **AI Agent Sandboxing**: Execute all LLM tool invocations in isolated gVisor/firecracker microVMs with strictly bounded egress.
+- **Perimeter Access Isolation**: Disallow external access to administrative ports (SSH, RDP, Kubernetes API, Ollama daemon).
+- **SafeTensors Verification**: Block unverified PyTorch `.bin`/`.pt` pickle checkpoints across all internal ML clusters.
 
-*Imprimatur: The Cyber Intelligence Chronicle • AetherGuard Autonomous SecIntel Engine • Edition #{edition_num}*
+*Imprimatur: The Aether Guard — Global AI & Technology Gazette • Autonomous SecIntel Engine • Edition #{edition_num}*
 """
         return md
 
@@ -1015,17 +1144,21 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
         date_str = generated_at.strftime("%A, %B %d, %Y • %H:%M UTC")
         story = []
 
-        def render_dense_article_card(item: Entry, tag_color: str, tag_label: str):
+        def render_dense_article_card(item: Entry, tag_color: str, tag_label: str, stat_label: str = "SEVERITY"):
             src = self._get_source_name(item)
+            is_pure_ai = (item.analysis and getattr(item.analysis, "is_ai_innovation", False)) or (
+                item.category.value if hasattr(item.category, "value") else str(item.category)
+            ) in ("github_trending", "ai_models", "ai_research", "cyber_tools")
             vel = item.analysis.threat_velocity if item.analysis else 35
             sev = item.analysis.severity_index if item.analysis else 50
             vec = item.analysis.attack_vector if item.analysis else "Remote Exploit"
+            effective_stat = "IMPACT" if is_pure_ai else stat_label
             title_text = f"<b>{html.escape(item.title)}</b>"
             meta_text = (
                 f"<font color='{tag_color}'><b>[{tag_label}]</b></font> "
-                f"<b>SOURCE:</b> {html.escape(src[:20])} | <b>VELOCITY:</b> {vel}/100 | <b>SEVERITY:</b> {sev}/100"
+                f"<b>SOURCE:</b> {html.escape(src[:20])} | <b>VELOCITY:</b> {vel}/100 | <b>{effective_stat}:</b> {sev}/100"
             )
-            body_text = html.escape(item.summary or "Detailed telemetry and technical analysis underway.")
+            body_text = html.escape(item.summary or "Detailed technical synthesis and telemetry analysis underway.")
             return [
                 Paragraph(meta_text, item_meta),
                 Paragraph(title_text, item_title),
@@ -1035,22 +1168,22 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
             ]
 
         # ═════════════════════════════════════════════════════════════════════
-        # PAGE 1: FRONT PAGE & BREAKING ZERO-DAY LEAD INVESTIGATION
+        # PAGE 1: FRONT PAGE & BREAKING GLOBAL AI & THREAT LEAD INVESTIGATION
         # ═════════════════════════════════════════════════════════════════════
         story.append(Table([[
-            Paragraph("AETHERGUARD DEFENSE DISPATCH", dateline_style),
+            Paragraph("AETHERGUARD INTELLIGENCE & DEFENSE DISPATCH", dateline_style),
             Paragraph("GLOBAL THREAT: <b>DEFCON 3 (ELEVATED)</b>", dateline_style),
             Paragraph(f"PAGE 1 OF 10 • 10-PAGE DOSSIER", ParagraphStyle('R', fontName='Helvetica-Bold', fontSize=7.5, alignment=2, textColor=colors.HexColor('#1e293b'))),
         ]], colWidths=[180, 180, 180]))
         story.append(Spacer(1, 2))
-        story.append(Paragraph("THE CYBER INTELLIGENCE CHRONICLE", masthead_title))
-        story.append(Paragraph('"Omnis Vulnerabilitas Patefacietur" — Autonomous Telemetry Across 92 Global Arrays', masthead_sub))
+        story.append(Paragraph("THE AETHER GUARD — GLOBAL AI & TECHNOLOGY GAZETTE", masthead_title))
+        story.append(Paragraph('"Omnis Intelligentia Patefacietur" — Frontier Research • Trending Repositories • Developer Tools • AI Models • Security & Governance', masthead_sub))
         story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#0f172a"), spaceAfter=1))
         story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#0f172a"), spaceAfter=3))
         story.append(Table([[
             Paragraph(f"<b>{date_str}</b>", dateline_style),
             Paragraph(f"<b>EDITION NO. {edition_num}</b>", ParagraphStyle('C', fontName='Helvetica-Bold', fontSize=7.5, alignment=1, textColor=colors.HexColor('#1e293b'))),
-            Paragraph("<b>AETHERGUARD AI CORE</b>", ParagraphStyle('R', fontName='Helvetica-Bold', fontSize=7.5, alignment=2, textColor=colors.HexColor('#1e293b'))),
+            Paragraph("<b>AETHERGUARD AI OBSERVER</b>", ParagraphStyle('R', fontName='Helvetica-Bold', fontSize=7.5, alignment=2, textColor=colors.HexColor('#1e293b'))),
         ]], colWidths=[200, 140, 200]))
         story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=4))
 
@@ -1190,106 +1323,210 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
         story.append(PageBreak())
 
         # ═════════════════════════════════════════════════════════════════════
-        # PAGE 3: AI FRONTIER, LLM VULNERABILITIES & PRE-CVE EARLY WARNINGS
+        # PAGE 3: TRENDING OPEN-SOURCE AI & GITHUB INNOVATIONS
         # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("🤖 SECTION III: AI FRONTIER, LLM SECURITY & PRE-CVE EARLY WARNINGS", page_header))
-        story.append(Paragraph("Autonomous Agent Prompt Injection, Model Weights Exfiltration & Pre-CVE Research Wire", page_sub))
+        story.append(Paragraph("🚀 SECTION III: TRENDING OPEN-SOURCE AI & GITHUB INNOVATIONS", page_header))
+        story.append(Paragraph("Top GitHub Repositories, Developer Velocity, Architecture Dissections & Deployment Guides", page_sub))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
 
-        ai_feature_text = (
-            "<b>THE AUTONOMOUS AGENT ATTACK SURFACE:</b> As enterprise environments integrate autonomous LLM agents "
-            "with access to databases, web browsing tools, and internal APIs, the traditional security perimeter collapses into "
-            "the prompt context window. Indirect prompt injection attacks demonstrate that untrusted data retrieved from external sources "
-            "can subvert agent guardrails, forcing the model to invoke destructive tools, exfiltrate API keys, or rewrite internal records. "
-            "Additionally, model weights exfiltration and unsafe serialization (such as legacy PyTorch pickle files) present immediate RCE vectors."
+        repo_intro = (
+            "<b>GLOBAL DEVELOPER VELOCITY:</b> Open-source AI engineering on GitHub is expanding across distributed runtimes, "
+            "agentic workflows, and quantized model serving. Developers worldwide are rapidly converging on local-first LLM orchestration, "
+            "synthetic data pipelines, and high-throughput inference kernels that bypass proprietary API bottlenecks."
         )
-        story.append(Paragraph(ai_feature_text, body_style))
+        story.append(Paragraph(repo_intro, body_style))
         story.append(Spacer(1, 4))
 
-        # Frontier AI Models Audit Table
-        ai_table_data = [
+        # Trending Repositories Matrix
+        repo_table_data = [
             [
-                Paragraph("<b>MODEL / ARCHITECTURE</b>", dateline_style),
-                Paragraph("<b>JAILBREAK RISK</b>", dateline_style),
-                Paragraph("<b>WEIGHT EXFILTRATION</b>", dateline_style),
-                Paragraph("<b>RAG POISONING DEFENSE</b>", dateline_style),
-                Paragraph("<b>RECOMMENDED CONTROLS</b>", dateline_style),
+                Paragraph("<b>PROJECT / REPO</b>", dateline_style),
+                Paragraph("<b>DOMAIN FOCUS</b>", dateline_style),
+                Paragraph("<b>ARCHITECTURE / STACK</b>", dateline_style),
+                Paragraph("<b>COMMUNITY MOMENTUM</b>", dateline_style),
             ],
             [
-                Paragraph("<b>DeepSeek-R1 / V3</b>", item_title),
-                Paragraph("<font color='#ea580c'><b>Moderate</b></font>", item_meta),
-                Paragraph("Elevated (Local Deploy)", item_summary),
-                Paragraph("Strict Context Guardrails", item_summary),
-                Paragraph("Enforce SafeTensors deserialization", item_summary),
+                Paragraph("<b>vllm-project / vllm</b>", item_title),
+                Paragraph("High-Throughput Serving", item_summary),
+                Paragraph("PagedAttention, CUDA C++, Python", item_summary),
+                Paragraph("★ 35,000+ Stars • Standard Engine", item_meta),
             ],
             [
-                Paragraph("<b>Qwen-2.5 72B</b>", item_title),
-                Paragraph("<font color='#ea580c'><b>Moderate</b></font>", item_meta),
-                Paragraph("Elevated (Open Weights)", item_summary),
-                Paragraph("Pre-embedding Tokenizer Audit", item_summary),
-                Paragraph("Air-gap inference compute clusters", item_summary),
+                Paragraph("<b>ollama / ollama</b>", item_title),
+                Paragraph("Local Execution Engine", item_summary),
+                Paragraph("Go, llama.cpp, Cross-Platform", item_summary),
+                Paragraph("★ 95,000+ Stars • Desktop Standard", item_meta),
             ],
             [
-                Paragraph("<b>Claude 3.7 Sonnet</b>", item_title),
-                Paragraph("<font color='#059669'><b>Low</b></font>", item_meta),
-                Paragraph("Low (Managed API)", item_summary),
-                Paragraph("Automated Tool Schema Checks", item_summary),
-                Paragraph("Validate tool parameter constraints", item_summary),
+                Paragraph("<b>run-llama / llama_index</b>", item_title),
+                Paragraph("Production Agentic RAG", item_summary),
+                Paragraph("Python, Hybrid Vector Connectors", item_summary),
+                Paragraph("★ 38,000+ Stars • Enterprise Retrieval", item_meta),
             ],
             [
-                Paragraph("<b>OpenAI o3 / GPT-4o</b>", item_title),
-                Paragraph("<font color='#059669'><b>Low</b></font>", item_meta),
-                Paragraph("Low (Managed API)", item_summary),
-                Paragraph("Dual-LLM Supervisor Validation", item_summary),
-                Paragraph("Enforce human-in-the-loop approvals", item_summary),
+                Paragraph("<b>deepseek-ai / DeepSeek-V3</b>", item_title),
+                Paragraph("Frontier MoE Foundation", item_summary),
+                Paragraph("Multi-Head Latent Attention", item_summary),
+                Paragraph("★ 60,000+ Stars • Open Weights", item_meta),
             ],
         ]
-        at = Table(ai_table_data, colWidths=[110, 80, 110, 110, 130])
-        at.setStyle(TableStyle([
+        rt = Table(repo_table_data, colWidths=[140, 130, 140, 130])
+        rt.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
             ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
             ('PADDING', (0, 0), (-1, -1), 4),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        story.append(at)
+        story.append(rt)
         story.append(Spacer(1, 4))
 
-        story.append(Paragraph("<b>PRE-CVE RESEARCH WIRE & EARLY WARNINGS</b>", ParagraphStyle('H', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#0f172a'), spaceAfter=3)))
-        for item in categorized.get("pre_cve", [])[:3]:
-            for element in render_dense_article_card(item, tag_color="#d97706", tag_label="PRE-CVE WARNING"):
+        story.append(Paragraph("<b>FEATURED OPEN-SOURCE DISPATCHES & REPOSITORIES</b>", ParagraphStyle('H', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#0f172a'), spaceAfter=3)))
+        for item in categorized.get("trending_repos", [])[:3]:
+            for element in render_dense_article_card(item, tag_color="#0891b2", tag_label="TRENDING REPO", stat_label="VELOCITY"):
                 story.append(element)
 
         story.append(PageBreak())
 
         # ═════════════════════════════════════════════════════════════════════
-        # PAGE 4: SOVEREIGN NATION-STATE & CHINA CYBER RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
+        # PAGE 4: FRONTIER AI MODELS & AUTONOMOUS AGENTS
         # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("🌐 SECTION IV: SOVEREIGN NATION-STATE & CHINA CYBER RADAR", page_header))
-        story.append(Paragraph("Translated Sovereign Telemetry from CNCERT, CNNVD, Qihoo 360, Antiy & APT Tracking", page_sub))
+        story.append(Paragraph("🤖 SECTION IV: FRONTIER AI MODELS & AUTONOMOUS AGENTS", page_header))
+        story.append(Paragraph("Sovereign Architectures, Reasoning Breakthroughs, Parameter Scale & Benchmark Matrices", page_sub))
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
+
+        model_intro = (
+            "<b>THE FRONTIER REASONING PARADIGM:</b> Machine intelligence has pivoted from pure next-token prediction to reinforcement "
+            "learning during inference (test-time compute). Architectures such as DeepSeek-R1, OpenAI o3, and Claude 3.7 Sonnet produce "
+            "verifiable internal reasoning traces, demonstrating human-expert parity across software engineering, competitive mathematics, "
+            "and formal logic benchmarks."
+        )
+        story.append(Paragraph(model_intro, body_style))
+        story.append(Spacer(1, 4))
+
+        # Frontier AI Models Benchmark Table
+        model_table_data = [
+            [
+                Paragraph("<b>MODEL / ARCHITECTURE</b>", dateline_style),
+                Paragraph("<b>SCALE / ACTIVE</b>", dateline_style),
+                Paragraph("<b>CONTEXT</b>", dateline_style),
+                Paragraph("<b>PRIMARY BENCHMARK</b>", dateline_style),
+                Paragraph("<b>INNOVATION HIGHLIGHT</b>", dateline_style),
+            ],
+            [
+                Paragraph("<b>DeepSeek-R1</b>", item_title),
+                Paragraph("671B / 37B MoE", item_summary),
+                Paragraph("128k Tokens", item_summary),
+                Paragraph("AIME 2024: 79.8%", item_meta),
+                Paragraph("Pure RL cold-start reasoning", item_summary),
+            ],
+            [
+                Paragraph("<b>Claude 3.7 Sonnet</b>", item_title),
+                Paragraph("Proprietary", item_summary),
+                Paragraph("200k Tokens", item_summary),
+                Paragraph("SWE-bench: 70.3%", item_meta),
+                Paragraph("Hybrid instant/extended thinking", item_summary),
+            ],
+            [
+                Paragraph("<b>OpenAI o3-mini</b>", item_title),
+                Paragraph("Proprietary", item_summary),
+                Paragraph("200k Tokens", item_summary),
+                Paragraph("Math: 91.2%", item_meta),
+                Paragraph("High-speed chain-of-thought", item_summary),
+            ],
+            [
+                Paragraph("<b>Qwen-2.5 72B</b>", item_title),
+                Paragraph("72B Dense", item_summary),
+                Paragraph("128k Tokens", item_summary),
+                Paragraph("MMLU: 86.1%", item_meta),
+                Paragraph("Bilingual coding & open weights", item_summary),
+            ],
+        ]
+        mt_models = Table(model_table_data, colWidths=[115, 80, 75, 120, 150])
+        mt_models.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
+            ('PADDING', (0, 0), (-1, -1), 4),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        story.append(mt_models)
+        story.append(Spacer(1, 4))
+
+        story.append(Paragraph("<b>FRONTIER MODEL DISPATCHES & CAPABILITY DOSSIERS</b>", ParagraphStyle('H', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#0f172a'), spaceAfter=3)))
+        for item in categorized.get("ai_models", [])[:3]:
+            for element in render_dense_article_card(item, tag_color="#7c3aed", tag_label="FRONTIER MODEL", stat_label="IMPACT"):
+                story.append(element)
+
+        story.append(PageBreak())
+
+        # ═════════════════════════════════════════════════════════════════════
+        # PAGE 5: TOP AI RESEARCH PAPERS & ARXIV BREAKTHROUGHS
+        # ═════════════════════════════════════════════════════════════════════
+        story.append(Paragraph("🔬 SECTION V: TOP AI RESEARCH PAPERS & ARXIV BREAKTHROUGHS", page_header))
+        story.append(Paragraph("Reasoning Paradigms, Multimodal Architectures, Autonomous Planning & Latent Alignment", page_sub))
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
+
+        research_intro = (
+            "<b>ACADEMIC & INDUSTRIAL DISCOVERY WIRE:</b> Peer-reviewed and preprint investigations across arXiv document monumental leaps "
+            "in test-time compute optimization, self-correcting agentic loops, and multi-modal alignment. Researchers increasingly focus "
+            "on algorithmic sample efficiency, process reward models (PRMs), and verifiable constraint satisfaction over brute-force pre-training."
+        )
+        story.append(Paragraph(research_intro, body_style))
+        story.append(Spacer(1, 4))
+
+        for item in categorized.get("ai_research", [])[:4]:
+            for element in render_dense_article_card(item, tag_color="#4338ca", tag_label="AI RESEARCH", stat_label="IMPACT"):
+                story.append(element)
+
+        story.append(PageBreak())
+
+        # ═════════════════════════════════════════════════════════════════════
+        # PAGE 6: DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE
+        # ═════════════════════════════════════════════════════════════════════
+        story.append(Paragraph("🛠️ SECTION VI: DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE", page_header))
+        story.append(Paragraph("Inference Runtimes, Evaluation Frameworks, Vector DBs & Local GPU Execution Engines", page_sub))
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
+
+        infra_intro = (
+            "<b>ENTERPRISE AI RUNTIME STACK:</b> The operational foundation of artificial intelligence requires fault-tolerant vector storage, "
+            "low-latency CUDA/Metal inference engines, and rigorous benchmark harnesses. Tooling ecosystems enable organizations to deploy "
+            "resilient multi-agent swarms with granular access controls and continuous latency optimization."
+        )
+        story.append(Paragraph(infra_intro, body_style))
+        story.append(Spacer(1, 4))
+
+        for item in categorized.get("ai_tools", [])[:4]:
+            for element in render_dense_article_card(item, tag_color="#0d9488", tag_label="AI TOOL", stat_label="ADOPTION"):
+                story.append(element)
+
+        story.append(PageBreak())
+
+        # ═════════════════════════════════════════════════════════════════════
+        # PAGE 7: SOVEREIGN AI & GLOBAL NATION-STATE RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
+        # ═════════════════════════════════════════════════════════════════════
+        story.append(Paragraph("🌐 SECTION VII: SOVEREIGN AI & GLOBAL NATION-STATE RADAR", page_header))
+        story.append(Paragraph("Translated Sovereign Telemetry from CNCERT, CNNVD, Qihoo 360, Antiy & Sovereign AI Labs", page_sub))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
 
         sovereign_text = (
-            "<b>SOVEREIGN VULNERABILITY GOVERNANCE:</b> Under China's <i>Regulations on the Management of Network Product Security "
-            "Vulnerabilities</i>, all domestically discovered security zero-days must be reported to the Ministry of Industry and Information "
-            "Technology (MIIT) before international disclosure. This framework establishes an asymmetric intelligence window wherein sovereign "
-            "threat actors gain visibility into high-impact vulnerabilities weeks prior to Western NVD CVE assignment. "
-            "Autonomous telemetry from Qihoo 360, Antiy Labs, and Cyber Kunlun confirms targeted exploitation against regional edge infrastructure."
+            "<b>SOVEREIGN AI & VULNERABILITY GOVERNANCE:</b> Sovereign compute ecosystems in China and the Asia-Pacific theatre are driving dual "
+            "revolutions in domestic foundation models (DeepSeek, Qwen, GLM) and proactive threat intelligence. Under national vulnerability "
+            "regulations, regional labs maintain early visibility into zero-day exploits before international NVD assignment. Autonomous "
+            "telemetry synthesizes real-time Chinese and sovereign sources."
         )
         story.append(Paragraph(sovereign_text, body_style))
         story.append(Spacer(1, 4))
 
-        # Sovereign Threat Dossiers
         for item in categorized.get("china_radar", [])[:4]:
-            for element in render_dense_article_card(item, tag_color="#b91c1c", tag_label="SOVEREIGN INTEL 🇨🇳"):
+            for element in render_dense_article_card(item, tag_color="#b91c1c", tag_label="SOVEREIGN WIRE 🇨🇳", stat_label="SEVERITY"):
                 story.append(element)
 
         story.append(PageBreak())
 
         # ═════════════════════════════════════════════════════════════════════
-        # PAGE 5: HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV CATALOG
+        # PAGE 8: HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV CATALOG
         # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("🛡️ SECTION V: HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV", page_header))
-        story.append(Paragraph("Known Exploited Vulnerabilities Catalog, CVSS Risk Ratings & Remediation Mandates", page_sub))
+        story.append(Paragraph("🛡️ SECTION VIII: HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV", page_header))
+        story.append(Paragraph("Known Exploited Vulnerabilities Catalog, CVSS Risk Ratings & Urgent Patch Directives", page_sub))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
 
         kev_intro = (
@@ -1300,83 +1537,26 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
         story.append(Paragraph(kev_intro, body_style))
         story.append(Spacer(1, 4))
 
-        # Detailed Vulnerability Cards
         for item in categorized.get("cves", [])[:4]:
-            for element in render_dense_article_card(item, tag_color="#dc2626", tag_label="CISA KEV / CVE"):
+            for element in render_dense_article_card(item, tag_color="#dc2626", tag_label="CISA KEV / CVE", stat_label="SEVERITY"):
                 story.append(element)
 
         story.append(PageBreak())
 
         # ═════════════════════════════════════════════════════════════════════
-        # PAGE 6: VERIFIED PROOF-OF-CONCEPTS (POCs) & RED TEAM EXPLOIT REPOSITORIES
+        # PAGE 9: VERIFIED PROOF-OF-CONCEPTS & RED TEAM REPOSITORIES
         # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("⚡ SECTION VI: VERIFIED PROOF-OF-CONCEPTS & RED TEAM REPOSITORIES", page_header))
-        story.append(Paragraph("Exploit-DB, Packet Storm & GitHub Trending 0-Day Code Weaponization Dissections", page_sub))
+        story.append(Paragraph("⚡ SECTION IX: VERIFIED PROOF-OF-CONCEPTS & RED TEAM REPOSITORIES", page_header))
+        story.append(Paragraph("Exploit-DB, Packet Storm & MITRE ATT&CK / ATLAS Threat Taxonomy", page_sub))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
 
         poc_text = (
             "<b>EXPLOIT WEAPONIZATION TIMELINES:</b> The window between vulnerability publication and functional exploit automation "
-            "has compressed to under 24 hours. Red team repositories and independent security researchers release proof-of-concept scripts "
-            "that are rapidly weaponized by ransomware syndicates. Defensive teams must deploy protocol-level inspection rules before binary patches can be fully staged."
+            "has compressed to under 24 hours. Red team repositories release proof-of-concept scripts that require proactive protocol-level "
+            "inspection rules before binary patches can be fully staged."
         )
         story.append(Paragraph(poc_text, body_style))
         story.append(Spacer(1, 4))
-
-        # PoC Case Studies
-        for item in categorized.get("exploits", [])[:4]:
-            for element in render_dense_article_card(item, tag_color="#ea580c", tag_label="VERIFIED PoC"):
-                story.append(element)
-
-        story.append(PageBreak())
-
-        # ═════════════════════════════════════════════════════════════════════
-        # PAGE 7: CLOUD INFRASTRUCTURE, KUBERNETES & SUPPLY CHAIN DEFENSE
-        # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("☁️ SECTION VII: CLOUD, CONTAINER & SUPPLY CHAIN DEFENSE", page_header))
-        story.append(Paragraph("AWS, Azure, GCP, Kubernetes Ingress Escapes & Open-Source Package Poisoning", page_sub))
-        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
-
-        cloud_text = (
-            "<b>CLOUD TENANT & PIPELINE COMPROMISE:</b> Attackers increasingly bypass network perimeters by compromising cloud IAM roles "
-            "and software supply chain pipelines. Malicious packages on PyPI and NPM employ typosquatting and dependency confusion to inject "
-            "obfuscated infostealer payloads during build phases, compromising production container environments."
-        )
-        story.append(Paragraph(cloud_text, body_style))
-        story.append(Spacer(1, 4))
-
-        for item in categorized.get("cloud_infra", [])[:4]:
-            for element in render_dense_article_card(item, tag_color="#0284c7", tag_label="CLOUD / K8S"):
-                story.append(element)
-
-        story.append(PageBreak())
-
-        # ═════════════════════════════════════════════════════════════════════
-        # PAGE 8: GLOBAL CERT ADVISORIES & INCIDENT RESPONSE BULLETINS
-        # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("🌍 SECTION VIII: INTERNATIONAL CERT BULLETINS & SECTOR IMPACT", page_header))
-        story.append(Paragraph("NCSC-UK, CERT-EU, JPCERT/CC, GovCERT.HK & Critical Infrastructure Directives", page_sub))
-        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
-
-        cert_text = (
-            "<b>CROSS-BORDER THREAT SYNTHESIS:</b> National cyber defense authorities issue synchronized advisories identifying "
-            "coordinated espionage against energy grids, financial clearinghouses, and healthcare infrastructure. Defending enterprises "
-            "must incorporate indicators of compromise (IoCs) published by sovereign CERT agencies."
-        )
-        story.append(Paragraph(cert_text, body_style))
-        story.append(Spacer(1, 4))
-
-        for item in categorized.get("cert_bulletins", [])[:4]:
-            for element in render_dense_article_card(item, tag_color="#059669", tag_label="NATIONAL CERT"):
-                story.append(element)
-
-        story.append(PageBreak())
-
-        # ═════════════════════════════════════════════════════════════════════
-        # PAGE 9: MITRE ATT&CK & ATLAS ENTERPRISE THREAT MATRIX
-        # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("🎯 SECTION IX: MITRE ATT&CK & ATLAS ENTERPRISE THREAT TAXONOMY", page_header))
-        story.append(Paragraph("Tactical Adversary TTP Mapping and Machine Learning ATLAS Security Matrix", page_sub))
-        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
 
         mitre_table_data = [
             [
@@ -1404,12 +1584,6 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
                 Paragraph("Mandate FIDO2 MFA & continuous conditional access re-evaluation", item_summary),
             ],
             [
-                Paragraph("<b>T1486</b>", callout_box_text),
-                Paragraph("Data Encrypted for Impact", item_title),
-                Paragraph("Impact", item_summary),
-                Paragraph("Immutable offline backups & volume shadow copy monitoring", item_summary),
-            ],
-            [
                 Paragraph("<b>AML.T0054</b>", callout_box_text),
                 Paragraph("LLM Prompt Injection", item_title),
                 Paragraph("AI ATLAS", item_summary),
@@ -1426,27 +1600,23 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
         mt.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
             ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-            ('PADDING', (0, 0), (-1, -1), 5),
+            ('PADDING', (0, 0), (-1, -1), 4),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
         story.append(mt)
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 4))
 
-        # ATLAS Framework AI Architecture
-        atlas_desc = (
-            "<b>AI SECURITY ATLAS ARCHITECTURE:</b> Machine learning workloads must implement strict isolation between user prompts "
-            "and system instructions. RAG vector databases must be indexed with cryptographic hashes to prevent embedding poisoning, "
-            "and model artifacts must be validated using SafeTensors format to mitigate arbitrary code execution during deserialization."
-        )
-        story.append(Paragraph(atlas_desc, body_style))
+        for item in categorized.get("exploits", [])[:3]:
+            for element in render_dense_article_card(item, tag_color="#ea580c", tag_label="VERIFIED PoC", stat_label="SEVERITY"):
+                story.append(element)
 
         story.append(PageBreak())
 
         # ═════════════════════════════════════════════════════════════════════
-        # PAGE 10: 24-HOUR DEFENSIVE PLAYBOOK & SECOPS DIRECTIVES
+        # PAGE 10: 24-HOUR DEFENSIVE PLAYBOOK & OPERATIONAL DIRECTIVES
         # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("🛡️ SECTION X: 24-HOUR REMEDIATION PLAYBOOK & SECOPS DIRECTIVES", page_header))
-        story.append(Paragraph("Actionable Patching SLAs, Perimeter Ingress Hardening & Broadsheet Colophon", page_sub))
+        story.append(Paragraph("🛡️ SECTION X: 24-HOUR REMEDIATION PLAYBOOK & OPERATIONAL DIRECTIVES", page_header))
+        story.append(Paragraph("Actionable Patching SLAs, AI Agent Runtime Hardening & Broadsheet Colophon", page_sub))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
 
         playbook_data = [
@@ -1468,7 +1638,7 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
             [
                 Paragraph("<font color='#0284c7'><b>P2 HIGH</b></font>", callout_box_text),
                 Paragraph("<b>&lt; 72 Hours</b>", dateline_style),
-                Paragraph("Audit AI agent system prompts, update dependencies in container registries, and apply non-critical OS updates.", item_summary),
+                Paragraph("Audit AI agent system prompts, update dependencies in container registries, and verify model SafeTensors.", item_summary),
             ],
         ]
         pt = Table(playbook_data, colWidths=[80, 60, 400])
@@ -1480,21 +1650,21 @@ National CERT agencies emphasize heightened resilience across energy grids, fina
         ]))
         story.append(pt)
 
-        story.append(Spacer(1, 8))
-        story.append(Paragraph("<b>TACTICAL FIREWALL & INGRESS HARDENING DIRECTIVES</b>", ParagraphStyle('H', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#0f172a'), spaceAfter=3)))
+        story.append(Spacer(1, 6))
+        story.append(Paragraph("<b>TACTICAL AI & INFRASTRUCTURE HARDENING DIRECTIVES</b>", ParagraphStyle('H', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#0f172a'), spaceAfter=3)))
         firewall_text = (
-            "1. <b>Perimeter Access Isolation:</b> Disallow external access to administrative ports (SSH, RDP, Kubernetes API, Docker socket).<br/>"
-            "2. <b>WAF Behavioral Inspection:</b> Enforce rate limiting and deep payload inspection on all public REST and GraphQL endpoints.<br/>"
-            "3. <b>Credential Revocation:</b> Terminate active sessions for users exhibiting impossible-travel login anomalies."
+            "1. <b>AI Agent Sandboxing:</b> Execute all LLM tool invocations in isolated gVisor/firecracker microVMs with strictly bounded egress and zero root capabilities.<br/>"
+            "2. <b>SafeTensors Deserialization Mandate:</b> Strictly reject untrusted PyTorch .bin/.pt pickle files across training and inference clusters.<br/>"
+            "3. <b>Perimeter Access Isolation:</b> Disallow public internet exposure of administrative ports (SSH, RDP, Kubernetes API, Ollama daemon)."
         )
         story.append(Paragraph(firewall_text, body_style))
 
-        story.append(Spacer(1, 8))
+        story.append(Spacer(1, 6))
         colophon = Paragraph(
-            "<b>COLOPHON & SENSOR METHODOLOGY:</b> The Cyber Intelligence Chronicle is compiled autonomously every five hours by the "
-            "AetherGuard Security Intelligence Engine. Data is aggregated from 92 authoritative sources including CISA, NVD, Exploit-DB, "
-            "GitHub Advisory Database, arXiv, CNNVD, and global national CERTs. Heuristic and neural NLP analyzers perform continuous de-noising, "
-            "threat velocity calculations, live web extraction, and multi-language translation. All rights reserved.",
+            "<b>COLOPHON & SENSOR METHODOLOGY:</b> The Aether Guard — Global AI & Technology Gazette is compiled autonomously by the "
+            "AetherGuard Intelligence Engine. Data is aggregated across 92 authoritative global sources including Hugging Face, GitHub Trending, "
+            "arXiv, CISA, NVD, Exploit-DB, and sovereign CERTs. Neural NLP analyzers perform multi-language translation, algorithmic deduplication, "
+            "and structured technical synthesis. All rights reserved.",
             body_style
         )
         story.append(colophon)

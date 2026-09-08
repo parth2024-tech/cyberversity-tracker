@@ -76,23 +76,23 @@ class GitHubTrendingFetcher(BaseFetcher):
 
                 content = "\n".join(content_parts)
 
-                # Only accept security-relevant or AI-security repositories
+                # Determine tags and clean title
+                clean_title = f"{repo_name}: {description[:80]}..." if description and len(description) > 10 else f"Trending Repo: {repo_name}"
+                tags = ["github", "trending", "open-source", self.frequency]
+                if language:
+                    tags.append(language.lower())
                 combined_info = f"{repo_name} {description}".lower()
-                sec_terms = (
-                    "security", "exploit", "cve", "poc", "vulnerability", "hack", "payload",
-                    "malware", "ransomware", "reverse", "audit", "pentest", "redteam", "blueteam",
-                    "jailbreak", "prompt-injection", "adversarial", "defense", "auth", "bypass",
-                    "sandbox", "agent", "llm", "deepseek", "qwen"
-                )
-                if not any(term in combined_info for term in sec_terms):
-                    continue
+                if any(w in combined_info for w in ("ai", "llm", "agent", "gpt", "model", "diffusion", "rag", "neural", "vision", "deepseek", "qwen", "transformer")):
+                    tags.append("ai")
+                if any(w in combined_info for w in ("security", "exploit", "cve", "poc", "audit", "pentest", "vulnerability")):
+                    tags.append("security")
 
                 entries.append({
-                    "title": f"Security Tool / PoC: {repo_name}",
+                    "title": clean_title,
                     "url": repo_url,
                     "content": content,
                     "published_at": datetime.utcnow(),
-                    "tags": ["github", "trending", "security", self.frequency, language.lower() if language else ""],
+                    "tags": tags,
                     "metadata": {
                         "repo_name": repo_name,
                         "language": language,

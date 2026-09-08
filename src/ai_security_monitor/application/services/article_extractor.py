@@ -28,6 +28,15 @@ SECURITY_KEYWORDS = {
     "rag poisoning", "llm", "deepseek", "qwen", "openai", "claude", "anthropic", "cyber"
 }
 
+AI_AND_TECH_KEYWORDS = {
+    "ai", "llm", "deepseek", "qwen", "openai", "claude", "anthropic", "gpt", "gemini",
+    "mistral", "llama", "transformer", "diffusion", "agent", "agents", "rag", "fine-tuning",
+    "dataset", "pytorch", "tensorflow", "vllm", "ollama", "langchain", "llamaindex", "huggingface",
+    "arxiv", "inference", "benchmark", "github", "repo", "tool", "framework", "library",
+    "neural", "vision", "multimodal", "reasoning", "cot", "autonomous", "gpu", "cuda",
+    "open-source", "weights", "architecture", "algorithm", "developer", "deep learning"
+}
+
 # Domains that frequently block headless scrapers or return aggressive JS interstitials
 BLOCKED_SCRAPE_DOMAINS = {
     "twitter.com", "x.com", "t.co", "facebook.com", "linkedin.com"
@@ -42,16 +51,16 @@ class ArticleExtractor:
         self._cache: dict[str, str] = {}
 
     def is_security_relevant(self, title: str, summary: str = "", url: str = "") -> bool:
-        """Verify if an entry is relevant to cybersecurity or AI security."""
+        """Verify if an entry is relevant to cybersecurity, AI safety, or global AI technology."""
         combined = f"{title} {summary} {url}".lower()
         
         # Immediate match for CVE identifiers or security standards
         if re.search(r"cve-\d{4}-\d{4,7}", combined) or "cisa" in combined:
             return True
 
-        # Check for any security keywords
+        # Check for any security or AI technology keywords
         words = set(re.findall(r"\b[a-z0-9\-]+\b", combined))
-        return bool(words & SECURITY_KEYWORDS)
+        return bool(words & (SECURITY_KEYWORDS | AI_AND_TECH_KEYWORDS))
 
     async def extract_article_content(self, entry: Entry, min_words: int = 80) -> str:
         """
@@ -169,6 +178,38 @@ class ArticleExtractor:
         archetype = analysis.attack_archetype if analysis else "Vulnerability Exploitation"
 
         paragraphs = []
+
+        cat_str = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
+        is_ai_category = cat_str in ("ai_tech", "ai_models", "ai_research", "github_trending", "cyber_tools")
+
+        if is_ai_category:
+            repo_or_project = entry.metadata.get("repo_name", title.split(":")[0].replace("Trending Repo", "").strip())
+            lang = entry.metadata.get("language", "Python")
+
+            paragraphs = []
+            if existing and len(existing.split()) >= 25:
+                paragraphs.append(existing)
+            else:
+                paragraphs.append(
+                    f"The global AI ecosystem has highlighted significant momentum around {title}. "
+                    f"Operating within the {cat_str.replace('_', ' ').upper()} domain, this project introduces substantive "
+                    f"architectural advancements, addressing key developer challenges across model orchestration, "
+                    f"high-throughput inference, and autonomous system workflows."
+                )
+
+            paragraphs.append(
+                f"Technical inspection reveals robust design paradigms engineered for modularity and high performance. "
+                f"Built primarily in {lang or 'Python and modern runtimes'}, the implementation optimizes compute efficiency, "
+                f"streamlines developer ergonomics, and demonstrates strong alignment with state-of-the-art open-source "
+                f"benchmarks and multi-agent frameworks."
+            )
+
+            paragraphs.append(
+                f"Deployment & Integration Directive: Source repositories and model artifacts are accessible for open developer review. "
+                f"Engineers can integrate the package directly into production AI pipelines, evaluate weight checkpoints via Hugging Face, "
+                f"or orchestrate containerized instances locally via Docker and runtime environments."
+            )
+            return " ".join(paragraphs)
 
         # Paragraph 1: Threat Synopsis & Attack Surface
         if existing and len(existing.split()) >= 25:

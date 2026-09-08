@@ -149,11 +149,15 @@ async def query_serialized_entries(
         blast_radius = 0
         mitigation = None
         attack_archetype = None
+        cat_val = e.category.value if hasattr(e.category, "value") else str(e.category)
+        is_ai_cat = cat_val in ("ai_tech", "ai_models", "ai_research", "github_trending", "cyber_tools")
+
         if e.analysis:
             severity = e.analysis.severity_index
             blast_radius = e.analysis.blast_radius_score
             mitigation = e.analysis.mitigation
             attack_archetype = e.analysis.attack_archetype
+            is_ai_innov = is_ai_cat and not bool(e.analysis.is_pre_cve_warning)
             analysis_dict = {
                 "attack_vector": e.analysis.attack_vector,
                 "risk_assessment": e.analysis.risk_assessment,
@@ -168,6 +172,41 @@ async def query_serialized_entries(
                 "mitre_attack_id": getattr(e.analysis, "mitre_attack_id", None),
                 "mitre_technique": getattr(e.analysis, "mitre_technique", None),
                 "model": e.analysis.model.value,
+                "is_ai_innovation": is_ai_innov,
+                "innovation_score": e.analysis.threat_velocity if is_ai_innov else 0,
+                "tech_focus": e.analysis.attack_vector if is_ai_innov else None,
+                "capability_summary": e.analysis.risk_assessment if is_ai_innov else None,
+                "actionable_insight": e.analysis.mitigation if is_ai_innov else None,
+            }
+        else:
+            is_ai_innov = is_ai_cat
+            # Default fallback for unanalyzed entries
+            fallback_focus = (
+                "Trending Open-Source Developer Repository" if cat_val == "github_trending"
+                else "Frontier AI Foundation Weights & Model Architecture" if cat_val == "ai_models"
+                else "Academic Research & ArXiv Paper" if cat_val == "ai_research"
+                else "AI Framework & Developer Infrastructure" if cat_val == "cyber_tools"
+                else "Global Artificial Intelligence News"
+            )
+            analysis_dict = {
+                "attack_vector": fallback_focus,
+                "risk_assessment": "Ecosystem milestone in global machine learning and autonomous systems.",
+                "mitigation": "Review official repository and model documentation for deployment.",
+                "threat_velocity": 70 if is_ai_cat else 25,
+                "severity_index": 65 if is_ai_cat else 20,
+                "blast_radius_score": 60 if is_ai_cat else 20,
+                "affected_ecosystem": [],
+                "is_pre_cve_warning": False,
+                "attack_archetype": "AI Innovation" if is_ai_cat else "Standard Entry",
+                "weaponization_potential": "Production Ready" if is_ai_cat else "Theoretical",
+                "mitre_attack_id": "AI.TECH" if is_ai_cat else None,
+                "mitre_technique": "AI Innovation" if is_ai_cat else None,
+                "model": "heuristic",
+                "is_ai_innovation": is_ai_innov,
+                "innovation_score": 75 if is_ai_innov else 0,
+                "tech_focus": fallback_focus if is_ai_innov else None,
+                "capability_summary": "Ecosystem milestone in global machine learning and autonomous systems." if is_ai_innov else None,
+                "actionable_insight": "Review official repository and documentation for deployment." if is_ai_innov else None,
             }
 
         serialized_entries.append(
@@ -184,15 +223,21 @@ async def query_serialized_entries(
                 "summary": e.summary,
                 "published_at": e.published_at.isoformat() if e.published_at else None,
                 "fetched_at": e.fetched_at.isoformat() if e.fetched_at else None,
-                "category": e.category.value,
+                "category": cat_val,
                 "tags": e.tags,
                 "metadata": e.metadata,
                 "matched_watchlist_rules": matched_rules,
                 "analysis": analysis_dict,
-                "severity": severity,
-                "blast_radius": blast_radius,
-                "mitigation": mitigation,
-                "attack_archetype": attack_archetype,
+                "severity": severity or (analysis_dict["severity_index"] if analysis_dict else 0),
+                "blast_radius": blast_radius or (analysis_dict["blast_radius_score"] if analysis_dict else 0),
+                "threat_velocity": (analysis_dict["threat_velocity"] if analysis_dict else 0),
+                "mitigation": mitigation or (analysis_dict["mitigation"] if analysis_dict else None),
+                "attack_archetype": attack_archetype or (analysis_dict["attack_archetype"] if analysis_dict else None),
+                "is_ai_innovation": analysis_dict.get("is_ai_innovation", False) if analysis_dict else False,
+                "innovation_score": analysis_dict.get("innovation_score", 0) if analysis_dict else 0,
+                "tech_focus": analysis_dict.get("tech_focus") if analysis_dict else None,
+                "capability_summary": analysis_dict.get("capability_summary") if analysis_dict else None,
+                "actionable_insight": analysis_dict.get("actionable_insight") if analysis_dict else None,
             }
         )
 

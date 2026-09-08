@@ -56,3 +56,32 @@ async def test_mitre_attack_and_weaponization_detection(sample_entry):
     res_poc = await analyzer.analyze(sample_entry)
     assert res_poc.weaponization_potential == "PoC Verified"
     assert res_poc.mitre_attack_id == "T1190"
+
+
+@pytest.mark.asyncio
+async def test_heuristic_analyzer_ai_innovation(sample_entry):
+    from ai_security_monitor.domain.entities import Category
+    analyzer = HeuristicAnalyzer()
+
+    # Test Trending GitHub repo
+    sample_entry.category = Category.GITHUB_TRENDING
+    sample_entry.title = "vllm: Easy, fast, and cheap LLM serving for everyone"
+    sample_entry.summary = "High-throughput and memory-efficient inference and serving engine for LLMs."
+    sample_entry.metadata = {"repo_name": "vllm-project/vllm", "language": "Python"}
+    res_repo = await analyzer.analyze(sample_entry)
+
+    assert "Infrastructure" in res_repo.attack_vector or "Tool" in res_repo.attack_vector
+    assert "Quick Start" in res_repo.mitigation or "github.com" in res_repo.mitigation
+    assert res_repo.attack_archetype == "Trending Repository"
+    assert res_repo.threat_velocity >= 70
+
+    # Test Frontier AI Model Release
+    sample_entry.category = Category.AI_MODELS
+    sample_entry.title = "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+    sample_entry.summary = "Open-weights reasoning model with state-of-the-art performance on AIME and MATH benchmarks."
+    res_model = await analyzer.analyze(sample_entry)
+
+    assert "Reasoning LLM" in res_model.attack_vector
+    assert "Breakthrough" in res_model.risk_assessment or "Capability" in res_model.risk_assessment
+    assert res_model.attack_archetype == "AI Model Release"
+    assert res_model.is_pre_cve_warning is False

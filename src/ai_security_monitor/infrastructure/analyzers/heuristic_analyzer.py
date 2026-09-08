@@ -312,10 +312,140 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
         return "; ".join(mitigations[:3])
 
+    AI_INNOVATION_CATEGORIES = {
+        Category.AI_TECH,
+        Category.AI_RESEARCH,
+        Category.GITHUB_TRENDING,
+        Category.AI_MODELS,
+        Category.CYBER_TOOLS,
+    }
+
+    def _is_pure_ai_innovation(self, entry: Entry, text: str) -> bool:
+        """Determine if entry is pure AI innovation/tool/paper rather than an active security threat."""
+        text_lower = text.lower()
+        if re.search(r"\bcve-\d{4}-\d{4,}\b", text_lower):
+            return False
+        threat_patterns = [
+            r"\brce\b", r"\bremote code execution\b", r"\bzero[- ]day\b", r"\b0[- ]day\b",
+            r"\bexploit\w*\b", r"\bransomware\b", r"\bjailbreak\b", r"\bprompt injection\b",
+            r"\badversarial attack\b", r"\bbackdoor\b", r"\btrojan\b",
+            r"\bprivilege escalation\b", r"\bdata poisoning\b", r"\bmodel inversion\b"
+        ]
+        if any(re.search(p, text_lower) for p in threat_patterns):
+            return False
+        return entry.category in self.AI_INNOVATION_CATEGORIES
+
+    def _generate_ai_architecture(self, text: str, category: Category) -> str:
+        text_lower = text.lower()
+        if any(k in text_lower for k in ("reasoning", "r1", "o1", "cot", "chain of thought", "mcts", "math", "aime")):
+            return "Architecture: Reasoning LLM & Multi-Step Chain-of-Thought"
+        if any(k in text_lower for k in ("agent", "workflow", "swarm", "autonomous", "tool use", "function call")):
+            return "Framework: Autonomous Multi-Agent Execution & Tool Calling"
+        if any(k in text_lower for k in ("vision", "multimodal", "vlm", "diffusion", "audio", "video", "image", "tts", "speech")):
+            return "Domain: Multimodal Generative AI (Vision / Audio / Video)"
+        if any(k in text_lower for k in ("vllm", "ollama", "inference", "quant", "gguf", "serving", "engine", "cuda", "triton")):
+            return "Infrastructure: High-Throughput Inference & GPU Acceleration"
+        if any(k in text_lower for k in ("rag", "vector", "embedding", "retriev", "chunk")):
+            return "Stack: Enterprise Retrieval-Augmented Generation (RAG)"
+        if any(k in text_lower for k in ("fine-tun", "lora", "qlora", "sft", "rlhf", "dpo", "grpo")):
+            return "Methodology: Post-Training Alignment & Efficient Fine-Tuning"
+        if category == Category.GITHUB_TRENDING:
+            return "Tool: Trending Open-Source Developer Repository"
+        if category == Category.AI_RESEARCH:
+            return "Research: ArXiv Breakthrough & Novel Algorithmic Paradigm"
+        if category == Category.AI_MODELS:
+            return "Model: Frontier Foundation Weights & Open Checkpoint"
+        return "Architecture: Modern AI System & Deep Learning Stack"
+
+    def _generate_ai_highlight(self, text: str, category: Category) -> str:
+        text_lower = text.lower()
+        if any(k in text_lower for k in ("benchmark", "state-of-the-art", "sota", "outperform", "record")):
+            return "Breakthrough: Outperforms leading proprietary baselines on complex reasoning and code benchmarks."
+        if any(k in text_lower for k in ("open weights", "open-source", "weights", "hugging face", "checkpoint")):
+            return "Capability: Open weights checkpoint available for unrestricted local fine-tuning and commercial inference."
+        if any(k in text_lower for k in ("efficiency", "throughput", "low latency", "quant", "memory")):
+            return "Efficiency: Substantive latency reduction and compute optimizations for resource-constrained environments."
+        if category == Category.GITHUB_TRENDING:
+            return "Ecosystem: High adoption velocity across developer communities with rapid GitHub star momentum."
+        if category == Category.AI_RESEARCH:
+            return "Research: Novel theoretical framework with peer-reviewed empirical validation and open methodology."
+        return "Ecosystem: Significant milestone advancing global autonomous artificial intelligence."
+
+    def _generate_ai_quickstart(self, text: str, category: Category, metadata: dict) -> str:
+        lang = metadata.get("language") if metadata else None
+        repo = metadata.get("repo_name") if metadata else None
+        if repo:
+            return f"Quick Start: Clone via https://github.com/{repo}; supports {lang or 'Python'}. Run locally with standard runtimes."
+        if category == Category.AI_RESEARCH:
+            return "Open Access: Preprint available on arXiv; reference implementation and benchmark dataset links included."
+        if category == Category.AI_MODELS:
+            return "Deployment: Checkpoints accessible on Hugging Face; compatible with Ollama, vLLM, and Transformers."
+        return "Access: Available on official open-source developer channels; ready for enterprise and local integration."
+
     async def analyze(self, entry: Entry) -> AnalysisResult:
-        """Analyze entry using heuristics."""
+        """Analyze entry using heuristics with dual-mode support for AI innovation vs cyber threats."""
         full_text = f"{entry.title} {entry.summary} {entry.metadata.get('description', '')}"
 
+        if self._is_pure_ai_innovation(entry, full_text):
+            # AI Innovation Mode
+            arch = self._generate_ai_architecture(full_text, entry.category)
+            highlight = self._generate_ai_highlight(full_text, entry.category)
+            quickstart = self._generate_ai_quickstart(full_text, entry.category, entry.metadata)
+            _, ecosystems = self._calculate_blast_radius(full_text, entry.category)
+            
+            # Compute adoption velocity (70 - 98)
+            velocity = 72
+            text_lower = full_text.lower()
+            if any(k in text_lower for k in ("deepseek", "openai", "anthropic", "qwen", "meta", "mistral", "google", "vllm", "ollama")):
+                velocity += 16
+            if entry.category in (Category.GITHUB_TRENDING, Category.AI_MODELS):
+                velocity += 8
+            velocity = min(98, max(45, velocity))
+
+            # Impact rating (65 - 95)
+            impact = 68
+            if any(k in text_lower for k in ("benchmark", "sota", "reasoning", "r1", "breakthrough", "state-of-the-art")):
+                impact += 20
+            impact = min(96, max(50, impact))
+
+            # Adoption reach
+            blast = 65 + (len(ecosystems) * 6)
+            blast = min(95, max(40, blast))
+
+            archetype = (
+                "AI Model Release" if entry.category == Category.AI_MODELS
+                else "Trending Repository" if entry.category == Category.GITHUB_TRENDING
+                else "Academic Research Paper" if entry.category == Category.AI_RESEARCH
+                else "Developer AI Tool" if entry.category == Category.CYBER_TOOLS
+                else "AI Technology Launch"
+            )
+
+            weaponization = (
+                "Open Weights Available" if entry.category == Category.AI_MODELS
+                else "Production Ready" if entry.category in (Category.GITHUB_TRENDING, Category.CYBER_TOOLS)
+                else "Research Preprint" if entry.category == Category.AI_RESEARCH
+                else "Community Verified"
+            )
+
+            return AnalysisResult(
+                entry_id=entry.id,
+                attack_vector=arch,
+                risk_assessment=highlight,
+                mitigation=quickstart,
+                threat_velocity=velocity,
+                severity_index=impact,
+                blast_radius_score=blast,
+                affected_ecosystem=ecosystems,
+                is_pre_cve_warning=False,
+                attack_archetype=archetype,
+                weaponization_potential=weaponization,
+                mitre_attack_id="AI.INNOVATION",
+                mitre_technique="Frontier AI Architecture & Innovation",
+                model=AnalysisModel.HEURISTIC,
+                confidence=0.90,
+            )
+
+        # Cyber Threat / Security Mode
         velocity = self._calculate_threat_velocity(full_text)
         severity = self._calculate_severity(full_text, velocity)
         blast_radius, ecosystems = self._calculate_blast_radius(full_text, entry.category)
