@@ -621,7 +621,7 @@ footer{
       <button class="tab-btn" onclick="setCategoryFilter('ai')">🤖 Frontier Models (<span id="countAi">0</span>)</button>
       <button class="tab-btn" onclick="setCategoryFilter('critical')">🚨 Critical 80+ (<span id="countCrit">0</span>)</button>
       <button class="tab-btn" onclick="setCategoryFilter('exploits')">⚡ Exploits & PoCs (<span id="countPoc">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('china')">🌐 Sovereign & China (<span id="countChina">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('china')">🌐 Sovereign & Worldwide (<span id="countChina">0</span>)</button>
     </div>
     <div class="search-box">
       <input type="text" id="wireSearch" placeholder="Search repos, models, papers, CVEs, tools…" oninput="handleSearch(this.value)">
@@ -868,8 +868,10 @@ function renderCurrentView() {
       if (cat !== 'exploits_tricks' && !title.includes('poc') && !title.includes('cve-') && !title.includes('exploit') && !title.includes('rce')) return false;
     } else if (currentCategory === 'china') {
       const region = (e.region || '').toLowerCase();
-      const country = (e.country || '').toLowerCase();
-      if (region !== 'china' && country !== 'cn' && !title.includes('china') && !title.includes('cert')) return false;
+      const country = (e.country || '').toUpperCase();
+      const sovereignCountries = ['CN', 'HK', 'IN', 'IL', 'JP', 'KR', 'TW', 'AE', 'SG', 'DE', 'FR', 'NL', 'FI', 'SE', 'CH', 'CA', 'AU', 'GB', 'EU'];
+      const sovereignRegions = ['china', 'south_asia', 'middle_east', 'nordic', 'apac', 'europe'];
+      if (!sovereignCountries.includes(country) && !sovereignRegions.includes(region) && !title.includes('cert') && !title.includes('sovereign') && !title.includes('deepseek') && !title.includes('china')) return false;
     }
 
     // Search query match
@@ -932,7 +934,9 @@ function renderCurrentView() {
   _setCount('countAi', allEntries.filter(e => ['ai_models', 'ai_tech'].includes(e.category) || (e.title||'').toLowerCase().includes('model')).length);
   _setCount('countCrit', allEntries.filter(e => (e.severity ?? e.analysis?.severity_index ?? 0) >= 80).length);
   _setCount('countPoc', allEntries.filter(e => ((e.category||'') + (e.title||'')).toLowerCase().includes('exploit') || (e.title||'').toLowerCase().includes('poc')).length);
-  _setCount('countChina', allEntries.filter(e => (e.region === 'china' || e.country === 'CN' || (e.title||'').toLowerCase().includes('china'))).length);
+  const _sovCountries = ['CN', 'HK', 'IN', 'IL', 'JP', 'KR', 'TW', 'AE', 'SG', 'DE', 'FR', 'NL', 'FI', 'SE', 'CH', 'CA', 'AU', 'GB', 'EU'];
+  const _sovRegions = ['china', 'south_asia', 'middle_east', 'nordic', 'apac', 'europe'];
+  _setCount('countChina', allEntries.filter(e => _sovCountries.includes((e.country||'').toUpperCase()) || _sovRegions.includes((e.region||'').toLowerCase()) || (e.title||'').toLowerCase().includes('cert') || (e.title||'').toLowerCase().includes('deepseek')).length);
 
   // Update Statistics Box
   document.getElementById('statEntries').textContent = allEntries.length;

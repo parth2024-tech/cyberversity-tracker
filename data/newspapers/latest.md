@@ -1,6 +1,6 @@
 # 📰 THE CYBER INTELLIGENCE CHRONICLE & GLOBAL AI GAZETTE
 **Autonomous 10-Page Comprehensive Intelligence Broadsheet Dossier • Edition #2204**  
-*Date: Tuesday, September 08, 2026 • 23:25 UTC • Monitoring Horizon: 5 Hours • Verified Across 92 Sensing Arrays*
+*Date: Tuesday, September 08, 2026 • 23:34 UTC • Monitoring Horizon: 24 Hours • Verified Across 92 Sensing Arrays*
 
 ---
 
@@ -177,28 +177,28 @@ A lot of proxmox 7.0-7 and < 8.0.4 has been rooted today, it's needed to have po
 
 ---
 
-## 🇨🇳 [PAGE 7] SOVEREIGN AI & GLOBAL NATION-STATE RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
-### Sovereign AI Initiatives, State Vulnerability Governance & Regional Wire
-Sovereign models (DeepSeek, Qwen, GLM, InternLM) and regional vulnerability mandates (China MIIT disclosure rules) form an interconnected geopolitical landscape. Telemetry synthesizes bilingual dispatches from major research institutes and state coordination centers.
+## 🌐 [PAGE 7] SOVEREIGN AI & WORLDWIDE REGIONAL INTEL RADAR (Tier 1 & Tier 2 Sovereigns)
+### Sovereign AI Initiatives, State Vulnerability Governance & Worldwide Wire (🇨🇳 CN · 🇮🇳 IN · 🇮🇱 IL · 🇯🇵 JP · 🇰🇷 KR · 🇬🇧 GB · 🇪🇺 EU · 🇸🇬 SG · 🇹🇼 TW · 🇦🇪 AE · 🇨🇦 CA · 🇩🇪 DE · 🇫🇷 FR · 🇳🇱 NL · 🇨🇭 CH)
+Comprehensive sovereign compute ecosystems, national foundation models (DeepSeek, Qwen, Falcon, Mistral, Kyutai, Indian AI initiatives), and regional defense agencies (CERT-In, BSI, ANSSI, JPCERT, TWCERT, NCSC, ENISA) form a unified geopolitical radar. Telemetry synthesizes bilingual dispatches from sovereign labs, CERTs, and academic nodes across Tier 1 and Tier 2 strategic nations.
 
 ### Sovereign Wire Dispatches
-### 🌐 VMware ESXi CVE-2024-37085 vulnerability verification analysis
-- **Sovereign Source**: `mp.weixin.qq.com`
+### 🌐 [CN] VMware ESXi CVE-2024-37085 vulnerability verification analysis
+- **Sovereign Source**: `mp.weixin.qq.com` | **Country**: `CN`
 
-Venus 2024-08-08 17:38 Beijing Recently, Microsoft disclosed an in-field attack report of an ESXi vulnerability (CVE-2024-37085). This vulnerability is an authentication bypass vulnerability in VMware ESXi and has been exploited by multiple ransomware. Through this vulnerability, an attacker can obtain full operating permissions for ESXi added to the AD domain and control the virtual machines contained in the ESXi. For more security information and analysis articles, please pay attention to the Venustech ADLab WeChat public account and official website (adlab.venustech.com.cn) 01 Vulnerability Overview Recently, Microsoft disclosed an in-field attack report of an ESXi vulnerability (numbered CVE-2024-37085) [1]. This vulnerability is an authentication bypass vulnerability in VMware ESXi and has been exploited by multiple ransomware. Through this vulnerability, an attacker can obtain full operating permissions for the ESXi joined to the AD domain and control the virtual machines included in the ESXi. The NVD description of the vulnerability is [2]: VMware ESXi contains an authentication bypass vulnerability. A malicious actor with sufficient Active Directory (AD) permissions can gain full access
+Qiming Xingchen 2024-08-08 17:38 Beijing Recently, Microsoft disclosed a report of an ESXi vulnerability (CVE-2024-37085) in the field attack. The vulnerability is a certification bypass vulnerability in VMware ESXi that has been exploited by multiple ransomware programs. Through this vulnerability, the attacker can gain full operational permission to join the ESXi of the AD domain. For more security information and analysis articles on controlling the virtual machine contained in the ESXi, please pay attention to Qiming Xingchen ADLab WeChat Official Account and the official website (adlab.venustech.com.cn) 01 Vulnerability Overview Recently, Microsoft disclosed an ESXi vulnerability (number CVE-2024-37085) in-field attack report [1]. The vulnerability is a certification bypass vulnerability in VMware ESXi that has been exploited by multiple ransomware programs. Through this vulnerability, an attacker can gain full operational rights to join the ESXi of the AD domain, control the virtual machines contained in the ESXi, and so on. The NVD of the vulnerability is described as [2]: VMware ESXi contains an authentication bypass vulnerability. A malicious actor with sufficient Acti ve Directory (AD) permissions can gain full access
 
-### 🌐 The open source risk management platform "Fuxi" has made important progress in security patch migration, helping to mitigate open source software security risks.
-- **Sovereign Source**: `mp.weixin.qq.com`
+### 🌐 [CN] Open source risk management platform "Fuxi" has made important progress in security patch migration, helping open source software security risk mitigation
+- **Sovereign Source**: `mp.weixin.qq.com` | **Country**: `CN`
 
 CodeWisdom 2026-05-13 09:00 Shanghai focuses on the problem of open source security patch migration. Based on the large model of syntax semantic enhancement, it enables automated patch migration Research background: Security patch migration is an important means of mitigating risks in the open source software supply chain With the wide application of open source software, more and more software systems rely on open source components, reuse open source code, and form multiple long-term maintenance branches or downstream derivative projects based on upstream projects. When upstream projects disclose vulnerabilities and issue security patches, whether the relevant patches can be timely and accurately migrated to other affected branches or downstream derivative projects is directly related to the overall security level of the open source software supply chain. However, in a true open source ecosystem, the migration of security patches is neither comprehensive nor timely. An empirical study of 26 popular open source projects and 806 CVEs showed that more than 80% of CVE-branch pairs never completed a patch migration; of these unpatched vulnerabilities, 47.39% were high-risk or severe; and even if a fix was eventually completed, it would take an average of 40.46 days. More notably, about 20% of vulnerabilities already have a public PoC, meaning that an attacker can exploit publicly available information before the patch is migrated to the affected branch or downstream project [1]. For security patches that are difficult to migrate in a timely manner, academia and industry A range of studies have been conducted. Existing automated patch migration techniques can be broadly divided into two categories: those based on pattern matching and those based on large models.
 
-### 🌐 Selected in the Agent Security Report | Lingmai AI allows code security detection to “read” business logic!
-- **Sovereign Source**: `mp.weixin.qq.com`
+### 🌐 [CN] Selected in the Agent Security Report | Lingmai AI allows code security detection to “read” business logic!
+- **Sovereign Source**: `mp.weixin.qq.com` | **Country**: `CN`
 
 Original Vanguard Digital Supply Chain 2026-06-25 14:00 Beijing Lingmai AI "read business logic", precisely dig out the code security agent of the unauthorized vulnerability. When OpenClaw-like applications move to the large-scale deployment stage, security is no longer an optional addition, but a prerequisite for supporting their global landing and long-term operation. By 2030, 15% of China's top 500 enterprises will have disrupted operations due to inadequate control and governance of artificial intelligence agents. Faced with the risk of high fines and even management changes, business managers urgently need to build an agent security and governance system to safely avoid potential crises in the era of large models. —— "Global CIO Agenda 2026 Forecast - China's Revelation" In the Agentic AI era, traditional detection tools can find grammar loopholes, but they can't understand the business intent behind the code. As a benchmark manufacturer in the field of digital supply chain security, suspension security has always been deeply cultivated and applied in the field of code security. The company's new generation of core products, Spiritual AI, gives differentiated answers: let code security testing truly "read" business logic for the first time. Suspension mirror · AI code leakage Relying on the first AI intelligent code leakage mining technology, Lingmai AI can accurately identify business logic vulnerabilities that are difficult to cover by traditional SAST such as horizontal/vertical overstepping and permission bypassing; and with "static analysis + AI intelligent enhancement", In the authoritative target machine test, a false positive rate (FPR) of 0% is achieved for core vulnerability types such as command injection, SQL injection, etc. 1► R&D efficiency-enhancing rear machine "
 
-### 🌐 Increasing active parameters per token in MOE (Qwen 35B A4B+) reduce reasoning token by 8.5% - and you don't need to train or finetune!
-- **Sovereign Source**: `reddit.com`
+### 🌐 [GLOBAL] Increasing active parameters per token in MOE (Qwen 35B A4B+) reduce reasoning token by 8.5% - and you don't need to train or finetune!
+- **Sovereign Source**: `reddit.com` | **Country**: `GLOBAL`
 
 I want to share a short paper just published exploring a simple but surprisingly effective optimization for sparse MoE reasoning models. The idea: Instead of retraining anything, we just tweak the router at runtime. Specifically, we expand the expert selection budget (N≥KN≥K) only in the late transformer layers, with a linear decay factor applied to the extra experts. Early layers stay untouched. So Qwen 3.6 35B A3B becomes Qwen 3.6 35B A4B+ ! What we found — "Succinct Convergence": When you giv
 

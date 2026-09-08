@@ -61,6 +61,7 @@ async def query_serialized_entries(
     watchlist_only: bool = False,
     hours: int | None = None,
     region: str | None = None,
+    country: str | None = None,
     sort_by: str = "newest",
     limit: int = 50,
     offset: int = 0,
@@ -98,11 +99,12 @@ async def query_serialized_entries(
         since=since,
         sort_by=sort_by if isinstance(sort_by, str) else "newest",
         region=region if region and region != "all" and isinstance(region, str) else None,
+        country=country if country and country != "all" and isinstance(country, str) else None,
     )
     pagination = PaginationParams(limit=limit, offset=offset)
 
     # Cache total count when query has no filters
-    has_custom_filters = bool(cat_enum or search or pre_cve or high_velocity or watchlist_only or since or (region and region != "all"))
+    has_custom_filters = bool(cat_enum or search or pre_cve or high_velocity or watchlist_only or since or (region and region != "all") or (country and country != "all"))
 
     async def _list_entries():
         async with SqlAlchemyUnitOfWork() as uow:
@@ -258,6 +260,7 @@ async def list_entries(
     watchlist_only: bool | None = Query(False),
     hours: int | None = Query(None),
     region: str | None = Query(None),
+    country: str | None = Query(None),
     sort: str | None = Query(None),
     sort_by: str = Query("newest"),
     limit: int = Query(50, ge=1, le=200),
@@ -265,7 +268,7 @@ async def list_entries(
 ):
     """Query intelligence entries with pagination, search, watchlist, and feature filters — cached 6s."""
     effective_sort = sort or sort_by
-    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{hours}_{region}_{effective_sort}_{limit}_{offset}"
+    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{hours}_{region}_{country}_{effective_sort}_{limit}_{offset}"
 
     async def _fetch():
         serialized_entries, total = await query_serialized_entries(
@@ -276,6 +279,7 @@ async def list_entries(
             watchlist_only=bool(watchlist_only),
             hours=hours,
             region=region,
+            country=country,
             sort_by=effective_sort,
             limit=limit,
             offset=offset,

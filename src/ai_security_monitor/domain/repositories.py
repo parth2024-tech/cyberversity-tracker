@@ -45,6 +45,7 @@ class EntryFilters:
     unanalyzed_only: bool = False
     sort_by: str = "newest"
     region: str | None = None
+    country: str | None = None
 
 
 class EntryRepository(ABC):

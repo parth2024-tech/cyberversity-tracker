@@ -285,19 +285,85 @@ class SQLAlchemyEntryRepository(EntryRepository):
         if filters.unanalyzed_only:
             stmt = stmt.outerjoin(AnalysisModelDB).where(AnalysisModelDB.entry_id.is_(None))
 
+        source_joined = False
+
         if filters.region and filters.region != "all":
-            if filters.region.lower() in ("china", "cn"):
-                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id).where(
+            reg = filters.region.lower()
+            if not source_joined:
+                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id)
+                source_joined = True
+
+            if reg in ("china", "cn"):
+                stmt = stmt.where(
                     or_(
                         SourceModel.config.like('%"region": "china"%'),
                         SourceModel.config.like('%"country": "CN"%'),
                         SourceModel.config.like('%"country": "HK"%'),
                     )
                 )
-            else:
-                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id).where(
-                    SourceModel.config.like(f'%"region": "{filters.region}"%')
+            elif reg in ("india", "south_asia", "in"):
+                stmt = stmt.where(
+                    or_(
+                        SourceModel.config.like('%"region": "south_asia"%'),
+                        SourceModel.config.like('%"country": "IN"%'),
+                    )
                 )
+            elif reg in ("middle_east", "me", "il", "ae"):
+                stmt = stmt.where(
+                    or_(
+                        SourceModel.config.like('%"region": "middle_east"%'),
+                        SourceModel.config.like('%"country": "IL"%'),
+                        SourceModel.config.like('%"country": "AE"%'),
+                    )
+                )
+            elif reg in ("nordic", "fi", "se"):
+                stmt = stmt.where(
+                    or_(
+                        SourceModel.config.like('%"region": "nordic"%'),
+                        SourceModel.config.like('%"country": "FI"%'),
+                        SourceModel.config.like('%"country": "SE"%'),
+                    )
+                )
+            elif reg in ("europe", "eu"):
+                stmt = stmt.where(
+                    or_(
+                        SourceModel.config.like('%"region": "europe"%'),
+                        SourceModel.config.like('%"country": "EU"%'),
+                        SourceModel.config.like('%"country": "GB"%'),
+                        SourceModel.config.like('%"country": "DE"%'),
+                        SourceModel.config.like('%"country": "FR"%'),
+                        SourceModel.config.like('%"country": "NL"%'),
+                        SourceModel.config.like('%"country": "CH"%'),
+                    )
+                )
+            elif reg in ("north_america", "na", "us", "ca"):
+                stmt = stmt.where(
+                    or_(
+                        SourceModel.config.like('%"region": "north_america"%'),
+                        SourceModel.config.like('%"country": "US"%'),
+                        SourceModel.config.like('%"country": "CA"%'),
+                    )
+                )
+            elif reg in ("apac", "asia_pacific"):
+                stmt = stmt.where(
+                    or_(
+                        SourceModel.config.like('%"region": "apac"%'),
+                        SourceModel.config.like('%"country": "JP"%'),
+                        SourceModel.config.like('%"country": "KR"%'),
+                        SourceModel.config.like('%"country": "TW"%'),
+                        SourceModel.config.like('%"country": "SG"%'),
+                        SourceModel.config.like('%"country": "AU"%'),
+                    )
+                )
+            else:
+                stmt = stmt.where(SourceModel.config.like(f'%"region": "{filters.region}"%'))
+
+        if filters.country and filters.country != "all":
+            if not source_joined:
+                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id)
+                source_joined = True
+            c_code = filters.country.upper()
+            stmt = stmt.where(SourceModel.config.like(f'%"country": "{c_code}"%'))
 
         return stmt
 

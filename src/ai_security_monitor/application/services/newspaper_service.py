@@ -394,6 +394,12 @@ class NewspaperService:
                 or country in ("CN", "HK")
                 or any(k in t_lower for k in ("deepseek", "qwen", "glm", "internlm", "zhipu", "baidu", "360", "cnnvd", "tencent", "tsinghua", "antiy", "venustech", "kunlun"))
             )
+            is_sovereign_regional = (
+                is_china
+                or region in ("china", "south_asia", "middle_east", "nordic")
+                or country in ("CN", "HK", "IN", "IL", "JP", "KR", "TW", "AE", "SG", "DE", "FR", "NL", "FI", "SE", "CH", "CA", "AU", "GB", "EU")
+                or any(k in t_lower or k in s_lower for k in ("cert-in", "bsi", "anssi", "jpcert", "krcert", "twcert", "singcert", "tii", "falcon", "ncsc", "enisa", "iisc", "kaist", "tsmc", "asml", "dfki", "turing", "semianalysis"))
+            )
             is_poc = "poc" in t_lower or "exploit" in t_lower or (e.analysis and "PoC" in (e.analysis.weaponization_potential or ""))
             is_cloud = any(k in t_lower or k in s_lower for k in ("aws", "azure", "gcp", "kubernetes", "k8s", "docker", "cloud", "iam", "npm", "pypi", "container", "artifactory"))
             is_cert = any(k in t_lower or k in s_lower for k in ("cisa", "cert", "ncsc", "advisory", "bulletin", "alert", "security update", "sonicwall", "citrix"))
@@ -414,7 +420,7 @@ class NewspaperService:
                     ai_labs.append(e)
             elif is_tool and len(ai_tools_list) < 10:
                 ai_tools_list.append(e)
-            elif is_china and len(china_radar) < 10:
+            elif is_sovereign_regional and len(china_radar) < 10:
                 china_radar.append(e)
             elif is_pre and len(pre_cves) < 8:
                 pre_cves.append(e)
@@ -448,7 +454,12 @@ class NewspaperService:
             tool_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("cyber_tools", "github_trending", "ai_tech") and e not in ai_tools_list]
             ai_tools_list.extend(tool_candidates[:4 - len(ai_tools_list)])
         if len(china_radar) < 4:
-            china_candidates = [e for e in pool if ((e.metadata and e.metadata.get("region") == "china") or "deepseek" in e.title.lower() or "qwen" in e.title.lower()) and e not in china_radar]
+            china_candidates = [
+                e for e in pool
+                if ((e.metadata and (e.metadata.get("region") in ("china", "south_asia", "middle_east", "nordic") or e.metadata.get("country") in ("CN", "HK", "IN", "IL", "JP", "KR", "TW", "AE", "SG", "DE", "FR", "NL", "FI", "SE", "CH", "CA", "AU", "GB", "EU")))
+                    or any(k in e.title.lower() for k in ("deepseek", "qwen", "cert", "falcon", "tsmc", "asml", "dfki", "inria", "kaist", "riken", "turing", "semianalysis")))
+                and e not in china_radar
+            ]
             china_radar.extend(china_candidates[:4 - len(china_radar)])
         if len(cves) < 4:
             cve_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("vulnerabilities", "cybersecurity") and e not in cves]
@@ -646,14 +657,15 @@ The infrastructure layer powering modern artificial intelligence has transitione
         md += f"""
 ---
 
-## 🇨🇳 [PAGE 7] SOVEREIGN AI & GLOBAL NATION-STATE RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
-### Sovereign AI Initiatives, State Vulnerability Governance & Regional Wire
-Sovereign models (DeepSeek, Qwen, GLM, InternLM) and regional vulnerability mandates (China MIIT disclosure rules) form an interconnected geopolitical landscape. Telemetry synthesizes bilingual dispatches from major research institutes and state coordination centers.
+## 🌐 [PAGE 7] SOVEREIGN AI & WORLDWIDE REGIONAL INTEL RADAR (Tier 1 & Tier 2 Sovereigns)
+### Sovereign AI Initiatives, State Vulnerability Governance & Worldwide Wire (🇨🇳 CN · 🇮🇳 IN · 🇮🇱 IL · 🇯🇵 JP · 🇰🇷 KR · 🇬🇧 GB · 🇪🇺 EU · 🇸🇬 SG · 🇹🇼 TW · 🇦🇪 AE · 🇨🇦 CA · 🇩🇪 DE · 🇫🇷 FR · 🇳🇱 NL · 🇨🇭 CH)
+Comprehensive sovereign compute ecosystems, national foundation models (DeepSeek, Qwen, Falcon, Mistral, Kyutai, Indian AI initiatives), and regional defense agencies (CERT-In, BSI, ANSSI, JPCERT, TWCERT, NCSC, ENISA) form a unified geopolitical radar. Telemetry synthesizes bilingual dispatches from sovereign labs, CERTs, and academic nodes across Tier 1 and Tier 2 strategic nations.
 
 ### Sovereign Wire Dispatches
 """
         for ch in categorized.get("china_radar", [])[:4]:
-            md += f"### 🌐 {ch.title}\n- **Sovereign Source**: `{self._get_source_name(ch)}`\n\n{ch.summary or ''}\n\n"
+            c_code = (ch.metadata.get("country") if ch.metadata else "") or "SOV"
+            md += f"### 🌐 [{c_code}] {ch.title}\n- **Sovereign Source**: `{self._get_source_name(ch)}` | **Country**: `{c_code}`\n\n{ch.summary or ''}\n\n"
 
         md += f"""
 ---
@@ -969,21 +981,21 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
       <div>SECTION IV: SOVEREIGN RADAR</div>
-      <div>🇨🇳 🇷🇺 🇮🇷 🇰🇵 NATION-STATE THREAT TELEMETRY</div>
+      <div>WORLDWIDE TIER 1 & TIER 2 SOVEREIGN TELEMETRY</div>
       <div>PAGE 4 OF 10</div>
     </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Sovereign Cyber Doctrine & Asian Threat Matrix</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Translated intelligence from sovereign CERTs, research labs, and APT tracking arrays.</p>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Sovereign AI Initiatives & Worldwide Regional Intelligence</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Strategic nation-state foundational models, sovereign cloud compute, and national CERT threat bulletins across Tier 1 (US, CN, GB, IN, EU, IL, JP, KR) and Tier 2 (CA, DE, FR, SG, TW, AE, AU, NL, FI, SE, CH) ecosystems.</p>
 
     <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-red-900 mb-2">🇨🇳 China Sovereign Vulnerability Governance</h3>
-      <p>Under China's national vulnerability disclosure frameworks, security research must be submitted to the Ministry of Industry and Information Technology before public disclosure. This mandatory reporting window allows state actors strategic visibility before international CVE assignments.</p>
+      <h3 class="font-mono text-xs font-bold uppercase text-red-900 mb-2">🌐 Global Sovereign Vulnerability & Foundation Model Governance</h3>
+      <p>Sovereign compute infrastructure and national vulnerability governance frameworks have become critical geopolitical determinants. Domestic foundation models (DeepSeek, Qwen, Falcon, Mistral, Kyutai, Indian AI initiatives) and sovereign defense agencies (CERT-In, BSI, ANSSI, JPCERT, TWCERT, NCSC, ENISA) maintain strategic early visibility into zero-day disclosures and frontier model breakthroughs.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {"".join([f"""
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-700">🇨🇳 SOVEREIGN DISPATCH • {html.escape(self._get_source_name(ch)[:22])}</span>
+          <span class="text-[9.5px] font-mono font-bold text-red-700">🌐 SOVEREIGN DISPATCH [{(ch.metadata.get("country") if ch.metadata else "") or "SOV"}] • {html.escape(self._get_source_name(ch)[:22])}</span>
           <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]">{html.escape(ch.title)}</h4>
           <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(ch.summary or '')}</p>
         </div>
@@ -1501,23 +1513,24 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
         story.append(PageBreak())
 
         # ═════════════════════════════════════════════════════════════════════
-        # PAGE 7: SOVEREIGN AI & GLOBAL NATION-STATE RADAR (🇨🇳 🇷🇺 🇮🇷 🇰🇵)
+        # PAGE 7: SOVEREIGN AI & WORLDWIDE REGIONAL INTEL RADAR (Tier 1 & Tier 2)
         # ═════════════════════════════════════════════════════════════════════
-        story.append(Paragraph("🌐 SECTION VII: SOVEREIGN AI & GLOBAL NATION-STATE RADAR", page_header))
-        story.append(Paragraph("Translated Sovereign Telemetry from CNCERT, CNNVD, Qihoo 360, Antiy & Sovereign AI Labs", page_sub))
+        story.append(Paragraph("🌐 SECTION VII: SOVEREIGN AI & WORLDWIDE REGIONAL INTEL RADAR", page_header))
+        story.append(Paragraph("Strategic Sovereign Telemetry: 🇨🇳 CN · 🇮🇳 IN · 🇮🇱 IL · 🇯🇵 JP · 🇰🇷 KR · 🇬🇧 GB · 🇪🇺 EU · 🇸🇬 SG · 🇹🇼 TW · 🇦🇪 AE · 🇨🇦 CA · 🇩🇪 DE · 🇫🇷 FR · 🇳🇱 NL · 🇨🇭 CH", page_sub))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0f172a"), spaceAfter=5))
 
         sovereign_text = (
-            "<b>SOVEREIGN AI & VULNERABILITY GOVERNANCE:</b> Sovereign compute ecosystems in China and the Asia-Pacific theatre are driving dual "
-            "revolutions in domestic foundation models (DeepSeek, Qwen, GLM) and proactive threat intelligence. Under national vulnerability "
-            "regulations, regional labs maintain early visibility into zero-day exploits before international NVD assignment. Autonomous "
-            "telemetry synthesizes real-time Chinese and sovereign sources."
+            "<b>WORLDWIDE SOVEREIGN & REGIONAL INTELLIGENCE:</b> Sovereign compute ecosystems and regional defense commands "
+            "across Tier 1 and Tier 2 nations are driving breakthroughs in domestic foundation models (China's DeepSeek & Qwen, "
+            "UAE's Falcon, France's Mistral & Kyutai, India's AI models, Korea's AI hardware) and active threat intelligence (CERT-In, "
+            "BSI, ANSSI, JPCERT, TWCERT, NCSC). Autonomous telemetry synthesizes cross-theatre sovereign disclosures."
         )
         story.append(Paragraph(sovereign_text, body_style))
         story.append(Spacer(1, 4))
 
         for item in categorized.get("china_radar", [])[:4]:
-            for element in render_dense_article_card(item, tag_color="#b91c1c", tag_label="SOVEREIGN WIRE 🇨🇳", stat_label="SEVERITY"):
+            c_code = (item.metadata.get("country") if item.metadata else "") or "SOV"
+            for element in render_dense_article_card(item, tag_color="#b91c1c", tag_label=f"SOVEREIGN WIRE [{c_code}]", stat_label="SEVERITY"):
                 story.append(element)
 
         story.append(PageBreak())

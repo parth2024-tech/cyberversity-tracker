@@ -903,11 +903,14 @@
           <div class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.06] flex-wrap text-xs font-mono">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-[10px] text-sky-400 font-medium uppercase mr-1 flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3 text-sky-400"></i> THEATRE:</span>
-              <button onclick="setRegionFilter('all')" id="region-all" class="region-pill px-2.5 py-1 rounded-md bg-sky-500/15 text-sky-200 border border-sky-500/35 font-medium transition">🌍 ALL THEATRES (70+)</button>
+              <button onclick="setRegionFilter('all')" id="region-all" class="region-pill px-2.5 py-1 rounded-md bg-sky-500/15 text-sky-200 border border-sky-500/35 font-medium transition">🌍 ALL THEATRES (130+)</button>
               <button onclick="setRegionFilter('china')" id="region-china" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇨🇳 CHINA INTEL & AI</button>
+              <button onclick="setRegionFilter('south_asia')" id="region-south_asia" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇮🇳 INDIA & SOUTH ASIA</button>
+              <button onclick="setRegionFilter('middle_east')" id="region-middle_east" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇮🇱 🇦🇪 MIDDLE EAST</button>
+              <button onclick="setRegionFilter('apac')" id="region-apac" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇯🇵 🇰🇷 🇹🇼 ASIA-PACIFIC</button>
               <button onclick="setRegionFilter('europe')" id="region-europe" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇪🇺 EUROPE & UK</button>
               <button onclick="setRegionFilter('north_america')" id="region-north_america" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇺🇸 NORTH AMERICA</button>
-              <button onclick="setRegionFilter('apac')" id="region-apac" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇯🇵 ASIA-PACIFIC</button>
+              <button onclick="setRegionFilter('nordic')" id="region-nordic" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🇫🇮 🇸🇪 NORDIC</button>
               <button onclick="setRegionFilter('global')" id="region-global" class="region-pill px-2.5 py-1 rounded-md bg-white/[0.02] text-slate-400 border border-white/[0.06] hover:text-white transition">🌐 GLOBAL RADARS</button>
             </div>
             <div class="text-[10px] font-mono text-slate-500">
@@ -1743,7 +1746,7 @@
       const catLabel = (entry.category || '').replace(/_/g, ' ').toUpperCase();
       const pubDate = entry.published_at ? entry.published_at.slice(0, 16).replace('T', ' ') : 'Recent';
       const sourceDisplayName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? (() => { try { return new URL(entry.url).hostname.replace('www.', ''); } catch(e) { return 'Intel'; } })() : 'Global Intel');
-      const countryFlags = {'CN':'🇨🇳','HK':'🇭🇰','US':'🇺🇸','CA':'🇨🇦','GB':'🇬🇧','EU':'🇪🇺','FR':'🇫🇷','DE':'🇩🇪','JP':'🇯🇵','AU':'🇦🇺','SG':'🇸🇬','CH':'🇨🇭','IN':'🇮🇳','IL':'🇮🇱','KR':'🇰🇷','NL':'🇳🇱','SE':'🇸🇪','GLOBAL':'🌐'};
+      const countryFlags = {'CN':'🇨🇳','HK':'🇭🇰','US':'🇺🇸','CA':'🇨🇦','GB':'🇬🇧','EU':'🇪🇺','FR':'🇫🇷','DE':'🇩🇪','JP':'🇯🇵','AU':'🇦🇺','SG':'🇸🇬','CH':'🇨🇭','IN':'🇮🇳','IL':'🇮🇱','KR':'🇰🇷','NL':'🇳🇱','SE':'🇸🇪','FI':'🇫🇮','TW':'🇹🇼','AE':'🇦🇪','BR':'🇧🇷','ZA':'🇿🇦','GLOBAL':'🌐'};
       const countryCode = entry.country || (entry.metadata && entry.metadata.country) || 'GLOBAL';
       const flag = countryFlags[countryCode] || '🌐';
       const isChina = (entry.region === 'china' || countryCode === 'CN' || countryCode === 'HK');
@@ -2400,6 +2403,7 @@
           'FR': '🇫🇷', 'DE': '🇩🇪', 'JP': '🇯🇵', 'AU': '🇦🇺',
           'SG': '🇸🇬', 'CH': '🇨🇭', 'IN': '🇮🇳', 'IL': '🇮🇱',
           'KR': '🇰🇷', 'NL': '🇳🇱', 'SE': '🇸🇪', 'FI': '🇫🇮',
+          'TW': '🇹🇼', 'AE': '🇦🇪', 'CN': '🇨🇳', 'HK': '🇭🇰',
           'BR': '🇧🇷', 'ZA': '🇿🇦', 'GLOBAL': '🌐'
         };
 
@@ -2935,7 +2939,14 @@
         { name: 'São Paulo Latin America Node', country: 'BR', flag: '🇧🇷', lat: -23.5505, lon: -46.6333, color: 0xfbbf24 },
         { name: 'Cape Town Africa Defense', country: 'ZA', flag: '🇿🇦', lat: -33.9249, lon: 18.4241, color: 0x34d399 },
         { name: 'Oxford AI Governance', country: 'GB', flag: '🇬🇧', lat: 51.7520, lon: -1.2577, color: 0x818cf8 },
-        { name: 'Cambridge AI Safety Center', country: 'GB', flag: '🇬🇧', lat: 52.2053, lon: 0.1218, color: 0x38bdf8 }
+        { name: 'Cambridge AI Safety Center', country: 'GB', flag: '🇬🇧', lat: 52.2053, lon: 0.1218, color: 0x38bdf8 },
+        { name: 'Taipei TSMC Semiconductor Foundry', country: 'TW', flag: '🇹🇼', lat: 25.0330, lon: 121.5654, color: 0x38bdf8 },
+        { name: 'Abu Dhabi TII Falcon & MBZUAI Lab', country: 'AE', flag: '🇦🇪', lat: 24.4539, lon: 54.3773, color: 0xfbbf24 },
+        { name: 'New Delhi CERT-In / Cyber Command', country: 'IN', flag: '🇮🇳', lat: 28.6139, lon: 77.2090, color: 0x38bdf8 },
+        { name: 'Montreal Mila AI Research Institute', country: 'CA', flag: '🇨🇦', lat: 45.5017, lon: -73.5673, color: 0x818cf8 },
+        { name: 'Munich Industrial AI & DFKI Hub', country: 'DE', flag: '🇩🇪', lat: 48.1351, lon: 11.5820, color: 0xfbbf24 },
+        { name: 'Veldhoven ASML Semiconductor Foundry', country: 'NL', flag: '🇳🇱', lat: 51.4190, lon: 5.4050, color: 0x34d399 },
+        { name: 'Geneva CERN Computing & AI Grid', country: 'CH', flag: '🇨🇭', lat: 46.2044, lon: 6.1432, color: 0x818cf8 }
       ];
 
       function geoToVector3(lat, lon, radius) {
@@ -3473,6 +3484,9 @@
     const DEFAULT_PALETTE_ACTIONS = [
       { id: 'action-translate-all', title: 'Translate All Foreign Intelligence to English', subtitle: 'Auto-detect & translate Chinese, Russian, Japanese & EU feeds', icon: 'languages', badge: 'TRANSLATE', type: 'action', run: backfillAllTranslations },
       { id: 'action-theatre-china', title: 'Switch Theatre to China Intel & AI', subtitle: 'Filter DeepSeek, Qwen, CNNVD & sovereign China threat feeds', icon: 'globe', badge: '🇨🇳 CHINA', type: 'action', run: () => setRegionFilter('china') },
+      { id: 'action-theatre-india', title: 'Switch Theatre to India & South Asia', subtitle: 'Filter Indian AI startups, CERT-In & IIT deep tech research', icon: 'globe', badge: '🇮🇳 INDIA', type: 'action', run: () => setRegionFilter('south_asia') },
+      { id: 'action-theatre-middle-east', title: 'Switch Theatre to Middle East (Israel & UAE)', subtitle: 'Filter Check Point, TII Falcon, CTech & regional feeds', icon: 'globe', badge: '🇮🇱 🇦🇪 MIDEAST', type: 'action', run: () => setRegionFilter('middle_east') },
+      { id: 'action-theatre-apac', title: 'Switch Theatre to Asia-Pacific (Japan, Korea, Taiwan)', subtitle: 'Filter TSMC, Samsung AI, JPCERT & robotics', icon: 'globe', badge: '🇯🇵 🇰🇷 APAC', type: 'action', run: () => setRegionFilter('apac') },
       { id: 'action-export-pdf', title: 'Export Threat Intelligence PDF Dossier', subtitle: 'Download executive multi-page PDF briefing report', icon: 'file-down', badge: 'PDF', type: 'action', run: exportPdfReport },
       { id: 'action-auto-triage', title: 'Run Autonomous Local LLM Triage', subtitle: 'Queue top threats for local Ollama (llama3.1:8b) deep analysis', icon: 'sparkles', badge: 'AI TRIAGE', type: 'action', run: triggerTriageBackfill },
       { id: 'action-scan', title: 'Trigger Real-Time Intelligence Sweep', subtitle: 'Ingest latest CVEs, arXiv papers & GitHub advisories', icon: 'refresh-cw', badge: 'RADAR', type: 'action', run: triggerScan },

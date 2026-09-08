@@ -833,6 +833,502 @@ sources:
     region: "china"
     country: "CN"
 
+  # =========================================================================
+  # INDIA AI STARTUPS, RESEARCH & CYBERSECURITY (IN / TIER 1)
+  # Indian AI Startups, Government Tech (CERT-In), Research & IT Ecosystem
+  # =========================================================================
+  - name: "Analytics India Magazine (AIM AI & Models)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://analyticsindiamag.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "south_asia"
+    country: "IN"
+
+  - name: "Inc42 AI & Deep Tech India"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://inc42.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "south_asia"
+    country: "IN"
+
+  - name: "CERT-In (Indian Computer Emergency Response Team)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.cert-in.org.in/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "south_asia"
+    country: "IN"
+
+  - name: "arXiv India AI & Deep Tech Radar (IIT / IISc)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "(cat:cs.AI OR cat:cs.CR) AND (IIT OR \"Indian Institute of Science\" OR IISc OR MeitY OR \"India AI\")"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "south_asia"
+    country: "IN"
+
+  - name: "YourStory AI Startups & Tech India"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://yourstory.com/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "south_asia"
+    country: "IN"
+
+  # =========================================================================
+  # ISRAEL CYBER INTELLIGENCE & HIGH-TECH RADAR (IL / TIER 1)
+  # Threat Intelligence, Security Startups, Offensive & Defensive Research
+  # =========================================================================
+  - name: "Check Point Research (Elite Threat Intel)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://research.checkpoint.com/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "middle_east"
+    country: "IL"
+
+  - name: "CTech by Calcalist (Israel Cyber & AI High-Tech)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.calcalistech.com/ctech/rss/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "middle_east"
+    country: "IL"
+
+  - name: "Team8 Cyber & AI Think Tank"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://team8.vc/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "middle_east"
+    country: "IL"
+
+  - name: "arXiv Israel Cybernetics & AI Security"
+    category: "ai_research"
+    type: "arxiv"
+    query: "(cat:cs.AI OR cat:cs.CR) AND (\"Tel Aviv University\" OR \"Technion\" OR \"Weizmann\" OR \"Hebrew University\")"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "middle_east"
+    country: "IL"
+
+  # =========================================================================
+  # JAPAN ROBOTICS, SEMICONDUCTOR & AI RESEARCH (JP / TIER 1)
+  # Robotics, AI Hardware, Industrial AI & Sovereign Defense
+  # =========================================================================
+  - name: "Nikkei Asia Tech & AI Hardware"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://asia.nikkei.com/rss/feed/nar"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "JP"
+
+  - name: "arXiv Japan AI & Robotics Radar (RIKEN / AIST / UTokyo)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "(cat:cs.AI OR cat:cs.RO) AND (RIKEN OR \"University of Tokyo\" OR AIST OR Kyoto)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "JP"
+
+  - name: "Japan Times Technology & AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.japantimes.co.jp/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "JP"
+
+  # =========================================================================
+  # SOUTH KOREA CHIPS, SEMICONDUCTOR & AI HARDWARE (KR / TIER 1)
+  # Samsung/SK Ecosystem, Chips, AI Hardware, Robotics & Startups
+  # =========================================================================
+  - name: "ETNews Korea (Electronic Times AI Chips & IT)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://english.etnews.com/rss/all.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "KR"
+
+  - name: "Korea JoongAng Daily Tech & AI"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://koreajoongangdaily.joins.com/section/rss/tech"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "KR"
+
+  - name: "KrCERT/CC (Korea Internet & Security Agency)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.boho.or.kr/kr/bbs/rss.do?bbsId=B0000021"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "KR"
+
+  - name: "arXiv South Korea AI & HBM Memory Radar (KAIST / SNU)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (KAIST OR \"Seoul National University\" OR \"Samsung AI\" OR POSTECH)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "KR"
+
+  # =========================================================================
+  # TAIWAN TSMC, HARDWARE FOUNDRY & CYBER RADAR (TW / TIER 2)
+  # TSMC Semiconductor Ecosystem, Hardware, Foundry & Cyber Defense
+  # =========================================================================
+  - name: "Digitimes Asia (Taiwan Semiconductors & TSMC Foundry)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.digitimes.com/rss/daily.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "TW"
+
+  - name: "Taiwan TWCERT/CC (Computer Emergency Response Team)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.twcert.org.tw/en/rss/1"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "TW"
+
+  - name: "ITRI Taiwan (Industrial Technology Research Institute)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.itri.org.tw/english/rss.aspx"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "TW"
+
+  # =========================================================================
+  # UAE FALCON AI, TII & MIDDLE EAST INFRASTRUCTURE (AE / TIER 2)
+  # Expanding AI Infrastructure, Open-Model Ecosystem (Falcon, TII, MBZUAI)
+  # =========================================================================
+  - name: "Technology Innovation Institute (TII Falcon Foundation Models)"
+    category: "ai_models"
+    type: "rss"
+    url: "https://www.tii.ae/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "middle_east"
+    country: "AE"
+
+  - name: "arXiv UAE Falcon & Abu Dhabi AI Radar (TII / MBZUAI)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (\"Technology Innovation Institute\" OR TII OR Falcon OR \"Mohamed bin Zayed University\" OR MBZUAI)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "middle_east"
+    country: "AE"
+
+  - name: "UAE AI Office & Future Foundation Wire"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://ai.gov.ae/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "middle_east"
+    country: "AE"
+
+  # =========================================================================
+  # SINGAPORE CSA, AI POLICY & SOUTHEAST ASIA HUB (SG / TIER 2)
+  # Cybersecurity (CSA SingCERT), AI Policy & Asian Tech Hub
+  # =========================================================================
+  - name: "Cyber Security Agency of Singapore (CSA SingCERT)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.csa.gov.sg/rss/singcert-alerts"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "SG"
+
+  - name: "AI Singapore (AISG National Frontier Initiatives)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://aisingapore.org/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "SG"
+
+  # =========================================================================
+  # GERMANY INDUSTRIAL AI, AUTOMOTIVE & BSI DEFENSE (DE / TIER 2)
+  # Industrial AI, Automotive, Cybersecurity & Research (DFKI)
+  # =========================================================================
+  - name: "DFKI (German Research Center for Artificial Intelligence)"
+    category: "ai_research"
+    type: "rss"
+    url: "https://www.dfki.de/en/web/news/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "DE"
+
+  - name: "Heise Security Alerts (German Cyber Defense)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.heise.de/security/rss/alert-news-atom.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "DE"
+
+  # =========================================================================
+  # FRANCE INRIA, MISTRAL & EUROPEAN AI FRONTIER (FR / TIER 2)
+  # AI Research (Mistral, Kyutai, INRIA), Startups & European Regulation
+  # =========================================================================
+  - name: "INRIA (French National Institute for Digital & AI Research)"
+    category: "ai_research"
+    type: "rss"
+    url: "https://www.inria.fr/en/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "FR"
+
+  - name: "arXiv France Frontier AI & Kyutai Radar"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (Kyutai OR INRIA OR Sorbonne OR CNRS OR Mistral)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "FR"
+
+  # =========================================================================
+  # NETHERLANDS ASML SEMICONDUCTOR & NCSC-NL (NL / TIER 2)
+  # Semiconductor Lithography (ASML), Security & Research (NCSC-NL, TU Delft)
+  # =========================================================================
+  - name: "NCSC-NL (National Cyber Security Centrum Netherlands)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.ncsc.nl/actueel/beveiligingsadviezen/rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "NL"
+
+  - name: "Bits of Freedom Dutch Tech & ASML Semiconductor Wire"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.bitsoffreedom.nl/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "NL"
+
+  - name: "arXiv Netherlands AI & Lithography Radar (TU Delft / UvA)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (\"TU Delft\" OR \"University of Amsterdam\" OR CWI OR ASML)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "NL"
+
+  # =========================================================================
+  # NORDIC & SWISS DEEP-TECH: FINLAND, SWEDEN & SWITZERLAND (FI / SE / CH / TIER 2)
+  # Deep-Tech, Microelectronics, CERN, ETH Zürich & Nordic Cyber Defense
+  # =========================================================================
+  - name: "Traficom NCSC-FI (National Cyber Security Centre Finland)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.kyberturvallisuuskeskus.fi/en/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "nordic"
+    country: "FI"
+
+  - name: "VTT Technical Research Centre of Finland (AI & Microelectronics)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.vttresearch.com/en/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "nordic"
+    country: "FI"
+
+  - name: "CERT-SE (Swedish Civil Contingencies Agency MSB)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.cert.se/feed.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "nordic"
+    country: "SE"
+
+  - name: "AI Sweden (National Centre for Applied Artificial Intelligence)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.ai.se/en/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "nordic"
+    country: "SE"
+
+  - name: "GovCERT.ch (Swiss National Cyber Security Centre NCSC)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.govcert.ch/rss.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "CH"
+
+  - name: "ETH Zürich AI Center Research Wire"
+    category: "ai_research"
+    type: "rss"
+    url: "https://ai.ethz.ch/news-and-events/news.rss"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "CH"
+
+  - name: "CERN Computing & AI Technology Wire"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://home.cern/rss/news/computing.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "CH"
+
+  # =========================================================================
+  # CANADA MILA, VECTOR & DEEP LEARNING RADAR (CA / TIER 2)
+  # AI Research, Montréal/Toronto Ecosystem (Mila, Vector Institute)
+  # =========================================================================
+  - name: "Vector Institute for Artificial Intelligence"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://vectorinstitute.ai/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "CA"
+
+  - name: "arXiv Canada AI & Deep Learning (Mila / Vector / Waterloo)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (Mila OR \"Vector Institute\" OR \"University of Toronto\" OR McGill OR Waterloo)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "CA"
+
+  # =========================================================================
+  # AUSTRALIA CSIRO DATA61 & DEFENSE (AU / TIER 2)
+  # Cybersecurity (ACSC/ASD), AI Research & Government Security
+  # =========================================================================
+  - name: "CSIRO Data61 (Australia AI Research & Cybernetics)"
+    category: "ai_research"
+    type: "rss"
+    url: "https://data61.csiro.au/en/News/RSS"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "AU"
+
+  # =========================================================================
+  # UNITED KINGDOM AI SAFETY & RESEARCH (GB / TIER 1)
+  # AI Safety, Alan Turing Institute, NCSC, Startups & Regulation
+  # =========================================================================
+  - name: "The Alan Turing Institute (UK AI Data Science)"
+    category: "ai_research"
+    type: "rss"
+    url: "https://www.turing.ac.uk/feed.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "GB"
+
+  - name: "TechUK Digital & AI Policy Wire"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.techuk.org/rss/insights.xml"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "GB"
+
+  - name: "arXiv UK AI Safety & Governance (Oxford / Cambridge / Turing)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (\"Alan Turing Institute\" OR \"UK AI Safety Institute\" OR Oxford OR Cambridge)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "GB"
+
+  # =========================================================================
+  # UNITED STATES CHIPS, HARDWARE & VC RADAR (US / TIER 1)
+  # Frontier AI, Startups, Chips, VC & Research
+  # =========================================================================
+  - name: "SemiAnalysis (Frontier AI Chips & Semiconductor Architecture)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://www.semianalysis.com/feed"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  - name: "arXiv US Frontier AI & Hardware (Stanford / Berkeley / MIT)"
+    category: "ai_research"
+    type: "arxiv"
+    query: "cat:cs.AI AND (Stanford OR Berkeley OR OpenAI OR Anthropic OR NVIDIA)"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "north_america"
+    country: "US"
+
+  # =========================================================================
+  # EUROPEAN UNION AI ACT & ENISA DEFENSE (EU / TIER 1)
+  # Regulation, AI Act, ENISA, European Research & Security
+  # =========================================================================
+  - name: "ENISA (European Union Agency for Cybersecurity News)"
+    category: "cybersecurity"
+    type: "rss"
+    url: "https://www.enisa.europa.eu/news/enisa-news/RSS"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "EU"
+
+  - name: "AlgorithmWatch (European AI & Algorithmic Accountability)"
+    category: "ai_tech"
+    type: "rss"
+    url: "https://algorithmwatch.org/en/feed/"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "europe"
+    country: "EU"
+
 
 # Delivery Configuration (user picks one at runtime)
 delivery:
