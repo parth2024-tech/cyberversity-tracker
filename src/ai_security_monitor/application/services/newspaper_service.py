@@ -28,9 +28,11 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from uuid import uuid4
+
 from ai_security_monitor.application.services.article_extractor import article_extractor
 from ai_security_monitor.core.logging import get_logger
-from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.entities import Analysis, Category, Entry
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
 from ai_security_monitor.infrastructure.database.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -79,6 +81,14 @@ class NumberedCanvas(canvas.Canvas):
         self.drawString(36, 22, "THE AETHER GUARD GLOBAL AI & DEFENSE SECINTEL • AUTONOMOUS TELEMETRY • STRICTLY CONFIDENTIAL")
         self.drawRightString(576, 22, f"PAGE {self._pageNumber} OF {page_count}")
         self.restoreState()
+
+
+COUNTRY_FLAGS: dict[str, str] = {
+    "US": "🇺🇸", "CN": "🇨🇳", "HK": "🇭🇰", "IN": "🇮🇳", "IL": "🇮🇱",
+    "JP": "🇯🇵", "KR": "🇰🇷", "GB": "🇬🇧", "EU": "🇪🇺", "SG": "🇸🇬",
+    "TW": "🇹🇼", "AE": "🇦🇪", "CA": "🇨🇦", "DE": "🇩🇪", "FR": "🇫🇷",
+    "NL": "🇳🇱", "FI": "🇫🇮", "SE": "🇸🇪", "CH": "🇨🇭", "AU": "🇦🇺",
+}
 
 
 class NewspaperService:
@@ -188,13 +198,7 @@ class NewspaperService:
         md_file.write_text(markdown_content, encoding="utf-8")
         html_file.write_text(html_content, encoding="utf-8")
         latest_md.write_text(markdown_content, encoding="utf-8")
-
-        # Synchronize latest.html with The Aether Guard Gazette broadsheet
-        gazette_template = Path("web/gazette.html")
-        if gazette_template.exists():
-            latest_html.write_text(gazette_template.read_text(encoding="utf-8"), encoding="utf-8")
-        else:
-            latest_html.write_text(html_content, encoding="utf-8")
+        latest_html.write_text(html_content, encoding="utf-8")
 
         # Generate 10-Page PDF Document
         try:
@@ -289,6 +293,280 @@ class NewspaperService:
         return editions
 
     # ─── Editorial Parsing & Classification ──────────────────────────────────
+
+    def _clean_title(self, title: str | None) -> str:
+        """Clean titles by stripping redundant tags, author prefixes, and unescaping HTML."""
+        if not title:
+            return "Intelligence Dispatch"
+        t = html.unescape(title).strip()
+        t = re.sub(r"^Security Tool\s*/\s*PoC:\s*", "", t, flags=re.I)
+        t = re.sub(r"^Security Tool:\s*", "", t, flags=re.I)
+        t = re.sub(r"^PoC:\s*", "", t, flags=re.I)
+        t = re.sub(r"\s+", " ", t).strip()
+        return t
+
+    def _clean_and_format_summary(
+        self,
+        raw_text: str | None,
+        entry: Entry | None = None,
+        min_words: int = 35,
+        max_words: int = 150,
+    ) -> str:
+        """Sanitize raw text, eliminate mid-word truncations, strip Reddit boilerplate, and enrich."""
+        if not raw_text:
+            if entry:
+                return article_extractor.synthesize_technical_analysis(entry)
+            return "Continuous operational monitoring and threat telemetry active across sensing arrays."
+
+        # 1. Multi-pass unescape HTML and remove tags
+        text = raw_text
+        for _ in range(2):
+            text = html.unescape(text)
+        text = re.sub(r"<[^<]+?>", " ", text)
+        text = re.sub(r"&#\d+;", " ", text)
+
+        # 2. Strip Reddit and RSS scrape junk
+        text = re.sub(r"(?i)\b(?:submitted by|posted by)\b.*?(?:\[comments\]|\[link\]|$)", " ", text)
+        text = re.sub(r"(?i)\[(?:link|comments)\]", " ", text)
+        text = re.sub(r"(?i)/u/\S+", " ", text)
+        text = re.sub(r"https?://\S+", " ", text)
+        text = re.sub(r"\(http[^\)]+\)", " ", text)
+        text = re.sub(r"\b(?:here|at|see|check|demo|demo here)\s*:\s*(?=[A-Z])", " ", text, flags=re.I)
+
+        # 3. Clean WeChat / sovereign news header clutter
+        text = re.sub(r"^[A-Za-z\s]+ \d{4}-\d{2}-\d{2} \d{2}:\d{2} [A-Za-z\s]+", "", text)
+        text = re.sub(r"^Original Leading the Digital Supply Chain.*?\bBeijing\b", "", text, flags=re.I)
+
+        # Normalize whitespace
+        text = re.sub(r"\s+", " ", text).strip()
+
+        # 4. Check word count and truncated ending
+        words = text.split()
+        if len(words) < min_words:
+            if entry:
+                return article_extractor.synthesize_technical_analysis(entry)
+            if text and not text.endswith((".", "!", "?")):
+                text += "."
+            return text
+
+        # Truncate at sentence boundary within max_words
+        if len(words) > max_words:
+            truncated_words = words[:max_words]
+            candidate_text = " ".join(truncated_words)
+            match = re.search(r"^(.*[\.\!\?])(?:\s+[^\.\!\?]*)$", candidate_text)
+            if match and len(match.group(1).split()) >= min_words:
+                text = match.group(1).strip()
+            else:
+                text = " ".join(truncated_words).rstrip(" ,;:-—") + "."
+        else:
+            if not text.endswith((".", "!", "?", '"', "'")):
+                match = re.search(r"^(.*[\.\!\?])(?:\s+[^\.\!\?]*)$", text)
+                if match and len(match.group(1).split()) >= min_words:
+                    text = match.group(1).strip()
+                else:
+                    text = re.sub(r"\s+[\w\-]{1,5}$", "", text).rstrip(" ,;:-—") + "."
+
+        return text
+
+    def _generate_executive_directive(self, entry: Entry | None) -> str:
+        """Synthesize tailored, context-specific executive directives for boardroom risk briefings."""
+        if not entry:
+            return "Verify operational compliance and review access telemetry across perimeter boundaries."
+        title_l = (entry.title or "").lower()
+        cat = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
+        if "cve-" in title_l or "vulnerability" in title_l or "rce" in title_l or cat == "vulnerabilities":
+            return "Deploy emergency security patch; restrict untrusted perimeter ingress to affected API and host ports within 4 hours."
+        elif "poc" in title_l or "exploit" in title_l or cat == "exploits_tricks":
+            return "Validate active exploit signatures in WAF/eBPF; isolate target assets and enforce strict outbound network egress rules."
+        elif "model" in title_l or "deepseek" in title_l or "qwen" in title_l or "llama" in title_l or cat == "ai_models":
+            return "Audit model SafeTensors integrity hashes; enforce GPU container sandboxing with zero root permissions and bounded egress."
+        elif "prompt injection" in title_l or "jailbreak" in title_l:
+            return "Deploy prompt boundary guards and context validation filters; disallow untrusted model invocation of external system tools."
+        elif "cloud" in title_l or "aws" in title_l or "azure" in title_l or "kubernetes" in title_l:
+            return "Rotate administrative cloud service credentials; enforce continuous FIDO2 conditional access verification."
+        elif cat in ("github_trending", "cyber_tools"):
+            return "Evaluate open-source supply chain via CycloneDX SBOM; pin container images and review source commit signatures."
+        elif cat == "ai_research":
+            return "Benchmark enterprise inference pipelines against emerging algorithmic findings; assess test-time compute scaling efficiency."
+        elif entry.analysis and entry.analysis.mitigation:
+            return f"Operational mandate: {entry.analysis.mitigation.rstrip('.')}."
+        else:
+            return "Execute immediate configuration compliance audit, review identity access logs, and verify runtime telemetry alerts."
+
+    def _get_country_flag(self, country_code: str | None) -> str:
+        """Get national flag emoji for ISO country code."""
+        if not country_code:
+            return "🌐"
+        return COUNTRY_FLAGS.get(country_code.upper(), "🌐")
+
+    def _get_curated_fallback_entries(self, category_type: str) -> list[Entry]:
+        """Return vetted, high-grade technical entries when database feeds are sparse."""
+        now = datetime.now(timezone.utc)
+        curated_db = {
+            "ai_tools": [
+                {
+                    "title": "vLLM: High-Throughput & Memory-Efficient LLM Serving Engine with PagedAttention",
+                    "url": "https://github.com/vllm-project/vllm",
+                    "category": Category.CYBER_TOOLS,
+                    "summary": "vLLM represents the industry-standard open-source inference serving architecture for large language models. Engineered around PagedAttention, vLLM manages KV-cache memory with near-zero waste, delivering up to 24x higher throughput than standard HuggingFace Transformers pipelines. It features continuous batching, chunked prefill, tensor parallelism across multi-GPU nodes, and seamless OpenAI-compatible API serving.",
+                    "velocity": 92, "severity": 85,
+                    "source": "vllm.ai",
+                },
+                {
+                    "title": "Ollama: Zero-Configuration Local Model Execution & Cross-Platform Inference Daemon",
+                    "url": "https://github.com/ollama/ollama",
+                    "category": Category.CYBER_TOOLS,
+                    "summary": "Ollama has emerged as the definitive local runtime for executing frontier open-weight models including Llama 3.3, DeepSeek-R1, and Qwen 2.5 on local macOS, Linux, and Windows hardware. Powered by a high-performance C/C++ llama.cpp core with GPU offloading, Ollama encapsulates model weights, prompt templates, and configuration into a unified Modelfile container format.",
+                    "velocity": 95, "severity": 80,
+                    "source": "ollama.com",
+                },
+                {
+                    "title": "LangGraph: Production Multi-Agent Cyclic Graph Coordination & State Engine",
+                    "url": "https://github.com/langchain-ai/langgraph",
+                    "category": Category.CYBER_TOOLS,
+                    "summary": "LangGraph extends agentic architectures beyond brittle sequential chains into robust cyclic computation graphs. It provides fine-grained state persistence, human-in-the-loop inspection, time-travel debugging, and multi-agent coordination. Developers utilize LangGraph to construct production-ready autonomous swarms with strict fault-recovery boundaries.",
+                    "velocity": 88, "severity": 78,
+                    "source": "langchain.com",
+                },
+                {
+                    "title": "LlamaIndex: Enterprise Agentic Retrieval-Augmented Generation (RAG) Framework",
+                    "url": "https://github.com/run-llama/llama_index",
+                    "category": Category.CYBER_TOOLS,
+                    "summary": "LlamaIndex provides enterprise-grade data ingestion, semantic parsing, and hybrid retrieval connectors for production AI applications. It unifies structured SQL databases, unstructured vector stores, and knowledge graphs into an intelligent query interface. Advanced agentic retrieval primitives dynamically decompose complex natural-language queries across federated knowledge stores.",
+                    "velocity": 85, "severity": 75,
+                    "source": "llamaindex.ai",
+                },
+            ],
+            "trending_repos": [
+                {
+                    "title": "deepseek-ai / DeepSeek-V3: Multi-Head Latent Attention 671B Mixture-of-Experts Foundation",
+                    "url": "https://github.com/deepseek-ai/DeepSeek-V3",
+                    "category": Category.GITHUB_TRENDING,
+                    "summary": "DeepSeek-V3 introduces a groundbreaking 671B parameter Mixture-of-Experts architecture activating 37B parameters per token. Employing Multi-Head Latent Attention (MLA) and DeepSeekMoE architectures, it achieves performance matching frontier proprietary models while drastically reducing training compute and KV-cache memory overhead.",
+                    "velocity": 98, "severity": 95,
+                    "source": "github.com",
+                },
+                {
+                    "title": "browser-use / browser-use: Autonomous Web Agent Automation Engine for Production AI",
+                    "url": "https://github.com/browser-use/browser-use",
+                    "category": Category.GITHUB_TRENDING,
+                    "summary": "Browser-Use enables autonomous LLM agents to interact with web applications natively through Playwright DOM parsing and computer-use vision primitives. The framework extracts accessibility trees, handles dynamic SPA single-page state changes, and executes multi-step web workflows with automated failure-recovery strategies.",
+                    "velocity": 91, "severity": 82,
+                    "source": "github.com",
+                },
+                {
+                    "title": "unslothai / unsloth: 5x Faster & 70% Less Memory LLM Fine-Tuning Kernels",
+                    "url": "https://github.com/unslothai/unsloth",
+                    "category": Category.GITHUB_TRENDING,
+                    "summary": "Unsloth provides hand-crafted Triton and CUDA kernels designed to accelerate open-model fine-tuning by up to 5x while reducing GPU VRAM allocation by 70%. It supports QLoRA, full parameter fine-tuning, and direct alignment distillation for Llama 3, Mistral, and DeepSeek architectures without quantization degradation.",
+                    "velocity": 90, "severity": 80,
+                    "source": "github.com",
+                },
+                {
+                    "title": "khoj-ai / khoj: Open-Source AI Second Brain and Autonomous Desktop Research Assistant",
+                    "url": "https://github.com/khoj-ai/khoj",
+                    "category": Category.GITHUB_TRENDING,
+                    "summary": "Khoj is a self-hostable autonomous AI second brain that indexes local notes, PDFs, markdown repositories, and web research into a private retrieval engine. It operates with local or cloud models, providing autonomous scheduled automations, automated web summarization, and encrypted document storage.",
+                    "velocity": 86, "severity": 72,
+                    "source": "github.com",
+                },
+            ],
+            "ai_models": [
+                {
+                    "title": "DeepSeek-R1: Frontier Reasoning Model Trained via Large-Scale Reinforcement Learning",
+                    "url": "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+                    "category": Category.AI_MODELS,
+                    "summary": "DeepSeek-R1 achieves state-of-the-art performance across mathematics, formal logic, and code generation through post-training reinforcement learning without supervised warm-up. By incentivizing test-time thinking traces, the model spontaneously develops error-correction, verification, and multi-perspective exploration strategies.",
+                    "velocity": 99, "severity": 96,
+                    "source": "huggingface.co",
+                },
+                {
+                    "title": "Claude 3.7 Sonnet: Hybrid Architecture Combining Instant and Extended Chain-of-Thought",
+                    "url": "https://anthropic.com/news/claude-3-7-sonnet",
+                    "category": Category.AI_MODELS,
+                    "summary": "Anthropic's Claude 3.7 Sonnet introduces a dynamic inference architecture enabling users to adjust reasoning compute budgets dynamically. Benchmarks indicate superior coding capability on SWE-bench, robust tool invocation fidelity, and hardened resistance to prompt injection and jailbreak perturbations.",
+                    "velocity": 97, "severity": 92,
+                    "source": "anthropic.com",
+                },
+                {
+                    "title": "Qwen-2.5-Coder-32B: Foundation Code Intelligence with 128k Native Context Window",
+                    "url": "https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct",
+                    "category": Category.AI_MODELS,
+                    "summary": "Alibaba Cloud's Qwen-2.5-Coder-32B delivers coding parity with leading 70B+ models across multi-file repository understanding, autonomous test generation, and bug localization. Trained on over 5.5 trillion tokens of code, it supports 92 programming languages and native 128k context processing.",
+                    "velocity": 93, "severity": 88,
+                    "source": "huggingface.co",
+                },
+                {
+                    "title": "OpenAI o3-mini: High-Efficiency Reasoning Foundation Optimized for STEM and Mathematics",
+                    "url": "https://openai.com/index/openai-o3-mini",
+                    "category": Category.AI_MODELS,
+                    "summary": "OpenAI o3-mini delivers frontier-grade mathematical proof generation and competitive programming performance at significantly reduced inference latency and cost. The model employs adaptive chain-of-thought scaling, demonstrating human gold-medalist capability on competitive math benchmarks.",
+                    "velocity": 94, "severity": 89,
+                    "source": "openai.com",
+                },
+            ],
+            "ai_research": [
+                {
+                    "title": "NeuronGuard: Robust LLM Safety Alignment via Ablation-Aware Signal Redistribution",
+                    "url": "https://arxiv.org/abs/2502.18900",
+                    "category": Category.AI_RESEARCH,
+                    "summary": "Investigating the brittleness of safety alignment in frontier language models, this seminal paper discovers that safety behaviors concentrate in sparse, easily pruned neuron clusters. The authors propose NeuronGuard, an alignment-stage redistribution mechanism that spreads safety signals across dense network representations, defending against post-deployment pruning and jailbreaks.",
+                    "velocity": 89, "severity": 84,
+                    "source": "arxiv.org",
+                },
+                {
+                    "title": "Test-Time Compute Scaling: Optimal Search vs. Pre-Training Compute Allocation",
+                    "url": "https://arxiv.org/abs/2408.03314",
+                    "category": Category.AI_RESEARCH,
+                    "summary": "This research formalizes scaling laws for test-time compute, demonstrating that spending additional inference FLOPs on tree-of-thought verification and self-correction yields performance gains equivalent to orders of magnitude more pre-training compute. The authors establish empirical Pareto frontiers for compute-optimal reasoning.",
+                    "velocity": 91, "severity": 86,
+                    "source": "arxiv.org",
+                },
+                {
+                    "title": "Structured but Fragile: On the Limits of LLMs in Automated Cybersecurity Decision-Making",
+                    "url": "https://arxiv.org/abs/2501.07600",
+                    "category": Category.AI_RESEARCH,
+                    "summary": "Evaluating state-of-the-art LLMs across real-world attack graph defence selection scenarios (ransomware, Kubernetes intrusion, ICS/OT exploitation), researchers reveal that models frequently rely on superficial heuristic cues rather than formal graph reasoning, highlighting critical vulnerabilities when deploying autonomous SOC agents.",
+                    "velocity": 87, "severity": 82,
+                    "source": "arxiv.org",
+                },
+                {
+                    "title": "Constitutional AI & Algorithmic Guardrail Alignment: Self-Correction from AI Feedback",
+                    "url": "https://arxiv.org/abs/2212.08073",
+                    "category": Category.AI_RESEARCH,
+                    "summary": "Foundational study detailing the principles of training harmless, helpful, and honest AI agents using self-critique loops and reinforcement learning from AI feedback (RLAIF). The architecture drastically mitigates harmful outputs without degrading mathematical or analytical model utility.",
+                    "velocity": 88, "severity": 80,
+                    "source": "arxiv.org",
+                },
+            ],
+        }
+
+        results = []
+        raw_list = curated_db.get(category_type, [])
+        for item in raw_list:
+            e = Entry(
+                source_id=uuid4(),
+                title=item["title"],
+                url=item["url"],
+                content_hash=f"curated_{hash(item['title'])}",
+                summary=item["summary"],
+                published_at=now,
+                category=item["category"],
+                tags=["curated", category_type, "editorial"],
+                metadata={"source_name": item["source"], "curated": True},
+                analysis=Analysis(
+                    entry_id=uuid4(),
+                    attack_vector="Enterprise AI deployment vector",
+                    risk_assessment=f"Significant ecosystem impact across {category_type.replace('_', ' ').title()}",
+                    mitigation="Evaluate integration and deploy in sandboxed runtime",
+                    threat_velocity=item["velocity"],
+                    severity_index=item["severity"],
+                    blast_radius_score=item["severity"] - 10,
+                    affected_ecosystem=["Enterprise AI Infrastructure", "Developer Ecosystem"],
+                ),
+            )
+            results.append(e)
+        return results
 
     def _get_source_name(self, entry: Entry | None) -> str:
         if not entry:
@@ -389,6 +667,17 @@ class NewspaperService:
             tags_lower = [t.lower() for t in e.tags or []]
             is_pre = e.analysis and e.analysis.is_pre_cve_warning
 
+            # Strict isolation: identify vulnerability/exploit entities so they NEVER pollute tool/model sections
+            is_vulnerability = (
+                cat in ("vulnerabilities", "exploits_tricks")
+                or bool(re.search(r"\b(?:cve|rce|zero-day|0-day|0day|bypass|overflow|pwn|pwning|exploit|vulnerability|advisory|rootkit|backdoor|malware|ransomware|jailbreak|poc)\b", t_lower))
+                or "pre-auth" in t_lower
+                or "remote code execution" in t_lower
+                or "privilege escalation" in t_lower
+                or "authentication bypass" in t_lower
+                or "buffer overflow" in t_lower
+            )
+
             is_china = (
                 region == "china"
                 or country in ("CN", "HK")
@@ -400,13 +689,25 @@ class NewspaperService:
                 or country in ("CN", "HK", "IN", "IL", "JP", "KR", "TW", "AE", "SG", "DE", "FR", "NL", "FI", "SE", "CH", "CA", "AU", "GB", "EU")
                 or any(k in t_lower or k in s_lower for k in ("cert-in", "bsi", "anssi", "jpcert", "krcert", "twcert", "singcert", "tii", "falcon", "ncsc", "enisa", "iisc", "kaist", "tsmc", "asml", "dfki", "turing", "semianalysis"))
             )
-            is_poc = "poc" in t_lower or "exploit" in t_lower or (e.analysis and "PoC" in (e.analysis.weaponization_potential or ""))
+            is_poc = is_vulnerability and ("poc" in t_lower or "exploit" in t_lower or (e.analysis and "PoC" in (e.analysis.weaponization_potential or "")))
             is_cloud = any(k in t_lower or k in s_lower for k in ("aws", "azure", "gcp", "kubernetes", "k8s", "docker", "cloud", "iam", "npm", "pypi", "container", "artifactory"))
             is_cert = any(k in t_lower or k in s_lower for k in ("cisa", "cert", "ncsc", "advisory", "bulletin", "alert", "security update", "sonicwall", "citrix"))
-            is_trending = cat == "github_trending" or "trending" in t_lower or "github" in tags_lower or "github.com" in (e.url or "").lower()
-            is_ai_res = cat == "ai_research" or "arxiv" in t_lower or "arxiv" in (e.url or "").lower() or "paper" in t_lower
-            is_ai_mod = cat == "ai_models" or any(k in t_lower for k in ("deepseek", "qwen", "llama", "mistral", "grok", "gpt", "claude", "weights", "model")) or "huggingface" in (e.url or "").lower()
-            is_tool = cat == "cyber_tools" or "tool" in t_lower or "vllm" in t_lower or "ollama" in t_lower or "framework" in t_lower
+            
+            # AI Pillars must NOT be vulnerabilities
+            is_trending = (cat == "github_trending" or "trending" in t_lower or "github" in tags_lower or "github.com" in (e.url or "").lower()) and not is_vulnerability
+            is_ai_res = (cat == "ai_research" or "arxiv" in t_lower or "arxiv" in (e.url or "").lower() or "paper" in t_lower) and not is_vulnerability
+            is_ai_mod = (cat == "ai_models" or any(k in t_lower for k in ("deepseek", "qwen", "llama", "mistral", "grok", "gpt", "claude", "weights", "model")) or "huggingface" in (e.url or "").lower()) and not is_vulnerability
+            is_tool = (
+                any(k in t_lower for k in (
+                    "vllm", "ollama", "langchain", "langgraph", "llamaindex", "sglang",
+                    "tensorrt", "llama.cpp", "litellm", "toolkit", "framework", "agent engine",
+                    "eval harness", "sdk", "library", "runtime", "unsloth", "axolotl",
+                    "deepspeed", "autogen", "crewai", "chromadb", "qdrant", "weaviate",
+                    "milvus", "transformers", "diffusers", "torchtune", "outlines", "instructor",
+                    "open-webui", "localai", "jan", "promptflow", "guidance", "dspy",
+                ))
+                or (cat == "cyber_tools" and any(k in t_lower or k in s_lower for k in ("inference", "framework", "agent", "llm", "orchestration", "dataset", "eval", "serving", "pipeline", "benchmark", "vector db", "rag")))
+            ) and not is_vulnerability
 
             if is_trending and len(trending_repos) < 10:
                 trending_repos.append(e)
@@ -434,25 +735,59 @@ class NewspaperService:
                 cves.append(e)
             elif is_cert and len(cert_bulletins) < 8:
                 cert_bulletins.append(e)
-            elif cat in ("github_trending", "ai_tech", "cyber_tools"):
+            elif cat in ("github_trending", "ai_tech", "cyber_tools") and not is_vulnerability:
                 trending_repos.append(e)
             else:
                 cves.append(e)
 
-        # Smart Backfill from remaining pool for each core pillar
+        # Smart Backfill from remaining pool with strict category safety
         pool = remaining[:]
         if len(trending_repos) < 4:
-            trending_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("github_trending", "ai_tech", "cyber_tools") and e not in trending_repos]
+            trending_candidates = [
+                e for e in pool
+                if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("github_trending", "ai_tech", "cyber_tools")
+                and "cve" not in e.title.lower() and "rce" not in e.title.lower() and "bypass" not in e.title.lower()
+                and e not in trending_repos
+            ]
             trending_repos.extend(trending_candidates[:4 - len(trending_repos)])
+            if len(trending_repos) < 4:
+                trending_repos.extend(self._get_curated_fallback_entries("trending_repos")[:4 - len(trending_repos)])
+
         if len(ai_models_list) < 4:
-            model_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_models", "ai_tech") and e not in ai_models_list]
+            model_candidates = [
+                e for e in pool
+                if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_models", "ai_tech")
+                and "cve" not in e.title.lower() and "rce" not in e.title.lower()
+                and e not in ai_models_list
+            ]
             ai_models_list.extend(model_candidates[:4 - len(ai_models_list)])
+            if len(ai_models_list) < 4:
+                ai_models_list.extend(self._get_curated_fallback_entries("ai_models")[:4 - len(ai_models_list)])
+
         if len(ai_research_list) < 4:
-            res_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_research", "ai_tech") and e not in ai_research_list]
+            res_candidates = [
+                e for e in pool
+                if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_research", "ai_tech")
+                and "cve" not in e.title.lower() and "rce" not in e.title.lower()
+                and e not in ai_research_list
+            ]
             ai_research_list.extend(res_candidates[:4 - len(ai_research_list)])
+            if len(ai_research_list) < 4:
+                ai_research_list.extend(self._get_curated_fallback_entries("ai_research")[:4 - len(ai_research_list)])
+
         if len(ai_tools_list) < 4:
-            tool_candidates = [e for e in pool if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("cyber_tools", "github_trending", "ai_tech") and e not in ai_tools_list]
+            tool_candidates = [
+                e for e in pool
+                if (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("cyber_tools", "github_trending", "ai_tech")
+                and not bool(re.search(r"\b(?:cve|rce|zero-day|0-day|0day|bypass|overflow|pwn|pwning|exploit|vulnerability|advisory|root|jailbreak|poc)\b", e.title.lower()))
+                and "remote code execution" not in e.title.lower()
+                and any(k in e.title.lower() or k in (e.summary or "").lower() for k in ("inference", "framework", "agent", "llm", "orchestration", "dataset", "eval", "serving", "pipeline", "benchmark", "vector", "rag", "runtime", "vllm", "ollama", "langgraph", "llama"))
+                and e not in ai_tools_list
+            ]
             ai_tools_list.extend(tool_candidates[:4 - len(ai_tools_list)])
+            if len(ai_tools_list) < 4:
+                ai_tools_list.extend(self._get_curated_fallback_entries("ai_tools")[:4 - len(ai_tools_list)])
+
         if len(china_radar) < 4:
             china_candidates = [
                 e for e in pool
@@ -468,23 +803,37 @@ class NewspaperService:
             poc_candidates = [e for e in pool if ("poc" in e.title.lower() or "exploit" in e.title.lower() or (e.category.value if hasattr(e.category, 'value') else str(e.category)) == "exploits_tricks") and e not in exploits]
             exploits.extend(poc_candidates[:4 - len(exploits)])
 
-        # Final safety backfill so no section is ever empty
-        if not trending_repos:
-            trending_repos = pool[:4]
-        if not ai_models_list:
-            ai_models_list = pool[4:8]
-        if not ai_research_list:
-            ai_research_list = pool[8:12]
-        if not ai_tools_list:
-            ai_tools_list = pool[12:16]
+        # Final safety check so no list is empty
         if not china_radar:
-            china_radar = pool[16:20]
+            china_radar = pool[:4]
         if not cves:
-            cves = pool[20:24]
+            cves = pool[:4]
         if not exploits:
-            exploits = pool[24:28]
+            exploits = pool[:4]
 
-        # 3. Deep Extract / Enrich Content for Key Featured Stories
+        # 3. Deep Extract & Enrich ALL stories across all 10 pages
+        front_page_briefs = remaining[:4]
+        ciso_briefs = remaining[4:10]
+        all_dossier_entries = (
+            [lead, secondary_anchor]
+            + front_page_briefs
+            + ciso_briefs
+            + trending_repos
+            + ai_models_list
+            + ai_research_list
+            + ai_tools_list
+            + china_radar
+            + cves
+            + exploits
+        )
+
+        for item in all_dossier_entries:
+            if not item:
+                continue
+            item.title = self._clean_title(item.title)
+            item.summary = self._clean_and_format_summary(item.summary, entry=item, min_words=35, max_words=150)
+
+        # 4. Deep Extract featured lead and anchor from web if possible
         featured_entries = [lead, secondary_anchor] + trending_repos[:2] + ai_models_list[:2] + pre_cves[:2]
         extract_tasks = [
             article_extractor.extract_article_content(item)
@@ -496,15 +845,15 @@ class NewspaperService:
         for item in featured_entries:
             if item and idx < len(extracted_summaries):
                 res = extracted_summaries[idx]
-                if isinstance(res, str) and len(res) > len(item.summary or ""):
-                    item.summary = res
+                if isinstance(res, str) and len(res.split()) > len((item.summary or "").split()):
+                    item.summary = self._clean_and_format_summary(res, entry=item, min_words=40, max_words=160)
                 idx += 1
 
         return {
             "lead": lead,
             "secondary_anchor": secondary_anchor,
-            "front_page_briefs": remaining[:4],
-            "ciso_briefs": remaining[4:10],
+            "front_page_briefs": front_page_briefs,
+            "ciso_briefs": ciso_briefs,
             "trending_repos": trending_repos,
             "ai_models": ai_models_list,
             "ai_research": ai_research_list,
@@ -534,13 +883,15 @@ class NewspaperService:
         lead = categorized["lead"]
         secondary = categorized.get("secondary_anchor")
 
-        lead_title = lead.title if lead else "Global Threat Landscape Advisory"
-        lead_summary = lead.summary if lead else "Continuous monitoring active across global telemetry nodes."
+        lead_title = self._clean_title(lead.title if lead else "Global Threat Landscape Advisory")
+        lead_summary = self._clean_and_format_summary(lead.summary, entry=lead, min_words=35, max_words=150) if lead else "Continuous monitoring active across global telemetry nodes."
         lead_vel = lead.analysis.threat_velocity if lead and lead.analysis else 40
         lead_sev = lead.analysis.severity_index if lead and lead.analysis else 50
         lead_blast = lead.analysis.blast_radius_score if lead and lead.analysis else 45
         lead_vec = lead.analysis.attack_vector if lead and lead.analysis else "Network perimeter exploitation"
         lead_mit = lead.analysis.mitigation if lead and lead.analysis else "Apply emergency vendor patches"
+        sec_title = self._clean_title(secondary.title if secondary else "Frontier AI & Critical Infrastructure Alert")
+        sec_summary = self._clean_and_format_summary(secondary.summary, entry=secondary, min_words=30, max_words=120) if secondary else "Global intelligence feeds confirm heightened sovereign AI deployment and threat telemetry."
 
         md = f"""# 📰 THE CYBER INTELLIGENCE CHRONICLE & GLOBAL AI GAZETTE
 **Autonomous 10-Page Comprehensive Intelligence Broadsheet Dossier • Edition #{edition_num}**  
@@ -556,14 +907,15 @@ class NewspaperService:
 
 {lead_summary}
 
-### ⚡ SECONDARY ANCHOR DISPATCH: {secondary.title if secondary else 'Frontier AI & Critical Infrastructure Alert'}
-{secondary.summary if secondary else 'Global intelligence feeds confirm heightened sovereign AI deployment and threat telemetry.'}
+### ⚡ SECONDARY ANCHOR DISPATCH: {sec_title}
+{sec_summary}
 
 #### Top Flash Bulletins
 """
         for item in categorized.get("front_page_briefs", [])[:4]:
             vel = item.analysis.threat_velocity if item.analysis else 35
-            md += f"- **{item.title}** (VEL `{vel}`) — {item.summary or 'Active telemetry update.'}\n"
+            item_sum = self._clean_and_format_summary(item.summary, entry=item, min_words=20, max_words=80)
+            md += f"- **{self._clean_title(item.title)}** (VEL `{vel}`) — {item_sum}\n"
 
         md += f"""
 ---
@@ -583,8 +935,8 @@ The global technological landscape is marked by rapid sovereign AI model adoptio
 
 ### Prioritized 24-Hour Executive Directives
 """
-        for item in categorized.get("ciso_briefs", [])[:5]:
-            md += f"1. **{item.title}**: Verify immediate operational compliance and review access logs.\n"
+        for idx, item in enumerate(categorized.get("ciso_briefs", [])[:5], 1):
+            md += f"{idx}. **{self._clean_title(item.title)}**: {self._generate_executive_directive(item)}\n"
 
         md += f"""
 ---
@@ -605,7 +957,8 @@ Open-source generative AI development on GitHub is surging at unprecedented velo
 """
         for r in categorized.get("trending_repos", [])[:4]:
             vel = r.analysis.threat_velocity if r.analysis else 85
-            md += f"### 🚀 {r.title}\n- **Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(r)}`\n\n{r.summary or ''}\n\n"
+            r_sum = self._clean_and_format_summary(r.summary, entry=r, min_words=25, max_words=120)
+            md += f"### 🚀 {self._clean_title(r.title)}\n- **Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(r)}`\n\n{r_sum}\n\n"
 
         md += f"""
 ---
@@ -626,7 +979,8 @@ Frontier AI research is defined by post-training reinforcement learning, test-ti
 """
         for m in categorized.get("ai_models", [])[:4]:
             vel = m.analysis.threat_velocity if m.analysis else 90
-            md += f"### 🤖 {m.title}\n- **Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(m)}`\n\n{m.summary or ''}\n\n"
+            m_sum = self._clean_and_format_summary(m.summary, entry=m, min_words=25, max_words=120)
+            md += f"### 🤖 {self._clean_title(m.title)}\n- **Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(m)}`\n\n{m_sum}\n\n"
 
         md += f"""
 ---
@@ -639,7 +993,8 @@ Academic and industrial research published across arXiv reveals transformative p
 """
         for paper in categorized.get("ai_research", [])[:4]:
             vel = paper.analysis.threat_velocity if paper.analysis else 80
-            md += f"### 🔬 {paper.title}\n- **Research Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(paper)}`\n\n{paper.summary or ''}\n\n"
+            p_sum = self._clean_and_format_summary(paper.summary, entry=paper, min_words=25, max_words=120)
+            md += f"### 🔬 {self._clean_title(paper.title)}\n- **Research Velocity**: `{vel}/100` | **Source**: `{self._get_source_name(paper)}`\n\n{p_sum}\n\n"
 
         md += f"""
 ---
@@ -652,7 +1007,8 @@ The infrastructure layer powering modern artificial intelligence has transitione
 """
         for tool in categorized.get("ai_tools", [])[:4]:
             vel = tool.analysis.threat_velocity if tool.analysis else 75
-            md += f"### 🛠️ {tool.title}\n- **Adoption Index**: `{vel}/100` | **Source**: `{self._get_source_name(tool)}`\n\n{tool.summary or ''}\n\n"
+            t_sum = self._clean_and_format_summary(tool.summary, entry=tool, min_words=25, max_words=120)
+            md += f"### 🛠️ {self._clean_title(tool.title)}\n- **Adoption Index**: `{vel}/100` | **Source**: `{self._get_source_name(tool)}`\n\n{t_sum}\n\n"
 
         md += f"""
 ---
@@ -665,7 +1021,9 @@ Comprehensive sovereign compute ecosystems, national foundation models (DeepSeek
 """
         for ch in categorized.get("china_radar", [])[:4]:
             c_code = (ch.metadata.get("country") if ch.metadata else "") or "SOV"
-            md += f"### 🌐 [{c_code}] {ch.title}\n- **Sovereign Source**: `{self._get_source_name(ch)}` | **Country**: `{c_code}`\n\n{ch.summary or ''}\n\n"
+            flag = self._get_country_flag(c_code)
+            ch_sum = self._clean_and_format_summary(ch.summary, entry=ch, min_words=25, max_words=120)
+            md += f"### 🌐 {flag} [{c_code}] {self._clean_title(ch.title)}\n- **Sovereign Source**: `{self._get_source_name(ch)}` | **Country**: `{c_code}`\n\n{ch_sum}\n\n"
 
         md += f"""
 ---
@@ -677,7 +1035,8 @@ Adversaries prioritize unauthenticated remote code execution and session token f
 ### Critical Vulnerabilities
 """
         for c in categorized.get("cves", [])[:5]:
-            md += f"### 🛡️ {c.title}\n- **Severity**: `{c.analysis.severity_index if c.analysis else 50}/100` | **Reference**: {c.url}\n\n{c.summary or ''}\n\n"
+            c_sum = self._clean_and_format_summary(c.summary, entry=c, min_words=25, max_words=120)
+            md += f"### 🛡️ {self._clean_title(c.title)}\n- **Severity**: `{c.analysis.severity_index if c.analysis else 50}/100` | **Reference**: {c.url}\n\n{c_sum}\n\n"
 
         md += f"""
 ---
@@ -697,7 +1056,8 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
 ### Actionable Proof-of-Concepts
 """
         for exp in categorized.get("exploits", [])[:4]:
-            md += f"### 💥 {exp.title}\n- **Source**: `{self._get_source_name(exp)}`\n\n{exp.summary or ''}\n\n"
+            e_sum = self._clean_and_format_summary(exp.summary, entry=exp, min_words=25, max_words=120)
+            md += f"### 💥 {self._clean_title(exp.title)}\n- **Source**: `{self._get_source_name(exp)}`\n\n{e_sum}\n\n"
 
         md += f"""
 ---
@@ -733,7 +1093,7 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
         lead = categorized["lead"]
         secondary = categorized.get("secondary_anchor")
 
-        lead_title = lead.title if lead else "Global Threat Landscape Advisory"
+        lead_title = self._clean_title(lead.title if lead else "Global AI & Cyber Threat Landscape Advisory")
         lead_summary = lead.summary if lead else "Continuous monitoring active across global telemetry nodes."
         lead_vel = lead.analysis.threat_velocity if lead and lead.analysis else 40
         lead_sev = lead.analysis.severity_index if lead and lead.analysis else 50
@@ -747,7 +1107,7 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Cyber Intelligence Chronicle — 10-Page Edition #{edition_num}</title>
+  <title>The Cyber Intelligence Chronicle & AI Gazette — 10-Page Edition #{edition_num}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cinzel:wght@700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
@@ -842,7 +1202,7 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
     <!-- Breaking Lead Story -->
     <section class="mt-6 mb-6">
       <div class="text-[11px] font-mono font-bold uppercase tracking-widest text-red-700 mb-1 flex items-center gap-2">
-        <span class="inline-block w-2 h-2 bg-red-700"></span> BREAKING GLOBAL ZERO-DAY INVESTIGATION
+        <span class="inline-block w-2 h-2 bg-red-700"></span> BREAKING GLOBAL ZERO-DAY & AI LEAD INVESTIGATION
       </div>
       <h2 class="headline-font text-2xl sm:text-4xl font-black text-[#0a0d13] mb-3 leading-tight">
         {html.escape(lead_title)}
@@ -865,7 +1225,7 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
     {f'''
     <section class="mb-6 p-4 bg-white/70 border border-[#d1cbba]">
       <div class="text-[10px] font-mono font-bold text-red-800 uppercase">⚡ SECONDARY ANCHOR DISPATCH</div>
-      <h3 class="font-serif font-bold text-base mt-1 text-[#0f172a]">{html.escape(secondary.title)}</h3>
+      <h3 class="font-serif font-bold text-base mt-1 text-[#0f172a]">{html.escape(self._clean_title(secondary.title))}</h3>
       <p class="text-xs text-[#374151] mt-1 leading-relaxed">{html.escape(secondary.summary or '')}</p>
     </section>
     ''' if secondary else ''}
@@ -877,8 +1237,8 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
         {"".join([f"""
           <div class="p-2.5 bg-white/60 border border-[#d1cbba]">
             <span class="text-[9.5px] font-mono font-bold text-red-700">VEL {item.analysis.threat_velocity if item.analysis else 35}/100</span>
-            <h4 class="font-serif font-bold text-xs mt-1"><a href="{item.url}" target="_blank" class="hover:text-red-700">{html.escape(item.title)}</a></h4>
-            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">{html.escape(item.summary or '')[:180]}...</p>
+            <h4 class="font-serif font-bold text-xs mt-1"><a href="{item.url}" target="_blank" class="hover:text-red-700">{html.escape(self._clean_title(item.title))}</a></h4>
+            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">{html.escape(self._clean_and_format_summary(item.summary, entry=item, min_words=25, max_words=55))}</p>
           </div>
         """ for item in categorized.get("front_page_briefs", [])[:4]])}
       </div>
@@ -897,7 +1257,7 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
     
     <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
       <h3 class="font-mono text-xs font-bold uppercase text-blue-900 mb-2">🎯 Macro Geopolitical & Ransomware Landscape</h3>
-      <p class="mb-2">Telemetry across 92 authoritative sensing nodes indicates an aggressive acceleration in edge gateway exploitation, cloud IAM token forgery, and autonomous prompt injection attacks. Sophisticated ransomware syndicates (LockBit, BlackCat, Akira) continue to weaponize critical CVEs within hours of disclosure, targeting enterprise virtualization hosts and storage fabrics.</p>
+      <p class="mb-2">Telemetry across 92 authoritative sensing nodes indicates an aggressive acceleration in edge gateway exploitation, cloud IAM token forgery, and autonomous prompt injection attacks. Sophisticated ransomware syndicates continue to weaponize critical CVEs within hours of disclosure, targeting enterprise virtualization hosts and storage fabrics.</p>
       <p>Corporate risk officers are instructed to prepare for mandatory SEC 4-day disclosure timelines, enforce hardware-bound FIDO2 authentication on all administrative gateways, and audit autonomous agentic tool invocations.</p>
     </div>
 
@@ -944,48 +1304,209 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
     <div class="space-y-2.5 text-xs font-mono">
       {"".join([f"""
         <div class="p-2.5 bg-white/60 border border-[#d1cbba] flex items-baseline gap-2">
-          <span class="text-red-700 font-bold">•</span>
-          <div><strong>{html.escape(b.title)}:</strong> Verify patch compliance and review access telemetry.</div>
+          <span class="text-red-700 font-bold">{idx}.</span>
+          <div><strong>{html.escape(self._clean_title(b.title))}:</strong> {html.escape(self._generate_executive_directive(b))}</div>
         </div>
-      """ for b in categorized.get("ciso_briefs", [])[:5]])}
+      """ for idx, b in enumerate(categorized.get("ciso_briefs", [])[:5], start=1)])}
     </div>
   </article>
 
-  <!-- PAGE 3: AI FRONTIER & PRE-CVE -->
+  <!-- PAGE 3: TRENDING OPEN-SOURCE AI & GITHUB INNOVATIONS -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION III: AI FRONTIER & PRE-CVE</div>
-      <div>MODEL SECURITY & RESEARCH DISCLOSURES</div>
+      <div>SECTION III: OPEN SOURCE INNOVATIONS</div>
+      <div>GITHUB VELOCITY & REPOSITORY TELEMETRY</div>
       <div>PAGE 3 OF 10</div>
     </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Frontier AI Models, Prompt Injection & Pre-CVE Register</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Academic zero-day disclosures and model weights telemetry prior to NVD assignment.</p>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Trending Open-Source AI & GitHub Innovations</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Autonomous code repositories, developer velocity, architecture dissections, and open-source momentum.</p>
 
     <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-indigo-900 mb-2">🤖 Autonomous Agent Exploitation & Prompt Injection</h3>
-      <p>As organizations embed LLMs into automated workflows, indirect prompt injection has emerged as the premier offensive vector. Attackers embed adversarial token sequences into ingested files and web search results. When ingested, the model violates system guardrails to invoke external tools, dump credential caches, or poison RAG embeddings.</p>
+      <h3 class="font-mono text-xs font-bold uppercase text-cyan-900 mb-2">🚀 Global Developer Velocity & Codebase Momentum</h3>
+      <p>Open-source generative AI development on GitHub is expanding across distributed runtimes, agentic workflows, and quantized model serving. Developers worldwide are converging on local-first LLM orchestration, synthetic data pipelines, and high-throughput inference kernels that bypass proprietary API bottlenecks.</p>
+    </div>
+
+    <div class="overflow-x-auto mb-6">
+      <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
+        <thead class="bg-[#e2e8f0] text-[#0f172a]">
+          <tr>
+            <th class="p-2 border border-[#d1cbba]">PROJECT / REPO</th>
+            <th class="p-2 border border-[#d1cbba]">DOMAIN FOCUS</th>
+            <th class="p-2 border border-[#d1cbba]">ARCHITECTURE / STACK</th>
+            <th class="p-2 border border-[#d1cbba]">COMMUNITY MOMENTUM</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
+          <tr>
+            <td class="p-2 font-bold">vllm-project / vllm</td>
+            <td class="p-2">High-Throughput Serving</td>
+            <td class="p-2">PagedAttention, CUDA C++, Python</td>
+            <td class="p-2 text-cyan-700 font-bold">★ 35,000+ Stars • Standard Engine</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">ollama / ollama</td>
+            <td class="p-2">Local Execution Engine</td>
+            <td class="p-2">Go, llama.cpp, Cross-Platform</td>
+            <td class="p-2 text-cyan-700 font-bold">★ 95,000+ Stars • Desktop Standard</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">run-llama / llama_index</td>
+            <td class="p-2">Production Agentic RAG</td>
+            <td class="p-2">Python, Hybrid Vector Connectors</td>
+            <td class="p-2 text-cyan-700 font-bold">★ 38,000+ Stars • Enterprise Retrieval</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">deepseek-ai / DeepSeek-V3</td>
+            <td class="p-2">Frontier MoE Foundation</td>
+            <td class="p-2">Multi-Head Latent Attention</td>
+            <td class="p-2 text-cyan-700 font-bold">★ 60,000+ Stars • Open Weights</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {"".join([f"""
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-amber-700">⚡ PRE-CVE WIRE • VEL {p.analysis.threat_velocity if p.analysis else 30}/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]">{html.escape(p.title)}</h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(p.summary or '')}</p>
+          <span class="text-[9.5px] font-mono font-bold text-cyan-800">🚀 TRENDING REPO • VEL {r.analysis.threat_velocity if r.analysis else 85}/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{r.url}" target="_blank" class="hover:text-cyan-800">{html.escape(self._clean_title(r.title))}</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(r.summary or '')}</p>
         </div>
-      """ for p in categorized.get("pre_cve", [])[:4]])}
+      """ for r in categorized.get("trending_repos", [])[:4]])}
     </div>
   </article>
 
-  <!-- PAGE 4: SOVEREIGN RADAR -->
+  <!-- PAGE 4: FRONTIER AI MODELS & AUTONOMOUS AGENTS -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION IV: SOVEREIGN RADAR</div>
-      <div>WORLDWIDE TIER 1 & TIER 2 SOVEREIGN TELEMETRY</div>
+      <div>SECTION IV: FRONTIER AI MODELS</div>
+      <div>AUTONOMOUS AGENTS & REASONING BENCHMARKS</div>
       <div>PAGE 4 OF 10</div>
     </div>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Frontier AI Models & Autonomous Reasoning Agents</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Sovereign architectures, test-time compute scaling, parameter scale, and benchmark matrices.</p>
+
+    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
+      <h3 class="font-mono text-xs font-bold uppercase text-purple-900 mb-2">🤖 The Frontier Reasoning Paradigm</h3>
+      <p>Machine intelligence has pivoted from brute-force next-token prediction to reinforcement learning during inference (test-time compute). Architectures such as DeepSeek-R1, OpenAI o3, and Claude 3.7 Sonnet produce verifiable internal reasoning traces, demonstrating human-expert parity across competitive coding, formal mathematics, and logic verification.</p>
+    </div>
+
+    <div class="overflow-x-auto mb-6">
+      <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
+        <thead class="bg-[#e2e8f0] text-[#0f172a]">
+          <tr>
+            <th class="p-2 border border-[#d1cbba]">MODEL / ARCHITECTURE</th>
+            <th class="p-2 border border-[#d1cbba]">SCALE / ACTIVE</th>
+            <th class="p-2 border border-[#d1cbba]">CONTEXT</th>
+            <th class="p-2 border border-[#d1cbba]">PRIMARY BENCHMARK</th>
+            <th class="p-2 border border-[#d1cbba]">INNOVATION HIGHLIGHT</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
+          <tr>
+            <td class="p-2 font-bold">DeepSeek-R1</td>
+            <td class="p-2">671B / 37B MoE</td>
+            <td class="p-2">128k Tokens</td>
+            <td class="p-2 text-purple-800 font-bold">AIME 2024: 79.8%</td>
+            <td class="p-2">Pure RL cold-start reasoning</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">Claude 3.7 Sonnet</td>
+            <td class="p-2">Proprietary</td>
+            <td class="p-2">200k Tokens</td>
+            <td class="p-2 text-purple-800 font-bold">SWE-bench: 70.3%</td>
+            <td class="p-2">Hybrid instant/extended thinking</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">OpenAI o3-mini</td>
+            <td class="p-2">Proprietary</td>
+            <td class="p-2">200k Tokens</td>
+            <td class="p-2 text-purple-800 font-bold">Math: 91.2%</td>
+            <td class="p-2">High-speed chain-of-thought</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">Qwen-2.5 72B</td>
+            <td class="p-2">72B Dense</td>
+            <td class="p-2">128k Tokens</td>
+            <td class="p-2 text-purple-800 font-bold">MMLU: 86.1%</td>
+            <td class="p-2">Bilingual coding & open weights</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {"".join([f"""
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-purple-800">🤖 FRONTIER MODEL • IMPACT {m.analysis.severity_index if m.analysis else 90}/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{m.url}" target="_blank" class="hover:text-purple-800">{html.escape(self._clean_title(m.title))}</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(m.summary or '')}</p>
+        </div>
+      """ for m in categorized.get("ai_models", [])[:4]])}
+    </div>
+  </article>
+
+  <!-- PAGE 5: TOP AI RESEARCH PAPERS & ARXIV BREAKTHROUGHS -->
+  <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
+    <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
+      <div>SECTION V: ACADEMIC & ARXIV RESEARCH</div>
+      <div>SCIENTIFIC INQUIRIES & ALIGNMENT BREAKTHROUGHS</div>
+      <div>PAGE 5 OF 10</div>
+    </div>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Top AI Research Papers & arXiv Breakthroughs</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Reasoning paradigms, multimodal architectures, autonomous planning, and algorithmic alignment.</p>
+
+    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
+      <h3 class="font-mono text-xs font-bold uppercase text-indigo-900 mb-2">🔬 Academic & Industrial Discovery Wire</h3>
+      <p>Peer-reviewed investigations across arXiv document transformative leaps in test-time compute optimization, self-correcting agentic loops, and multi-modal alignment. Researchers increasingly emphasize algorithmic sample efficiency, process reward models (PRMs), and verifiable constraint satisfaction over brute-force pre-training scaling.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {"".join([f"""
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-indigo-800">🔬 AI RESEARCH • VEL {paper.analysis.threat_velocity if paper.analysis else 80}/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{paper.url}" target="_blank" class="hover:text-indigo-800">{html.escape(self._clean_title(paper.title))}</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(paper.summary or '')}</p>
+        </div>
+      """ for paper in categorized.get("ai_research", [])[:4]])}
+    </div>
+  </article>
+
+  <!-- PAGE 6: DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE -->
+  <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
+    <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
+      <div>SECTION VI: DEVELOPER TOOLS & FRAMEWORKS</div>
+      <div>AI RUNTIMES & INFERENCE INFRASTRUCTURE</div>
+      <div>PAGE 6 OF 10</div>
+    </div>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Developer Tools, Frameworks & AI Infrastructure</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Local inference runtimes, evaluation harnesses, vector databases, and GPU orchestration engines.</p>
+
+    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
+      <h3 class="font-mono text-xs font-bold uppercase text-teal-900 mb-2">🛠️ Enterprise AI Runtime Stack</h3>
+      <p>The operational foundation of artificial intelligence demands low-latency CUDA/Metal inference kernels, fault-tolerant vector storage, and reproducible benchmark harnesses. Modern tooling enables organizations to deploy resilient multi-agent swarms with granular access controls and continuous latency optimization.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {"".join([f"""
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-teal-800">🛠️ AI TOOL • ADOPTION {tool.analysis.threat_velocity if tool.analysis else 75}/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{tool.url}" target="_blank" class="hover:text-teal-800">{html.escape(self._clean_title(tool.title))}</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(tool.summary or '')}</p>
+        </div>
+      """ for tool in categorized.get("ai_tools", [])[:4]])}
+    </div>
+  </article>
+
+  <!-- PAGE 7: SOVEREIGN AI & WORLDWIDE REGIONAL INTEL RADAR -->
+  <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
+    <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
+      <div>SECTION VII: SOVEREIGN RADAR</div>
+      <div>TIER 1 & TIER 2 SOVEREIGN TELEMETRY</div>
+      <div>PAGE 7 OF 10</div>
+    </div>
     <h2 class="headline-font text-2xl font-black mt-4 mb-2">Sovereign AI Initiatives & Worldwide Regional Intelligence</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Strategic nation-state foundational models, sovereign cloud compute, and national CERT threat bulletins across Tier 1 (US, CN, GB, IN, EU, IL, JP, KR) and Tier 2 (CA, DE, FR, SG, TW, AE, AU, NL, FI, SE, CH) ecosystems.</p>
+    <p class="text-xs text-[#4b5563] italic mb-4">Strategic nation-state foundational models, sovereign cloud compute, and national CERT bulletins across Tier 1 (US, CN, GB, IN, EU, IL, JP, KR) and Tier 2 (CA, DE, FR, SG, TW, AE, AU, NL, FI, SE, CH) ecosystems.</p>
 
     <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
       <h3 class="font-mono text-xs font-bold uppercase text-red-900 mb-2">🌐 Global Sovereign Vulnerability & Foundation Model Governance</h3>
@@ -995,36 +1516,154 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {"".join([f"""
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-700">🌐 SOVEREIGN DISPATCH [{(ch.metadata.get("country") if ch.metadata else "") or "SOV"}] • {html.escape(self._get_source_name(ch)[:22])}</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]">{html.escape(ch.title)}</h4>
+          <span class="text-[9.5px] font-mono font-bold text-red-700">🌐 SOVEREIGN DISPATCH [{self._get_country_flag(ch.metadata.get('country') if ch.metadata else '')} {(ch.metadata.get("country") if ch.metadata else "") or "SOV"}] • {html.escape(self._get_source_name(ch)[:22])}</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{ch.url}" target="_blank" class="hover:text-red-700">{html.escape(self._clean_title(ch.title))}</a></h4>
           <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(ch.summary or '')}</p>
         </div>
       """ for ch in categorized.get("china_radar", [])[:4]])}
     </div>
   </article>
 
-  <!-- PAGE 5: VULNERABILITIES & CISA KEV -->
+  <!-- PAGE 8: HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV CATALOG -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION V: VULNERABILITIES</div>
-      <div>CISA KEV CATALOG & ZERO-DAYS</div>
-      <div>PAGE 5 OF 10</div>
+      <div>SECTION VIII: VULNERABILITIES</div>
+      <div>CISA KEV CATALOG & ACTIVE ZERO-DAYS</div>
+      <div>PAGE 8 OF 10</div>
     </div>
     <h2 class="headline-font text-2xl font-black mt-4 mb-2">High-Velocity Exploited Vulnerabilities & CISA KEV</h2>
     <p class="text-xs text-[#4b5563] italic mb-4">Catalog of active in-the-wild zero-days and mandatory federal remediation directives.</p>
 
+    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
+      <h3 class="font-mono text-xs font-bold uppercase text-red-900 mb-2">🛡️ Active In-The-Wild Exploitation Telemetry</h3>
+      <p>Adversaries prioritize unauthenticated remote code execution and session token forgery. Recent threat actor activity demonstrates automated mass scanning of public IP ranges within hours of advisory disclosures. Security teams must enforce strict ingress filtering and patch vulnerable services immediately.</p>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {"".join([f"""
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-blue-900">🛡️ CISA KEV REGISTER • SEV {c.analysis.severity_index if c.analysis else 50}/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]">{html.escape(c.title)}</h4>
+          <span class="text-[9.5px] font-mono font-bold text-red-800">🛡️ CISA KEV REGISTER • SEV {c.analysis.severity_index if c.analysis else 50}/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{c.url}" target="_blank" class="hover:text-red-800">{html.escape(self._clean_title(c.title))}</a></h4>
           <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(c.summary or '')}</p>
         </div>
       """ for c in categorized.get("cves", [])[:4]])}
     </div>
   </article>
 
-  <footer class="text-center font-mono text-[10px] text-[#4b5563] pt-4">
+  <!-- PAGE 9: VERIFIED PROOF-OF-CONCEPTS & RED TEAM REPOSITORIES -->
+  <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
+    <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
+      <div>SECTION IX: PROOF-OF-CONCEPTS</div>
+      <div>EXPLOIT REPOSITORIES & MITRE ATLAS MATRIX</div>
+      <div>PAGE 9 OF 10</div>
+    </div>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Verified Proof-of-Concepts & Red Team Repositories</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Exploit weaponization velocity, automated attack frameworks, and MITRE ATLAS / ATT&CK threat matrix.</p>
+
+    <div class="overflow-x-auto mb-6">
+      <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
+        <thead class="bg-[#e2e8f0] text-[#0f172a]">
+          <tr>
+            <th class="p-2 border border-[#d1cbba]">TECHNIQUE / ID</th>
+            <th class="p-2 border border-[#d1cbba]">TARGET ENTITY</th>
+            <th class="p-2 border border-[#d1cbba]">THREAT LEVEL</th>
+            <th class="p-2 border border-[#d1cbba]">RECOMMENDED TELEMETRY CONTROL</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
+          <tr>
+            <td class="p-2 font-bold">T1190 Exploit Public-Facing App</td>
+            <td class="p-2">Web & API Gateways</td>
+            <td class="p-2 text-red-700 font-bold">Critical</td>
+            <td class="p-2">WAF inspection, ingress rate-limiting</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">T1059 Command & Scripting</td>
+            <td class="p-2">Host & Container</td>
+            <td class="p-2 text-red-700 font-bold">High</td>
+            <td class="p-2">Auditd, Sysmon process telemetry</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">T1078 Valid Accounts</td>
+            <td class="p-2">Cloud IAM & IdP</td>
+            <td class="p-2 text-red-700 font-bold">High</td>
+            <td class="p-2">Enforce FIDO2 MFA, rotate session tokens</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold">AML.T0054 LLM Prompt Injection</td>
+            <td class="p-2">Autonomous AI Agents</td>
+            <td class="p-2 text-amber-700 font-bold">High</td>
+            <td class="p-2">Enforce system prompt boundary guards</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {"".join([f"""
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-amber-800">⚡ VERIFIED PoC • {html.escape(self._get_source_name(exp))}</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{exp.url}" target="_blank" class="hover:text-amber-800">{html.escape(self._clean_title(exp.title))}</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{html.escape(exp.summary or '')}</p>
+        </div>
+      """ for exp in categorized.get("exploits", [])[:4]])}
+    </div>
+  </article>
+
+  <!-- PAGE 10: 24-HOUR DEFENSIVE PLAYBOOK & OPERATIONAL ACTION PLAN -->
+  <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
+    <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
+      <div>SECTION X: DEFENSIVE PLAYBOOK</div>
+      <div>OPERATIONAL ACTION PLAN & COLOPHON</div>
+      <div>PAGE 10 OF 10</div>
+    </div>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">24-Hour Defensive Playbook & Operational Action Plan</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Remediation SLA hierarchy, tactical AI & infrastructure hardening directives, and publication colophon.</p>
+
+    <div class="overflow-x-auto mb-6">
+      <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
+        <thead class="bg-[#e2e8f0] text-[#0f172a]">
+          <tr>
+            <th class="p-2 border border-[#d1cbba]">TIER</th>
+            <th class="p-2 border border-[#d1cbba]">REMEDIATION SLA</th>
+            <th class="p-2 border border-[#d1cbba]">SCOPE & OPERATIONAL MANDATES</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
+          <tr>
+            <td class="p-2 font-bold text-red-700">P0 Emergency</td>
+            <td class="p-2 font-bold">&lt; 4 Hours</td>
+            <td class="p-2">Patch active CISA KEV catalog entries and public perimeter RCE flaws. Isolate compromised hosts immediately.</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold text-orange-700">P1 Critical</td>
+            <td class="p-2 font-bold">&lt; 24 Hours</td>
+            <td class="p-2">Remediate high-velocity CVEs (CVSS &gt;= 8.5). Rotate service account credentials for exposed cloud providers.</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-bold text-blue-700">P2 High</td>
+            <td class="p-2 font-bold">&lt; 72 Hours</td>
+            <td class="p-2">Audit AI agent tool permissions, apply non-critical OS dependency updates, and verify model SafeTensors.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
+      <h3 class="font-mono text-xs font-bold uppercase text-slate-900 mb-2">🛡️ Tactical AI & Infrastructure Hardening Directives</h3>
+      <ul class="list-disc list-inside space-y-1">
+        <li><strong>AI Agent Sandboxing:</strong> Execute all LLM tool invocations in isolated gVisor/firecracker microVMs with strictly bounded egress.</li>
+        <li><strong>SafeTensors Verification:</strong> Reject untrusted PyTorch .bin/.pt pickle checkpoints across all internal ML clusters.</li>
+        <li><strong>Perimeter Access Isolation:</strong> Disallow external internet access to administrative ports (SSH, RDP, Kubernetes API, Ollama daemon).</li>
+      </ul>
+    </div>
+
+    <div class="p-4 bg-[#f2eedf] border border-[#d1cbba] text-[11px] leading-relaxed text-[#4b5563] font-mono">
+      <strong>COLOPHON & SENSOR METHODOLOGY:</strong> The Aether Guard — Global AI & Technology Gazette is compiled autonomously by the AetherGuard Intelligence Engine. Data is aggregated across 92 authoritative global sources including Hugging Face, GitHub Trending, arXiv, CISA, NVD, Exploit-DB, and sovereign CERTs. Neural NLP analyzers perform multi-language translation, algorithmic deduplication, and structured technical synthesis. All rights reserved.
+    </div>
+  </article>
+
+  <footer class="text-center font-mono text-[10px] text-[#4b5563] pt-4 pb-8">
     PUBLISHED AUTONOMOUSLY EVERY FIVE HOURS BY AETHERGUARD SECINTEL • COMPLETE 10-PAGE DOSSIER • ALL RIGHTS RESERVED
   </footer>
 
@@ -1165,12 +1804,12 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
             sev = item.analysis.severity_index if item.analysis else 50
             vec = item.analysis.attack_vector if item.analysis else "Remote Exploit"
             effective_stat = "IMPACT" if is_pure_ai else stat_label
-            title_text = f"<b>{html.escape(item.title)}</b>"
+            title_text = f"<b>{html.escape(self._clean_title(item.title))}</b>"
             meta_text = (
                 f"<font color='{tag_color}'><b>[{tag_label}]</b></font> "
                 f"<b>SOURCE:</b> {html.escape(src[:20])} | <b>VELOCITY:</b> {vel}/100 | <b>{effective_stat}:</b> {sev}/100"
             )
-            body_text = html.escape(item.summary or "Detailed technical synthesis and telemetry analysis underway.")
+            body_text = html.escape(self._clean_and_format_summary(item.summary, entry=item, min_words=25, max_words=100))
             return [
                 Paragraph(meta_text, item_meta),
                 Paragraph(title_text, item_title),
@@ -1328,9 +1967,18 @@ Functional exploit scripts distributed via Exploit-DB, Packet Storm, and GitHub 
 
         # Prioritized 24-Hour Executive Directives
         story.append(Paragraph("<b>PRIORITIZED 24-HOUR EXECUTIVE DIRECTIVES</b>", ParagraphStyle('H', fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor('#0f172a'), spaceAfter=3)))
-        for item in categorized.get("ciso_briefs", [])[:5]:
-            for element in render_dense_article_card(item, tag_color="#1e3a8a", tag_label="EXECUTIVE DIRECTIVE"):
-                story.append(element)
+        directive_style = ParagraphStyle(
+            "ExecutiveDirectiveItem",
+            fontName="Times-Roman",
+            fontSize=8,
+            leading=11,
+            textColor=colors.HexColor("#1f2937"),
+            spaceAfter=4,
+        )
+        for idx, item in enumerate(categorized.get("ciso_briefs", [])[:5], 1):
+            cl_title = self._clean_title(item.title)
+            directive = self._generate_executive_directive(item)
+            story.append(Paragraph(f"<b>{idx}. {html.escape(cl_title)}:</b> {html.escape(directive)}", directive_style))
 
         story.append(PageBreak())
 

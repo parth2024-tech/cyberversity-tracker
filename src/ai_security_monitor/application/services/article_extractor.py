@@ -165,6 +165,17 @@ class ArticleExtractor:
         """
         title = entry.title or "Security Advisory"
         existing = (entry.summary or "").strip()
+        if existing:
+            existing = html.unescape(existing)
+            existing = re.sub(r"<[^<]+?>", " ", existing)
+            existing = re.sub(r"(?i)\b(?:submitted by|posted by)\s+/u/\S+", "", existing)
+            existing = re.sub(r"(?i)\[link\]\s*\[comments\]", "", existing)
+            existing = re.sub(r"(?i)\[link\]", "", existing)
+            existing = re.sub(r"(?i)\[comments\]", "", existing)
+            existing = re.sub(r"(?i)submitted by\s+.*", "", existing)
+            existing = re.sub(r"https?://\S+", "", existing)
+            existing = re.sub(r"\s+", " ", existing).strip()
+
         analysis = entry.analysis
 
         # Detect specific CVE or vulnerability archetype
@@ -177,10 +188,21 @@ class ArticleExtractor:
         vec = analysis.attack_vector if analysis and analysis.attack_vector else "remote exploitation"
         archetype = analysis.attack_archetype if analysis else "Vulnerability Exploitation"
 
-        paragraphs = []
-
+        title_lower = title.lower()
         cat_str = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
-        is_ai_category = cat_str in ("ai_tech", "ai_models", "ai_research", "github_trending", "cyber_tools")
+        is_vuln = (
+            cat_str in ("vulnerabilities", "exploits_tricks")
+            or bool(re.search(r"\b(?:cve|rce|zero-day|0-day|0day|bypass|overflow|pwn|pwning|exploit|vulnerability|advisory|rootkit|backdoor|malware|ransomware|jailbreak|poc)\b", title_lower))
+            or "pre-auth" in title_lower
+            or "remote code execution" in title_lower
+            or "privilege escalation" in title_lower
+            or "authentication bypass" in title_lower
+            or "buffer overflow" in title_lower
+        )
+        is_ai_category = (
+            cat_str in ("ai_tech", "ai_models", "ai_research", "github_trending")
+            or (cat_str == "cyber_tools" and any(k in title_lower for k in ("vllm", "ollama", "langchain", "langgraph", "llamaindex", "framework", "agent", "llm", "runtime", "eval")))
+        ) and not is_vuln
 
         if is_ai_category:
             repo_or_project = entry.metadata.get("repo_name", title.split(":")[0].replace("Trending Repo", "").strip())
@@ -188,6 +210,8 @@ class ArticleExtractor:
 
             paragraphs = []
             if existing and len(existing.split()) >= 25:
+                if not existing.endswith((".", "!", "?")):
+                    existing += "."
                 paragraphs.append(existing)
             else:
                 paragraphs.append(
@@ -211,8 +235,11 @@ class ArticleExtractor:
             )
             return " ".join(paragraphs)
 
+        paragraphs = []
         # Paragraph 1: Threat Synopsis & Attack Surface
         if existing and len(existing.split()) >= 25:
+            if not existing.endswith((".", "!", "?")):
+                existing += "."
             paragraphs.append(existing)
         else:
             if cve_id:
