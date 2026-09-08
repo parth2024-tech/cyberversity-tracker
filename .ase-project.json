@@ -14,7 +14,8 @@
     "Clean architecture: domain, application, infrastructure, presentation layers",
     "Async SQLAlchemy Unit of Work pattern for persistence",
     "Strict type hinting and dataclasses across domain models",
-    "Luxury dark aesthetic with obsidian palette and refined glassmorphism"
+    "Luxury dark aesthetic with obsidian palette and refined glassmorphism",
+    "Strict user rule: Focus on broad global AI news (trending GitHub repos, developer tools, frontier models, research breakthroughs) and omit security unless explicitly asked"
   ],
   "architecture_patterns": [
     "Domain-Driven Design (DDD) with clear boundary contexts",
@@ -55,6 +56,7 @@
     "lifecycle/test-driven-development"
   ],
   "never_do": [
+    "Never focus on cybersecurity, CVEs, or vulnerability telemetry unless the user explicitly requests it",
     "Never use useEffect for data fetching — use Server Components or SWR",
     "Never store secrets in .env files committed to git",
     "Never use inline styles — always use Tailwind classes",
