@@ -271,6 +271,130 @@
       #sidebar-nav { display: none; }
       .main-layout { margin-left: 0 !important; }
     }
+
+    /* Grid vs List View Modes */
+    #feed-container.grid-view {
+      display: grid !important;
+      grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+      gap: 0.85rem !important;
+    }
+    @media (min-width: 880px) {
+      #feed-container.grid-view {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+    }
+    #feed-container.list-view {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+    }
+
+    /* Tech Quick Filter Chips */
+    .tech-chip {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+    }
+    .tech-chip:hover {
+      background: rgba(34, 211, 238, 0.08);
+      border-color: rgba(34, 211, 238, 0.3);
+      color: #e2e8f0;
+      transform: translateY(-1px);
+    }
+    .tech-chip.active {
+      background: rgba(34, 211, 238, 0.16);
+      border-color: rgba(34, 211, 238, 0.5);
+      color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+      font-weight: 600;
+    }
+
+    /* Keyboard Focused Card Highlight Ring */
+    .card-focused {
+      outline: 2px solid var(--cyan) !important;
+      outline-offset: 2px;
+      box-shadow: 0 0 24px rgba(34, 211, 238, 0.3), 0 8px 32px rgba(0, 0, 0, 0.7) !important;
+      transform: translateY(-2px) !important;
+    }
+
+    /* 3D Globe HUD Tooltip */
+    #globe-tooltip {
+      position: absolute;
+      pointer-events: none;
+      z-index: 40;
+      opacity: 0;
+      transform: translate(-50%, -120%);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      background: rgba(6, 10, 18, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: #f8fafc;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.25);
+    }
+    #globe-tooltip.visible {
+      opacity: 1;
+      transform: translate(-50%, -130%);
+    }
+
+    /* Compact List View Card Overrides */
+    .feed-card-compact {
+      padding: 10px 14px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+    }
+    .feed-card-compact .card-body-compact {
+      flex: 1;
+      min-width: 0;
+    }
+    .feed-card-compact .card-title-compact {
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      margin-bottom: 3px !important;
+    }
+    .feed-card-compact .card-meta-compact {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      font-size: 10px !important;
+      font-family: var(--font-mono) !important;
+      color: #64748b !important;
+    }
+
+    /* Kbd Badges */
+    kbd.shortcut-key {
+      display: inline-block;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1;
+      color: #cbd5e1;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 4px;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
   </style>
 </head>
 <body class="selection:bg-sky-500/30 selection:text-white">
@@ -609,6 +733,49 @@
     </div>
   </div>
 
+  <!-- MODAL: Power-User Keyboard Shortcuts Cheatsheet -->
+  <div id="keyboard-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-xl rounded-2xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+            <i data-lucide="keyboard" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-white tracking-wide">Keyboard Command Matrix</h2>
+            <p class="text-xs text-slate-400 font-mono">Streamline your intelligence workflow with single-key shortcuts</p>
+          </div>
+        </div>
+        <button onclick="closeKeyboardModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+        <div class="space-y-2.5 p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <h3 class="text-cyan-400 font-semibold uppercase text-[10px] tracking-wider mb-2">Feed Navigation</h3>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Next Entry</span><div class="flex items-center gap-1"><kbd class="shortcut-key">j</kbd><span class="text-slate-500">/</span><kbd class="shortcut-key">↓</kbd></div></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Previous Entry</span><div class="flex items-center gap-1"><kbd class="shortcut-key">k</kbd><span class="text-slate-500">/</span><kbd class="shortcut-key">↑</kbd></div></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Inspect Entry</span><kbd class="shortcut-key">Enter</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Read Aloud (TTS)</span><kbd class="shortcut-key">Space</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Pin / Star Entry</span><kbd class="shortcut-key">p</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Share / Copy Link</span><kbd class="shortcut-key">s</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Open Source Link</span><kbd class="shortcut-key">o</kbd></div>
+        </div>
+
+        <div class="space-y-2.5 p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <h3 class="text-violet-400 font-semibold uppercase text-[10px] tracking-wider mb-2">Controls & Layout</h3>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Focus Search</span><kbd class="shortcut-key">/</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Toggle Grid / List</span><kbd class="shortcut-key">g</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Command Palette</span><kbd class="shortcut-key">⌘ K</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">3D Globe Toggle</span><kbd class="shortcut-key">b</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">Close Any Modal</span><kbd class="shortcut-key">Esc</kbd></div>
+          <div class="flex items-center justify-between"><span class="text-slate-300">This Cheat Sheet</span><kbd class="shortcut-key">?</kbd></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 
   <!-- LEFT ICON SIDEBAR: Mission Control Nav Strip -->
@@ -735,6 +902,9 @@
         <button onclick="openCommandPalette()" class="hidden sm:flex w-9 h-9 items-center justify-center rounded-md border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.06] text-slate-500 hover:text-slate-300 transition" title="Command palette ⌘K">
           <i data-lucide="command" class="w-4 h-4"></i>
         </button>
+        <button onclick="openKeyboardModal()" class="w-9 h-9 flex items-center justify-center rounded-md border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.06] text-slate-400 hover:text-cyan-300 transition" title="Keyboard Shortcuts (?)">
+          <kbd class="shortcut-key text-[11px]">?</kbd>
+        </button>
         <button onclick="openNewspaperModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-md bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/35 text-cyan-300 hover:text-white font-mono text-xs font-semibold tracking-wide transition active:scale-95 shadow-sm" title="Read The Cyber Intelligence Chronicle (5-Hour Newspaper Edition)">
           <i data-lucide="newspaper" class="w-3.5 h-3.5 text-cyan-400"></i>
           <span class="hidden md:inline">5H CHRONICLE</span>
@@ -771,6 +941,8 @@
       </div>
 
       <div class="relative w-full h-64 sm:h-80 flex items-center justify-center cursor-grab active:cursor-grabbing" id="three-globe-viewport">
+        <!-- Floating 3D Station HUD Tooltip -->
+        <div id="globe-tooltip"></div>
         <!-- Three.js Canvas mounts here -->
         <div class="absolute top-3 left-3 z-10 pointer-events-none space-y-1 font-mono text-[10px] text-slate-400 bg-slate-950/80 p-2.5 rounded-xl border border-white/[0.08] backdrop-blur-md">
           <p class="text-sky-300 font-semibold tracking-wide flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 24H PLANETARY RADAR ACTIVE</p>
@@ -918,21 +1090,55 @@
             </div>
           </div>
 
-          <!-- Search & Sort Row -->
+          <!-- Search & Sort Row with View Switcher -->
           <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             <div class="relative flex-1 w-full">
               <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-              <input id="search-input" oninput="debounceSearch()" type="text" placeholder="Search CVEs, research papers, AI models, attack vectors..." class="w-full glass-input pl-9 pr-3 py-2 text-xs font-mono placeholder:text-slate-500 transition">
+              <input id="search-input" oninput="handleSearchInput()" type="text" placeholder="Search GitHub repos, vLLM/SGLang, frontier models, arXiv papers, sovereign AI..." class="w-full glass-input pl-9 pr-8 py-2 text-xs font-mono placeholder:text-slate-500 transition">
+              <button id="search-clear-btn" onclick="clearSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition text-xs font-mono px-1 py-0.5" title="Clear search">✕</button>
             </div>
             
             <div class="flex items-center gap-2 flex-shrink-0">
               <span class="text-[10px] font-mono text-slate-500 uppercase">SORT:</span>
               <select id="sort-select" onchange="loadFeed(true)" class="glass-input px-3 py-2 text-xs font-mono text-slate-300 cursor-pointer">
                 <option value="newest">Newest First</option>
-                <option value="velocity">Threat Velocity</option>
-                <option value="blast">Blast Radius</option>
+                <option value="velocity">Velocity / Stars</option>
+                <option value="blast">Impact / Blast</option>
               </select>
+
+              <!-- View Mode Toggle Buttons -->
+              <div class="flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08]">
+                <button id="view-mode-grid-btn" onclick="setViewMode('grid')" class="p-1.5 rounded-md text-cyan-400 bg-white/[0.08] hover:text-white transition" title="Grid View (2 Columns)">
+                  <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                </button>
+                <button id="view-mode-list-btn" onclick="setViewMode('list')" class="p-1.5 rounded-md text-slate-500 hover:text-white transition" title="Compact List View">
+                  <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
+          </div>
+
+          <!-- Smart AI Tech Quick-Filter Chips Bar -->
+          <div class="pt-2 border-t border-white/[0.05] flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <span class="text-[10px] font-mono uppercase text-slate-500 mr-1 flex items-center gap-1 flex-shrink-0">
+              <i data-lucide="sparkles" class="w-3 h-3 text-cyan-400"></i> QUICK AI:
+            </span>
+            <button onclick="setQuickChip('')" class="tech-chip active" id="chip-all">🔥 All</button>
+            <button onclick="setQuickChip('deepseek')" class="tech-chip" id="chip-deepseek">⚡ DeepSeek (V3/R1)</button>
+            <button onclick="setQuickChip('vllm')" class="tech-chip" id="chip-vllm">🛠️ vLLM / SGLang</button>
+            <button onclick="setQuickChip('claude')" class="tech-chip" id="chip-claude">🤖 Claude / Anthropic</button>
+            <button onclick="setQuickChip('openai')" class="tech-chip" id="chip-openai">🧠 OpenAI / GPT</button>
+            <button onclick="setQuickChip('ollama')" class="tech-chip" id="chip-ollama">🦙 Ollama / Local AI</button>
+            <button onclick="setQuickChip('agent')" class="tech-chip" id="chip-agent">📦 Agents & LangGraph</button>
+            <button onclick="setQuickChip('reasoning')" class="tech-chip" id="chip-reasoning">🔬 Reasoning & CoT</button>
+            <button onclick="setQuickChip('qwen')" class="tech-chip" id="chip-qwen">🇨🇳 Qwen / Alibaba</button>
+            <button onclick="setQuickChip('sovereign')" class="tech-chip" id="chip-sovereign">🌐 Sovereign AI</button>
+          </div>
+
+          <!-- Active Filter Status Bar -->
+          <div id="active-filters-bar" class="hidden pt-2 border-t border-white/[0.05] flex items-center justify-between gap-2 text-[11px] font-mono">
+            <div class="flex items-center gap-1.5 flex-wrap" id="active-filter-tags"></div>
+            <button onclick="resetAllFilters()" class="text-rose-400 hover:text-rose-300 underline font-semibold flex-shrink-0 text-[10px]">Clear All ✕</button>
           </div>
         </div>
 
@@ -945,8 +1151,8 @@
           <span class="text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-medium">SWEEP ACTIVE</span>
         </div>
 
-        <!-- Feed Cards Container -->
-        <div id="feed-container" class="space-y-2">
+        <!-- Feed Cards Container (Grid View by default) -->
+        <div id="feed-container" class="grid-view">
           <!-- Populated dynamically via JS -->
         </div>
 
@@ -1033,6 +1239,261 @@
     let audioEnabled = true;
     let categoryChart = null;
     let allFeedItems = [];
+    let currentViewMode = 'grid'; // 'grid' | 'list'
+    let activeTechChip = '';
+    let focusedCardIndex = -1;
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      playBeep('click');
+      const container = document.getElementById('feed-container');
+      const gridBtn = document.getElementById('view-mode-grid-btn');
+      const listBtn = document.getElementById('view-mode-list-btn');
+
+      if (mode === 'grid') {
+        if (container) {
+          container.classList.remove('list-view');
+          container.classList.add('grid-view');
+        }
+        if (gridBtn) {
+          gridBtn.classList.add('text-cyan-400', 'bg-white/[0.08]');
+          gridBtn.classList.remove('text-slate-500');
+        }
+        if (listBtn) {
+          listBtn.classList.remove('text-cyan-400', 'bg-white/[0.08]');
+          listBtn.classList.add('text-slate-500');
+        }
+      } else {
+        if (container) {
+          container.classList.remove('grid-view');
+          container.classList.add('list-view');
+        }
+        if (listBtn) {
+          listBtn.classList.add('text-cyan-400', 'bg-white/[0.08]');
+          listBtn.classList.remove('text-slate-500');
+        }
+        if (gridBtn) {
+          gridBtn.classList.remove('text-cyan-400', 'bg-white/[0.08]');
+          gridBtn.classList.add('text-slate-500');
+        }
+      }
+
+      if (container && allFeedItems && allFeedItems.length > 0) {
+        container.innerHTML = '';
+        allFeedItems.forEach(entry => appendFeedCard(entry));
+        lucide.createIcons();
+      }
+    }
+
+    function toggleViewMode() {
+      setViewMode(currentViewMode === 'grid' ? 'list' : 'grid');
+    }
+
+    function setQuickChip(chip) {
+      playBeep('click');
+      if (activeTechChip === chip && chip !== '') {
+        activeTechChip = '';
+      } else {
+        activeTechChip = chip;
+      }
+      document.querySelectorAll('.tech-chip').forEach(c => c.classList.remove('active'));
+      if (!activeTechChip) {
+        const el = document.getElementById('chip-all');
+        if (el) el.classList.add('active');
+      } else {
+        const el = document.getElementById('chip-' + activeTechChip);
+        if (el) el.classList.add('active');
+      }
+      updateActiveFiltersBar();
+      loadFeed(true);
+    }
+
+    let searchDebounceTimer = null;
+    function handleSearchInput() {
+      const input = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear-btn');
+      if (!input) return;
+      const val = input.value.trim();
+      if (clearBtn) {
+        if (val) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = val;
+        updateActiveFiltersBar();
+        loadFeed(true);
+      }, 250);
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear-btn');
+      if (input) input.value = '';
+      if (clearBtn) clearBtn.classList.add('hidden');
+      searchQuery = '';
+      updateActiveFiltersBar();
+      loadFeed(true);
+    }
+
+    function shareCardLink(entryId, event) {
+      if (event) event.stopPropagation();
+      playBeep('click');
+      const entry = allFeedItems.find(e => e.id === entryId);
+      const title = entry ? entry.title : 'AI Intelligence';
+      const url = (entry && entry.url) ? entry.url : window.location.href;
+      const shareText = `${title} — ${url}`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareText).then(() => {
+          showToast('Advisory link copied to clipboard! 📋', 'success');
+        }).catch(() => {
+          showToast(`Shared: ${title.slice(0, 30)}...`, 'info');
+        });
+      } else {
+        showToast('Link ready to share!', 'success');
+      }
+    }
+
+    function updateActiveFiltersBar() {
+      const bar = document.getElementById('active-filters-bar');
+      const tagsContainer = document.getElementById('active-filter-tags');
+      if (!bar || !tagsContainer) return;
+
+      const filters = [];
+      if (currentCategory !== 'all') {
+        filters.push({ label: `Category: ${currentCategory.replace(/_/g, ' ')}`, clear: () => setCategory('all') });
+      }
+      if (activeTechChip) {
+        filters.push({ label: `Tech: ${activeTechChip}`, clear: () => setQuickChip('') });
+      }
+      if (currentRegion && currentRegion !== 'all') {
+        filters.push({ label: `Theatre: ${currentRegion}`, clear: () => setRegionFilter('all') });
+      }
+      if (searchQuery) {
+        filters.push({ label: `Search: "${searchQuery}"`, clear: () => clearSearch() });
+      }
+      if (typeof currentTimeHorizon !== 'undefined' && currentTimeHorizon > 0) {
+        filters.push({ label: `Horizon: ${currentTimeHorizon}h`, clear: () => setTimeHorizon(0) });
+      }
+
+      if (filters.length > 0) {
+        tagsContainer.innerHTML = filters.map((f, i) => `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px]">
+            <span>${f.label}</span>
+            <button onclick="clearSpecificFilter(${i})" class="hover:text-white transition font-bold cursor-pointer">✕</button>
+          </span>
+        `).join('');
+        window._activeFiltersList = filters;
+        bar.classList.remove('hidden');
+      } else {
+        bar.classList.add('hidden');
+        tagsContainer.innerHTML = '';
+        window._activeFiltersList = [];
+      }
+    }
+
+    function clearSpecificFilter(idx) {
+      if (window._activeFiltersList && window._activeFiltersList[idx]) {
+        window._activeFiltersList[idx].clear();
+      }
+    }
+
+    function resetAllFilters() {
+      currentCategory = 'all';
+      activeTechChip = '';
+      currentRegion = 'all';
+      searchQuery = '';
+      if (typeof currentTimeHorizon !== 'undefined') currentTimeHorizon = 0;
+      
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
+      const searchClear = document.getElementById('search-clear-btn');
+      if (searchClear) searchClear.classList.add('hidden');
+
+      document.querySelectorAll('.cat-tab').forEach(t => {
+        t.classList.remove('active-tab', 'bg-white/[0.12]', 'text-white', 'border-white/20');
+        t.classList.add('bg-white/[0.03]');
+      });
+      const tabAll = document.getElementById('tab-all');
+      if (tabAll) {
+        tabAll.classList.add('active-tab', 'bg-white/[0.12]', 'text-white', 'border-white/20');
+        tabAll.classList.remove('bg-white/[0.03]');
+      }
+
+      document.querySelectorAll('.horizon-pill').forEach(p => {
+        p.classList.remove('bg-white/[0.1]', 'text-white', 'border-white/20');
+        p.classList.add('bg-white/[0.02]', 'text-slate-400');
+      });
+      const hAll = document.getElementById('horizon-all');
+      if (hAll) {
+        hAll.classList.add('bg-white/[0.1]', 'text-white', 'border-white/20');
+        hAll.classList.remove('bg-white/[0.02]', 'text-slate-400');
+      }
+
+      document.querySelectorAll('.region-pill').forEach(p => {
+        p.classList.remove('bg-sky-500/15', 'text-sky-200', 'border-sky-500/35');
+        p.classList.add('bg-white/[0.02]', 'text-slate-400');
+      });
+      const rAll = document.getElementById('region-all');
+      if (rAll) {
+        rAll.classList.add('bg-sky-500/15', 'text-sky-200', 'border-sky-500/35');
+        rAll.classList.remove('bg-white/[0.02]', 'text-slate-400');
+      }
+
+      document.querySelectorAll('.tech-chip').forEach(c => c.classList.remove('active'));
+      const chipAll = document.getElementById('chip-all');
+      if (chipAll) chipAll.classList.add('active');
+
+      updateActiveFiltersBar();
+      loadFeed(true);
+    }
+
+    function openKeyboardModal() {
+      playBeep('click');
+      const modal = document.getElementById('keyboard-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeKeyboardModal() {
+      const modal = document.getElementById('keyboard-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function toggleKeyboardModal() {
+      const modal = document.getElementById('keyboard-modal');
+      if (modal) {
+        if (modal.classList.contains('hidden')) openKeyboardModal();
+        else closeKeyboardModal();
+      }
+    }
+
+    function focusFeedCard(index) {
+      const cards = document.querySelectorAll('#feed-container .feed-card');
+      if (!cards.length) return;
+      if (index < 0) index = 0;
+      if (index >= cards.length) index = cards.length - 1;
+
+      cards.forEach(c => c.classList.remove('card-focused'));
+      focusedCardIndex = index;
+      const target = cards[focusedCardIndex];
+      if (target) {
+        target.classList.add('card-focused');
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function getFocusedCardEntry() {
+      const cards = document.querySelectorAll('#feed-container .feed-card');
+      if (focusedCardIndex >= 0 && focusedCardIndex < cards.length) {
+        const card = cards[focusedCardIndex];
+        const entryId = card.getAttribute('data-entry-id');
+        if (entryId) {
+          return allFeedItems.find(e => e.id === entryId) || null;
+        }
+      }
+      return null;
+    }
 
     // Web Audio Synthesizer for high-tech UI feedback
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -1584,6 +2045,7 @@
         if (stationEl) stationEl.innerHTML = '🇨🇳 Beijing CNCERT • 🇨🇳 Shanghai AI Lab • 🇨🇳 Hangzhou Qwen • 🇨🇳 Shenzhen • 🇭🇰 HKCERT';
       }
 
+      updateActiveFiltersBar();
       loadFeed(true);
     }
 
@@ -1641,7 +2103,11 @@
           url += `&hours=${currentTimeHorizon}`;
         }
         
-        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+        let effectiveSearch = searchQuery;
+        if (activeTechChip) {
+          effectiveSearch = effectiveSearch ? (effectiveSearch + ' ' + activeTechChip) : activeTechChip;
+        }
+        if (effectiveSearch) url += `&search=${encodeURIComponent(effectiveSearch)}`;
 
         const res = await fetch(url, { cache: 'default' });
         let data = await res.json();
@@ -1651,7 +2117,11 @@
           data.entries = (data.entries || []).filter(e => pinnedIds.has(e.id));
         }
 
-        if (reset) container.innerHTML = '';
+        if (reset) {
+          container.innerHTML = '';
+          focusedCardIndex = -1;
+        }
+        updateActiveFiltersBar();
 
         if (!data.entries || data.entries.length === 0) {
           if (reset) {
@@ -1709,6 +2179,7 @@
     function createCardElement(entry) {
       const card = document.createElement('div');
       card.id = 'threat-card-' + entry.id;
+      card.setAttribute('data-entry-id', entry.id);
 
       const analysis = entry.analysis || {};
       const isPreCve = Boolean(analysis.is_pre_cve_warning || entry.is_pre_cve_warning);
@@ -1734,8 +2205,6 @@
       else if (entry.category === 'cyber_tools') accentClass = 'accent-green';
       else if (entry.category === 'github_trending' || entry.category === 'ai_tech') accentClass = 'accent-cyan';
       else if (entry.category === 'cybersecurity' || entry.category === 'vulnerabilities') accentClass = 'accent-rose';
-
-      card.className = `feed-card ${accentClass} p-4`;
 
       const categoryColors = {
         vulnerabilities: 'text-rose-400', ai_tech: 'text-sky-400',
@@ -1780,85 +2249,124 @@
       }
 
       const mitreId = analysis.mitre_attack_id || entry.mitre_attack_id;
+      const isPinned = isThreatPinned(entry.id);
 
-      card.innerHTML = `
-        <!-- Top Row: Category + Velocity + Controls -->
-        <div class="flex items-center justify-between gap-2 mb-2.5">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${catLabel}</span>
-            ${provenanceBadge}
-            ${isPreCve ? `<span class="text-[9px] font-mono font-bold text-amber-400 uppercase bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-sm">⚡ PRE-CVE</span>` : ''}
-            ${isExploited ? `<span class="text-[9px] font-mono font-bold text-red-400 uppercase bg-red-500/10 border border-red-500/25 px-1.5 py-0.5 rounded-sm animate-pulse">🔴 EXPLOITED</span>` : isPoc ? `<span class="text-[9px] font-mono font-bold text-rose-400 uppercase bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-sm">⚡ PoC</span>` : ''}
-            ${mitreId && !mitreId.includes('AI.INNOVATION') ? `<span class="text-[9px] font-mono text-violet-400 cursor-default" title="${analysis.mitre_technique || entry.mitre_technique || 'MITRE ATT&CK'}">${mitreId} ›</span>` : ''}
-            ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `<span class="text-[9px] font-mono text-indigo-400">✦ AI</span>` : ''}
-            ${(entry.matched_watchlist_rules || []).map(w => `<span class="text-[9px] font-mono text-cyan-400 uppercase">◉ ${w}</span>`).join('')}
+      // Render mode check: Compact List vs Grid
+      if (currentViewMode === 'list') {
+        card.className = `feed-card feed-card-compact ${accentClass}`;
+        card.innerHTML = `
+          <div class="card-body-compact">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${catLabel}</span>
+              ${provenanceBadge}
+              <span class="text-slate-500 text-[10px] font-mono">${flag} ${sourceDisplayName}</span>
+              <span class="text-slate-600 text-[10px] font-mono ml-auto sm:ml-0">${pubDate}</span>
+            </div>
+            <h3 id="card-title-${entry.id}" class="card-title-compact text-slate-100 hover:text-cyan-300 transition">${entry.title}</h3>
           </div>
-          <div class="flex items-center gap-2.5 flex-shrink-0 text-[9px] font-mono">
-            <span class="text-slate-600">${flag} ${sourceDisplayName}</span>
-            <span class="${isPureAi ? 'text-cyan-400' : (velocity >= 70 ? 'text-rose-400' : velocity >= 50 ? 'text-amber-400' : 'text-slate-500')}">VEL ${velocity}</span>
-            <span class="${isPureAi ? 'text-purple-400' : (blastRadius >= 60 ? 'text-violet-400' : 'text-slate-600')}">${isPureAi ? 'IMPACT' : 'BLAST'} ${blastRadius}</span>
-            <button onclick="togglePinThreat('${entry.id}', event)" class="text-slate-600 hover:text-amber-400 transition" title="Pin">
-              <i data-lucide="star" class="w-3 h-3 ${isThreatPinned(entry.id) ? 'text-amber-400' : ''}"></i>
+          <div class="flex items-center gap-2 flex-shrink-0 text-[10px] font-mono">
+            <span class="${isPureAi ? 'text-cyan-400 font-medium' : (velocity >= 70 ? 'text-rose-400' : velocity >= 50 ? 'text-amber-400' : 'text-slate-500')}">VEL ${velocity}</span>
+            <span class="${isPureAi ? 'text-purple-400 font-medium' : (blastRadius >= 60 ? 'text-violet-400' : 'text-slate-600')}">${isPureAi ? 'IMP' : 'BLAST'} ${blastRadius}</span>
+            <button onclick="togglePinThreat('${entry.id}', event)" class="p-1 text-slate-500 hover:text-amber-400 transition" title="Pin / Star">
+              <i data-lucide="star" class="w-3.5 h-3.5 ${isPinned ? 'text-amber-400' : ''}"></i>
             </button>
-          </div>
-        </div>
-
-        <!-- Title -->
-        <h3 id="card-title-${entry.id}" class="text-sm font-semibold text-slate-100 hover:text-cyan-300 transition line-clamp-2 leading-snug mb-2">${entry.title}</h3>
-
-        ${isTranslated ? `
-          <!-- Translation Active Badge -->
-          <div class="mb-2.5 p-2 rounded-lg bg-sky-950/40 border border-sky-500/30 text-[10px] font-mono text-sky-300 flex items-center justify-between gap-2 shadow-sm">
-            <span class="flex items-center gap-1.5 font-bold">
-              <span class="px-1.5 py-0.2 bg-sky-500/20 text-sky-200 rounded text-[9px] uppercase tracking-wide">AUTO-TRANSLATED</span>
-              <span>${langFlag} From ${langName}</span>
-            </span>
-            ${origTitle ? `<button onclick="event.stopPropagation(); toggleOriginalText('${entry.id}')" id="trans-btn-${entry.id}" class="text-[9.5px] text-cyan-400 hover:text-cyan-200 underline font-semibold transition cursor-pointer">Show Original</button>` : ''}
-          </div>
-        ` : (hasNonEnglish ? `
-          <!-- Untranslated Foreign Text Action -->
-          <div class="mb-2.5 p-2 rounded-lg bg-amber-950/30 border border-amber-500/25 text-[10px] font-mono text-amber-300 flex items-center justify-between gap-2">
-            <span class="flex items-center gap-1.5">
-              <span>🌐 Foreign Script Detected</span>
-            </span>
-            <button onclick="event.stopPropagation(); translateCardOnDemand('${entry.id}')" id="trans-btn-${entry.id}" class="text-[9.5px] bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded font-semibold transition cursor-pointer">
-              Translate to EN →
+            <button onclick="event.stopPropagation(); VoiceRadar.speakSingleEntry('${entry.id}')" class="p-1 text-slate-500 hover:text-cyan-400 transition" title="Read Aloud">
+              <i data-lucide="volume-2" class="w-3.5 h-3.5 text-cyan-400"></i>
             </button>
-          </div>
-        ` : '')}
-
-        <!-- Summary -->
-        <p id="card-summary-${entry.id}" class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-3">${entry.summary || 'No detailed abstract available.'}</p>
-
-        ${isPureAi ? `
-        <!-- AI Innovation Focus Box -->
-        <div class="border-t border-white/[0.05] pt-2.5 space-y-1 text-[10px] font-mono">
-          ${attackVector ? `<div class="flex gap-1.5"><span class="text-cyan-400 font-bold flex-shrink-0">FOCUS</span><span class="text-slate-300 line-clamp-1">${attackVector}</span></div>` : ''}
-          ${risk ? `<div class="flex gap-1.5"><span class="text-emerald-400 font-bold flex-shrink-0">HIGHLIGHT</span><span class="text-slate-400 line-clamp-1">${risk}</span></div>` : ''}
-          ${mitigation ? `<div class="flex gap-1.5"><span class="text-sky-400 font-bold flex-shrink-0">DEPLOY</span><span class="text-slate-400 line-clamp-1">${mitigation}</span></div>` : ''}
-        </div>` : ((attackVector || risk) ? `
-        <!-- Cyber Threat Triage Box -->
-        <div class="border-t border-white/[0.05] pt-2.5 space-y-1 text-[10px] font-mono">
-          ${attackVector ? `<div class="flex gap-1.5"><span class="text-cyan-500 flex-shrink-0">VECTOR</span><span class="text-slate-500 line-clamp-1">${attackVector}</span></div>` : ''}
-          ${risk ? `<div class="flex gap-1.5"><span class="text-rose-500 flex-shrink-0">RISK</span><span class="text-slate-500 line-clamp-1">${risk}</span></div>` : ''}
-          ${mitigation ? `<div class="flex gap-1.5"><span class="text-green-500 flex-shrink-0">PATCH</span><span class="text-slate-500 line-clamp-1">${mitigation}</span></div>` : ''}
-        </div>` : '')}
-
-        <!-- Footer: Tags + Date + Inspect -->
-        <div class="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-white/[0.04]">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            ${ecosystem.slice(0,2).map(e => `<span class="text-[9px] font-mono text-slate-600 bg-white/[0.03] border border-white/[0.05] px-1.5 py-0.5 rounded-sm">${e}</span>`).join('')}
-            ${(entry.tags || []).filter(t => t && t.length < 18).slice(0,2).map(t => `<span onclick="searchByTag('${t}', event)" class="text-[9px] font-mono text-slate-600 hover:text-cyan-400 cursor-pointer transition">#${t}</span>`).join('')}
-          </div>
-          <div class="flex items-center gap-3 text-[9px] font-mono text-slate-600 flex-shrink-0">
-            <span>${pubDate}</span>
-            <button onclick="event.stopPropagation(); VoiceRadar.speakSingleEntry('${entry.id}')" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Read Advisory Aloud">
-              <i data-lucide="volume-2" class="w-3 h-3 text-cyan-400"></i> READ
+            <button onclick="event.stopPropagation(); shareCardLink('${entry.id}', event)" class="p-1 text-slate-500 hover:text-cyan-300 transition" title="Share Link">
+              <i data-lucide="share-2" class="w-3.5 h-3.5 text-sky-400"></i>
             </button>
-            <button class="text-cyan-500 hover:text-cyan-300 transition font-medium">INSPECT →</button>
+            ${entry.url ? `<a href="${entry.url}" target="_blank" onclick="event.stopPropagation()" class="p-1 text-slate-500 hover:text-white transition" title="Open Source Link"><i data-lucide="external-link" class="w-3.5 h-3.5"></i></a>` : ''}
+            <button class="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-[10px] font-medium transition">INSPECT →</button>
           </div>
-        </div>
-      `;
+        `;
+      } else {
+        card.className = `feed-card ${accentClass} p-4 flex flex-col justify-between`;
+        card.innerHTML = `
+          <div>
+            <!-- Top Row: Category + Provenance + Badges + Quick Actions -->
+            <div class="flex items-center justify-between gap-2 mb-2.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${catLabel}</span>
+                ${provenanceBadge}
+                ${isPreCve ? `<span class="text-[9px] font-mono font-bold text-amber-400 uppercase bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-sm">⚡ PRE-CVE</span>` : ''}
+                ${isExploited ? `<span class="text-[9px] font-mono font-bold text-red-400 uppercase bg-red-500/10 border border-red-500/25 px-1.5 py-0.5 rounded-sm animate-pulse">🔴 EXPLOITED</span>` : isPoc ? `<span class="text-[9px] font-mono font-bold text-rose-400 uppercase bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded-sm">⚡ PoC</span>` : ''}
+                ${mitreId && !mitreId.includes('AI.INNOVATION') ? `<span class="text-[9px] font-mono text-violet-400 cursor-default" title="${analysis.mitre_technique || entry.mitre_technique || 'MITRE ATT&CK'}">${mitreId} ›</span>` : ''}
+                ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `<span class="text-[9px] font-mono text-indigo-400">✦ AI</span>` : ''}
+                ${(entry.matched_watchlist_rules || []).map(w => `<span class="text-[9px] font-mono text-cyan-400 uppercase">◉ ${w}</span>`).join('')}
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0 text-[9px] font-mono">
+                <span class="text-slate-500">${flag} ${sourceDisplayName}</span>
+                <span class="${isPureAi ? 'text-cyan-400 font-semibold' : (velocity >= 70 ? 'text-rose-400 font-semibold' : velocity >= 50 ? 'text-amber-400' : 'text-slate-500')}">VEL ${velocity}</span>
+                <span class="${isPureAi ? 'text-purple-400 font-semibold' : (blastRadius >= 60 ? 'text-violet-400 font-semibold' : 'text-slate-600')}">${isPureAi ? 'IMPACT' : 'BLAST'} ${blastRadius}</span>
+                <button onclick="togglePinThreat('${entry.id}', event)" class="text-slate-500 hover:text-amber-400 transition" title="Pin / Star">
+                  <i data-lucide="star" class="w-3 h-3 ${isPinned ? 'text-amber-400' : ''}"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Title -->
+            <h3 id="card-title-${entry.id}" class="text-sm font-semibold text-slate-100 hover:text-cyan-300 transition line-clamp-2 leading-snug mb-2">${entry.title}</h3>
+
+            ${isTranslated ? `
+              <!-- Translation Active Badge -->
+              <div class="mb-2 p-1.5 rounded-lg bg-sky-950/40 border border-sky-500/30 text-[10px] font-mono text-sky-300 flex items-center justify-between gap-2 shadow-sm">
+                <span class="flex items-center gap-1.5 font-bold">
+                  <span class="px-1.5 py-0.2 bg-sky-500/20 text-sky-200 rounded text-[9px] uppercase tracking-wide">TRANSLATED</span>
+                  <span>${langFlag} From ${langName}</span>
+                </span>
+                ${origTitle ? `<button onclick="event.stopPropagation(); toggleOriginalText('${entry.id}')" id="trans-btn-${entry.id}" class="text-[9.5px] text-cyan-400 hover:text-cyan-200 underline font-semibold transition cursor-pointer">Show Original</button>` : ''}
+              </div>
+            ` : (hasNonEnglish ? `
+              <!-- Untranslated Foreign Text Action -->
+              <div class="mb-2 p-1.5 rounded-lg bg-amber-950/30 border border-amber-500/25 text-[10px] font-mono text-amber-300 flex items-center justify-between gap-2">
+                <span class="flex items-center gap-1.5">
+                  <span>🌐 Foreign Script</span>
+                </span>
+                <button onclick="event.stopPropagation(); translateCardOnDemand('${entry.id}')" id="trans-btn-${entry.id}" class="text-[9.5px] bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded font-semibold transition cursor-pointer">
+                  Translate →
+                </button>
+              </div>
+            ` : '')}
+
+            <!-- Summary -->
+            <p id="card-summary-${entry.id}" class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-3">${entry.summary || 'No detailed abstract available.'}</p>
+
+            ${isPureAi ? `
+            <!-- AI Innovation Focus Box -->
+            <div class="border-t border-white/[0.05] pt-2 space-y-1 text-[10px] font-mono mb-2">
+              ${attackVector ? `<div class="flex gap-1.5"><span class="text-cyan-400 font-bold flex-shrink-0">FOCUS</span><span class="text-slate-300 line-clamp-1">${attackVector}</span></div>` : ''}
+              ${risk ? `<div class="flex gap-1.5"><span class="text-emerald-400 font-bold flex-shrink-0">HIGHLIGHT</span><span class="text-slate-400 line-clamp-1">${risk}</span></div>` : ''}
+              ${mitigation ? `<div class="flex gap-1.5"><span class="text-sky-400 font-bold flex-shrink-0">DEPLOY</span><span class="text-slate-400 line-clamp-1">${mitigation}</span></div>` : ''}
+            </div>` : ((attackVector || risk) ? `
+            <!-- Cyber Threat Triage Box -->
+            <div class="border-t border-white/[0.05] pt-2 space-y-1 text-[10px] font-mono mb-2">
+              ${attackVector ? `<div class="flex gap-1.5"><span class="text-cyan-500 flex-shrink-0">VECTOR</span><span class="text-slate-400 line-clamp-1">${attackVector}</span></div>` : ''}
+              ${risk ? `<div class="flex gap-1.5"><span class="text-rose-500 flex-shrink-0">RISK</span><span class="text-slate-400 line-clamp-1">${risk}</span></div>` : ''}
+              ${mitigation ? `<div class="flex gap-1.5"><span class="text-green-500 flex-shrink-0">PATCH</span><span class="text-slate-400 line-clamp-1">${mitigation}</span></div>` : ''}
+            </div>` : '')}
+          </div>
+
+          <!-- Footer: Tags + PubDate + Full Action Toolbar -->
+          <div class="flex items-center justify-between gap-2 pt-2.5 border-t border-white/[0.05]">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${ecosystem.slice(0,2).map(e => `<span class="text-[9px] font-mono text-slate-500 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.5 rounded-sm">${e}</span>`).join('')}
+              ${(entry.tags || []).filter(t => t && t.length < 16).slice(0,2).map(t => `<span onclick="searchByTag('${t}', event)" class="text-[9px] font-mono text-slate-500 hover:text-cyan-300 cursor-pointer transition">#${t}</span>`).join('')}
+            </div>
+            <div class="flex items-center gap-2.5 text-[9px] font-mono text-slate-500 flex-shrink-0">
+              <span>${pubDate}</span>
+              <button onclick="event.stopPropagation(); VoiceRadar.speakSingleEntry('${entry.id}')" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Read Advisory Aloud">
+                <i data-lucide="volume-2" class="w-3 h-3 text-cyan-400"></i> READ
+              </button>
+              <button onclick="event.stopPropagation(); shareCardLink('${entry.id}', event)" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Share Link">
+                <i data-lucide="share-2" class="w-3 h-3 text-sky-400"></i> SHARE
+              </button>
+              ${entry.url ? `<a href="${entry.url}" target="_blank" onclick="event.stopPropagation()" class="text-slate-400 hover:text-white transition flex items-center gap-1 font-mono text-[9px]" title="Open Source Link"><i data-lucide="external-link" class="w-3 h-3"></i> SOURCE ↗</a>` : ''}
+              <button class="text-cyan-400 hover:text-cyan-200 transition font-bold">INSPECT →</button>
+            </div>
+          </div>
+        `;
+      }
 
       card.onclick = (e) => {
         if (e.target.tagName !== 'A' && !e.target.closest('button')) {
@@ -2147,21 +2655,21 @@
       currentCategory = cat;
       document.querySelectorAll('.cat-tab').forEach(b => {
         b.classList.remove('active-tab', 'bg-white/[0.12]', 'text-white', 'border-white/20');
+        b.classList.add('bg-white/[0.03]');
       });
       const activeBtn = document.getElementById(`tab-${cat}`);
-      if (activeBtn) activeBtn.classList.add('active-tab');
+      if (activeBtn) {
+        activeBtn.classList.add('active-tab', 'bg-white/[0.12]', 'text-white', 'border-white/20');
+        activeBtn.classList.remove('bg-white/[0.03]');
+      }
       playBeep('click');
+      updateActiveFiltersBar();
       loadFeed(true);
     }
 
-    // Debounced Search
-    let searchTimeout = null;
+    // Debounced Search (Forward to handleSearchInput)
     function debounceSearch() {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        searchQuery = document.getElementById('search-input').value.trim();
-        loadFeed(true);
-      }, 300);
+      handleSearchInput();
     }
 
     function loadMore() {
@@ -2849,10 +3357,15 @@
     let isDraggingGlobe = false;
     let prevMouseX = 0, prevMouseY = 0;
     let globeVelX = 0.002, globeVelY = 0;
+    let dragStartX = 0, dragStartY = 0;
+    let hoveredStation = null;
+    let isNavigatingToStation = false;
+    let targetRotX = 0, targetRotY = 0;
 
     function initThreeGlobe() {
       try {
         const container = document.getElementById('three-globe-viewport');
+        const tooltip = document.getElementById('globe-tooltip');
         if (!container || typeof THREE === 'undefined') return;
 
         const w = container.clientWidth || 800;
@@ -2867,198 +3380,413 @@
         globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(globeRenderer.domElement);
 
-      // Inner Wireframe Sphere (Refined Aerospace Lattice)
-      const sphereGeo = new THREE.IcosahedronGeometry(1.6, 3);
-      const sphereMat = new THREE.MeshBasicMaterial({
-        color: 0x38bdf8,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.14
-      });
-      globeSphere = new THREE.Mesh(sphereGeo, sphereMat);
-      globeScene.add(globeSphere);
+        // Core Obsidian Sphere
+        const coreGeo = new THREE.SphereGeometry(1.4, 32, 32);
+        const coreMat = new THREE.MeshBasicMaterial({
+          color: 0x070a12,
+          transparent: true,
+          opacity: 0.95
+        });
+        globeScene.add(new THREE.Mesh(coreGeo, coreMat));
 
-      // Core Obsidian Sphere
-      const coreGeo = new THREE.SphereGeometry(1.4, 28, 28);
-      const coreMat = new THREE.MeshBasicMaterial({
-        color: 0x070a12,
-        transparent: true,
-        opacity: 0.95
-      });
-      globeScene.add(new THREE.Mesh(coreGeo, coreMat));
+        // Atmospheric Outer Aura Glow (Inverted Normals Shader with Additive Fresnel Falloff)
+        const atmoGeo = new THREE.SphereGeometry(1.78, 32, 32);
+        const atmoMat = new THREE.ShaderMaterial({
+          vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            varying vec3 vNormal;
+            void main() {
+              float intensity = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
+              gl_FragColor = vec4(0.22, 0.74, 0.98, 1.0) * intensity * 0.85;
+            }
+          `,
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          depthWrite: false
+        });
+        const atmoMesh = new THREE.Mesh(atmoGeo, atmoMat);
+        atmoMesh.renderOrder = 0;
+        globeScene.add(atmoMesh);
 
-      // Longitude / Latitude Accent Rings (Titanium Silver)
-      for (let i = -2; i <= 2; i++) {
-        const ringRad = Math.cos((i * Math.PI) / 6) * 1.62;
-        const ringGeo = new THREE.RingGeometry(ringRad - 0.008, ringRad + 0.008, 48);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
-        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-        ringMesh.rotation.x = Math.PI / 2;
-        ringMesh.position.y = Math.sin((i * Math.PI) / 6) * 1.62;
-        globeSphere.add(ringMesh);
-      }
+        // Ambient Cosmic Stardust Particle Cloud
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = new Float32Array(350 * 3);
+        for (let i = 0; i < 350; i++) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos((Math.random() * 2) - 1);
+          const dist = 3.2 + Math.random() * 4.5;
+          starPos[i * 3]     = dist * Math.sin(phi) * Math.cos(theta);
+          starPos[i * 3 + 1] = dist * Math.sin(phi) * Math.sin(theta);
+          starPos[i * 3 + 2] = dist * Math.cos(phi);
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ size: 0.035, color: 0x94a3b8, transparent: true, opacity: 0.55 });
+        const starField = new THREE.Points(starGeo, starMat);
+        globeScene.add(starField);
 
-      // Orbital Scanning Sweep Ring (Ethereal Sky Azure)
-      const scanRingGeo = new THREE.RingGeometry(1.85, 1.93, 64);
-      const scanRingMat = new THREE.MeshBasicMaterial({
-        color: 0x60a5fa,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.22
-      });
-      globeRing = new THREE.Mesh(scanRingGeo, scanRingMat);
-      globeRing.rotation.x = Math.PI / 2.8;
-      globeScene.add(globeRing);
+        // Planetary Carrier Sphere (Houses all rotating geography, arcs, and beacons)
+        const sphereGeo = new THREE.IcosahedronGeometry(1.6, 3);
+        const sphereMat = new THREE.MeshBasicMaterial({
+          color: 0x38bdf8,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.14
+        });
+        globeSphere = new THREE.Mesh(sphereGeo, sphereMat);
+        globeScene.add(globeSphere);
 
-      // 29 Sovereign Threat Defense Stations (True Planetary Lat/Lon Coordinates)
-      const WORLD_STATIONS = [
-        { name: 'Beijing AI & CNCERT Command', country: 'CN', flag: '🇨🇳', lat: 39.9042, lon: 116.4074, color: 0xef4444 },
-        { name: 'Shanghai AI Lab & Fudan Hub', country: 'CN', flag: '🇨🇳', lat: 31.2304, lon: 121.4737, color: 0xf97316 },
-        { name: 'Hangzhou Alibaba Qwen Grid', country: 'CN', flag: '🇨🇳', lat: 30.2741, lon: 120.1551, color: 0xfbbf24 },
-        { name: 'Shenzhen Tencent & MindSpore Lab', country: 'CN', flag: '🇨🇳', lat: 22.5431, lon: 114.0579, color: 0x38bdf8 },
-        { name: 'Hong Kong GovCERT Radar', country: 'HK', flag: '🇭🇰', lat: 22.3193, lon: 114.1694, color: 0xef4444 },
-        { name: 'Tokyo Cyber Command', country: 'JP', flag: '🇯🇵', lat: 35.6762, lon: 139.6503, color: 0x38bdf8 },
-        { name: 'London NCSC Node', country: 'GB', flag: '🇬🇧', lat: 51.5074, lon: -0.1278, color: 0x818cf8 },
-        { name: 'Paris ANSSI / Mistral', country: 'FR', flag: '🇫🇷', lat: 48.8566, lon: 2.3522, color: 0x34d399 },
-        { name: 'Berlin BSI Station', country: 'DE', flag: '🇩🇪', lat: 52.5200, lon: 13.4050, color: 0xfbbf24 },
-        { name: 'Brussels CERT-EU / AI Office', country: 'EU', flag: '🇪🇺', lat: 50.8503, lon: 4.3517, color: 0x38bdf8 },
-        { name: 'Washington DC CISA / NIST', country: 'US', flag: '🇺🇸', lat: 38.9072, lon: -77.0369, color: 0xfb7185 },
-        { name: 'Canberra ACSC Defense', country: 'AU', flag: '🇦🇺', lat: -35.2809, lon: 149.1300, color: 0x34d399 },
-        { name: 'Ottawa CCCS Gateway', country: 'CA', flag: '🇨🇦', lat: 45.4215, lon: -75.6972, color: 0x818cf8 },
-        { name: 'Singapore SingCERT', country: 'SG', flag: '🇸🇬', lat: 1.3521, lon: 103.8198, color: 0x38bdf8 },
-        { name: 'Zurich ETH AI Safety Lab', country: 'CH', flag: '🇨🇭', lat: 47.3769, lon: 8.5417, color: 0xfbbf24 },
-        { name: 'Sydney Pacific Radar', country: 'AU', flag: '🇦🇺', lat: -33.8688, lon: 151.2093, color: 0x34d399 },
-        { name: 'Bengaluru AI Cyber Hub', country: 'IN', flag: '🇮🇳', lat: 12.9716, lon: 77.5946, color: 0x38bdf8 },
-        { name: 'Tel Aviv Threat Intel', country: 'IL', flag: '🇮🇱', lat: 32.0853, lon: 34.7818, color: 0xfb7185 },
-        { name: 'Seoul East Asia Defense', country: 'KR', flag: '🇰🇷', lat: 37.5665, lon: 126.9780, color: 0x38bdf8 },
-        { name: 'San Francisco Frontier AI Grid', country: 'US', flag: '🇺🇸', lat: 37.7749, lon: -122.4194, color: 0x818cf8 },
-        { name: 'New York Financial Telemetry', country: 'US', flag: '🇺🇸', lat: 40.7128, lon: -74.0060, color: 0xfb7185 },
-        { name: 'Toronto Vector AI Hub', country: 'CA', flag: '🇨🇦', lat: 43.6532, lon: -79.3832, color: 0x818cf8 },
-        { name: 'Amsterdam AMS-IX Cyber Node', country: 'NL', flag: '🇳🇱', lat: 52.3676, lon: 4.9041, color: 0x34d399 },
-        { name: 'Stockholm Nordic Defense', country: 'SE', flag: '🇸🇪', lat: 59.3293, lon: 18.0686, color: 0x38bdf8 },
-        { name: 'Helsinki Hybrid CoE', country: 'FI', flag: '🇫🇮', lat: 60.1699, lon: 24.9384, color: 0x38bdf8 },
-        { name: 'São Paulo Latin America Node', country: 'BR', flag: '🇧🇷', lat: -23.5505, lon: -46.6333, color: 0xfbbf24 },
-        { name: 'Cape Town Africa Defense', country: 'ZA', flag: '🇿🇦', lat: -33.9249, lon: 18.4241, color: 0x34d399 },
-        { name: 'Oxford AI Governance', country: 'GB', flag: '🇬🇧', lat: 51.7520, lon: -1.2577, color: 0x818cf8 },
-        { name: 'Cambridge AI Safety Center', country: 'GB', flag: '🇬🇧', lat: 52.2053, lon: 0.1218, color: 0x38bdf8 },
-        { name: 'Taipei TSMC Semiconductor Foundry', country: 'TW', flag: '🇹🇼', lat: 25.0330, lon: 121.5654, color: 0x38bdf8 },
-        { name: 'Abu Dhabi TII Falcon & MBZUAI Lab', country: 'AE', flag: '🇦🇪', lat: 24.4539, lon: 54.3773, color: 0xfbbf24 },
-        { name: 'New Delhi CERT-In / Cyber Command', country: 'IN', flag: '🇮🇳', lat: 28.6139, lon: 77.2090, color: 0x38bdf8 },
-        { name: 'Montreal Mila AI Research Institute', country: 'CA', flag: '🇨🇦', lat: 45.5017, lon: -73.5673, color: 0x818cf8 },
-        { name: 'Munich Industrial AI & DFKI Hub', country: 'DE', flag: '🇩🇪', lat: 48.1351, lon: 11.5820, color: 0xfbbf24 },
-        { name: 'Veldhoven ASML Semiconductor Foundry', country: 'NL', flag: '🇳🇱', lat: 51.4190, lon: 5.4050, color: 0x34d399 },
-        { name: 'Geneva CERN Computing & AI Grid', country: 'CH', flag: '🇨🇭', lat: 46.2044, lon: 6.1432, color: 0x818cf8 }
-      ];
+        // Longitude / Latitude Accent Rings (Titanium Silver)
+        for (let i = -2; i <= 2; i++) {
+          const ringRad = Math.cos((i * Math.PI) / 6) * 1.62;
+          const ringGeo = new THREE.RingGeometry(ringRad - 0.008, ringRad + 0.008, 48);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0x334155, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
+          const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+          ringMesh.rotation.x = Math.PI / 2;
+          ringMesh.position.y = Math.sin((i * Math.PI) / 6) * 1.62;
+          globeSphere.add(ringMesh);
+        }
 
-      function geoToVector3(lat, lon, radius) {
-        const phi = (90 - lat) * (Math.PI / 180);
-        const theta = (lon + 180) * (Math.PI / 180);
-        const x = -(radius * Math.sin(phi) * Math.cos(theta));
-        const z = (radius * Math.sin(phi) * Math.sin(theta));
-        const y = (radius * Math.cos(phi));
-        return new THREE.Vector3(x, y, z);
-      }
+        // Orbital Scanning Sweep Ring (Ethereal Sky Azure)
+        const scanRingGeo = new THREE.RingGeometry(1.85, 1.93, 64);
+        const scanRingMat = new THREE.MeshBasicMaterial({
+          color: 0x60a5fa,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.22
+        });
+        globeRing = new THREE.Mesh(scanRingGeo, scanRingMat);
+        globeRing.rotation.x = Math.PI / 2.8;
+        globeScene.add(globeRing);
 
-      const pointCount = WORLD_STATIONS.length;
-      const pointPositions = new Float32Array(pointCount * 3);
-      const pointColors = new Float32Array(pointCount * 3);
+        // 36 Sovereign Intelligence & AI Research Stations
+        const WORLD_STATIONS = [
+          { name: 'Beijing AI & CNCERT Command', country: 'CN', flag: '🇨🇳', lat: 39.9042, lon: 116.4074, color: 0xef4444 },
+          { name: 'Shanghai AI Lab & Fudan Hub', country: 'CN', flag: '🇨🇳', lat: 31.2304, lon: 121.4737, color: 0xf97316 },
+          { name: 'Hangzhou Alibaba Qwen Grid', country: 'CN', flag: '🇨🇳', lat: 30.2741, lon: 120.1551, color: 0xfbbf24 },
+          { name: 'Shenzhen Tencent & MindSpore Lab', country: 'CN', flag: '🇨🇳', lat: 22.5431, lon: 114.0579, color: 0x38bdf8 },
+          { name: 'Hong Kong GovCERT Radar', country: 'HK', flag: '🇭🇰', lat: 22.3193, lon: 114.1694, color: 0xef4444 },
+          { name: 'Tokyo Cyber Command', country: 'JP', flag: '🇯🇵', lat: 35.6762, lon: 139.6503, color: 0x38bdf8 },
+          { name: 'London NCSC Node', country: 'GB', flag: '🇬🇧', lat: 51.5074, lon: -0.1278, color: 0x818cf8 },
+          { name: 'Paris ANSSI / Mistral', country: 'FR', flag: '🇫🇷', lat: 48.8566, lon: 2.3522, color: 0x34d399 },
+          { name: 'Berlin BSI Station', country: 'DE', flag: '🇩🇪', lat: 52.5200, lon: 13.4050, color: 0xfbbf24 },
+          { name: 'Brussels CERT-EU / AI Office', country: 'EU', flag: '🇪🇺', lat: 50.8503, lon: 4.3517, color: 0x38bdf8 },
+          { name: 'Washington DC CISA / NIST', country: 'US', flag: '🇺🇸', lat: 38.9072, lon: -77.0369, color: 0xfb7185 },
+          { name: 'Canberra ACSC Defense', country: 'AU', flag: '🇦🇺', lat: -35.2809, lon: 149.1300, color: 0x34d399 },
+          { name: 'Ottawa CCCS Gateway', country: 'CA', flag: '🇨🇦', lat: 45.4215, lon: -75.6972, color: 0x818cf8 },
+          { name: 'Singapore SingCERT', country: 'SG', flag: '🇸🇬', lat: 1.3521, lon: 103.8198, color: 0x38bdf8 },
+          { name: 'Zurich ETH AI Safety Lab', country: 'CH', flag: '🇨🇭', lat: 47.3769, lon: 8.5417, color: 0xfbbf24 },
+          { name: 'Sydney Pacific Radar', country: 'AU', flag: '🇦🇺', lat: -33.8688, lon: 151.2093, color: 0x34d399 },
+          { name: 'Bengaluru AI Cyber Hub', country: 'IN', flag: '🇮🇳', lat: 12.9716, lon: 77.5946, color: 0x38bdf8 },
+          { name: 'Tel Aviv Threat Intel', country: 'IL', flag: '🇮🇱', lat: 32.0853, lon: 34.7818, color: 0xfb7185 },
+          { name: 'Seoul East Asia Defense', country: 'KR', flag: '🇰🇷', lat: 37.5665, lon: 126.9780, color: 0x38bdf8 },
+          { name: 'San Francisco Frontier AI Grid', country: 'US', flag: '🇺🇸', lat: 37.7749, lon: -122.4194, color: 0x818cf8 },
+          { name: 'New York Financial Telemetry', country: 'US', flag: '🇺🇸', lat: 40.7128, lon: -74.0060, color: 0xfb7185 },
+          { name: 'Toronto Vector AI Hub', country: 'CA', flag: '🇨🇦', lat: 43.6532, lon: -79.3832, color: 0x818cf8 },
+          { name: 'Amsterdam AMS-IX Cyber Node', country: 'NL', flag: '🇳🇱', lat: 52.3676, lon: 4.9041, color: 0x34d399 },
+          { name: 'Stockholm Nordic Defense', country: 'SE', flag: '🇸🇪', lat: 59.3293, lon: 18.0686, color: 0x38bdf8 },
+          { name: 'Helsinki Hybrid CoE', country: 'FI', flag: '🇫🇮', lat: 60.1699, lon: 24.9384, color: 0x38bdf8 },
+          { name: 'São Paulo Latin America Node', country: 'BR', flag: '🇧🇷', lat: -23.5505, lon: -46.6333, color: 0xfbbf24 },
+          { name: 'Cape Town Africa Defense', country: 'ZA', flag: '🇿🇦', lat: -33.9249, lon: 18.4241, color: 0x34d399 },
+          { name: 'Oxford AI Governance', country: 'GB', flag: '🇬🇧', lat: 51.7520, lon: -1.2577, color: 0x818cf8 },
+          { name: 'Cambridge AI Safety Center', country: 'GB', flag: '🇬🇧', lat: 52.2053, lon: 0.1218, color: 0x38bdf8 },
+          { name: 'Taipei TSMC Semiconductor Foundry', country: 'TW', flag: '🇹🇼', lat: 25.0330, lon: 121.5654, color: 0x38bdf8 },
+          { name: 'Abu Dhabi TII Falcon & MBZUAI Lab', country: 'AE', flag: '🇦🇪', lat: 24.4539, lon: 54.3773, color: 0xfbbf24 },
+          { name: 'New Delhi CERT-In / Cyber Command', country: 'IN', flag: '🇮🇳', lat: 28.6139, lon: 77.2090, color: 0x38bdf8 },
+          { name: 'Montreal Mila AI Research Institute', country: 'CA', flag: '🇨🇦', lat: 45.5017, lon: -73.5673, color: 0x818cf8 },
+          { name: 'Munich Industrial AI & DFKI Hub', country: 'DE', flag: '🇩🇪', lat: 48.1351, lon: 11.5820, color: 0xfbbf24 },
+          { name: 'Veldhoven ASML Semiconductor Foundry', country: 'NL', flag: '🇳🇱', lat: 51.4190, lon: 5.4050, color: 0x34d399 },
+          { name: 'Geneva CERN Computing & AI Grid', country: 'CH', flag: '🇨🇭', lat: 46.2044, lon: 6.1432, color: 0x818cf8 }
+        ];
 
-      for (let i = 0; i < pointCount; i++) {
-        const st = WORLD_STATIONS[i];
-        const v = geoToVector3(st.lat, st.lon, 1.62);
-        pointPositions[i * 3] = v.x;
-        pointPositions[i * 3 + 1] = v.y;
-        pointPositions[i * 3 + 2] = v.z;
+        function geoToVector3(lat, lon, radius) {
+          const phi = (90 - lat) * (Math.PI / 180);
+          const theta = (lon + 180) * (Math.PI / 180);
+          const x = -(radius * Math.sin(phi) * Math.cos(theta));
+          const z = (radius * Math.sin(phi) * Math.sin(theta));
+          const y = (radius * Math.cos(phi));
+          return new THREE.Vector3(x, y, z);
+        }
 
-        const c = new THREE.Color(st.color);
-        pointColors[i * 3] = c.r;
-        pointColors[i * 3 + 1] = c.g;
-        pointColors[i * 3 + 2] = c.b;
-      }
+        const pointCount = WORLD_STATIONS.length;
+        const pointPositions = new Float32Array(pointCount * 3);
+        const pointColors = new Float32Array(pointCount * 3);
+        const stationHitMeshes = [];
+        const stationMeshHitGeo = new THREE.SphereGeometry(0.12, 8, 8);
+        const stationMeshHitMat = new THREE.MeshBasicMaterial({ visible: false });
 
-      const pointsGeo = new THREE.BufferGeometry();
-      pointsGeo.setAttribute('position', new THREE.BufferAttribute(pointPositions, 3));
-      pointsGeo.setAttribute('color', new THREE.BufferAttribute(pointColors, 3));
-      const pointsMat = new THREE.PointsMaterial({
-        size: 0.085,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.95
-      });
-      globePoints = new THREE.Points(pointsGeo, pointsMat);
-      globeSphere.add(globePoints);
+        for (let i = 0; i < pointCount; i++) {
+          const st = WORLD_STATIONS[i];
+          const v = geoToVector3(st.lat, st.lon, 1.62);
+          pointPositions[i * 3]     = v.x;
+          pointPositions[i * 3 + 1] = v.y;
+          pointPositions[i * 3 + 2] = v.z;
 
-      // Mouse drag controls
-      container.addEventListener('mousedown', (e) => {
-        isDraggingGlobe = true;
-        prevMouseX = e.clientX;
-        prevMouseY = e.clientY;
-      });
-      window.addEventListener('mouseup', () => { isDraggingGlobe = false; });
-      window.addEventListener('mousemove', (e) => {
-        if (!isDraggingGlobe) return;
-        const deltaX = e.clientX - prevMouseX;
-        const deltaY = e.clientY - prevMouseY;
-        globeVelX = deltaX * 0.005;
-        globeVelY = deltaY * 0.005;
-        prevMouseX = e.clientX;
-        prevMouseY = e.clientY;
-      });
+          const c = new THREE.Color(st.color);
+          pointColors[i * 3]     = c.r;
+          pointColors[i * 3 + 1] = c.g;
+          pointColors[i * 3 + 2] = c.b;
 
-      // Window resize handling
-      window.addEventListener('resize', () => {
-        if (!container || !globeRenderer) return;
-        const nw = container.clientWidth;
-        const nh = container.clientHeight;
-        globeCamera.aspect = nw / nh;
-        globeCamera.updateProjectionMatrix();
-        globeRenderer.setSize(nw, nh);
-      });
+          // Hit Target for Interactive Raycasting
+          const hitMesh = new THREE.Mesh(stationMeshHitGeo, stationMeshHitMat);
+          hitMesh.position.copy(v);
+          hitMesh.userData = st;
+          globeSphere.add(hitMesh);
+          stationHitMeshes.push(hitMesh);
+        }
 
-      // Animation Loop (Zero allocations inside frame)
-      function animateGlobe() {
-        requestAnimationFrame(animateGlobe);
-        if (!isGlobeVisible) return;
+        const pointsGeo = new THREE.BufferGeometry();
+        pointsGeo.setAttribute('position', new THREE.BufferAttribute(pointPositions, 3));
+        pointsGeo.setAttribute('color', new THREE.BufferAttribute(pointColors, 3));
+        const pointsMat = new THREE.PointsMaterial({
+          size: 0.085,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.95
+        });
+        globePoints = new THREE.Points(pointsGeo, pointsMat);
+        globeSphere.add(globePoints);
 
-        if (globeSphere) {
-          if (!isDraggingGlobe) {
-            globeVelX *= 0.96;
-            globeVelY *= 0.96;
-            globeSphere.rotation.y += 0.003 + globeVelX;
-            globeSphere.rotation.x += globeVelY;
-          } else {
-            globeSphere.rotation.y += globeVelX;
-            globeSphere.rotation.x += globeVelY;
+        // 10 Global AI Great-Circle Synchronization Arcs & Moving Pulses
+        const ARC_PAIRS = [
+          ['San Francisco Frontier AI Grid', 'Tokyo Cyber Command'],
+          ['San Francisco Frontier AI Grid', 'London NCSC Node'],
+          ['Bengaluru AI Cyber Hub', 'Singapore SingCERT'],
+          ['Beijing AI & CNCERT Command', 'Seoul East Asia Defense'],
+          ['Paris ANSSI / Mistral', 'Berlin BSI Station'],
+          ['Abu Dhabi TII Falcon & MBZUAI Lab', 'Zurich ETH AI Safety Lab'],
+          ['Taipei TSMC Semiconductor Foundry', 'San Francisco Frontier AI Grid'],
+          ['New York Financial Telemetry', 'London NCSC Node'],
+          ['Sydney Pacific Radar', 'Singapore SingCERT'],
+          ['Montreal Mila AI Research Institute', 'Paris ANSSI / Mistral']
+        ];
+
+        const stationLookup = {};
+        WORLD_STATIONS.forEach(s => { stationLookup[s.name] = s; });
+
+        const aiCurves = [];
+        const arcCount = ARC_PAIRS.length;
+        const arcPulsePositions = new Float32Array(arcCount * 3);
+        const arcProgress = [0.0, 0.12, 0.25, 0.38, 0.5, 0.62, 0.75, 0.88, 0.3, 0.7];
+        const arcSpeeds = [0.007, 0.009, 0.006, 0.008, 0.005, 0.007, 0.009, 0.006, 0.008, 0.005];
+
+        const arcLineMat = new THREE.LineBasicMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.38
+        });
+
+        ARC_PAIRS.forEach(([nameA, nameB], idx) => {
+          const stA = stationLookup[nameA];
+          const stB = stationLookup[nameB];
+          if (!stA || !stB) return;
+
+          const pA = geoToVector3(stA.lat, stA.lon, 1.62);
+          const pB = geoToVector3(stB.lat, stB.lon, 1.62);
+
+          const mid = new THREE.Vector3().addVectors(pA, pB).multiplyScalar(0.5);
+          const dist = pA.distanceTo(pB);
+          mid.normalize().multiplyScalar(1.62 + dist * 0.22);
+
+          const curve = new THREE.QuadraticBezierCurve3(pA, mid, pB);
+          aiCurves.push(curve);
+
+          const curveGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(36));
+          const curveLine = new THREE.Line(curveGeo, arcLineMat);
+          globeSphere.add(curveLine);
+
+          // Initial pulse pos
+          const initPoint = curve.getPoint(arcProgress[idx]);
+          arcPulsePositions[idx * 3]     = initPoint.x;
+          arcPulsePositions[idx * 3 + 1] = initPoint.y;
+          arcPulsePositions[idx * 3 + 2] = initPoint.z;
+        });
+
+        // Travelling Pulse Particles on Arcs
+        const pulseGeo = new THREE.BufferGeometry();
+        pulseGeo.setAttribute('position', new THREE.BufferAttribute(arcPulsePositions, 3));
+        const pulseMat = new THREE.PointsMaterial({
+          size: 0.12,
+          color: 0x7dd3fc,
+          transparent: true,
+          opacity: 0.95,
+          blending: THREE.AdditiveBlending
+        });
+        const pulsePoints = new THREE.Points(pulseGeo, pulseMat);
+        globeSphere.add(pulsePoints);
+
+        // Reusable objects for zero allocations in rAF loop (Law 1)
+        const _tempVec = new THREE.Vector3();
+        const _raycaster = new THREE.Raycaster();
+        const _mouseNDC = new THREE.Vector2(-999, -999);
+
+        // Raycasting & Mouse move
+        container.addEventListener('mousemove', (e) => {
+          const rect = container.getBoundingClientRect();
+          _mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          _mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+          if (isDraggingGlobe) {
+            const deltaX = e.clientX - prevMouseX;
+            const deltaY = e.clientY - prevMouseY;
+            globeVelX = deltaX * 0.005;
+            globeVelY = deltaY * 0.005;
+            prevMouseX = e.clientX;
+            prevMouseY = e.clientY;
+            if (tooltip) tooltip.classList.remove('visible');
+            return;
           }
+
+          // Test station hover
+          _raycaster.setFromCamera(_mouseNDC, globeCamera);
+          const intersects = _raycaster.intersectObjects(stationHitMeshes);
+
+          if (intersects.length > 0) {
+            hoveredStation = intersects[0].object.userData;
+            container.style.cursor = 'pointer';
+            if (tooltip) {
+              tooltip.innerHTML = `
+                <div class="flex items-center gap-1.5">
+                  <span class="text-sm">${hoveredStation.flag}</span>
+                  <span class="font-bold text-sky-300">${hoveredStation.name}</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Click station to filter feed by ${hoveredStation.country}</div>
+              `;
+              tooltip.style.left = (e.clientX - rect.left) + 'px';
+              tooltip.style.top = (e.clientY - rect.top) + 'px';
+              tooltip.classList.add('visible');
+            }
+          } else {
+            hoveredStation = null;
+            container.style.cursor = 'grab';
+            if (tooltip) tooltip.classList.remove('visible');
+          }
+        });
+
+        // Mouse drag controls & Click-to-filter
+        container.addEventListener('mousedown', (e) => {
+          isDraggingGlobe = true;
+          isNavigatingToStation = false;
+          prevMouseX = e.clientX;
+          prevMouseY = e.clientY;
+          dragStartX = e.clientX;
+          dragStartY = e.clientY;
+          container.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mouseup', (e) => {
+          if (!isDraggingGlobe) return;
+          isDraggingGlobe = false;
+          container.style.cursor = hoveredStation ? 'pointer' : 'grab';
+
+          // Detect click without drag (< 6px movement)
+          const distDragged = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
+          if (distDragged < 6 && hoveredStation) {
+            filterByStation(hoveredStation);
+          }
+        });
+
+        // Window resize handling
+        window.addEventListener('resize', () => {
+          if (!container || !globeRenderer) return;
+          const nw = container.clientWidth;
+          const nh = container.clientHeight;
+          globeCamera.aspect = nw / nh;
+          globeCamera.updateProjectionMatrix();
+          globeRenderer.setSize(nw, nh);
+        });
+
+        // Smooth Station Navigation & Feed Filtering
+        function filterByStation(st) {
+          if (!st) return;
+          const c = st.country;
+          if (c === 'CN' || c === 'HK') setRegionFilter('china');
+          else if (c === 'IN') setRegionFilter('south_asia');
+          else if (c === 'US' || c === 'CA') setRegionFilter('north_america');
+          else if (['FR', 'DE', 'GB', 'EU', 'NL', 'CH', 'SE', 'FI'].includes(c)) setRegionFilter('europe');
+          else if (['JP', 'KR', 'TW', 'SG', 'AU'].includes(c)) setRegionFilter('apac');
+          else if (['IL', 'AE'].includes(c)) setRegionFilter('middle_east');
+          else setRegionFilter('all');
+
+          // Target rotation to smoothly face camera
+          targetRotY = - (st.lon + 180) * (Math.PI / 180) + Math.PI / 2;
+          targetRotX = (st.lat * (Math.PI / 180)) * 0.4;
+          isNavigatingToStation = true;
+          showToast(`Station Activated: ${st.flag} ${st.name}`, 'info');
         }
 
-        if (globeRing) {
-          globeRing.rotation.z += 0.01;
+        // Animation Loop (Zero allocations inside frame)
+        function animateGlobe() {
+          requestAnimationFrame(animateGlobe);
+          if (!isGlobeVisible) return;
+
+          // Subtle starfield ambient drift
+          starField.rotation.y += 0.0003;
+
+          // Planetary rotation & inertia
+          if (globeSphere) {
+            if (isNavigatingToStation) {
+              globeSphere.rotation.y += (targetRotY - globeSphere.rotation.y) * 0.08;
+              globeSphere.rotation.x += (targetRotX - globeSphere.rotation.x) * 0.08;
+              if (Math.abs(targetRotY - globeSphere.rotation.y) < 0.005) {
+                isNavigatingToStation = false;
+              }
+            } else if (!isDraggingGlobe) {
+              globeVelX *= 0.95;
+              globeVelY *= 0.95;
+              globeSphere.rotation.y += 0.0025 + globeVelX;
+              globeSphere.rotation.x += globeVelY;
+            } else {
+              globeSphere.rotation.y += globeVelX;
+              globeSphere.rotation.x += globeVelY;
+            }
+          }
+
+          if (globeRing) {
+            globeRing.rotation.z += 0.008;
+          }
+
+          // Advance travelling pulse particles along AI great-circle arcs
+          if (aiCurves.length > 0) {
+            for (let i = 0; i < aiCurves.length; i++) {
+              arcProgress[i] = (arcProgress[i] + arcSpeeds[i]) % 1.0;
+              aiCurves[i].getPoint(arcProgress[i], _tempVec);
+              arcPulsePositions[i * 3]     = _tempVec.x;
+              arcPulsePositions[i * 3 + 1] = _tempVec.y;
+              arcPulsePositions[i * 3 + 2] = _tempVec.z;
+            }
+            pulseGeo.attributes.position.needsUpdate = true;
+          }
+
+          globeRenderer.render(globeScene, globeCamera);
         }
 
-        globeRenderer.render(globeScene, globeCamera);
+        // Cycle active planetary defense stations in HUD
+        let stationIdx = 0;
+        setInterval(() => {
+          const el = document.getElementById('globe-active-station');
+          if (el && WORLD_STATIONS.length) {
+            const st1 = WORLD_STATIONS[stationIdx % WORLD_STATIONS.length];
+            const st2 = WORLD_STATIONS[(stationIdx + 1) % WORLD_STATIONS.length];
+            const st3 = WORLD_STATIONS[(stationIdx + 2) % WORLD_STATIONS.length];
+            el.innerHTML = `${st1.flag} ${st1.name} • ${st2.flag} ${st2.name} • ${st3.flag} ${st3.name}`;
+            stationIdx = (stationIdx + 1) % WORLD_STATIONS.length;
+          }
+        }, 3500);
+
+        animateGlobe();
+      } catch (e) {
+        console.warn("Three.js globe initialization gracefully skipped:", e);
+        const panel = document.getElementById('globe-panel');
+        if (panel) panel.classList.add('hidden');
       }
-
-      // Cycle active planetary defense stations in HUD
-      let stationIdx = 0;
-      setInterval(() => {
-        const el = document.getElementById('globe-active-station');
-        if (el && WORLD_STATIONS.length) {
-          const st1 = WORLD_STATIONS[stationIdx % WORLD_STATIONS.length];
-          const st2 = WORLD_STATIONS[(stationIdx + 1) % WORLD_STATIONS.length];
-          const st3 = WORLD_STATIONS[(stationIdx + 2) % WORLD_STATIONS.length];
-          el.innerHTML = `${st1.flag} ${st1.name} • ${st2.flag} ${st2.name} • ${st3.flag} ${st3.name}`;
-          stationIdx = (stationIdx + 1) % WORLD_STATIONS.length;
-        }
-      }, 3500);
-
-      animateGlobe();
-    } catch (e) {
-      console.warn("Three.js globe initialization gracefully skipped:", e);
-      const panel = document.getElementById('globe-panel');
-      if (panel) panel.classList.add('hidden');
     }
-  }
 
     function toggle3DGlobe() {
       const panel = document.getElementById('globe-panel');
@@ -3093,6 +3821,7 @@
       }
 
       playBeep('click');
+      updateActiveFiltersBar();
       loadFeed(true);
     }
 
@@ -3608,22 +4337,23 @@
       }
     }
 
-    // Keyboard navigation listeners for Spotlight Cmd+K
+    // Global Keyboard Navigation & Hotkeys
     document.addEventListener('keydown', (e) => {
-      // Cmd+K or Ctrl+K
+      // Cmd+K or Ctrl+K for Command Palette
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        const modal = document.getElementById('command-palette-modal');
-        if (modal.classList.contains('hidden')) {
+        const palModal = document.getElementById('command-palette-modal');
+        if (palModal && palModal.classList.contains('hidden')) {
           openCommandPalette();
-        } else {
+        } else if (palModal) {
           closeCommandPalette();
         }
         return;
       }
 
-      const modal = document.getElementById('command-palette-modal');
-      if (modal && !modal.classList.contains('hidden')) {
+      // If Command Palette is open, trap its navigation
+      const palModal = document.getElementById('command-palette-modal');
+      if (palModal && !palModal.classList.contains('hidden')) {
         if (e.key === 'Escape') {
           closeCommandPalette();
         } else if (e.key === 'ArrowDown') {
@@ -3638,6 +4368,119 @@
           e.preventDefault();
           executePaletteItem(paletteSelectedIndex);
         }
+        return;
+      }
+
+      // If user is actively typing in an input or textarea, only process Escape
+      const activeTag = document.activeElement ? document.activeElement.tagName : '';
+      const isTyping = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable);
+      if (isTyping) {
+        if (e.key === 'Escape') {
+          document.activeElement.blur();
+        }
+        return;
+      }
+
+      // Global Hotkeys
+      if (e.key === 'Escape') {
+        closeInspectModal();
+        closeTriageModal();
+        closeWatchlistModal();
+        closeNewspaperModal();
+        closeEmailPdfModal();
+        closeSourcesModal();
+        closeTelegramModal();
+        closeKeyboardModal();
+        closeCommandPalette();
+        const cards = document.querySelectorAll('#feed-container .feed-card');
+        cards.forEach(c => c.classList.remove('card-focused'));
+        focusedCardIndex = -1;
+        return;
+      }
+
+      if (e.key === '/') {
+        e.preventDefault();
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+        return;
+      }
+
+      if (e.key === '?') {
+        e.preventDefault();
+        toggleKeyboardModal();
+        return;
+      }
+
+      if (e.key === 'g' || e.key === 'G') {
+        e.preventDefault();
+        toggleViewMode();
+        return;
+      }
+
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        toggle3DGlobe();
+        return;
+      }
+
+      if (e.key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        focusFeedCard(focusedCardIndex + 1);
+        return;
+      }
+
+      if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        focusFeedCard(focusedCardIndex - 1);
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        const entry = getFocusedCardEntry();
+        if (entry) {
+          e.preventDefault();
+          openInspectModal(entry);
+        }
+        return;
+      }
+
+      if (e.key === ' ') {
+        const entry = getFocusedCardEntry();
+        if (entry) {
+          e.preventDefault();
+          VoiceRadar.speakSingleEntry(entry.id);
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'p') {
+        const entry = getFocusedCardEntry();
+        if (entry) {
+          e.preventDefault();
+          togglePinThreat(entry.id);
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 's') {
+        const entry = getFocusedCardEntry();
+        if (entry) {
+          e.preventDefault();
+          shareCardLink(entry.id);
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'o') {
+        const entry = getFocusedCardEntry();
+        if (entry && entry.url) {
+          e.preventDefault();
+          window.open(entry.url, '_blank');
+        }
+        return;
       }
     });
 
