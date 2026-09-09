@@ -1,8 +1,8 @@
 {
-  "edition_id": "chronicle_20260908_2348",
+  "edition_id": "chronicle_20260909_0001",
   "edition_number": 2204,
   "title": "The Cyber Intelligence Chronicle & AI Gazette \u2014 10-Page Edition #2204",
-  "generated_at": "2026-09-08T23:48:21.411954+00:00",
+  "generated_at": "2026-09-09T00:01:53.103675+00:00",
   "window_hours": 5,
   "total_threats": 92,
   "pages_count": 10,
@@ -15,8 +15,8 @@
   "cve_count": 31,
   "china_count": 4,
   "poc_count": 8,
-  "md_path": "data/newspapers/chronicle_20260908_2348.md",
-  "html_path": "data/newspapers/chronicle_20260908_2348.html",
-  "pdf_path": "data/newspapers/chronicle_20260908_2348.pdf",
+  "md_path": "data/newspapers/chronicle_20260909_0001.md",
+  "html_path": "data/newspapers/chronicle_20260909_0001.html",
+  "pdf_path": "data/newspapers/chronicle_20260909_0001.pdf",
   "has_pdf": true
 }

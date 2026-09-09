@@ -701,8 +701,8 @@
               <span class="hidden sm:inline-flex items-center gap-1 text-[9px] font-mono uppercase bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 px-2 py-0.5 rounded font-medium">
                 <span class="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span> GLOBAL AI WIRE
               </span>
-              <span class="hidden sm:inline-flex items-center gap-1 text-[9px] font-mono uppercase bg-rose-500/10 border border-rose-500/25 text-rose-300 px-2 py-0.5 rounded font-medium">
-                <span class="w-1 h-1 rounded-full bg-rose-400"></span> DEFCON 3
+              <span class="hidden sm:inline-flex items-center gap-1 text-[9px] font-mono uppercase bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 px-2 py-0.5 rounded font-medium">
+                <span class="w-1 h-1 rounded-full bg-cyan-400"></span> 50+ AI HUBS ACTIVE
               </span>
             </div>
             <div class="flex items-center gap-2.5 text-[10px] font-mono text-slate-500 mt-0.5 flex-wrap">
@@ -812,10 +812,10 @@
         <div class="kpi-number" id="ai-count">—</div>
         <div class="kpi-label">🔬 Top Research</div>
       </div>
-      <!-- Security & Zero-Days -->
-      <div class="kpi-card kpi-rose cursor-pointer" onclick="setCategory('vulnerabilities')">
-        <div class="kpi-number" id="security-cve-count">—</div>
-        <div class="kpi-label">🛡️ Security & Zero-Days</div>
+      <!-- Developer Tools & Infrastructure -->
+      <div class="kpi-card kpi-amber cursor-pointer" onclick="setCategory('cyber_tools')">
+        <div class="kpi-number" id="developer-tools-count">—</div>
+        <div class="kpi-label">🛠️ Developer Tools</div>
       </div>
     </div>
 
@@ -971,9 +971,9 @@
             </div>
           </div>
 
-          <!-- AI Framework Blast Exposure -->
+          <!-- AI Framework & Runtime Ecosystem -->
           <div class="panel-section">
-            <div class="panel-heading">AI Framework Exposure</div>
+            <div class="panel-heading">AI Frameworks & Runtimes</div>
             <div id="framework-exposure-list" class="space-y-2.5 text-[10px] font-mono">
               <div class="space-y-2 animate-pulse py-1">
                 <div class="flex justify-between items-center"><div class="h-2.5 bg-white/[0.05] rounded w-24"></div><div class="h-2 bg-white/[0.03] rounded w-10"></div></div>
@@ -984,13 +984,13 @@
             </div>
           </div>
 
-          <!-- Detection Engine -->
+          <!-- Autonomous Intelligence Engine -->
           <div class="panel-section">
-            <div class="panel-heading">Autonomous Engine</div>
+            <div class="panel-heading">Autonomous AI Engine</div>
             <div class="space-y-2.5 text-[10px] font-mono">
-              <div class="flex items-start gap-2"><span class="text-amber-500 flex-shrink-0">⚡</span><span class="text-slate-500">Pre-CVE arXiv radar — LLM jailbreaks, RAG poisoning, agent hijack detection before CVE filing</span></div>
-              <div class="flex items-start gap-2"><span class="text-cyan-500 flex-shrink-0">◎</span><span class="text-slate-500">Blast radius engine cross-correlates against PyTorch, LangChain, Ollama, Transformers</span></div>
-              <div class="flex items-start gap-2"><span class="text-violet-500 flex-shrink-0">✦</span><span class="text-slate-500">Local Ollama GPU triage for deep autonomous analysis</span></div>
+              <div class="flex items-start gap-2"><span class="text-amber-400 flex-shrink-0">⚡</span><span class="text-slate-400">Global AI Radar — Frontier models, inference runtimes, agent frameworks & breakthroughs</span></div>
+              <div class="flex items-start gap-2"><span class="text-cyan-400 flex-shrink-0">◎</span><span class="text-slate-400">Ecosystem cross-correlation across vLLM, PyTorch, LangChain, Ollama, Transformers</span></div>
+              <div class="flex items-start gap-2"><span class="text-violet-400 flex-shrink-0">✦</span><span class="text-slate-400">Autonomous GPU Triage for deep architectural analysis & technical insights</span></div>
               <button onclick="triggerAutonomousBackfill()" id="btn-sidebar-backfill" class="w-full mt-2 py-2 px-3 rounded-sm bg-violet-500/10 hover:bg-violet-500/18 border border-violet-500/20 text-violet-400 hover:text-violet-300 text-[9px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition">
                 <i data-lucide="sparkles" class="w-3 h-3"></i> Auto-Triage Top 25
               </button>
@@ -1441,6 +1441,7 @@
       _set('frontier-models-count', (cats.ai_models || 0).toLocaleString());
       _set('ai-count', (cats.ai_research || (cats.ai_tech || 0)).toLocaleString());
       _set('security-cve-count', ((cats.vulnerabilities || 0) + (cats.cybersecurity || 0) + (cats.exploits_tricks || 0)).toLocaleString());
+      _set('developer-tools-count', (cats.cyber_tools || 0).toLocaleString());
       _set('pre-cve-count', (stats.pre_cve_warnings || 0).toLocaleString());
       _set('high-vel-count', (stats.high_velocity_entries || 0).toLocaleString());
       _set('active-sources-count', totalSrcs);
@@ -2601,7 +2602,7 @@
         return;
       }
       const rawMd = window._currentNewspaperMarkdown || "";
-      let narrative = "Good day. This is your 5-Hour Autonomous Security Chronicle summary. Global threat level is DEFCON 3, Elevated. ";
+      let narrative = "Good day. This is your Autonomous Intelligence Chronicle summary. Global AI telemetry active across 50+ hubs. ";
 
       if (rawMd) {
         const leadMatch = rawMd.match(/# 🚨 FRONT PAGE:\s*(.+)/);
@@ -3944,7 +3945,7 @@
 
         let script = '';
         if (includeIntro) {
-          script += `AetherGuard Intelligence Briefing. DEFCON 3 elevated alert. Analyzing top ${this.playlist.length} security developments. `;
+          script += `AetherGuard Global AI Briefing. Analyzing top ${this.playlist.length} intelligence developments. `;
         }
 
         script += `Item ${idx + 1}. ${this.normalizeSecurityText(item.title)}. `;

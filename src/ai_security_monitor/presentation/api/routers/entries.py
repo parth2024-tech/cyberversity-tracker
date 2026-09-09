@@ -12,7 +12,10 @@ Key improvements over v1:
 from __future__ import annotations
 
 import asyncio
+import html
+import re
 from datetime import datetime, timedelta
+from typing import Any
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
@@ -25,6 +28,72 @@ from ai_security_monitor.infrastructure.database.unit_of_work import (
 )
 
 entries_router = APIRouter(prefix="/entries")
+
+# ---------------------------------------------------------------------------
+# Data Hygiene & Content Sanitization Helpers
+# ---------------------------------------------------------------------------
+
+def _clean_entry_title(title: str | None) -> str:
+    """Sanitize title: unescape HTML entities, strip scrape prefixes, normalize whitespace."""
+    if not title:
+        return "Intelligence Dispatch"
+    t = html.unescape(title).strip()
+    t = re.sub(r"^Security Tool\s*/\s*PoC:\s*", "", t, flags=re.I)
+    t = re.sub(r"^Security Tool:\s*", "", t, flags=re.I)
+    t = re.sub(r"^PoC:\s*", "", t, flags=re.I)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t or "Intelligence Dispatch"
+
+
+def _clean_entry_summary(raw_summary: str | None, entry: Any, cleaned_title: str | None = None) -> str:
+    """Sanitize summary: strip HTML/scraped junk, enforce complete sentences, deduplicate repeated text."""
+    from ai_security_monitor.application.services.article_extractor import (
+        article_extractor,
+    )
+
+    if not raw_summary or not raw_summary.strip():
+        return article_extractor.synthesize_technical_analysis(entry)
+
+    text = html.unescape(raw_summary)
+    text = re.sub(r"<[^<]+?>", " ", text)
+    text = re.sub(r"(?i)\b(?:submitted by|posted by)\s+/u/\S+", "", text)
+    text = re.sub(r"(?i)\[link\]\s*\[comments\]", "", text)
+    text = re.sub(r"(?i)\[link\]", "", text)
+    text = re.sub(r"(?i)\[comments\]", "", text)
+    text = re.sub(r"(?i)submitted by\s+.*", "", text)
+    text = re.sub(r"https?://\S+", "", text)
+    text = re.sub(r"\(http[^\)]+\)", "", text)
+    text = re.sub(r"^[A-Za-z\s]+ \d{4}-\d{2}-\d{2} \d{2}:\d{2} [A-Za-z\s]+", "", text)
+    text = re.sub(r"^Original Leading the Digital Supply Chain.*?\bBeijing\b", "", text, flags=re.I)
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # Deduplicate repeated identical halves (e.g. GitHub/RSS description duplicated)
+    if len(text) > 30:
+        half = len(text) // 2
+        if text[:half].strip() == text[half:].strip():
+            text = text[:half].strip()
+
+    words = text.split()
+    if len(words) < 6:
+        return article_extractor.synthesize_technical_analysis(entry)
+
+    # Ensure text ends at a clean sentence boundary
+    if len(words) > 100:
+        candidate = " ".join(words[:100])
+        match = re.search(r"^(.*[\.\!\?])(?:\s+[^\.\!\?]*)$", candidate)
+        if match and len(match.group(1).split()) >= 30:
+            return match.group(1).strip()
+        return candidate.rstrip(" ,;:-—") + "."
+
+    if not text.endswith((".", "!", "?", '"', "'")):
+        # Check if there is an abrupt cutoff of 1-4 words trailing a complete sentence
+        match = re.search(r"^(.*[\.\!\?])\s+\S+(?:\s+\S+){0,4}$", text)
+        if match and len(match.group(1).split()) >= 8:
+            return match.group(1).strip()
+        return text.rstrip(" ,;:-—") + "."
+
+    return text
+
 
 # ---------------------------------------------------------------------------
 # Cached helpers
@@ -211,6 +280,9 @@ async def query_serialized_entries(
                 "actionable_insight": "Review official repository and documentation for deployment." if is_ai_innov else None,
             }
 
+        cleaned_title = _clean_entry_title(e.title)
+        cleaned_summary = _clean_entry_summary(e.summary, e, cleaned_title)
+
         serialized_entries.append(
             {
                 "id": str(e.id),
@@ -219,10 +291,10 @@ async def query_serialized_entries(
                 "source": src_name,
                 "region": src_region,
                 "country": src_country,
-                "title": e.title,
+                "title": cleaned_title,
                 "url": e.url,
                 "content_hash": e.content_hash,
-                "summary": e.summary,
+                "summary": cleaned_summary,
                 "published_at": e.published_at.isoformat() if e.published_at else None,
                 "fetched_at": e.fetched_at.isoformat() if e.fetched_at else None,
                 "category": cat_val,
@@ -327,15 +399,15 @@ async def export_entries_pdf(
     )
 
     cat_label = f" // {category.upper()}" if category and category != "all" else ""
-    title = f"AetherGuard Threat Dossier{cat_label}"
+    title = f"AetherGuard Global AI Dossier{cat_label}"
     pdf_bytes = PdfExportService.generate_dossier_pdf(
         entries=entries_list,
         title=title,
-        subtitle=f"Scoped Threat Intelligence Analysis ({len(entries_list)} Incidents)",
+        subtitle=f"Frontier AI & Technology Intelligence Analysis ({len(entries_list)} Reports)",
     )
 
     timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M")
-    filename = f"threat_dossier_{timestamp_str}.pdf"
+    filename = f"ai_intelligence_dossier_{timestamp_str}.pdf"
 
     from fastapi.responses import Response
 
@@ -353,14 +425,14 @@ from pydantic import BaseModel, Field
 
 
 class ExportPdfRequest(BaseModel):
-    ids: list[str] | None = Field(default=None, description="Specific threat IDs to include")
-    title: str | None = Field(default="AetherGuard Threat Intelligence Dossier")
-    subtitle: str | None = Field(default="Tactical Zero-Day & AI Blast Radius Analysis")
+    ids: list[str] | None = Field(default=None, description="Specific intelligence IDs to include")
+    title: str | None = Field(default="AetherGuard Global AI & Technology Intelligence Dossier")
+    subtitle: str | None = Field(default="Frontier AI Systems & Technology Intelligence Briefing")
 
 
 @entries_router.post("/export/pdf")
 async def export_selected_entries_pdf(payload: ExportPdfRequest):
-    """Generate executive PDF dossier from a specific list of threat IDs (e.g. pinned board)."""
+    """Generate executive PDF dossier from a specific list of entry IDs (e.g. pinned board)."""
     from ai_security_monitor.application.services.pdf_export_service import (
         PdfExportService,
     )
@@ -375,12 +447,12 @@ async def export_selected_entries_pdf(payload: ExportPdfRequest):
 
     pdf_bytes = PdfExportService.generate_dossier_pdf(
         entries=filtered,
-        title=payload.title or "AetherGuard Threat Intelligence Dossier",
-        subtitle=payload.subtitle or f"Custom Executive Threat Brief ({len(filtered)} items)",
+        title=payload.title or "AetherGuard Global AI & Technology Intelligence Dossier",
+        subtitle=payload.subtitle or f"Executive AI & Technology Brief ({len(filtered)} items)",
     )
 
     timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M")
-    filename = f"threat_dossier_{timestamp_str}.pdf"
+    filename = f"ai_intelligence_dossier_{timestamp_str}.pdf"
 
     from fastapi.responses import Response
 

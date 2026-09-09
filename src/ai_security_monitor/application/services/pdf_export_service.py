@@ -32,7 +32,7 @@ class DossierNumberedCanvas(canvas.Canvas):
         super().__init__(*args, **kwargs)
         self._saved_page_states = []
 
-    def showPage(self):
+    def showPage(self):  # noqa: N802
         self._saved_page_states.append(dict(self.__dict__))
         self._startPage()
 
@@ -51,8 +51,8 @@ class DossierNumberedCanvas(canvas.Canvas):
 
         # Running Header on page 2+
         if self._pageNumber > 1:
-            self.drawString(36, 756, "AETHERGUARD THREAT INTELLIGENCE DOSSIER")
-            self.drawRightString(576, 756, "EXECUTIVE INCIDENT BRIEF")
+            self.drawString(36, 756, "AETHERGUARD GLOBAL AI & TECHNOLOGY INTELLIGENCE DOSSIER")
+            self.drawRightString(576, 756, "EXECUTIVE TECHNOLOGY BRIEF")
             self.setStrokeColor(colors.HexColor("#cbd5e1"))
             self.setLineWidth(0.5)
             self.line(36, 750, 576, 750)
@@ -60,7 +60,7 @@ class DossierNumberedCanvas(canvas.Canvas):
         # Running Footer on all pages
         page_str = f"Page {self._pageNumber} of {page_count}"
         self.drawString(
-            36, 25, "CONFIDENTIAL // FOR AUTHORIZED DEFENSIVE USE ONLY • AETHERGUARD RADAR"
+            36, 25, "CONFIDENTIAL // FOR AUTHORIZED RESEARCH & DEV USE ONLY • AETHERGUARD AI OBSERVATORY"
         )
         self.drawRightString(576, 25, page_str)
         self.setStrokeColor(colors.HexColor("#cbd5e1"))
@@ -70,13 +70,13 @@ class DossierNumberedCanvas(canvas.Canvas):
 
 
 class PdfExportService:
-    """Generates structured PDF reports for threat entries."""
+    """Generates structured PDF reports for threat and AI intelligence entries."""
 
     @staticmethod
     def generate_dossier_pdf(
         entries: list[dict[str, Any]],
-        title: str = "AetherGuard Threat Intelligence Dossier",
-        subtitle: str = "Tactical Zero-Day & AI Blast Radius Analysis",
+        title: str = "AetherGuard Global AI & Technology Intelligence Dossier",
+        subtitle: str = "Frontier AI Systems & Technology Intelligence Briefing",
     ) -> bytes:
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -109,14 +109,6 @@ class PdfExportService:
             textColor=colors.HexColor("#475569"),
             spaceAfter=8,
         )
-        meta_badge_style = ParagraphStyle(
-            "MetaBadge",
-            parent=styles["Normal"],
-            fontName="Helvetica-Bold",
-            fontSize=8,
-            leading=11,
-            textColor=colors.HexColor("#0284c7"),
-        )
         section_h2 = ParagraphStyle(
             "SectionH2",
             parent=styles["Heading2"],
@@ -142,14 +134,6 @@ class PdfExportService:
             fontSize=8,
             leading=11,
             textColor=colors.HexColor("#1e293b"),
-        )
-        table_bold_cell = ParagraphStyle(
-            "TableBoldCell",
-            parent=styles["Normal"],
-            fontName="Helvetica-Bold",
-            fontSize=8,
-            leading=11,
-            textColor=colors.HexColor("#0f172a"),
         )
         threat_title_style = ParagraphStyle(
             "ThreatTitle",
@@ -202,32 +186,26 @@ class PdfExportService:
             if (e.get("analysis") or {}).get("threat_velocity", 0) >= 70
             or e.get("threat_velocity", 0) >= 70
         )
-        pre_cve_count = sum(
-            1
-            for e in entries
-            if (e.get("analysis") or {}).get("is_pre_cve_warning")
-            or e.get("is_pre_cve_warning")
-        )
 
         stats_data = [
             [
-                Paragraph("<b>Total Threats Analyzed</b>", body_label),
+                Paragraph("<b>Total Intelligence Analyzed</b>", body_label),
                 Paragraph("<b>High Velocity (≥70)</b>", body_label),
-                Paragraph("<b>Pre-CVE Early Warnings</b>", body_label),
-                Paragraph("<b>Classification Level</b>", body_label),
+                Paragraph("<b>Frontier Systems & Papers</b>", body_label),
+                Paragraph("<b>Observatory Status</b>", body_label),
             ],
             [
                 Paragraph(f"<font size=14><b>{total_threats}</b></font>", doc_title_style),
                 Paragraph(
-                    f"<font size=14 color='#e11d48'><b>{high_vel_count}</b></font>",
+                    f"<font size=14 color='#0284c7'><b>{high_vel_count}</b></font>",
                     doc_title_style,
                 ),
                 Paragraph(
-                    f"<font size=14 color='#d97706'><b>{pre_cve_count}</b></font>",
+                    f"<font size=14 color='#7c3aed'><b>{sum(1 for e in entries if (e.get('category') or '') in ('ai_models', 'ai_research', 'github_trending'))}</b></font>",
                     doc_title_style,
                 ),
                 Paragraph(
-                    "<font size=11 color='#0284c7'><b>DEFCON 3 // ELEVATED</b></font>",
+                    "<font size=11 color='#059669'><b>GLOBAL RADAR // ACTIVE</b></font>",
                     doc_title_style,
                 ),
             ],
@@ -249,16 +227,16 @@ class PdfExportService:
         story.append(stats_table)
         story.append(Spacer(1, 12))
 
-        # Section 1: Executive Threat Matrix Table
-        story.append(Paragraph("1. EXECUTIVE THREAT INTELLIGENCE MATRIX", section_h2))
+        # Section 1: Executive Intelligence Matrix Table
+        story.append(Paragraph("1. EXECUTIVE INTELLIGENCE & ACCELERATION MATRIX", section_h2))
 
         table_rows = [
             [
-                Paragraph("THREAT ADVISORY", table_hdr_style),
+                Paragraph("DISPATCH / ARTIFACT", table_hdr_style),
                 Paragraph("SOURCE", table_hdr_style),
                 Paragraph("CATEGORY", table_hdr_style),
                 Paragraph("VELOCITY", table_hdr_style),
-                Paragraph("BLAST", table_hdr_style),
+                Paragraph("IMPACT", table_hdr_style),
             ]
         ]
 
@@ -268,7 +246,7 @@ class PdfExportService:
             blast = analysis.get("blast_radius_score") or entry.get("blast_radius_score") or 20
             source_name = entry.get("source_name") or "Verified Intel"
             category = entry.get("category") or "security"
-            title_text = entry.get("title") or "Unnamed Threat"
+            title_text = entry.get("title") or "Unnamed Dispatch"
 
             vel_color = "#e11d48" if vel >= 70 else ("#d97706" if vel >= 40 else "#0284c7")
             blast_color = "#e11d48" if blast >= 70 else ("#d97706" if blast >= 40 else "#0284c7")
@@ -301,43 +279,47 @@ class PdfExportService:
         story.append(matrix_table)
         story.append(Spacer(1, 14))
 
-        # Section 2: Detailed Threat Profiles & Actionable Mitigations
-        story.append(Paragraph("2. DETAILED THREAT PROFILES & MITIGATION ADVISORIES", section_h2))
+        # Section 2: Detailed Intelligence Profiles & Technical Advisories
+        story.append(Paragraph("2. DETAILED INTELLIGENCE PROFILES & TECHNICAL ADVISORIES", section_h2))
 
         for idx, entry in enumerate(entries[:20]):
             analysis = entry.get("analysis") or {}
             vel = analysis.get("threat_velocity") or entry.get("threat_velocity") or 25
-            sev = analysis.get("severity_index") or entry.get("severity_index") or 25
             blast = analysis.get("blast_radius_score") or entry.get("blast_radius_score") or 20
             source_name = entry.get("source_name") or "Verified Intel"
             category = (entry.get("category") or "security").replace("_", " ").upper()
             pub_date = entry.get("published_at") or "Recent"
             url = entry.get("url") or ""
             is_pre_cve = analysis.get("is_pre_cve_warning") or entry.get("is_pre_cve_warning")
+            is_ai_entry = entry.get("is_ai_innovation") or (entry.get("category") in ("ai_tech", "ai_models", "ai_research", "github_trending", "cyber_tools"))
 
-            badge_text = " [🚨 PRE-CVE EARLY WARNING]" if is_pre_cve else ""
+            badge_text = " [🚨 PRE-CVE EARLY WARNING]" if is_pre_cve else (" [🚀 AI INNOVATION]" if is_ai_entry else "")
 
             threat_elements = [
                 Paragraph(f"<b>{idx + 1}. {entry.get('title')}{badge_text}</b>", threat_title_style),
                 Paragraph(
                     f"<b>Category:</b> {category} | <b>Source:</b> {source_name} | <b>Published:</b> {pub_date} | "
-                    f"<b>Velocity:</b> {vel}/100 | <b>Severity:</b> {sev}/100 | <b>Blast Radius:</b> {blast}/100",
+                    f"<b>Velocity:</b> {vel}/100 | <b>Impact:</b> {blast}/100",
                     body_label,
                 ),
             ]
 
-            if analysis.get("attack_vector"):
+            tech_vector = analysis.get("tech_focus") or analysis.get("attack_vector")
+            if tech_vector:
+                vec_label = "⚡ Technology Focus:" if is_ai_entry else "⚡ Primary Attack Vector:"
                 threat_elements.append(
                     Paragraph(
-                        f"<b>⚡ Primary Attack Vector:</b> {analysis.get('attack_vector')}",
+                        f"<b>{vec_label}</b> {tech_vector}",
                         body_val,
                     )
                 )
 
-            if analysis.get("risk_assessment"):
+            cap_summary = analysis.get("capability_summary") or analysis.get("risk_assessment")
+            if cap_summary:
+                risk_label = "💡 Capability & Analysis:" if is_ai_entry else "🛡️ Infrastructure Risk:"
                 threat_elements.append(
                     Paragraph(
-                        f"<b>🛡️ Infrastructure Risk:</b> {analysis.get('risk_assessment')}",
+                        f"<b>{risk_label}</b> {cap_summary}",
                         body_val,
                     )
                 )
@@ -346,10 +328,12 @@ class PdfExportService:
                     Paragraph(f"<b>📝 Summary:</b> {entry.get('summary')[:300]}", body_val)
                 )
 
-            if analysis.get("mitigation"):
+            action_insight = analysis.get("actionable_insight") or analysis.get("mitigation")
+            if action_insight:
+                mit_label = "🔧 Deployment Directive:" if is_ai_entry else "🔧 Recommended Patch & Hardening:"
                 threat_elements.append(
                     Paragraph(
-                        f"<b>🔧 Recommended Patch & Hardening:</b> <font color='#0284c7'><b>{analysis.get('mitigation')}</b></font>",
+                        f"<b>{mit_label}</b> <font color='#0284c7'><b>{action_insight}</b></font>",
                         body_val,
                     )
                 )
@@ -358,7 +342,7 @@ class PdfExportService:
             if ecosystem:
                 threat_elements.append(
                     Paragraph(
-                        f"<b>📦 Affected Ecosystem:</b> {', '.join(ecosystem)}",
+                        f"<b>📦 Ecosystem:</b> {', '.join(ecosystem)}",
                         body_val,
                     )
                 )
