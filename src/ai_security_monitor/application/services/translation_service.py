@@ -7,6 +7,7 @@ advisories, and abstracts into English with multi-engine fallback and LRU cachin
 """
 from __future__ import annotations
 
+import asyncio
 import re
 import html
 import structlog
@@ -232,6 +233,19 @@ class TranslationService:
             for k in keys:
                 self._cache.pop(k, None)
         self._cache[key] = (value, lang)
+
+    # ------------------------------------------------------------------
+    # Async-safe wrappers — use these from async contexts (FastAPI routes,
+    # monitor sweeps, newspaper generation) to avoid blocking the event loop.
+    # ------------------------------------------------------------------
+
+    async def translate_text_async(self, text: str, target: str = "en") -> tuple[str, str, bool]:
+        """Non-blocking version of translate_text() — runs sync providers in a thread."""
+        return await asyncio.to_thread(self.translate_text, text, target)
+
+    async def translate_entry_async(self, entry) -> bool:
+        """Non-blocking version of translate_entry() — runs sync providers in a thread."""
+        return await asyncio.to_thread(self.translate_entry, entry)
 
 
 # Global singleton translation service instance

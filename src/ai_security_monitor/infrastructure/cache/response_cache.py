@@ -15,10 +15,21 @@ import time
 from typing import Any, Callable, Awaitable
 
 _CACHE: dict[str, tuple[float, Any]] = {}
+_PURGE_INTERVAL = 50       # Run a full sweep every N get_or_set calls
+_call_counter: int = 0     # Tracks calls since last sweep
 
 
 def _now() -> float:
     return time.monotonic()
+
+
+def purge_expired() -> int:
+    """Remove all stale entries from the cache. Returns number of keys removed."""
+    now = _now()
+    stale = [k for k, (exp, _) in _CACHE.items() if now >= exp]
+    for k in stale:
+        del _CACHE[k]
+    return len(stale)
 
 
 async def get_or_set(
@@ -29,7 +40,16 @@ async def get_or_set(
     """
     Return cached value if fresh, otherwise call factory coroutine,
     store the result, and return it.
+
+    Every _PURGE_INTERVAL calls a full expired-key sweep is performed
+    to prevent unbounded memory growth.
     """
+    global _call_counter
+    _call_counter += 1
+    if _call_counter >= _PURGE_INTERVAL:
+        _call_counter = 0
+        purge_expired()
+
     entry = _CACHE.get(key)
     if entry is not None:
         expires_at, value = entry

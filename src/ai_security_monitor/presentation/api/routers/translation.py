@@ -46,7 +46,7 @@ class BackfillTranslationRequest(BaseModel):
 @translation_router.post("/", response_model=TranslateTextResponse)
 async def translate_text_endpoint(req: TranslateTextRequest):
     """Translate arbitrary text into English with automatic language detection."""
-    trans, lang, is_trans = translation_service.translate_text(req.text, target=req.target)
+    trans, lang, is_trans = await translation_service.translate_text_async(req.text, target=req.target)
     name, flag = LANGUAGE_NAMES.get(lang, (lang.upper(), "🌐"))
 
     return TranslateTextResponse(
@@ -72,7 +72,7 @@ async def translate_entry_endpoint(entry_id: str):
         if not entry:
             raise HTTPException(status_code=404, detail="Entry not found")
 
-        was_translated = translation_service.translate_entry(entry)
+        was_translated = await translation_service.translate_entry_async(entry)
         if was_translated:
             await uow.entries.update(entry)
             await uow.commit()
@@ -103,7 +103,7 @@ async def backfill_translations(req: BackfillTranslationRequest):
         for entry in entries:
             # Check if entry is not already translated and contains non-English text
             if not entry.metadata.get("is_translated"):
-                if translation_service.translate_entry(entry):
+                if await translation_service.translate_entry_async(entry):
                     await uow.entries.update(entry)
                     translated_count += 1
 

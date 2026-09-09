@@ -208,81 +208,26 @@ class ArticleExtractor:
             repo_or_project = entry.metadata.get("repo_name", title.split(":")[0].replace("Trending Repo", "").strip())
             lang = entry.metadata.get("language", "Python")
 
-            paragraphs = []
-            if existing and len(existing.split()) >= 25:
-                if not existing.endswith((".", "!", "?")):
-                    existing += "."
-                paragraphs.append(existing)
-            else:
-                paragraphs.append(
-                    f"The global AI ecosystem has highlighted significant momentum around {title}. "
-                    f"Operating within the {cat_str.replace('_', ' ').upper()} domain, this project introduces substantive "
-                    f"architectural advancements, addressing key developer challenges across model orchestration, "
-                    f"high-throughput inference, and autonomous system workflows."
-                )
+        if existing and len(existing.split()) >= 15:
+            return existing
 
-            paragraphs.append(
-                f"Technical inspection reveals robust design paradigms engineered for modularity and high performance. "
-                f"Built primarily in {lang or 'Python and modern runtimes'}, the implementation optimizes compute efficiency, "
-                f"streamlines developer ergonomics, and demonstrates strong alignment with state-of-the-art open-source "
-                f"benchmarks and multi-agent frameworks."
+        if not is_vuln:
+            if existing and len(existing.split()) >= 15:
+                return existing
+            cat_label = cat_str.replace('_', ' ').upper()
+            return (
+                f"The global AI ecosystem highlights significant activity around {title}. "
+                f"Categorized under {cat_label}, this initiative provides capabilities for developers "
+                f"and practitioners. Technical documentation and reference implementations "
+                f"are accessible directly via {entry.url}."
             )
 
-            paragraphs.append(
-                f"Deployment & Integration Directive: Source repositories and model artifacts are accessible for open developer review. "
-                f"Engineers can integrate the package directly into production AI pipelines, evaluate weight checkpoints via Hugging Face, "
-                f"or orchestrate containerized instances locally via Docker and runtime environments."
-            )
-            return " ".join(paragraphs)
-
-        paragraphs = []
-        # Paragraph 1: Threat Synopsis & Attack Surface
-        if existing and len(existing.split()) >= 25:
-            if not existing.endswith((".", "!", "?")):
-                existing += "."
-            paragraphs.append(existing)
-        else:
-            if cve_id:
-                paragraphs.append(
-                    f"A critical security vulnerability identified as {cve_id} has been discovered impacting {eco}. "
-                    f"The threat carries an elevated severity rating of {sev}/100 and a velocity index of {vel}/100. "
-                    f"Adversaries can exploit this vulnerability via {vec} to compromise core host and application processes."
-                )
-            else:
-                paragraphs.append(
-                    f"Telemetry sensors have identified an emerging threat vector concerning {title}. "
-                    f"Categorized under {archetype}, the incident presents severe operational risk across {eco}, "
-                    f"with real-time threat velocity tracked at {vel}/100 and a high probability of weaponization."
-                )
-
-        # Paragraph 2: Technical Mechanics & Exploitation Telemetry
-        if "poc" in title.lower() or "exploit" in title.lower() or (analysis and "PoC" in (analysis.weaponization_potential or "")):
-            paragraphs.append(
-                "A functional proof-of-concept (PoC) or weaponized exploit module has been validated in the wild. "
-                "Attackers leverage protocol anomalies and memory layout manipulation to bypass established security perimeters. "
-                "Security teams should immediately monitor incoming network traffic for anomalous request payloads and inspect process execution trees."
-            )
-        elif "prompt injection" in title.lower() or "jailbreak" in title.lower() or "llm" in title.lower() or "ai" in title.lower():
-            paragraphs.append(
-                "The vulnerability targets the cognitive layer of generative AI and autonomous agentic workflows. "
-                "Through crafted prompt injection and context window manipulation, untrusted input subverts model system instructions, "
-                "potentially allowing unauthorized tool invocation, training data exfiltration, or secondary RAG database poisoning."
-            )
-        else:
-            paragraphs.append(
-                f"Technical inspection reveals significant blast radius implications across distributed enterprise environments. "
-                f"The exploitation mechanics rely on {vec}, enabling adversaries to execute arbitrary commands, bypass authentication barriers, "
-                f"or achieve lateral movement across interconnected segmentations without requiring elevated initial privileges."
-            )
-
-        # Paragraph 3: Defensive Remediation Directives
-        mitigation = analysis.mitigation if analysis and analysis.mitigation else "Deploy vendor-supplied patches and enforce strict perimeter filtering"
-        paragraphs.append(
-            f"Remediation Directive: {mitigation}. Organizations are advised to restrict ingress network access, "
-            "implement strict input validation controls, and audit system telemetry logs for indicators of compromise (IoCs)."
-        )
-
-        return " ".join(paragraphs)
+        # Vulnerability fallback when no body text is available
+        if existing and len(existing.split()) >= 15:
+            return existing
+        if cve_id:
+            return f"Security advisory identified for {cve_id} impacting {eco}. Refer to official vendor channels for technical details and updates."
+        return f"Security disclosure concerning {title}. Official updates and technical references are cataloged on the source wire."
 
 
 article_extractor = ArticleExtractor()

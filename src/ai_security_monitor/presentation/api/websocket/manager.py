@@ -3,6 +3,7 @@ WebSocket Connection Manager and real-time event broadcaster.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -31,16 +32,20 @@ class ConnectionManager:
         if not self.active_connections:
             return
 
-        dead_connections = set()
-        for connection in list(self.active_connections):
-            try:
-                await connection.send_text(json.dumps(message))
-            except Exception as e:
-                logger.warn(f"Failed to send to WebSocket client: {e}")
-                dead_connections.add(connection)
+        payload = json.dumps(message)
+        connections = list(self.active_connections)
 
-        for dead in dead_connections:
-            self.active_connections.discard(dead)
+        # Fan-out concurrently — all clients receive the message in parallel
+        results = await asyncio.gather(
+            *[conn.send_text(payload) for conn in connections],
+            return_exceptions=True,
+        )
+
+        # Prune any connections that raised an exception
+        for conn, result in zip(connections, results):
+            if isinstance(result, Exception):
+                logger.warning(f"WebSocket send failed, dropping client: {result}")
+                self.active_connections.discard(conn)
 
 
 manager = ConnectionManager()

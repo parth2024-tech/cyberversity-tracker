@@ -6,8 +6,10 @@ Eliminates all OS-level speech-dispatcher dependencies.
 """
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
+import time
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +26,31 @@ audio_router = APIRouter(prefix="/audio", tags=["Audio"])
 # Directory to cache synthesized speech clips
 CACHE_DIR = Path("data/audio_cache")
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+_AUDIO_CACHE_TTL_SECONDS = 7 * 24 * 3600  # 7 days
+
+
+def _cleanup_audio_cache(ttl_seconds: int = _AUDIO_CACHE_TTL_SECONDS) -> int:
+    """Delete cached .mp3 files older than ttl_seconds. Returns number of files removed."""
+    cutoff = time.time() - ttl_seconds
+    removed = 0
+    try:
+        for mp3 in CACHE_DIR.glob("*.mp3"):
+            try:
+                if mp3.stat().st_mtime < cutoff:
+                    mp3.unlink(missing_ok=True)
+                    removed += 1
+            except OSError:
+                pass
+    except Exception as exc:
+        logger.warning(f"Audio cache cleanup error: {exc}")
+    if removed:
+        logger.info(f"Audio cache TTL sweep: removed {removed} stale file(s)")
+    return removed
+
+
+# Run a lightweight cleanup when the module is first imported
+_cleanup_audio_cache()
 
 DEFAULT_VOICE = "en-US-GuyNeural"
 
@@ -65,13 +92,16 @@ async def _synthesize_edge_tts(text: str, voice: str, rate: str, output_path: Pa
         return False
 
 
-def _synthesize_gtts(text: str, output_path: Path) -> bool:
-    """Fallback synthesis using Google TTS."""
+async def _synthesize_gtts(text: str, output_path: Path) -> bool:
+    """Fallback synthesis using Google TTS. Runs blocking I/O in a thread."""
     try:
         from gtts import gTTS
 
-        tts = gTTS(text=text, lang="en")
-        tts.save(str(output_path))
+        def _do_save() -> None:
+            tts = gTTS(text=text, lang="en")
+            tts.save(str(output_path))
+
+        await asyncio.to_thread(_do_save)
         return output_path.exists() and output_path.stat().st_size > 0
     except Exception as e:
         logger.error(f"gTTS fallback synthesis failed: {e}")
@@ -87,8 +117,8 @@ async def _generate_audio_file(text: str, voice: str = DEFAULT_VOICE, rate: str 
     # Try edge-tts first
     success = await _synthesize_edge_tts(text, voice, rate, output_path)
     if not success:
-        # Fallback to gTTS
-        success = _synthesize_gtts(text, output_path)
+        # Fallback to gTTS (non-blocking)
+        success = await _synthesize_gtts(text, output_path)
 
     if not success:
         raise HTTPException(

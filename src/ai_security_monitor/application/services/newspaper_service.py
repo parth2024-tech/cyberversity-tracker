@@ -614,11 +614,11 @@ class NewspaperService:
         if len(filtered_entries) < 15:
             filtered_entries = raw_entries
 
-        # 2. Auto-translate any foreign language entries
+        # 2. Auto-translate any foreign language entries (non-blocking via asyncio.to_thread)
         from ai_security_monitor.application.services.translation_service import translation_service
         for e in filtered_entries:
             try:
-                translation_service.translate_entry(e)
+                await translation_service.translate_entry_async(e)
             except Exception:
                 pass
 

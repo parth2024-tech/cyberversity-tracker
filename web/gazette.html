@@ -645,61 +645,17 @@ footer{
         <!-- articles injected dynamically -->
       </div>
 
-      <!-- MITRE ATT&CK & ATLAS Enterprise Matrix Section -->
-      <div class="matrix-section">
-        <h3>
-          <span>Enterprise TTP Threat Matrix</span>
-          <span style="font-size:12px;font-family:Georgia,serif;font-style:italic;color:var(--ink-light);">MITRE ATT&CK & ATLAS Mappings</span>
-        </h3>
-        <table class="matrix-table">
-          <thead>
-            <tr>
-              <th style="width:18%;">Technique</th>
-              <th style="width:30%;">TTP Description</th>
-              <th style="width:14%;">Risk Rating</th>
-              <th style="width:38%;">Defensive Mandate</th>
-            </tr>
-          </thead>
-          <tbody id="matrixTableBody">
-            <tr>
-              <td><b>T1190</b><br><small>Exploit Perimeter</small></td>
-              <td>Pre-auth RCE and SSRF against edge gateways (Ivanti, SonicWall, Fortinet).</td>
-              <td><span class="badge-def red">CRITICAL</span></td>
-              <td>Enforce zero-trust ingress; patch CVE within 4 hours.</td>
-            </tr>
-            <tr>
-              <td><b>AML.T0054</b><br><small>LLM Prompt Inject</small></td>
-              <td>Context window pollution forcing autonomous agents to execute unauthorized tools.</td>
-              <td><span class="badge-def amber">HIGH</span></td>
-              <td>Enforce strict tool parameter validation schemas & guardrails.</td>
-            </tr>
-            <tr>
-              <td><b>T1078</b><br><small>Valid Accounts</small></td>
-              <td>Compromised OAuth session tokens & cloud IdP service principal abuse.</td>
-              <td><span class="badge-def red">CRITICAL</span></td>
-              <td>Enforce FIDO2 hardware MFA; shorten session token TTLs to 60m.</td>
-            </tr>
-            <tr>
-              <td><b>AML.T0043</b><br><small>RAG Poisoning</small></td>
-              <td>Corrupting enterprise vector embeddings to steer retrieval outputs.</td>
-              <td><span class="badge-def blue">ELEVATED</span></td>
-              <td>Cryptographically sign ingested knowledge corpus documents.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
       <!-- Frontier AI Model Safety Observatory -->
       <div class="frontier-wire">
         <h3>Frontier AI Model Safety Observatory</h3>
         <div class="frontier-grid">
           <div class="frontier-card">
-            <h5>DeepSeek V3 / R1 Security Posture</h5>
-            <p>Sovereign model weight distribution inspected. Guardrails against jailbreaks rated resilient against automated token evasion; sandbox tool execution requires container confinement.</p>
+            <h5>DeepSeek V3 / R1 Open Architecture</h5>
+            <p>Sovereign model weight distribution and reasoning benchmarks inspected. Multi-step reasoning architectures demonstrate high performance across global developer benchmarks.</p>
           </div>
           <div class="frontier-card">
-            <h5>OpenAI & Anthropic Red-Team Wire</h5>
-            <p>Zero-day system prompt extraction resistance updated. Autonomous agent multi-step goal divergence monitored under NIST AI Risk Management Framework.</p>
+            <h5>OpenAI & Anthropic Frontier Releases</h5>
+            <p>Advancements in test-time compute, reasoning verification, and autonomous agent orchestration frameworks monitored across frontier labs.</p>
           </div>
         </div>
       </div>
@@ -707,32 +663,32 @@ footer{
 
     <!-- Right Column: Threat Desk, Barometer, Briefs, Classifieds -->
     <div>
-      <!-- Threat Desk Statistics Box -->
+      <!-- Intelligence Desk Statistics Box -->
       <div class="sidebar-box">
-        <h4>Threat Desk — At a Glance</h4>
+        <h4>Intelligence Desk — At a Glance</h4>
         <div class="stat-row"><span>Entries Monitored</span><b id="statEntries">0</b></div>
-        <div class="stat-row"><span>Critical (80+ Index)</span><b id="statCritical" style="color:var(--accent);">0</b></div>
-        <div class="stat-row"><span>Avg. Blast Radius</span><b id="statBlast">0 / 100</b></div>
+        <div class="stat-row"><span>High Priority</span><b id="statCritical" style="color:var(--accent);">0</b></div>
+        <div class="stat-row"><span>Feed Reliability</span><b id="statBlast">100%</b></div>
         <div class="stat-row"><span>Active Wire Sources</span><b id="statSources">0</b></div>
       </div>
 
-      <!-- Cyber Meteorological Weather & DEFCON Barometer -->
+      <!-- Global AI Barometer -->
       <div class="weather-box">
         <h4>
-          <span>Cyber Barometer</span>
-          <span class="weather-defcon">DEFCON 3</span>
+          <span>AI Ecosystem Pulse</span>
+          <span class="weather-defcon">ACTIVE</span>
         </h4>
         <div class="weather-item">
-          <b>Atmospheric Condition</b>
-          Severe barometric pressure on external perimeter gateways; intense scan gale forces detected across port 443.
+          <b>Inference Ecosystem</b>
+          High-throughput inference engines and GGUF quantization frameworks continue rapid open-source adoption.
         </div>
         <div class="weather-item">
-          <b>Storm Warning</b>
-          Active pre-CVE weaponization tracking on enterprise VPNs. Heavy cloud identity credential showers reported in US-East & EU-West.
+          <b>Frontier Models</b>
+          New reasoning models driving increased focus on test-time compute and verifiable synthetic datasets.
         </div>
         <div class="weather-item">
-          <b>24-Hour Defensive Outlook</b>
-          Fair to turbulent. High probability of rogue dependency injections targeting PyPI and HuggingFace repositories.
+          <b>Developer Velocity</b>
+          Accelerated repository momentum across autonomous coding assistants and local AI tooling.
         </div>
       </div>
 
@@ -746,7 +702,7 @@ footer{
 
       <!-- Broadsheet Pull Quote -->
       <div class="pull-quote" id="pullQuote">
-        "The blast radius of a single unpatched dependency now spans the entire autonomous AI stack."
+        "Open-source foundational models and high-throughput inference runtimes are accelerating the global AI ecosystem."
       </div>
 
       <!-- Classifieds & Bounties Notice Board -->
@@ -901,12 +857,10 @@ function renderCurrentView() {
   const leadAction = lead.actionable_insight || lead.mitigation || (lead.analysis && lead.analysis.mitigation);
 
   document.getElementById('leadTitle').textContent = lead.title || 'Global AI & Technology Wire';
-  document.getElementById('leadMeta').textContent = isLeadAi
-    ? `Wire: ${leadSource} · Innovation Impact: ${leadScore}/100 · Ecosystem Reach: ${leadBlast}/100`
-    : `Wire: ${leadSource} · Threat Severity: ${leadScore}/100 · Blast Radius: ${leadBlast}/100`;
+  document.getElementById('leadMeta').textContent = `Wire: ${leadSource} · Category: ${(lead.category || 'Global AI').replace('_', ' ').toUpperCase()}`;
   document.getElementById('leadBody').innerHTML =
     `<p>${leadSummary}</p>` +
-    (leadAction ? `<p><strong>${isLeadAi ? 'Deployment & Quick Start:' : 'Defensive Mandate:'}</strong> ${leadAction}</p>` : '');
+    (leadAction ? `<p><strong>Deployment & Quick Start:</strong> ${leadAction}</p>` : '');
 
   // Update Article List
   document.getElementById('articleList').innerHTML = rest.length > 0 
@@ -941,8 +895,7 @@ function renderCurrentView() {
   // Update Statistics Box
   document.getElementById('statEntries').textContent = allEntries.length;
   document.getElementById('statCritical').textContent = allEntries.filter(e => (e.severity ?? e.analysis?.severity_index ?? 0) >= 80).length;
-  const avgBlast = allEntries.reduce((s, e) => s + (e.blast_radius || (e.analysis && e.analysis.blast_radius_score) || 0), 0) / (allEntries.length || 1);
-  document.getElementById('statBlast').textContent = Math.round(avgBlast) + ' / 100';
+  document.getElementById('statBlast').textContent = allEntries.length > 0 ? '100%' : '—';
 }
 
 async function loadFeed(force = false) {
@@ -1001,22 +954,17 @@ function openArticleModal(id) {
   if (!entry) return;
   currentModalEntry = entry;
 
-  const score = entry.severity ?? entry.analysis?.severity_index ?? '—';
-  const blast = entry.blast_radius ?? entry.analysis?.blast_radius_score ?? '—';
   const src = entry.source || entry.source_name || 'Wire';
-  const bodyText = entry.summary || entry.description || (entry.analysis && entry.analysis.risk_assessment) || 'Full technical details available on the original publisher wire.';
-  const mitigation = entry.mitigation || entry.analysis?.mitigation || 'Isolate affected perimeter nodes and apply vendor security advisory.';
-  const archetype = entry.attack_archetype || entry.analysis?.attack_archetype || 'Exploit Public-Facing Application';
+  const bodyText = entry.summary || entry.description || 'Full technical details available on the original publisher wire.';
 
-  document.getElementById('modalKicker').textContent = `${(entry.category || 'INTEL').toUpperCase()} • ${archetype.toUpperCase()}`;
+  document.getElementById('modalKicker').textContent = (entry.category || 'GLOBAL AI').replace('_', ' ').toUpperCase();
   document.getElementById('modalTitle').textContent = entry.title || 'Intelligence Dispatch';
-  document.getElementById('modalMeta').textContent = `Wire Origin: ${src} · Threat Index: ${score}/100 · Blast Radius: ${blast}/100`;
+  document.getElementById('modalMeta').textContent = `Wire Origin: ${src} · Category: ${(entry.category || 'Intel').replace('_', ' ').toUpperCase()}`;
   document.getElementById('modalBody').innerHTML = `
     <p>${bodyText}</p>
-    ${entry.analysis?.attack_vector ? `<p style="margin-top:10px;"><strong>Attack Vector:</strong> ${entry.analysis.attack_vector}</p>` : ''}
-    ${entry.analysis?.affected_ecosystem && entry.analysis.affected_ecosystem.length ? `<p style="margin-top:8px;"><strong>Affected Ecosystems:</strong> ${entry.analysis.affected_ecosystem.join(', ')}</p>` : ''}
+    ${entry.analysis?.affected_ecosystem && entry.analysis.affected_ecosystem.length ? `<p style="margin-top:8px;"><strong>Related Technologies:</strong> ${entry.analysis.affected_ecosystem.filter(e => e !== 'INFRASTRUCTURE' && e !== 'Enterprise Systems').join(', ')}</p>` : ''}
   `;
-  document.getElementById('modalMitigation').textContent = mitigation;
+  document.getElementById('modalMitigation').textContent = 'Follow authoritative source link for full documentation and code access.';
   
   const linkEl = document.getElementById('modalSourceLink');
   if (entry.url) {

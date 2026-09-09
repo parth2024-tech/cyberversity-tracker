@@ -115,10 +115,11 @@ class MonitorService:
                         continue
 
                     try:
-                        # Automatically detect non-English text and translate title/summary to English
+                        # Automatically detect non-English text and translate title/summary to English.
+                        # Uses asyncio.to_thread() internally — does not block the event loop.
                         try:
                             from ai_security_monitor.application.services.translation_service import translation_service
-                            translation_service.translate_entry(entry)
+                            await translation_service.translate_entry_async(entry)
                         except Exception as trans_e:
                             logger.debug(f"Translation skipped: {trans_e}")
 

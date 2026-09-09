@@ -333,7 +333,10 @@ class HeuristicAnalyzer(BaseAnalyzer):
         ]
         if any(re.search(p, text_lower) for p in threat_patterns):
             return False
-        return entry.category in self.AI_INNOVATION_CATEGORIES
+        if entry.category in self.AI_INNOVATION_CATEGORIES:
+            return True
+        # Treat general news and non-CVE, non-exploit dispatches as AI/technology innovation
+        return True
 
     def _generate_ai_architecture(self, text: str, category: Category) -> str:
         text_lower = text.lower()
@@ -355,21 +358,21 @@ class HeuristicAnalyzer(BaseAnalyzer):
             return "Research: ArXiv Breakthrough & Novel Algorithmic Paradigm"
         if category == Category.AI_MODELS:
             return "Model: Frontier Foundation Weights & Open Checkpoint"
-        return "Architecture: Modern AI System & Deep Learning Stack"
+        return ""
 
     def _generate_ai_highlight(self, text: str, category: Category) -> str:
         text_lower = text.lower()
         if any(k in text_lower for k in ("benchmark", "state-of-the-art", "sota", "outperform", "record")):
-            return "Breakthrough: Outperforms leading proprietary baselines on complex reasoning and code benchmarks."
+            return "Breakthrough: Outperforms baselines on complex reasoning benchmarks."
         if any(k in text_lower for k in ("open weights", "open-source", "weights", "hugging face", "checkpoint")):
-            return "Capability: Open weights checkpoint available for unrestricted local fine-tuning and commercial inference."
+            return "Capability: Open weights checkpoint available for fine-tuning and inference."
         if any(k in text_lower for k in ("efficiency", "throughput", "low latency", "quant", "memory")):
-            return "Efficiency: Substantive latency reduction and compute optimizations for resource-constrained environments."
+            return "Efficiency: Latency reduction and compute optimizations."
         if category == Category.GITHUB_TRENDING:
-            return "Ecosystem: High adoption velocity across developer communities with rapid GitHub star momentum."
+            return "Ecosystem: High adoption velocity across developer communities."
         if category == Category.AI_RESEARCH:
-            return "Research: Novel theoretical framework with peer-reviewed empirical validation and open methodology."
-        return "Ecosystem: Significant milestone advancing global autonomous artificial intelligence."
+            return "Research: Theoretical framework with empirical validation."
+        return ""
 
     def _generate_ai_quickstart(self, text: str, category: Category, metadata: dict) -> str:
         lang = metadata.get("language") if metadata else None
@@ -377,10 +380,10 @@ class HeuristicAnalyzer(BaseAnalyzer):
         if repo:
             return f"Quick Start: Clone via https://github.com/{repo}; supports {lang or 'Python'}. Run locally with standard runtimes."
         if category == Category.AI_RESEARCH:
-            return "Open Access: Preprint available on arXiv; reference implementation and benchmark dataset links included."
+            return "Open Access: Preprint available on arXiv; reference implementation included."
         if category == Category.AI_MODELS:
-            return "Deployment: Checkpoints accessible on Hugging Face; compatible with Ollama, vLLM, and Transformers."
-        return "Access: Available on official open-source developer channels; ready for enterprise and local integration."
+            return "Deployment: Checkpoints accessible on Hugging Face; compatible with standard runtimes."
+        return ""
 
     async def analyze(self, entry: Entry) -> AnalysisResult:
         """Analyze entry using heuristics with dual-mode support for AI innovation vs cyber threats."""
@@ -408,10 +411,6 @@ class HeuristicAnalyzer(BaseAnalyzer):
                 impact += 20
             impact = min(96, max(50, impact))
 
-            # Adoption reach
-            blast = 65 + (len(ecosystems) * 6)
-            blast = min(95, max(40, blast))
-
             archetype = (
                 "AI Model Release" if entry.category == Category.AI_MODELS
                 else "Trending Repository" if entry.category == Category.GITHUB_TRENDING
@@ -424,7 +423,7 @@ class HeuristicAnalyzer(BaseAnalyzer):
                 "Open Weights Available" if entry.category == Category.AI_MODELS
                 else "Production Ready" if entry.category in (Category.GITHUB_TRENDING, Category.CYBER_TOOLS)
                 else "Research Preprint" if entry.category == Category.AI_RESEARCH
-                else "Community Verified"
+                else None
             )
 
             return AnalysisResult(
@@ -434,13 +433,13 @@ class HeuristicAnalyzer(BaseAnalyzer):
                 mitigation=quickstart,
                 threat_velocity=velocity,
                 severity_index=impact,
-                blast_radius_score=blast,
+                blast_radius_score=0,
                 affected_ecosystem=ecosystems,
                 is_pre_cve_warning=False,
                 attack_archetype=archetype,
                 weaponization_potential=weaponization,
-                mitre_attack_id="AI.INNOVATION",
-                mitre_technique="Frontier AI Architecture & Innovation",
+                mitre_attack_id=None,
+                mitre_technique=None,
                 model=AnalysisModel.HEURISTIC,
                 confidence=0.90,
             )
