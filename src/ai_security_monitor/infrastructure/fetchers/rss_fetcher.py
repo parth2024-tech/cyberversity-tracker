@@ -1,5 +1,6 @@
 # RSS/Atom feed fetcher implementation.
 
+import re
 from datetime import datetime
 
 import feedparser
@@ -106,11 +107,27 @@ class RSSFetcher(BaseFetcher):
             raw_title = getattr(item, "title", "Untitled")
             clean_title = self._clean_html(raw_title)
 
-            # If this is a GitHub repository releases feed, prepend the project name for clarity
-            if "releases.atom" in self.source.url or "releases" in self.source.url:
-                prefix = self.source.name.split("Releases")[0].strip()
-                if prefix and not clean_title.lower().startswith(prefix.lower()):
-                    clean_title = f"{prefix}: {clean_title}"
+            # Cap GitHub releases feeds to the latest 2 releases and enrich title formatting
+            is_releases = bool(self.source.url and ("releases.atom" in self.source.url or "/releases" in self.source.url))
+            if is_releases:
+                if len(entries) >= 2:
+                    break
+                prefix = self.source.name.split("Releases")[0].strip().replace("Codebase", "").strip()
+                ver_match = re.search(r"v?\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9\.]+)?", clean_title)
+                ver_str = ver_match.group(0) if ver_match else clean_title.replace(prefix, "").strip(": ")
+
+                snippet = ""
+                if content:
+                    first_line = content.split("\n")[0].strip()
+                    first_line = re.sub(r"^#+\s*", "", first_line)
+                    first_line = re.sub(r"\[.*?\]|\(.*?\)|<.*?>", "", first_line).strip()
+                    if len(first_line) > 10 and not first_line.startswith(("http", "```")):
+                        snippet = f": {first_line[:90]}"
+
+                if snippet:
+                    clean_title = f"{prefix} {ver_str}{snippet}"
+                elif not clean_title.lower().startswith(prefix.lower()):
+                    clean_title = f"{prefix} Release {clean_title}"
 
             entries.append({
                 "title": clean_title,

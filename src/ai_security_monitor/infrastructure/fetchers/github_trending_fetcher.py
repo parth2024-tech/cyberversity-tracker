@@ -30,17 +30,19 @@ class GitHubTrendingFetcher(BaseFetcher):
         entries = []
         try:
             entries = await self._fetch_raw_scraping()
-        except Exception as scrape_err:
-            print(f"GitHub trending HTML scraping failed: {scrape_err}")
+        except Exception:
             entries = []
 
-        # If scraping failed or returned 0 entries (common on datacenter IPs like Fly.io),
-        # automatically fallback to official GitHub Search REST API
-        if not entries:
+        # If scraping returned few/no AI entries or failed, fetch from official GitHub Search API
+        if len(entries) < 5:
             try:
-                entries = await self._fetch_raw_api()
-            except Exception as api_err:
-                print(f"GitHub Search API fallback failed: {api_err}")
+                api_entries = await self._fetch_raw_api()
+                existing_urls = {e["url"].lower() for e in entries}
+                for ae in api_entries:
+                    if ae["url"].lower() not in existing_urls:
+                        entries.append(ae)
+            except Exception:
+                pass
 
         return entries
 
@@ -94,14 +96,23 @@ class GitHubTrendingFetcher(BaseFetcher):
 
                 content = "\n".join(content_parts)
 
-                # Determine tags and clean title
+                # Enforce strict AI filter to guarantee feed quality
+                combined_info = f"{repo_name} {description}".lower()
+                ai_keywords = (
+                    "ai", "llm", "agent", "agents", "machine-learning", "deep-learning",
+                    "neural", "model", "models", "gpt", "transformer", "transformers",
+                    "diffusion", "rag", "vision", "deepseek", "qwen", "claude", "llama",
+                    "mistral", "vllm", "ollama", "sglang", "embedding", "embeddings",
+                    "inference", "fine-tuning", "lora", "rlhf", "langchain", "llamaindex",
+                    "gemini", "pytorch", "huggingface", "whisper", "vision-language", "multimodal"
+                )
+                if not any(w in combined_info for w in ai_keywords):
+                    continue
+
                 clean_title = f"{repo_name}: {description[:80]}..." if description and len(description) > 10 else f"Trending Repo: {repo_name}"
-                tags = ["github", "trending", "open-source", self.frequency]
+                tags = ["github", "trending", "open-source", "ai", self.frequency]
                 if language:
                     tags.append(language.lower())
-                combined_info = f"{repo_name} {description}".lower()
-                if any(w in combined_info for w in ("ai", "llm", "agent", "gpt", "model", "diffusion", "rag", "neural", "vision", "deepseek", "qwen", "transformer")):
-                    tags.append("ai")
 
                 entries.append({
                     "title": clean_title,
@@ -206,11 +217,11 @@ class GitHubTrendingFetcher(BaseFetcher):
         return entries
 
     def _parse_entry(self, raw: dict) -> Entry:
-        date_str = raw["published_at"].strftime("%Y-%m-%d") if isinstance(raw["published_at"], datetime) else str(raw["published_at"])[:10]
+        repo_ident = raw.get("metadata", {}).get("repo_name") or raw["url"]
         content_hash = ContentHash.from_content(
-            raw["title"],
-            raw["url"],
-            date_str,
+            "github_repo",
+            repo_ident.lower().strip(),
+            raw["url"].lower().strip(),
         )
         return Entry(
             source_id=self.source.id,

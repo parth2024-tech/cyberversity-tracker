@@ -5118,17 +5118,9 @@
           countLabel = ` | #${sweepCount}`;
         }
 
-        // Server uptime — proves server is always on
-        const uptimeSecs = data.server_uptime_seconds;
-        let uptimeLabel = '';
-        if (uptimeSecs !== null && uptimeSecs !== undefined) {
-          const uptimeH = Math.floor(uptimeSecs / 3600);
-          const uptimeM = Math.floor((uptimeSecs % 3600) / 60);
-          if (uptimeH > 0) uptimeLabel = ` | UP: ${uptimeH}h${uptimeM}m`;
-          else uptimeLabel = ` | UP: ${uptimeM}m`;
-        }
-
-        txt.textContent = `SWEPT: ${age}${countLabel}${nextLabel}${uptimeLabel}`;
+        // Clean, luxury telemetry display without crowding the header bar
+        txt.textContent = `SWEEP: ${age} │ 24/7 ACTIVE │ 1-WK RETENTION`;
+        txt.title = `Last Sweep: ${age} | Cycle: #${sweepCount || 1}${nextLabel}${uptimeLabel}`;
 
         // Color-code freshness: green ≤ 35min, amber ≤ 90min, red > 90min
         const mins = secs / 60;

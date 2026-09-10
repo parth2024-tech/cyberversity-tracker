@@ -34,6 +34,7 @@ class PaginationParams:
 class EntryFilters:
     """Filters for entry queries."""
     category: Category | None = None
+    categories: list[Category] | None = None
     source_id: UUID | None = None
     since: datetime | None = None
     until: datetime | None = None

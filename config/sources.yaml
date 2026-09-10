@@ -688,19 +688,19 @@ sources:
     region: "global"
     country: "GLOBAL"
 
-  - name: "KitPloit Security Tools & Repos"
+  - name: "Ollama Developer Updates & Blog"
     category: "cyber_tools"
     type: "rss"
-    url: "https://feeds.feedburner.com/KitPloit"
+    url: "https://ollama.com/blog/rss.xml"
     rate_limit_seconds: 1800
     enabled: true
     region: "global"
     country: "GLOBAL"
 
-  - name: "Reddit r/netsec Tools & Code"
+  - name: "LangChain AI Engineering Blog"
     category: "cyber_tools"
     type: "rss"
-    url: "https://www.reddit.com/r/netsec/.rss"
+    url: "https://blog.langchain.dev/rss/"
     rate_limit_seconds: 1800
     enabled: true
     region: "global"
@@ -906,7 +906,7 @@ sources:
     country: "CN"
 
   - name: "Xmirror DevSecOps (悬镜安全技术研究)"
-    category: "cyber_tools"
+    category: "cybersecurity"
     type: "rss"
     url: "https://wechat2rss.xlab.app/feed/59c134d2e41c3a0724d89cc6fa359bc1abedbc26.xml"
     rate_limit_seconds: 1800
@@ -1049,7 +1049,7 @@ sources:
     country: "IL"
 
   - name: "Team8 Cyber & AI Think Tank"
-    category: "cyber_tools"
+    category: "ai_tech"
     type: "rss"
     url: "https://team8.vc/feed/"
     rate_limit_seconds: 1800
@@ -1075,7 +1075,7 @@ sources:
     type: "rss"
     url: "https://asia.nikkei.com/rss/feed/nar"
     rate_limit_seconds: 1800
-    enabled: true
+    enabled: false
     region: "apac"
     country: "JP"
 
@@ -1093,7 +1093,7 @@ sources:
     type: "rss"
     url: "https://www.japantimes.co.jp/feed/"
     rate_limit_seconds: 1800
-    enabled: true
+    enabled: false
     region: "apac"
     country: "JP"
 
@@ -1106,7 +1106,7 @@ sources:
     type: "rss"
     url: "https://english.etnews.com/rss/all.xml"
     rate_limit_seconds: 1800
-    enabled: true
+    enabled: false
     region: "apac"
     country: "KR"
 

@@ -112,26 +112,26 @@ class SQLAlchemyEntryRepository(EntryRepository):
         if filters and filters.sort_by == "velocity":
             stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
                 desc(AnalysisModelDB.threat_velocity),
-                desc(EntryModel.fetched_at),
-                desc(EntryModel.published_at)
+                desc(EntryModel.published_at),
+                desc(EntryModel.fetched_at)
             )
         elif filters and filters.sort_by == "blast":
             stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
                 desc(AnalysisModelDB.blast_radius_score),
-                desc(EntryModel.fetched_at),
-                desc(EntryModel.published_at)
+                desc(EntryModel.published_at),
+                desc(EntryModel.fetched_at)
             )
         elif filters and filters.sort_by == "severity":
             stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
                 desc(AnalysisModelDB.severity_index),
-                desc(EntryModel.fetched_at),
-                desc(EntryModel.published_at)
+                desc(EntryModel.published_at),
+                desc(EntryModel.fetched_at)
             )
         elif filters and filters.sort_by == "published":
-            stmt = stmt.order_by(desc(EntryModel.published_at))
+            stmt = stmt.order_by(desc(EntryModel.published_at), desc(EntryModel.fetched_at))
         else:
-            # Default "newest": order by fetched_at so fresh intelligence appears immediately at top
-            stmt = stmt.order_by(desc(EntryModel.fetched_at), desc(EntryModel.published_at))
+            # Default "newest": order by published_at DESC so the latest research, models, and intelligence lead the feed
+            stmt = stmt.order_by(desc(EntryModel.published_at), desc(EntryModel.fetched_at))
 
         if pagination:
             stmt = stmt.limit(pagination.limit).offset(pagination.offset)
@@ -242,6 +242,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
     def _apply_filters(self, stmt, filters: EntryFilters):
         if filters.category:
             stmt = stmt.where(EntryModel.category == filters.category.value)
+        elif filters.categories:
+            stmt = stmt.where(EntryModel.category.in_([c.value if hasattr(c, "value") else str(c) for c in filters.categories]))
 
         if filters.source_id:
             stmt = stmt.where(EntryModel.source_id == _uuid_to_str(filters.source_id))

@@ -41,6 +41,8 @@ def _clean_entry_title(title: str | None) -> str:
     t = re.sub(r"^Security Tool\s*/\s*PoC:\s*", "", t, flags=re.I)
     t = re.sub(r"^Security Tool:\s*", "", t, flags=re.I)
     t = re.sub(r"^PoC:\s*", "", t, flags=re.I)
+    t = re.sub(r"^(llama\.cpp[^:]*):\s*b(\d+)", r"\1 Build b\2", t, flags=re.I)
+    t = re.sub(r"^(LangChain[^:]*):\s*([a-zA-Z0-9_\-]+)==([0-9\.]+)", r"\1: \2 v\3 Release", t, flags=re.I)
     t = re.sub(r"\s+", " ", t).strip()
     return t or "Intelligence Dispatch"
 
@@ -141,11 +143,21 @@ async def query_serialized_entries(
         since = datetime.utcnow() - timedelta(hours=hours)
 
     cat_enum = None
+    categories_filter = None
     if category and category != "all" and isinstance(category, str):
         try:
             cat_enum = Category(category)
         except ValueError:
             pass
+    elif not pre_cve and not high_velocity:
+        # Default stream: Prioritize worldwide AI ecosystem (5 pillars) and omit security/CVEs
+        categories_filter = [
+            Category.AI_RESEARCH,
+            Category.AI_MODELS,
+            Category.GITHUB_TRENDING,
+            Category.CYBER_TOOLS,
+            Category.AI_TECH,
+        ]
 
     # Fetch sources map from cache (never hits DB when warm)
     sources_map = await _get_sources_map()
@@ -161,6 +173,7 @@ async def query_serialized_entries(
 
     filters = EntryFilters(
         category=cat_enum,
+        categories=categories_filter,
         search=search if isinstance(search, str) else None,
         keywords=wl_keywords,
         pre_cve_only=bool(pre_cve),
