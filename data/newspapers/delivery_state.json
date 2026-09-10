@@ -1,11 +1,12 @@
 {
   "telegram": {
-    "last_sent_edition": 2212,
-    "last_sent_at": "2026-09-10T15:42:45.619826+00:00",
-    "last_lead_story": "Qwen3.8-27B-Uncensored-Genesis-V1-GGUF",
+    "last_sent_edition": 2213,
+    "last_sent_at": "2026-09-10T18:19:38.062166+00:00",
+    "last_lead_story": "ANOTHER researcher accuses OpenAI of training on conversations and then claiming a breakthrough",
     "sent_editions": [
       2205,
-      2212
+      2212,
+      2213
     ],
     "history": [
       {
@@ -17,6 +18,14 @@
         "edition_number": 2212,
         "dispatched_at": "2026-09-10T15:42:45.619840+00:00",
         "lead_story": "Qwen3.8-27B-Uncensored-Genesis-V1-GGUF"
+      },
+      {
+        "edition_number": 2213,
+        "dispatched_at": "2026-09-10T18:19:38.062166+00:00",
+        "lead_story": "ANOTHER researcher accuses OpenAI of training on conversations and then claiming a breakthrough",
+        "details": {
+          "chat_id": "1650972026"
+        }
       }
     ]
   },

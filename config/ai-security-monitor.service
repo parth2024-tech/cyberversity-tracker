@@ -1,0 +1,25 @@
+[Unit]
+Description=Global AI Ecosystem Monitor & Autonomous Intelligence Radar
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/thor/Projects/ai-security-monitor
+ExecStart=/home/thor/Projects/ai-security-monitor/.venv/bin/python -m ai_security_monitor.presentation.cli.main serve --host 127.0.0.1 --port 8080
+Restart=always
+RestartSec=10
+Environment="PYTHONPATH=/home/thor/Projects/ai-security-monitor/src"
+Environment="PORT=8080"
+Environment="API_PORT=8080"
+Environment="SCHEDULER_ENABLED=true"
+
+# Laptop Resource Shield: Keep background monitoring ultra-lightweight
+Nice=15
+CPUSchedulingPolicy=other
+CPUQuota=30%
+MemoryHigh=300M
+MemoryMax=450M
+IOWeight=100
+
+[Install]
+WantedBy=default.target

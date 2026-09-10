@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
-**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2212**  
-*Thursday, September 10, 2026 • 16:44 UTC • Coverage Window: 5h • 184 verified AI stories analyzed*
+**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2213**  
+*Thursday, September 10, 2026 • 18:33 UTC • Coverage Window: 5h • 167 verified AI stories analyzed*
 
 ---
 
@@ -31,30 +31,30 @@ I like to benchmark new models that come out on motion videos. So here's a test 
 
 | Strategic Operational Vector | Priority Development | Source | Boardroom Action Directive |
 | :--- | :--- | :--- | :--- |
-| **Model Sourcing & Licensing** | Running Vision Qwen 3.8 27B on a 16GB Card, the co | `reddit.com` | Audit open-weights licensing vs proprietary APIs; evaluate reddit.com parameter efficiency and commercial distribution terms. |
-| **Compute & Infrastructure CapEx** | DeepSeek-V4.1-Flash surprised .... | `reddit.com` | Review GPU cluster allocation and power envelopes; benchmark reddit.com hardware efficiency to optimize cost per token. |
-| **Agentic Autonomy & Governance** | Deepseek V4.1 Flash is 748B, not 552B | `reddit.com` | Implement deterministic sandboxes for autonomous tool execution, strict rate limiting, and human-in-the-loop validation. |
-| **Inference Latency & Quantization** | Deepseek v4.1 flash finally has engrams, what do y | `reddit.com` | Benchmark KV-cache compression (FP8/INT4/GGUF) and modern inference engines (reddit.com) against TTFT SLAs. |
-| **Open-Source Supply Chain** | DeepSeek V4-1 Flash is out | `reddit.com` | Inspect upstream repository dependencies; audit tokenizer code, weights provenance, and pinned runtime releases for reddit.com. |
-| **Data Residency & Sovereignty** | DeepSeek V4.1 Flash: Stronger, Faster, More Access | `reddit.com` | Verify compliance with sovereign AI frameworks and regional data residency requirements for reddit.com deployments. |
+| **Model Sourcing & Licensing** | DeepSeek V4.1 Flash is available in HuggingChat | `reddit.com` | Audit open-weights licensing vs proprietary APIs; evaluate reddit.com parameter efficiency and commercial distribution terms. |
+| **Compute & Infrastructure CapEx** | Running Vision Qwen 3.8 27B on a 16GB Card, the co | `reddit.com` | Review GPU cluster allocation and power envelopes; benchmark reddit.com hardware efficiency to optimize cost per token. |
+| **Agentic Autonomy & Governance** | DeepSeek-V4.1-Flash surprised .... | `reddit.com` | Implement deterministic sandboxes for autonomous tool execution, strict rate limiting, and human-in-the-loop validation. |
+| **Inference Latency & Quantization** | Deepseek V4.1 Flash is 748B, not 552B | `reddit.com` | Benchmark KV-cache compression (FP8/INT4/GGUF) and modern inference engines (reddit.com) against TTFT SLAs. |
+| **Open-Source Supply Chain** | Deepseek v4.1 flash finally has engrams, what do y | `reddit.com` | Inspect upstream repository dependencies; audit tokenizer code, weights provenance, and pinned runtime releases for reddit.com. |
+| **Data Residency & Sovereignty** | DeepSeek V4-1 Flash is out | `reddit.com` | Verify compliance with sovereign AI frameworks and regional data residency requirements for reddit.com deployments. |
 
 ### Key Strategic Dispatches
-1. **Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).** — I am just sharing my config for Qwen 3.8 27b that fits on a 5060TI, what is cool about this is that you can even get vision! and a 85K context (I have 1.5gb of headroom for more context or a better quant) Model: IQ3_XXS-mtp from Using beellama Config used: [*] model = ..\llm-models\Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp.gguf mmproj = ..\llm-models\mmproj-Qwen3.8-27B-BF16.gguf image-min-tokens = 256.  
+1. **DeepSeek V4.1 Flash is available in HuggingChat** — DeepSeek V4.1 Flash is available in HuggingChat introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.  
    *Directive: Audit open-weights licensing vs proprietary APIs; evaluate reddit.com parameter efficiency and commercial distribution terms.*
 
-2. **DeepSeek-V4.1-Flash surprised ....** — Hoping to see smartest medium size models soon & later with all available optimizations/architectures/etc.,. Thanks Deepseek! Ex 1: 30-50B MOE + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache Ex 2: 15-30B Dense + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache EDIT: Updated Engram to 10-15B from.  
+2. **Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).** — I am just sharing my config for Qwen 3.8 27b that fits on a 5060TI, what is cool about this is that you can even get vision! and a 85K context (I have 1.5gb of headroom for more context or a better quant) Model: IQ3_XXS-mtp from Using beellama Config used: [*] model = ..\llm-models\Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp.gguf mmproj = ..\llm-models\mmproj-Qwen3.8-27B-BF16.gguf image-min-tokens = 256.  
    *Directive: Review GPU cluster allocation and power envelopes; benchmark reddit.com hardware efficiency to optimize cost per token.*
 
-3. **Deepseek V4.1 Flash is 748B, not 552B** — People keep on getting confused about this, so I looked at the safetensors on hf. The title should have been "Deepseek V4.1 Flash is 748B total/552B base, not 284B or 305B or 485B or 522B" The model is not 284B. The original Deepseek V4 Flash is 284B, but not the V4.1 Flash model The model is not 305B, despite what some people claim "So: ~305B real backbone + 203B engram = 508B total" This is incorrect.  
+3. **DeepSeek-V4.1-Flash surprised ....** — Hoping to see smartest medium size models soon & later with all available optimizations/architectures/etc.,. Thanks Deepseek! Ex 1: 30-50B MOE + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache Ex 2: 15-30B Dense + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache EDIT: Updated Engram to 10-15B from.  
    *Directive: Implement deterministic sandboxes for autonomous tool execution, strict rate limiting, and human-in-the-loop validation.*
 
-4. **Deepseek v4.1 flash finally has engrams, what do you expect from 4.1 pro?** — If the ratio is the same, Maybe 1.6T -3.1T params plus .56T-1.06T engrams and fable 5.0 level performance? Maybe v4.2 or 4.5 will have engram gradient modification?  
+4. **Deepseek V4.1 Flash is 748B, not 552B** — People keep on getting confused about this, so I looked at the safetensors on hf. The title should have been "Deepseek V4.1 Flash is 748B total/552B base, not 284B or 305B or 485B or 522B" The model is not 284B. The original Deepseek V4 Flash is 284B, but not the V4.1 Flash model The model is not 305B, despite what some people claim "So: ~305B real backbone + 203B engram = 508B total" This is incorrect.  
    *Directive: Benchmark KV-cache compression (FP8/INT4/GGUF) and modern inference engines (reddit.com) against TTFT SLAs.*
 
-5. **DeepSeek V4-1 Flash is out** — Here we go again, DeepSeek is back again with a new model V4-1 Flash A multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters and support for contexts of up to one million tokens Market crash as a service.  
+5. **Deepseek v4.1 flash finally has engrams, what do you expect from 4.1 pro?** — If the ratio is the same, Maybe 1.6T -3.1T params plus .56T-1.06T engrams and fable 5.0 level performance? Maybe v4.2 or 4.5 will have engram gradient modification?  
    *Directive: Inspect upstream repository dependencies; audit tokenizer code, weights provenance, and pinned runtime releases for reddit.com.*
 
-6. **DeepSeek V4.1 Flash: Stronger, Faster, More Accessible** — Original Source from DeepSeek WeChat Official Account: Today we're officially releasing the DeepSeek V4.1 Flash model. It is the smallest model in our brand-new model architecture series, with native multimodal visual understanding. The new architecture was designed with these goals in mind: a higher capability ceiling, faster inference, greater throughput, and scalability to larger-parameter models.  
+6. **DeepSeek V4-1 Flash is out** — Here we go again, DeepSeek is back again with a new model V4-1 Flash A multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters and support for contexts of up to one million tokens Market crash as a service.  
    *Directive: Verify compliance with sovereign AI frameworks and regional data residency requirements for reddit.com deployments.*
 
 
@@ -65,13 +65,13 @@ I like to benchmark new models that come out on motion videos. So here's a test 
 | Repository / Project | Source | Primary Stack | Velocity | Core Architectural Focus |
 | :--- | :--- | :--- | :--- | :--- |
 | **Deploying Qwen3.8-2.4T-A95B on Amazon SageMaker Hy** | `aws.amazon.com` | `Python` | `88/100` | On August 12, 2026, Alibaba’s Qwen team released Qwen3.8-2.4T-A95B . This is the first time a Qwen-Max-class model has been. |
-| **Anthropic researcher quits with a warning: Self-im** | `arstechnica.com` | `Python` | `88/100` | When a prominent researcher quits a job at a frontier AI lab these days, it's often to pursue a new. |
-| **Anthropic researcher believes more than 10% chance** | `bbc.co.uk` | `Python` | `88/100` | It is the latest in a series of increasing warnings about the safety threat posed by artificial intelligence. |
-| **OpenAI's deeper Samsung tie-up lands on a foundry ** | `digitimes.com` | `Python` | `88/100` | OpenAI's deeper Samsung tie-up lands on a foundry that is running out of capacity delivers key capabilities for AI software. |
-| **OpenAI says it cracked 90-year-old maths problem i** | `bbc.co.uk` | `Python` | `88/100` | OpenAI's claim that it solved parts of Navier-Stokes equations has quickly stirred controversy. |
-| **OpenAI Admits More AI Agents Went Astray in May** | `aibusiness.com` | `Python` | `88/100` | The incident was the latest in a string of unauthorized actions by AI agents. |
-| **OpenAI chief scientist warns no-one is prepared fo** | `bbc.co.uk` | `Python` | `88/100` | The post comes as the firm releases GPT-6 Astra, which it says is its most powerful product yet. |
-| **OpenAI agents hijacked German website before Huggi** | `bbc.co.uk` | `Python` | `88/100` | OpenAI said it could not "meaningfully respond" to the report's findings because it hadn't been allowed to review it ahead. |
+| **Alibaba takes on Anthropic with 50% cheaper e-comm** | `asia.nikkei.com` | `Python` | `88/100` | Alibaba takes on Anthropic with 50% cheaper e-commerce AI agent delivers key capabilities for AI software engineering and local execution.. |
+| **SemiQon's cryogenic chip technology for quantum co** | `vttresearch.com` | `Python` | `88/100` | EARTO, the organisation of the European Research and Technology Organisations, awarded SemiQon and VTT first prize in the “Impact Expected”. |
+| **DeepSeek Ships V4.1 Flash GA With Causal-Encoder-D** | `pandaily.com` | `Python` | `88/100` | DeepSeek has released DeepSeek V4.1 Flash for general availability, promoting the model from a short limited beta into a production. |
+| **DeepSeek AI Released DeepSeek-V4.1-Flash with 1M C** | `marktechpost.com` | `Python` | `88/100` | Long-horizon agents have turned LLM serving into an input-heavy workload. Repeated prefills and million-token contexts leave KV caches that strain. |
+| **Alibaba Opens Qwen3.8-2.4T-A95B Weights as First Q** | `pandaily.com` | `Python` | `88/100` | Alibaba's Qwen team has published open weights for Qwen3.8-2.4T-A95B, describing it as the first Qwen-Max-class model released for download rather. |
+| **DeepSeek reportedly advances Shanghai IPO plans as** | `digitimes.com` | `Python` | `88/100` | DeepSeek reportedly advances Shanghai IPO plans as it cuts Flash model API prices introduces key developments in machine learning foundation. |
+| **Samsung SDS partners with OpenAI and Anthropic in ** | `digitimes.com` | `Python` | `88/100` | Samsung SDS partners with OpenAI and Anthropic in AI push delivers key capabilities for AI software engineering and local execution.. |
 
 ### Featured Repository Deep-Dives
 ### 🚀 Deploying Qwen3.8-2.4T-A95B on Amazon SageMaker HyperPod with vLLM
@@ -79,30 +79,30 @@ I like to benchmark new models that come out on motion videos. So here's a test 
 
 On August 12, 2026, Alibaba’s Qwen team released Qwen3.8-2.4T-A95B . This is the first time a Qwen-Max-class model has been made available as open weights. With 2.4 trillion total parameters (95 billion activated per token), a hybrid linear-plus-full-attention architecture, and native context up to 262K tokens (extensible to 1M), Qwen3.8 targets the most demanding agentic and reasoning workloads. These include multi-step coding, long-horizon planning, and autonomous tool use. Open weights models give you full control. Data stays within your infrastructure, inference behavior can be customized, and there are no per-token API fees at scale. The trade-off is operational: hosting a 2.4T-parameter model requires purpose-built GPU infrastructure and an optimized serving stack. In this post we show how to deploy Qwen3.8-2.4T-A95B on Amazon SageMaker HyperPod using vLLM on a ml.p6-b300 instance.
 
-### 🚀 Anthropic researcher quits with a warning: Self-improving AI could "kill us all"
-- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `arstechnica.com`
+### 🚀 Alibaba takes on Anthropic with 50% cheaper e-commerce AI agent
+- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `asia.nikkei.com`
 
-When a prominent researcher quits a job at a frontier AI lab these days, it's often to pursue a new startup or protest a new business model. But AI researcher Jacob Coxon is using his departure from Anthropic to publicly warn that frontier AI companies are "gambling with our lives" with systems that they "earnestly believe... could kill us all by the end of the decade." In a social media thread Tuesday night, Coxon said that this existential risk is inherent not so much in today's models but.
+Alibaba takes on Anthropic with 50% cheaper e-commerce AI agent delivers key capabilities for AI software engineering and local execution. Engineered to enhance developer velocity, it streamlines model serving, evaluation, and pipeline orchestration.
 
-### 🚀 Anthropic researcher believes more than 10% chance AI 'could kill all humans'
-- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `bbc.co.uk`
+### 🚀 SemiQon's cryogenic chip technology for quantum computing and space applications receives award from EARTO
+- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `vttresearch.com`
 
-It is the latest in a series of increasing warnings about the safety threat posed by artificial intelligence.
+EARTO, the organisation of the European Research and Technology Organisations, awarded SemiQon and VTT first prize in the “Impact Expected” category on 14 October 2025 in Brussels for a pioneering cryogenic CMOS (complementary metal-oxide semiconductor) chip innovation. The solution enables the full capacity of advanced CMOS functionalities at cryogenic temperatures, thereby unlocking new possibilities for quantum computing and space applications.
 
-### 🚀 OpenAI's deeper Samsung tie-up lands on a foundry that is running out of capacity
-- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `digitimes.com`
+### 🚀 DeepSeek Ships V4.1 Flash GA With Causal-Encoder-Decoder MoE as V4 Pro Retires
+- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `pandaily.com`
 
-OpenAI's deeper Samsung tie-up lands on a foundry that is running out of capacity delivers key capabilities for AI software engineering and local execution. Engineered to enhance developer velocity, it streamlines model serving, evaluation, and pipeline orchestration.
+DeepSeek has released DeepSeek V4.1 Flash for general availability, promoting the model from a short limited beta into a production SKU on a new Causal-Encoder-Decoder Mixture-of-Experts architecture. The company presents V4.1 Flash as the smallest member of that structure family and says it now surpasses DeepSeek V4 Pro on capability, cost, speed and end-to-end task time, clearing the path for an orderly Pro retirement later this week. Architecturally, V4.1 Flash is a 552-billion-parameter.
 
-### 🚀 OpenAI says it cracked 90-year-old maths problem in 88 hours
-- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `bbc.co.uk`
+### 🚀 DeepSeek AI Released DeepSeek-V4.1-Flash with 1M Context, FP4 KV Cache, and Cross-Layer Attention Reuse
+- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `marktechpost.com`
 
-OpenAI's claim that it solved parts of Navier-Stokes equations has quickly stirred controversy.
+Long-horizon agents have turned LLM serving into an input-heavy workload. Repeated prefills and million-token contexts leave KV caches that strain HBM, SSD capacity, and bandwidth. DeepSeek AI built its newest release around that exact bottleneck. DeepSeek-V4.1-Flash is a multimodal Mixture-of-Experts model with 552B backbone parameters, 196B additional Engram parameters, and a 1M-token context window. It activates 8B parameters per token during prefill and 16B during decode.
 
-### 🚀 OpenAI Admits More AI Agents Went Astray in May
-- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `aibusiness.com`
+### 🚀 Alibaba Opens Qwen3.8-2.4T-A95B Weights as First Qwen-Max-Class MoE
+- **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `pandaily.com`
 
-The incident was the latest in a string of unauthorized actions by AI agents.
+Alibaba's Qwen team has published open weights for Qwen3.8-2.4T-A95B, describing it as the first Qwen-Max-class model released for download rather than API-only access. The sparse mixture-of-experts checkpoint holds about 2.4 trillion total parameters and activates roughly 95 billion per token across 512 experts, with 10 routed experts plus one shared expert used at each step. The release is distinct from earlier Qwen open drops such as Qwen-Drive and smaller Qwen3.8 coding snapshots, positionin.
 
 
 ---
@@ -113,12 +113,12 @@ The incident was the latest in a string of unauthorized actions by AI agents.
 | :--- | :--- | :--- | :--- | :--- |
 | **guide to using reasoning_effort on deepseek v4.1 f** | `reddit.com` | `MoE / SOTA / 128K` | `88/100` | guide to using reasoning_effort on deepseek v4.1 flash introduces key developments in machine learning foundation architectures. |
 | **Qwen3.8-27B-Uncensored-Genesis-V1-GGUF** | `reddit.com` | `27B / 128K` | `88/100` | Model available Qwen3.8-27B-Uncensored-Genesis-V1-MTP-GGUF This model is a practical realisation of things described in this paper, but adapted by me for. |
+| **DeepSeek V4.1 Flash is available in HuggingChat** | `reddit.com` | `MoE / SOTA / 128K` | `68/100` | DeepSeek V4.1 Flash is available in HuggingChat introduces key developments in machine learning foundation architectures. |
 | **DeepSeek-V4.1-Flash surprised ....** | `reddit.com` | `50B / 128K` | `68/100` | Hoping to see smartest medium size models soon & later with all available optimizations/architectures/etc.,. Thanks Deepseek! |
 | **Deepseek V4.1 Flash is 748B, not 552B** | `reddit.com` | `748B / 128K` | `68/100` | People keep on getting confused about this, so I looked at the safetensors on hf. |
 | **Deepseek v4.1 flash finally has engrams, what do y** | `reddit.com` | `MoE / SOTA / 128K` | `68/100` | If the ratio is the same, Maybe 1.6T -3.1T params plus .56T-1.06T engrams and fable 5.0 level performance? Maybe v4.2. |
 | **DeepSeek V4-1 Flash is out** | `reddit.com` | `MOE / 128K` | `68/100` | Here we go again, DeepSeek is back again with a new model V4-1 Flash A multimodal Mixture-of-Experts (MoE) model with. |
 | **DeepSeek V4.1 Flash: Stronger, Faster, More Access** | `reddit.com` | `MoE / SOTA / 128K` | `68/100` | Original Source from DeepSeek WeChat Official Account: Today we're officially releasing the DeepSeek V4.1 Flash model. |
-| **deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face** | `reddit.com` | `MoE / SOTA / 128K` | `68/100` | deepseek-ai/DeepSeek-V4.1-Flash · Hugging Face introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model. |
 
 ### Frontier Model Dispatches
 ### 🤖 guide to using reasoning_effort on deepseek v4.1 flash
@@ -130,6 +130,11 @@ guide to using reasoning_effort on deepseek v4.1 flash introduces key developmen
 - **Velocity**: `96/100` | **Architecture**: `27B • GGUF` | **Source**: `reddit.com`
 
 Model available Qwen3.8-27B-Uncensored-Genesis-V1-MTP-GGUF This model is a practical realisation of things described in this paper, but adapted by me for machine learning: I am trying to solve the problem: why LLM models even for simple questions write walls of text during reasoning, and burn too much tokens instead of solving the task. And when number of parameters increase the problem became worse.
+
+### 🤖 DeepSeek V4.1 Flash is available in HuggingChat
+- **Velocity**: `96/100` | **Architecture**: `MoE / SOTA • Native / FP16` | **Source**: `reddit.com`
+
+DeepSeek V4.1 Flash is available in HuggingChat introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.
 
 ### 🤖 DeepSeek-V4.1-Flash surprised ....
 - **Velocity**: `96/100` | **Architecture**: `50B • Native / FP16` | **Source**: `reddit.com`
@@ -145,11 +150,6 @@ People keep on getting confused about this, so I looked at the safetensors on hf
 - **Velocity**: `96/100` | **Architecture**: `MoE / SOTA • Native / FP16` | **Source**: `reddit.com`
 
 If the ratio is the same, Maybe 1.6T -3.1T params plus .56T-1.06T engrams and fable 5.0 level performance? Maybe v4.2 or 4.5 will have engram gradient modification?
-
-### 🤖 DeepSeek V4-1 Flash is out
-- **Velocity**: `96/100` | **Architecture**: `MOE • Native / FP16` | **Source**: `reddit.com`
-
-Here we go again, DeepSeek is back again with a new model V4-1 Flash A multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters and support for contexts of up to one million tokens Market crash as a service.
 
 
 ---
@@ -171,30 +171,25 @@ Multi-head latent attention (MLA) exposes many logical query heads through one p
 
 We assess 18 chapter-specific reviews of the ten mathematical results announced by OpenAI on 1 August 2026, alongside review standards, Lean formalizations, subsequent research, and mathematical references. The article audits this review record without claiming a complete reconstruction of all ten proofs. No confirmed substantive mathematical error in a principal result remains in the examined assessments, although review depth varies and some dependencies remain partly checked.
 
-### 🔬 Building Multilingual Bridges: Data Mixing as the Pillar of Generalization for In-Language Reasoning
-- **Research Velocity**: `72/100` | **Source**: `arxiv.org`
-
-Reasoning language models have made substantial advances on a variety of complex tasks, yet their capabilities remain overwhelmingly English-centric: models primarily reason in English regardless of the language they are prompted in. This is inaccessible for non-English-speaking users, risks losing the intent of the original question, and forgoes knowledge more readily expressed in the target language.
-
-### 🔬 MIT Schwarzman College of Computing launches pilot to help educators teach AI across disciplines
-- **Research Velocity**: `72/100` | **Source**: `news.mit.edu`
-
-This summer, the MIT Schwarzman College of Computing welcomed faculty from colleges and universities across Greater Boston, South Carolina, West Virginia, and Texas to campus for the inaugural AI Educators Pilot, a weeklong workshop aimed at expanding how artificial intelligence is taught across disciplines and learning environments.
-
-### 🔬 Qiushi Engine on AstaBench E2E-Bench-Hard
+### 🔬 Fusing Perceptual Vision Experts with Multimodal Large Language Models for Explainable Plant Disease Diagnosis: From Benchmark Imagery to Real-World Robotic Field Validation
 - **Research Velocity**: `88/100` | **Source**: `arxiv.org`
 
-This report analyzes Qiushi Engine v0.8 across all 40 test tasks in AstaBench E2E-Bench-Hard, a benchmark that requires autonomous agents to carry a research question through experimental design, code implementation, actual execution, result analysis, and report delivery. Qiushi Engine is model-configurable; this evaluation selected DeepSeek deepseek-v4pro-preview as the model backend. The official AstaBench leaderboard records a score of 0.816 and an average benchmark cost of USD 15.209 per.
+Accurate field plant disease diagnosis requires reliable fusion of uncertain and conflicting perceptual evidence. We present the Hybrid Hierarchical Multi-Agent Framework (H$^{2}$MAF), combining decision-level fusion of EfficientNet-B3 and ConvNeXt-Tiny with semantic arbitration by open-weight multimodal large language models (MLLMs), Gemma 4 E4B and Qwen3.5 4B, using structured JSON evidence to generate explainable diagnoses, risk levels, treatment urgency, and financial exposure.
+
+### 🔬 Rigorous Evaluation of Large Language Models for Malaria Drug Discovery: Trade-offs in Performance, Scale, and Resource Utility
+- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
+
+We introduce Malaria-Instruct, a curated instruction-following dataset derived from the ChEMBL Legacy Malaria corpus for Malaria virtual screening, and conduct a systematic evaluation of five open-source LLMs; Gemma-2 2B/9B, TxGemma-2B/9B, and LlaSMol-Mistral-7B, on a rigorous out-of-distribution data split. Performance was benchmarked against classical ML models (Random Forest, XGBoost) and frontier proprietary models (Gemini 2.5, OpenAI o3) under few-shot conditions.
+
+### 🔬 Can LLMs Reason in a Legally Meaningful Manner? A Small-scale Study on European Court of Human Rights Cases
+- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
+
+Reasoning has become a standard technique and feature for contemporary LLMs; however, its application and quality in the context of demanding legal-oriented tasks, such as legal case forecasting, remain under explored. We investigate how LLMs reason in the context of legal case forecasting, using legal cases from the European Court of Human Rights (ECtHR) as a testbed. We evaluate OpenAI GPT 5.4, a recent top-tier LLM, by exploring alternative prompting strategies that are more or less suggestiv.
 
 
 ---
 
 ## 🛠️ [PAGE 6] DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE
-
-### 🛠️ I trained an audio model that can generate infinite one-shots for music production and turn text prompts into fully playable synths. I'm not only releasing the model but I've also released a video on exactly how I did it (and the inferencing pipeline to let others make text based synths.)
-- **Adoption Index**: `80/100` | **Engine**: `PyTorch / ONNX` | **Source**: `reddit.com`
-
-(hopefully this is okay to here - it seems like audio models and image / video modeals is allowed but yeah this is a bit different) So I've been doing independent audio research for a while now. The ultimate dream of this work was actually getting an AI to respond not only to instruments but also timbre itself as separate controllable things. Think a Grand Piano can sound both Warm / Gritty but also Cold / Sparkly. Its still a piano though.
 
 ### 🛠️ Closed AI doesn't like biological research, user turns to open weight models
 - **Adoption Index**: `96/100` | **Engine**: `PyTorch / ONNX` | **Source**: `reddit.com`
@@ -221,10 +216,20 @@ Introducing ChatGPT Images 2.5 OpenAI's image generation models are apparently u
 
 The strongest argument I see for continuing to train much smarter models quickly is the need to build defensive systems against the dangers posed by other AI. [...] We will need powerful, aligned AI for defense; to secure infrastructure, to protect against rogue agents in real time, and to invent entirely new protective measures. This will be a primary focus of OpenAI's deployment efforts.
 
+### 🛠️ Seamless replacement of BlackDuck｜Suspended mirror security code security + intelligent body security products both rank first in the Chinese market in terms of application rate!
+- **Adoption Index**: `88/100` | **Engine**: `PyTorch / ONNX` | **Source**: `mp.weixin.qq.com`
+
+"AI + DevOps Status Survey Report" ranks first in market application rate for five consecutive years, continuing to lead the new generation of digital supply chain security. Recently, the China Communications Standards Association released the "AI+DevOps Current Situation Survey Report (2026)". The survey cycle covers July 2026-September 2026, spanning high-demand industries such as finance, energy, government affairs, central and state-owned enterprises, and high-end manufacturing. Focusing on the development pattern and ecological status quo, a total of 60 companies collected 3,351 valid questionnaires. After sample screening, expert review, and data cross-checking, it is the first domestic AI+DevOps The authoritative reference for model selection.
+
 
 ---
 
 ## 🌐 [PAGE 7] SOVEREIGN AI & GLOBAL REGIONAL ECOSYSTEMS
+
+### 🌐 🌐 [GLOBAL] Deepseek Has Soft Retired Deepseek V4 Pro
+- **Source**: `reddit.com`
+
+Deepseek Has Soft Retired Deepseek V4 Pro introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.
 
 ### 🌐 🌐 [GLOBAL] 3060 12GB vs 4060 ti 16GB
 - **Source**: `reddit.com`
@@ -240,11 +245,6 @@ I was not aware that the harness makes such a big difference. DeepSeek V4.1.
 - **Source**: `reddit.com`
 
 A few posts tagged with "new model" present models that are finetunes. My opinion : I'd rather have the "new model" tag reserved for new "major" releases, like a new Qwen model, Deepseek V4 -> Deepseek V4.1, etc., that involved a new pretrain or intensive post-training (in opposition to a small finetune). Otherwise, maybe prepend "[Finetune]" to the title to indicate that the new model is "less of a big news", a use a "new finetune" tag, to differentiate between the two kinds of new models.
-
-### 🌐 🇨🇳 [CN] How Does mHC Use Its Residual Streams? Selective Routing and Near-Identity Mixing
-- **Source**: `arxiv.org`
-
-Hyper-Connections and their manifold-constrained variant mHC widen a residual pathway from one stream to n, yet how trained models use this capacity remains unclear: how broadly blocks read and write, how strongly the residual pathway mixes streams, and whether the streams carry distinct representations. We examine these properties in the four-stream residual pathway of DeepSeek-V4-Flash using effective stream counts, cross-stream residual weights, and inter-stream cosine similarity.
 
 ### 🌐 🇨🇳 [CN] 'Ghaib in Translation' aka Unseen Harm: Measuring Cross-Script Safety Inconsistency with 'Missed-in-Urdu' Scores in LLM Hate Speech Detection
 - **Source**: `arxiv.org`
@@ -351,56 +351,56 @@ Agent reinforcement learning (RL) increasingly runs through full execution harne
 
 *10 high-velocity AI stories from today's intelligence sweep that didn't fit earlier sections.*
 
-### 1. Take on your most ambitious work with GPT-6 Astra on Amazon Bedrock
+### 1. Meta's Recipe for Building Agents as "Organizational Second Brains"
+- **Source**: `infoq.com` | **Velocity**: `88/100`
+
+Meta describes how an AI agent can be designed to capture the logic and expertise of domain experts, rather than simply storing documents or retrieving relevant information. The system, dubbed an "organizational second brain", was built for a specialized compliance domain, but Meta argues the architecture generalizes to areas like security, finance, engineering, and procurement.
+
+### 2. Paul Christiano joins OpenAI Foundation Board
+- **Source**: `openai.com` | **Velocity**: `88/100`
+
+Paul Christiano joins the OpenAI Foundation Board and its Safety and Security Committee, bringing experience in AI alignment, safety, and standards.
+
+### 3. Anthropic researcher quits with a warning: Self-improving AI could "kill us all"
+- **Source**: `arstechnica.com` | **Velocity**: `88/100`
+
+When a prominent researcher quits a job at a frontier AI lab these days, it's often to pursue a new startup or protest a new business model. But AI researcher Jacob Coxon is using his departure from Anthropic to publicly warn that frontier AI companies are "gambling with our lives" with systems that they "earnestly believe... could kill us all by the end of the decade." In a social media thread Tuesday night, Coxon said that this existential risk is inherent not so much in today's models but.
+
+### 4. Japan's Fanuc, Google team up on AI-automated welding robots
+- **Source**: `asia.nikkei.com` | **Velocity**: `88/100`
+
+Japan's Fanuc, Google team up on AI-automated welding robots delivers key capabilities for AI software engineering and local execution. Engineered to enhance developer velocity, it streamlines model serving, evaluation, and pipeline orchestration.
+
+### 5. Google to Invest $15B in Finland's AI Infrastructure
+- **Source**: `aibusiness.com` | **Velocity**: `88/100`
+
+The tech giant simultaneously revealed a nuclear power contract with Finnish operator Fortum, its first outside of the U.S.
+
+### 6. Model-agnostic PII detection with LLMs
 - **Source**: `aws.amazon.com` | **Velocity**: `88/100`
 
-GPT-6 Astra from OpenAI brings greater depth and judgment to your most demanding tasks and runs on the Amazon Bedrock inference engine built for high performance, security, and scale. Organizations are already running AI agents that write code, analyze data, and automate complex workflows at production scale on Amazon Bedrock. GPT-6 Astra raises the potential of what those agents can deliver.
+A configurable, instruction-driven detector that runs on any large language model (LLM) managed on Amazon Bedrock, evaluated on five public PII corpora across nine LLM-based detectors, including the OpenAI PrivacyFilter. Fine-tuning a model on real-world text creates a personally identifiable information (PII) detection problem. Training corpora are full of PII: names, home addresses, email and phone numbers, national-ID and social-security numbers, bank accounts, dates of birth.
 
-### 2. How Mistral's New Funding is a Bridge to Sovereign AI
-- **Source**: `aibusiness.com` | **Velocity**: `88/100`
+### 7. Google expands India's clean-energy push with Solar API for 300M rooftops, climate-smart agri programme, and more
+- **Source**: `yourstory.com` | **Velocity**: `88/100`
 
-After starting as an open-weight startup, Mistral has shifted toward sovereign AI, given the European market it operates in.
+Google has unveiled a slew of clean-energy and climate-tech initiatives in India, combining artificial intelligence, geospatial data, and infrastructure investments to accelerate the country's clean-energy transition.The initiatives include the expansion of its Solar API to more than 300 million buildings across India, a 150-megawatt (MW) solar project in Rajasthan with ReNew Power, a climate-smart agriculture programme with Mitti Labs to help rice farmers cut methane emissions and water use.
 
-### 3. AI Beyond the Hype: Insights From Google
-- **Source**: `aibusiness.com` | **Velocity**: `88/100`
+### 8. Enterprise AI Is Learning To Charge For Work, And Owning The Outcomes Becomes The Contest
+- **Source**: `inc42.com` | **Velocity**: `88/100`
 
-By establishing key foundations, businesses can create effective AI workflows that drive meaningful outcomes.
+The most consequential change in enterprise AI this year is not a model release, it is a change in what buyers agree to pay for. OpenAI’s CFO has recast the buyer’s question away from cost per token and towards cost per successful task, proposing “useful intelligence per dollar” as the scorecard and arguing that AI should be measured by work accomplished rather than usage.
 
-### 4. Don't let chatbot developers avoid their responsibility any longer
-- **Source**: `bitsoffreedom.nl` | **Velocity**: `88/100`
+### 9. Meta loses key AI researcher after billion-dollar hiring push
+- **Source**: `digitimes.com` | **Velocity**: `88/100`
 
-Large tech companies behind generative AI software do not take sufficient responsibility for the output of their tools, even if it helps perpetrators of abuse or violence. That must change, either through stricter rules or through lawsuits. OpenAI, the company behind AI chatbot ChatGPT, has already faced several lawsuits.
+Meta loses key AI researcher after billion-dollar hiring push delivers key capabilities for AI software engineering and local execution. Engineered to enhance developer velocity, it streamlines model serving, evaluation, and pipeline orchestration.
 
-### 5. Breaking Barriers, Building Bridges: Increasing Language Representation in Southeast Asia
-- **Source**: `aisingapore.org` | **Velocity**: `88/100`
+### 10. Expanding AI access and cyber defense for federal, state, local, and tribal governments
+- **Source**: `openai.com` | **Velocity**: `88/100`
 
-Held outside of Singapore for the very first time, the third Languages Summit was co-hosted by AI Singapore, Google and VISTEC in Bangkok, Thailand and brought together a passionate community of AI experts and researchers from all corners of the SEA region. This event, dedicated to building a more inclusive AI future, provided a platform for exchanging discussions and insights around efficient model training, obtaining and sharing high-quality data, and regional updates on AI.
-
-### 6. Learning to Generate Unbounded 3D Scenes from Image Collections
-- **Source**: `aisingapore.org` | **Velocity**: `88/100`
-
-Introduction Scene generation has raised considerable attention in recent years, addressing the growing need for 3D creative tools in the metaverse. At the core of 3D content creation is inverse graphics, which aims to recover 3D representations from 2D observations. Given the cost and labor for creating 3D assets, the ultimate goal of 3D content creation would be learning a generative model from in-the-wild 2D images.
-
-### 7. Apple wants to give me $1175 for a Mac Mini M4 Pro? And would you sell for a DGX Spark or M5-based Studio (which?)
-- **Source**: `reddit.com` | **Velocity**: `80/100`
-
-I thought Trade-in value offered by Apple was only ever close to reasonable (for not having to go through the extra work of selling it yourself) if you bought the base model and did not upgrade anything. And you would get less than half of what you paid. For example: The base price of the M4 Pro Mac Mini was $1399. On Apple's trade in page for the Mac Mini it says "Up to $620". So there offer retains 44% of the value. But I upgraded the GPU, RAM, and SSD pushing the price to $2099.
-
-### 8. The CEA architecture is a bigger deal than I initially thought
-- **Source**: `reddit.com` | **Velocity**: `80/100`
-
-I initially saw CED as just an efficiency improvement, but the more I read about it, the more it feels like an inference architecture leap. The encoder/decoder split has some pretty interesting implications for GPU pooling. Instead of treating every GPU the same, you could have prefill-specialized GPUs for the encoder and decode-specialized GPUs for the decoder, each optimized for a different part of inference.
-
-### 9. What TTS models do you recommend as today?
-- **Source**: `reddit.com` | **Velocity**: `80/100`
-
-Trying to get Hermes a local, efficient, tts voice.
-
-### 10. Rebuilding AUTOMATIC1111 with Gradio Workflow
-- **Source**: `huggingface.co` | **Velocity**: `80/100`
-
-Rebuilding AUTOMATIC1111 with Gradio Workflow introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.
+OpenAI and GSA will offer eligible federal, state, local, and tribal governments $0 license fees, 50% off usage, and expanded cyber defense support.
 
 
 ---
-*Compiled autonomously • Thursday, September 10, 2026 • 16:44 UTC • Edition #2212 • 184 items processed from worldwide AI feeds*
+*Compiled autonomously • Thursday, September 10, 2026 • 18:33 UTC • Edition #2213 • 167 items processed from worldwide AI feeds*

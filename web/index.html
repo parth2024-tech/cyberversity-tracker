@@ -1619,37 +1619,14 @@
       let w = canvas.width = window.innerWidth;
       let h = canvas.height = window.innerHeight;
 
-      let isVisible = true;
-      document.addEventListener('visibilitychange', () => {
-        isVisible = !document.hidden;
-        if (isVisible) requestAnimationFrame(draw);
-      });
-
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-          w = canvas.width = window.innerWidth;
-          h = canvas.height = window.innerHeight;
-        }, 150);
-      });
-
-      const count = Math.min(Math.floor(w / 45), 28);
-      const particles = [];
-
-      for (let i = 0; i < count; i++) {
-        particles.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.2,
-          vy: (Math.random() - 0.5) * 0.2,
-          radius: Math.random() * 0.8 + 0.3,
-          color: Math.random() > 0.6 ? 'rgba(255, 255, 255, 0.25)' : (Math.random() > 0.4 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(167, 139, 250, 0.15)')
-        });
-      }
+      let isVisible = !document.hidden;
+      let animId = null;
 
       function draw() {
-        if (!isVisible) return;
+        if (!isVisible) {
+          animId = null;
+          return;
+        }
         ctx.clearRect(0, 0, w, h);
 
         // Update and draw stardust particles
@@ -1686,10 +1663,45 @@
           }
         }
 
-        requestAnimationFrame(draw);
+        animId = requestAnimationFrame(draw);
       }
 
-      draw();
+      document.addEventListener('visibilitychange', () => {
+        isVisible = !document.hidden;
+        if (isVisible && !animId) {
+          animId = requestAnimationFrame(draw);
+        } else if (!isVisible && animId) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      });
+
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          w = canvas.width = window.innerWidth;
+          h = canvas.height = window.innerHeight;
+        }, 150);
+      });
+
+      const count = Math.min(Math.floor(w / 45), 28);
+      const particles = [];
+
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          radius: Math.random() * 0.8 + 0.3,
+          color: Math.random() > 0.6 ? 'rgba(255, 255, 255, 0.25)' : (Math.random() > 0.4 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(167, 139, 250, 0.15)')
+        });
+      }
+
+      if (isVisible) {
+        animId = requestAnimationFrame(draw);
+      }
     }
 
     // UTC Global Clock
@@ -1887,23 +1899,43 @@
       while (container.children.length >= 3) {
         container.lastElementChild.remove();
       }
-      const isSecurityCategory = ['vulnerabilities', 'cybersecurity', 'exploits_tricks'].includes(entry.category || '');
-      const isPreCve = isSecurityCategory && entry.analysis && entry.analysis.is_pre_cve_warning;
-      const isCritical = entry.category === 'vulnerabilities' || (isSecurityCategory && entry.analysis && entry.analysis.threat_velocity >= 70);
       
+      const cat = entry.category || '';
+      const isTrending = cat === 'trending_repos' || cat === 'github';
+      const isPaper = cat === 'research_papers' || cat === 'arxiv';
+      const isModel = cat === 'frontier_models' || cat === 'models';
+      const isTools = cat === 'dev_tools' || cat === 'infrastructure';
+
       const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
       const toast = document.createElement('div');
       toast.id = toastId;
       
       let borderClass = 'border-white/[0.08] bg-black/90';
-      if (isPreCve) {
-        borderClass = 'border-amber-500/40 bg-black/90 shadow-amber-500/15';
-      } else if (isCritical) {
-        borderClass = 'border-rose-500/40 bg-black/90 shadow-rose-500/15';
-      }
+      let icon = 'bot';
+      let color = 'text-sky-400';
+      let label = (entry.category || 'AI INTELLIGENCE').replace(/_/g, ' ').toUpperCase();
 
-      const icon = isPreCve ? 'zap' : (isCritical ? 'flame' : (entry.category === 'ai_tech' ? 'bot' : 'newspaper'));
-      const color = isPreCve ? 'text-amber-400' : (isCritical ? 'text-rose-400' : (entry.category === 'ai_tech' ? 'text-indigo-400' : 'text-sky-400'));
+      if (isTrending) {
+        borderClass = 'border-emerald-500/40 bg-black/90 shadow-emerald-500/15';
+        icon = 'git-branch';
+        color = 'text-emerald-400';
+        label = 'TRENDING REPO';
+      } else if (isPaper) {
+        borderClass = 'border-purple-500/40 bg-black/90 shadow-purple-500/15';
+        icon = 'file-text';
+        color = 'text-purple-400';
+        label = 'AI BREAKTHROUGH';
+      } else if (isModel) {
+        borderClass = 'border-cyan-500/40 bg-black/90 shadow-cyan-500/15';
+        icon = 'cpu';
+        color = 'text-cyan-400';
+        label = 'FRONTIER MODEL';
+      } else if (isTools) {
+        borderClass = 'border-amber-500/40 bg-black/90 shadow-amber-500/15';
+        icon = 'tool';
+        color = 'text-amber-400';
+        label = 'DEV TOOLS / INFRA';
+      }
 
       toast.className = `glass-panel pointer-events-auto rounded-xl p-4 shadow-2xl transition-all duration-300 toast-animate-in flex gap-3 border ${borderClass}`;
 
@@ -1916,7 +1948,7 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between gap-2">
             <span class="text-[10px] font-mono uppercase font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] ${color}">
-              ${isPreCve ? '⚠️ PRE-CVE ZERO-DAY' : (entry.category || 'INTEL').replace('_', ' ')}
+              ${label}
             </span>
             <span class="text-[10px] font-mono text-slate-500">JUST NOW</span>
           </div>
@@ -1924,7 +1956,7 @@
             ${entry.title}
           </h4>
           <p class="text-[11px] text-slate-400 line-clamp-2 mt-0.5 font-sans">
-            ${(entry.analysis && entry.analysis.risk_assessment) || entry.summary || 'New intelligence advisory detected.'}
+            ${(entry.analysis && entry.analysis.summary) || entry.summary || 'New intelligence advisory detected.'}
           </p>
           <div class="mt-2 flex items-center justify-between">
             <span class="text-[10px] font-mono text-slate-400">${entry.source_name || 'Feed'}</span>
@@ -1941,7 +1973,7 @@
       container.prepend(toast);
       lucide.createIcons();
 
-      setTimeout(() => dismissToast(toastId), 7000);
+      setTimeout(() => dismissToast(toastId), 4500);
     }
 
     function dismissToast(id) {
@@ -3317,6 +3349,9 @@
     let hoveredStation = null;
     let isNavigatingToStation = false;
     let targetRotX = 0, targetRotY = 0;
+    let globeAnimFrameId = null;
+    let resumeGlobeAnimation = null;
+    let pauseGlobeAnimation = null;
 
     function initThreeGlobe() {
       try {
@@ -3331,9 +3366,10 @@
         globeCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
         globeCamera.position.z = 4.5;
 
-        globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        // Use low-power GPU profile and balanced pixel ratio to protect laptop battery and thermals
+        globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
         globeRenderer.setSize(w, h);
-        globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        globeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         container.appendChild(globeRenderer.domElement);
 
         // Core Obsidian Sphere
@@ -3677,10 +3713,25 @@
           showToast(`Station Activated: ${st.flag} ${st.name}`, 'info');
         }
 
-        // Animation Loop (Zero allocations inside frame)
+        pauseGlobeAnimation = function() {
+          if (globeAnimFrameId) {
+            cancelAnimationFrame(globeAnimFrameId);
+            globeAnimFrameId = null;
+          }
+        };
+
+        resumeGlobeAnimation = function() {
+          if (isGlobeVisible && !document.hidden && !globeAnimFrameId && globeRenderer && globeScene && globeCamera) {
+            globeAnimFrameId = requestAnimationFrame(animateGlobe);
+          }
+        };
+
+        // Animation Loop (Zero allocations inside frame, completely dormant when hidden)
         function animateGlobe() {
-          requestAnimationFrame(animateGlobe);
-          if (!isGlobeVisible) return;
+          if (!isGlobeVisible || document.hidden) {
+            globeAnimFrameId = null;
+            return;
+          }
 
           // Subtle starfield ambient drift
           starField.rotation.y += 0.0003;
@@ -3721,11 +3772,21 @@
           }
 
           globeRenderer.render(globeScene, globeCamera);
+          globeAnimFrameId = requestAnimationFrame(animateGlobe);
         }
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            if (pauseGlobeAnimation) pauseGlobeAnimation();
+          } else {
+            if (resumeGlobeAnimation) resumeGlobeAnimation();
+          }
+        });
 
         // Cycle active planetary defense stations in HUD
         let stationIdx = 0;
         setInterval(() => {
+          if (document.hidden || !isGlobeVisible) return;
           const el = document.getElementById('globe-active-station');
           if (el && WORLD_STATIONS.length) {
             const st1 = WORLD_STATIONS[stationIdx % WORLD_STATIONS.length];
@@ -3734,9 +3795,9 @@
             el.innerHTML = `${st1.flag} ${st1.name} • ${st2.flag} ${st2.name} • ${st3.flag} ${st3.name}`;
             stationIdx = (stationIdx + 1) % WORLD_STATIONS.length;
           }
-        }, 3500);
+        }, 5000);
 
-        animateGlobe();
+        resumeGlobeAnimation();
       } catch (e) {
         console.warn("Three.js globe initialization gracefully skipped:", e);
         const panel = document.getElementById('globe-panel');
@@ -3752,9 +3813,11 @@
       if (isGlobeVisible) {
         panel.classList.remove('hidden');
         if (btn) btn.classList.add('text-cyber-cyan');
+        if (resumeGlobeAnimation) resumeGlobeAnimation();
       } else {
         panel.classList.add('hidden');
         if (btn) btn.classList.remove('text-cyber-cyan');
+        if (pauseGlobeAnimation) pauseGlobeAnimation();
       }
       playBeep('click');
     }
@@ -4898,11 +4961,15 @@
       // WebSocket setup (non-blocking)
       try { initWebSocket(); } catch (e) { console.warn("WebSocket:", e); }
 
-      // Poll sweep freshness every 60 seconds
-      setInterval(() => { try { updateSweepFreshness(); } catch(e){} }, 60000);
-
-      // Continuous Intelligence Fallback: Check for new entries and refresh telemetry every 45 seconds
+      // Poll sweep freshness every 60 seconds (dormant when tab is backgrounded)
       setInterval(() => {
+        if (document.hidden) return;
+        try { updateSweepFreshness(); } catch(e){}
+      }, 60000);
+
+      // Continuous Intelligence Fallback: Check for new entries and refresh telemetry every 45 seconds (dormant when tab is backgrounded)
+      setInterval(() => {
+        if (document.hidden) return;
         try {
           // If at the top of the feed or viewing all, refresh telemetry and check latest feed
           if (window.scrollY < 300) {
@@ -4916,6 +4983,16 @@
           console.warn("Continuous telemetry sync:", e);
         }
       }, 45000);
+
+      // Re-sync telemetry smoothly when user returns to this tab
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          try { updateSweepFreshness(); } catch(e){}
+          if (window.scrollY < 300) {
+            try { refreshStats(); } catch(e){}
+          }
+        }
+      });
     }
 
     if (document.readyState === 'loading') {
