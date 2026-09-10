@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
 **Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2212**  
-*Thursday, September 10, 2026 • 16:05 UTC • Coverage Window: 5h • 201 verified AI stories analyzed*
+*Thursday, September 10, 2026 • 16:44 UTC • Coverage Window: 5h • 184 verified AI stories analyzed*
 
 ---
 
@@ -196,11 +196,6 @@ This report analyzes Qiushi Engine v0.8 across all 40 test tasks in AstaBench E2
 
 (hopefully this is okay to here - it seems like audio models and image / video modeals is allowed but yeah this is a bit different) So I've been doing independent audio research for a while now. The ultimate dream of this work was actually getting an AI to respond not only to instruments but also timbre itself as separate controllable things. Think a Grand Piano can sound both Warm / Gritty but also Cold / Sparkly. Its still a piano though.
 
-### 🛠️ 拆解 Agent Loop 盲盒：从 RSAC2026 冠军看灵境 AIDR 的智能体原生安全实践！
-- **Adoption Index**: `30/100` | **Engine**: `PyTorch / ONNX` | **Source**: `mp.weixin.qq.com`
-
-Multi-modal AIDR 2026-04-29 16:31 Beijing Achieves 95% asset visibility and second-level blocking, Lingjing AIDR protects the entire Agentic AI application landscape! "Security Paradigm Shift" from Moscone Center #March 23, 2026, Moscone Center, San Francisco. When Geordie AI won the RSAC2026 Innovation Sandbox Championship trophy, the applause from the audience could not conceal the anxiety of security people around the world: security has officially entered the no-man’s land ruled by “Agentic AI”. The most frightening thing is no longer the code, but the AI ​​digital employees who make decisions independently on the corporate intranet but are in a "supervisory vacuum." 1► "Speed ​​Collapse" of 22 seconds When Vibe Coding hit the offensive agent, in the Keynote on the first day of RSAC 2026, Mandiant disclosed a data that sent chills down.
-
 ### 🛠️ Closed AI doesn't like biological research, user turns to open weight models
 - **Adoption Index**: `96/100` | **Engine**: `PyTorch / ONNX` | **Source**: `reddit.com`
 
@@ -220,6 +215,11 @@ On the Navier–Stokes Millennium Prize Problem Impressive result from OpenAI, w
 - **Adoption Index**: `96/100` | **Engine**: `PyTorch / ONNX` | **Source**: `simonwillison.net`
 
 Introducing ChatGPT Images 2.5 OpenAI's image generation models are apparently used "more than 3 billion images across ChatGPT Images and the GPT‑Image models in the API". This latest release improves their instruction-following ability across multiple turns, responds faster, and "is better at preserving the subjects in your reference photos". There are two new model IDs in the API: gpt-image-2.5-sunburst and gpt-image-2.5-flare.
+
+### 🛠️ Quoting Jakub Pachocki
+- **Adoption Index**: `96/100` | **Engine**: `PyTorch / ONNX` | **Source**: `simonwillison.net`
+
+The strongest argument I see for continuing to train much smarter models quickly is the need to build defensive systems against the dangers posed by other AI. [...] We will need powerful, aligned AI for defense; to secure infrastructure, to protect against rogue agents in real time, and to invent entirely new protective measures. This will be a primary focus of OpenAI's deployment efforts.
 
 
 ---
@@ -268,7 +268,7 @@ Prior work on LLM behavior under anomalous conditions asks whether a model notic
 | **Qwen3.8-Flash-Next on MLX-serve, 1m context is rel** | `reddit.com` | `40 tok/s` | `96/100` | Hi, I'm the co-creator of this Qwen3.8-Flash-Next engine support in MLX-serve. I've been tuning this one to run both fast. |
 | **Substrate-Aware AI Agents: Execution Context as a ** | `arxiv.org` | `High Velocity` | `88/100` | Autonomous AI agents increasingly select actions in environments whose memory, execution-time, runtime, compute, and operational constraints determine what counts as. |
 | **SAT-Edge-Agent: Hardware-in-the-Loop Edge-Agent Or** | `arxiv.org` | `High Velocity` | `88/100` | Onboard satellite intelligence requires a task layer that translates mission intent into local tool calls, exposes execution state, and returns. |
-| **Best Open source TTS right now for narration?** | `reddit.com` | `High Velocity` | `80/100` | I run these models on Kaggle notebook, so not all TTS models, such as the ones that use conda env. |
+| **Characterizing Contention-Induced Reliability Coll** | `arxiv.org` | `High Velocity` | `88/100` | Shared key--value (KV) cache reuse improves large language model (LLM) serving, but it can also create a timing side channel. |
 
 ### ⚡ Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).
 - **Source**: `reddit.com`
@@ -295,10 +295,10 @@ Autonomous AI agents increasingly select actions in environments whose memory, e
 
 Onboard satellite intelligence requires a task layer that translates mission intent into local tool calls, exposes execution state, and returns machine-consumable artifacts under communication and power constraints. We present SAT-Edge-Agent, a hardware-in-the-loop (HIL) edge-agent system deployed on a commercial off-the-shelf ARM-based heterogeneous edge system-on-chip.
 
-### ⚡ Best Open source TTS right now for narration?
-- **Source**: `reddit.com`
+### ⚡ Characterizing Contention-Induced Reliability Collapse in KV-Cache Timing Side Channels for Multi-Tenant LLM Serving
+- **Source**: `arxiv.org`
 
-I run these models on Kaggle notebook, so not all TTS models, such as the ones that use conda env, are compatible (Or I just haven't found a way for them to work on Kaggle). I currently use a fork from Chatterbox called Chatterbox Audiobook. It is like a workstation really optimized for getting the close-to-perfection audio clips from Chatterbox. However, the only downside of Chatterbox is the lack of emotional sliders or tags that you can use to control the output.
+Shared key--value (KV) cache reuse improves large language model (LLM) serving, but it can also create a timing side channel that reveals whether a prefix is already cached. Previous work shows that such attacks are possible, but their reliability under realistic multi-tenant contention is less understood. We study this problem through seven experiments on live shared LLM-serving systems. On a vLLM server running DeepSeek-R1-Distill-Llama-8B on NVIDIA GB10, mean Cohen's d drops from 0.7789.
 
 
 ---
@@ -351,56 +351,56 @@ Agent reinforcement learning (RL) increasingly runs through full execution harne
 
 *10 high-velocity AI stories from today's intelligence sweep that didn't fit earlier sections.*
 
-### 1. The Truth Stays in the Family: Enhancing Contextual Grounding via Inherited Truthful Heads in Model Lineages
-- **Source**: `arxiv.org` | **Velocity**: `88/100`
-
-Recent advances in large language models (LLMs) have produced many specialized multimodal LLMs (MLLMs) that share common foundational LLMs, forming distinct model lineages. It remains unclear whether a fundamental behavioral link exists between the foundational LLMs and downstream variants. We investigate this question by quantifying head-level context-truthfulness scores. Across diverse LLM and MLLM lineages, including Vicuna-, Qwen2.5-, LLaMA2-, and Mistral-based models, we find that Truth.
-
-### 2. Take on your most ambitious work with GPT-6 Astra on Amazon Bedrock
+### 1. Take on your most ambitious work with GPT-6 Astra on Amazon Bedrock
 - **Source**: `aws.amazon.com` | **Velocity**: `88/100`
 
 GPT-6 Astra from OpenAI brings greater depth and judgment to your most demanding tasks and runs on the Amazon Bedrock inference engine built for high performance, security, and scale. Organizations are already running AI agents that write code, analyze data, and automate complex workflows at production scale on Amazon Bedrock. GPT-6 Astra raises the potential of what those agents can deliver.
 
-### 3. How Mistral's New Funding is a Bridge to Sovereign AI
+### 2. How Mistral's New Funding is a Bridge to Sovereign AI
 - **Source**: `aibusiness.com` | **Velocity**: `88/100`
 
 After starting as an open-weight startup, Mistral has shifted toward sovereign AI, given the European market it operates in.
 
-### 4. AI Beyond the Hype: Insights From Google
+### 3. AI Beyond the Hype: Insights From Google
 - **Source**: `aibusiness.com` | **Velocity**: `88/100`
 
 By establishing key foundations, businesses can create effective AI workflows that drive meaningful outcomes.
 
-### 5. Don't let chatbot developers avoid their responsibility any longer
+### 4. Don't let chatbot developers avoid their responsibility any longer
 - **Source**: `bitsoffreedom.nl` | **Velocity**: `88/100`
 
 Large tech companies behind generative AI software do not take sufficient responsibility for the output of their tools, even if it helps perpetrators of abuse or violence. That must change, either through stricter rules or through lawsuits. OpenAI, the company behind AI chatbot ChatGPT, has already faced several lawsuits.
 
-### 6. Breaking Barriers, Building Bridges: Increasing Language Representation in Southeast Asia
+### 5. Breaking Barriers, Building Bridges: Increasing Language Representation in Southeast Asia
 - **Source**: `aisingapore.org` | **Velocity**: `88/100`
 
 Held outside of Singapore for the very first time, the third Languages Summit was co-hosted by AI Singapore, Google and VISTEC in Bangkok, Thailand and brought together a passionate community of AI experts and researchers from all corners of the SEA region. This event, dedicated to building a more inclusive AI future, provided a platform for exchanging discussions and insights around efficient model training, obtaining and sharing high-quality data, and regional updates on AI.
 
-### 7. Learning to Generate Unbounded 3D Scenes from Image Collections
+### 6. Learning to Generate Unbounded 3D Scenes from Image Collections
 - **Source**: `aisingapore.org` | **Velocity**: `88/100`
 
 Introduction Scene generation has raised considerable attention in recent years, addressing the growing need for 3D creative tools in the metaverse. At the core of 3D content creation is inverse graphics, which aims to recover 3D representations from 2D observations. Given the cost and labor for creating 3D assets, the ultimate goal of 3D content creation would be learning a generative model from in-the-wild 2D images.
 
-### 8. Apple wants to give me $1175 for a Mac Mini M4 Pro? And would you sell for a DGX Spark or M5-based Studio (which?)
+### 7. Apple wants to give me $1175 for a Mac Mini M4 Pro? And would you sell for a DGX Spark or M5-based Studio (which?)
 - **Source**: `reddit.com` | **Velocity**: `80/100`
 
 I thought Trade-in value offered by Apple was only ever close to reasonable (for not having to go through the extra work of selling it yourself) if you bought the base model and did not upgrade anything. And you would get less than half of what you paid. For example: The base price of the M4 Pro Mac Mini was $1399. On Apple's trade in page for the Mac Mini it says "Up to $620". So there offer retains 44% of the value. But I upgraded the GPU, RAM, and SSD pushing the price to $2099.
 
-### 9. The CEA architecture is a bigger deal than I initially thought
+### 8. The CEA architecture is a bigger deal than I initially thought
 - **Source**: `reddit.com` | **Velocity**: `80/100`
 
 I initially saw CED as just an efficiency improvement, but the more I read about it, the more it feels like an inference architecture leap. The encoder/decoder split has some pretty interesting implications for GPU pooling. Instead of treating every GPU the same, you could have prefill-specialized GPUs for the encoder and decode-specialized GPUs for the decoder, each optimized for a different part of inference.
 
-### 10. What TTS models do you recommend as today?
+### 9. What TTS models do you recommend as today?
 - **Source**: `reddit.com` | **Velocity**: `80/100`
 
 Trying to get Hermes a local, efficient, tts voice.
 
+### 10. Rebuilding AUTOMATIC1111 with Gradio Workflow
+- **Source**: `huggingface.co` | **Velocity**: `80/100`
+
+Rebuilding AUTOMATIC1111 with Gradio Workflow introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.
+
 
 ---
-*Compiled autonomously • Thursday, September 10, 2026 • 16:05 UTC • Edition #2212 • 201 items processed from worldwide AI feeds*
+*Compiled autonomously • Thursday, September 10, 2026 • 16:44 UTC • Edition #2212 • 184 items processed from worldwide AI feeds*
