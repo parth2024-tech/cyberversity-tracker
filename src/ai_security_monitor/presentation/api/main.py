@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                     async with SqlAlchemyUnitOfWork() as uow:
                         all_srcs = await uow.sources.list(enabled_only=True)
                     targets = [s for s in all_srcs if s.category.value in missing_pillars]
-                    sem = asyncio.Semaphore(8)
+                    sem = asyncio.Semaphore(3)
 
                     async def _fetch_target(s):
                         async with sem:
@@ -83,6 +83,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                                 await asyncio.wait_for(monitor_service.fetch_source(s), timeout=25.0)
                             except Exception as src_err:
                                 logger.warning(f"Error priming source {s.name}: {src_err}")
+                            finally:
+                                await asyncio.sleep(0.05)
 
                     await asyncio.gather(*[_fetch_target(s) for s in targets], return_exceptions=True)
                     from ai_security_monitor.infrastructure.cache import response_cache

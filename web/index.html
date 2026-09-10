@@ -1866,14 +1866,18 @@
       } else if (msg.type === 'emergency_threat_alert' || msg.type === 'new_entry') {
         // Quiet mode: Never mutate active feed or trigger popups while user is reading.
         // New information arrives cleanly and strictly when user refreshes the page.
-        if (msg.entry && msg.entry.id) {
-          if (!pendingNewEntries.some(e => e.id === msg.entry.id)) {
-            pendingNewEntries.push(msg.entry);
+        const entry = msg.data || msg.entry;
+        if (entry && entry.id) {
+          if (!pendingNewEntries.some(e => e.id === entry.id)) {
+            pendingNewEntries.push(entry);
             updatePendingBanner();
           }
-        } else {
-          pendingNewEntries.push({ id: Date.now() });
-          updatePendingBanner();
+        } else if (entry) {
+          const pseudoId = 'new-' + (entry.url || Date.now());
+          if (!pendingNewEntries.some(e => e.id === pseudoId)) {
+            pendingNewEntries.push({ ...entry, id: pseudoId });
+            updatePendingBanner();
+          }
         }
       } else if (msg.type === 'scan_status') {
         const banner = document.getElementById('scan-progress-banner');

@@ -17,6 +17,57 @@ from sqlalchemy.pool import NullPool
 from ai_security_monitor.config.settings import settings
 
 
+def _ensure_seed_database(db_path: str) -> None:
+    """Ensure SQLite database is seeded with curated global AI entries on fresh cloud boot."""
+    import os
+    import shutil
+    import sqlite3
+
+    # Multi-path search for seed candidate database
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+    candidates = [
+        os.path.join(base_dir, "data", "seed_monitor.db"),
+        os.path.join(os.getcwd(), "data", "seed_monitor.db"),
+        "data/seed_monitor.db",
+        "/app/data/seed_monitor.db",
+    ]
+    seed_file = None
+    for c in candidates:
+        if os.path.exists(c) and os.path.getsize(c) > 100_000:
+            seed_file = c
+            break
+
+    if not seed_file:
+        return
+
+    # Check if target db is missing or has fewer than 50 entries
+    needs_seeding = False
+    if not os.path.exists(db_path) or os.path.getsize(db_path) < 100_000:
+        needs_seeding = True
+    else:
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT count(*) FROM entries")
+            row = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if not row or row[0] < 50:
+                needs_seeding = True
+        except Exception:
+            needs_seeding = True
+
+    if needs_seeding:
+        try:
+            dir_name = os.path.dirname(db_path)
+            if dir_name:
+                os.makedirs(dir_name, exist_ok=True)
+            if os.path.abspath(seed_file) != os.path.abspath(db_path):
+                shutil.copy2(seed_file, db_path)
+        except Exception:
+            pass
+
+
 class DatabaseManager:
     """Manages database engine and sessions."""
 
@@ -55,16 +106,7 @@ class DatabaseManager:
                 os.makedirs(dir_name, exist_ok=True)
 
             # Auto-seed initial intelligence database on fresh cloud boot
-            seed_candidate = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "data", "seed_monitor.db")
-            if not os.path.exists(seed_candidate):
-                seed_candidate = "data/seed_monitor.db"
-
-            if os.path.exists(seed_candidate):
-                if not os.path.exists(db_path) or os.path.getsize(db_path) < 1024:
-                    try:
-                        shutil.copy2(seed_candidate, db_path)
-                    except Exception:
-                        pass
+            _ensure_seed_database(db_path)
 
             engine = create_async_engine(
                 self._url,
@@ -136,9 +178,15 @@ class DatabaseManager:
 
     async def init_db(self) -> None:
         """Initialize database - create tables if they don't exist."""
+        db_path = None
+        if self._url.startswith("sqlite"):
+            db_path = self._url.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "").split("?")[0]
+            _ensure_seed_database(db_path)
         from ai_security_monitor.infrastructure.database.models import Base
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        if db_path:
+            _ensure_seed_database(db_path)
 
 
 # Global database manager instance

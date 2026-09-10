@@ -54,7 +54,7 @@ class HackerNewsFetcher(BaseFetcher):
                 "title": title,
                 "url": url_str,
                 "content": content,
-                "published_at": datetime.fromisoformat(created_at.replace("Z", "+00:00")) if created_at else datetime.utcnow(),
+                "published_at": datetime.fromisoformat(created_at.replace("Z", "+00:00")).replace(tzinfo=None) if created_at else datetime.utcnow(),
                 "tags": ["hackernews", "ai", "ml", "llm", "gpt"],
                 "metadata": {
                     "hn_id": hit.get("objectID"),

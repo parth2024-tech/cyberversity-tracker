@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import desc, func, or_, select
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -106,23 +106,30 @@ class SQLAlchemyEntryRepository(EntryRepository):
     ) -> list[Entry]:
         stmt = select(EntryModel).options(selectinload(EntryModel.analysis))
 
+        analysis_joined = False
         if filters:
-            stmt = self._apply_filters(stmt, filters)
+            stmt, analysis_joined = self._apply_filters(stmt, filters)
 
         if filters and filters.sort_by in ("top", "velocity"):
-            stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
+            if not analysis_joined:
+                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+            stmt = stmt.order_by(
                 desc(AnalysisModelDB.threat_velocity),
                 desc(EntryModel.published_at),
                 desc(EntryModel.fetched_at)
             )
         elif filters and filters.sort_by == "blast":
-            stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
+            if not analysis_joined:
+                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+            stmt = stmt.order_by(
                 desc(AnalysisModelDB.blast_radius_score),
                 desc(EntryModel.published_at),
                 desc(EntryModel.fetched_at)
             )
         elif filters and filters.sort_by == "severity":
-            stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
+            if not analysis_joined:
+                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+            stmt = stmt.order_by(
                 desc(AnalysisModelDB.severity_index),
                 desc(EntryModel.published_at),
                 desc(EntryModel.fetched_at)
@@ -144,7 +151,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         stmt = select(func.count(EntryModel.id))
 
         if filters:
-            stmt = self._apply_filters(stmt, filters)
+            stmt, _ = self._apply_filters(stmt, filters)
 
         result = await self._session.execute(stmt)
         return result.scalar() or 0
@@ -208,13 +215,17 @@ class SQLAlchemyEntryRepository(EntryRepository):
         cutoff = datetime.utcnow() - timedelta(days=older_than_days)
 
         # Delete associated analyses first via subquery to avoid parameter limit issues
-        subquery = select(EntryModel.id).where(EntryModel.fetched_at < cutoff)
+        expired_cond = or_(
+            EntryModel.fetched_at < cutoff,
+            and_(EntryModel.published_at.is_not(None), EntryModel.published_at < cutoff)
+        )
+        subquery = select(EntryModel.id).where(expired_cond)
         await self._session.execute(
             sa_delete(AnalysisModelDB).where(AnalysisModelDB.entry_id.in_(subquery))
         )
         # Delete entries older than retention window (1 week / 7 days)
         del_result = await self._session.execute(
-            sa_delete(EntryModel).where(EntryModel.fetched_at < cutoff)
+            sa_delete(EntryModel).where(expired_cond)
         )
         return del_result.rowcount or 0
 
@@ -274,17 +285,31 @@ class SQLAlchemyEntryRepository(EntryRepository):
             if kw_conditions:
                 stmt = stmt.where(or_(*kw_conditions))
 
+        analysis_joined = False
+
         if filters.pre_cve_only:
-            stmt = stmt.join(AnalysisModelDB).where(AnalysisModelDB.is_pre_cve_warning.is_(True))
+            if not analysis_joined:
+                stmt = stmt.join(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                analysis_joined = True
+            stmt = stmt.where(AnalysisModelDB.is_pre_cve_warning.is_(True))
 
         if filters.high_velocity_only:
-            stmt = stmt.join(AnalysisModelDB).where(AnalysisModelDB.threat_velocity >= 70)
+            if not analysis_joined:
+                stmt = stmt.join(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                analysis_joined = True
+            stmt = stmt.where(AnalysisModelDB.threat_velocity >= 70)
 
         if filters.analyzed_only:
-            stmt = stmt.join(AnalysisModelDB).where(AnalysisModelDB.entry_id.is_not(None))
+            if not analysis_joined:
+                stmt = stmt.join(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                analysis_joined = True
+            stmt = stmt.where(AnalysisModelDB.entry_id.is_not(None))
 
         if filters.unanalyzed_only:
-            stmt = stmt.outerjoin(AnalysisModelDB).where(AnalysisModelDB.entry_id.is_(None))
+            if not analysis_joined:
+                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                analysis_joined = True
+            stmt = stmt.where(AnalysisModelDB.entry_id.is_(None))
 
         source_joined = False
 
@@ -366,7 +391,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             c_code = filters.country.upper()
             stmt = stmt.where(SourceModel.config.like(f'%"country": "{c_code}"%'))
 
-        return stmt
+        return stmt, analysis_joined
 
     def _model_to_entity(self, model: EntryModel) -> Entry:
         analysis = None
@@ -674,6 +699,15 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 
+    async def purge_old_logs(self, older_than_days: int = 7) -> int:
+        """Delete fetch logs older than retention window."""
+        from sqlalchemy import delete as sa_delete
+        cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+        del_res = await self._session.execute(
+            sa_delete(FetchLogModel).where(FetchLogModel.fetched_at < cutoff)
+        )
+        return del_res.rowcount or 0
+
     def _model_to_entity(self, model: FetchLogModel) -> FetchLog:
         return FetchLog(
             id=_str_to_uuid(model.id),
@@ -748,6 +782,15 @@ class SQLAlchemyDigestRepository(DigestRepository):
 
         await self._session.flush()
         return self._model_to_entity(model)
+
+    async def purge_old_digests(self, older_than_days: int = 7) -> int:
+        """Delete temporary generated digests older than retention window."""
+        from sqlalchemy import delete as sa_delete
+        cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+        del_res = await self._session.execute(
+            sa_delete(DigestModel).where(DigestModel.created_at < cutoff)
+        )
+        return del_res.rowcount or 0
 
     def _model_to_entity(self, model: DigestModel) -> Digest:
         return Digest(

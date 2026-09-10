@@ -202,6 +202,10 @@ class FetchLogRepository(ABC):
         """Get fetch logs for a specific source."""
         ...
 
+    async def purge_old_logs(self, older_than_days: int = 7) -> int:
+        """Purge fetch logs older than retention window."""
+        return 0
+
 
 class DigestRepository(ABC):
     """Repository for Digest entities."""
@@ -228,5 +232,9 @@ class DigestRepository(ABC):
 
     @abstractmethod
     async def update(self, digest: Digest) -> Digest:
-        """Update a digest."""
+        """Update an existing digest."""
         ...
+
+    async def purge_old_digests(self, older_than_days: int = 7) -> int:
+        """Purge digests older than retention window."""
+        return 0

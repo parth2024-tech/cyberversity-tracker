@@ -47,7 +47,7 @@ class CISAFetcher(BaseFetcher):
                 "title": f"CISA KEV: {cve_id} - {vuln_name}",
                 "url": f"https://nvd.nist.gov/vuln/detail/{cve_id}",
                 "content": content,
-                "published_at": datetime.fromisoformat(vuln.get("dateAdded", "").replace("Z", "+00:00")) if vuln.get("dateAdded") else datetime.utcnow(),
+                "published_at": datetime.fromisoformat(vuln.get("dateAdded", "").replace("Z", "+00:00")).replace(tzinfo=None) if vuln.get("dateAdded") else datetime.utcnow(),
                 "tags": ["cisa", "kev", "exploited", "critical"],
                 "metadata": {
                     "cve_id": cve_id,

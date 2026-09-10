@@ -48,7 +48,7 @@ class GitHubAdvisoriesFetcher(BaseFetcher):
                 "title": f"GHSA: {ghsa_id} - {summary[:200]}",
                 "url": item.get("html_url", f"https://github.com/advisories/{ghsa_id}"),
                 "content": content,
-                "published_at": datetime.fromisoformat(item.get("published_at", "").replace("Z", "+00:00")) if item.get("published_at") else datetime.utcnow(),
+                "published_at": datetime.fromisoformat(item.get("published_at", "").replace("Z", "+00:00")).replace(tzinfo=None) if item.get("published_at") else datetime.utcnow(),
                 "tags": ["github", "advisory", severity.lower()],
                 "metadata": {
                     "ghsa_id": ghsa_id,

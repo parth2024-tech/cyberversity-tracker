@@ -63,8 +63,8 @@ class SchedulerService:
         """Periodic sweep loop with automatic data hygiene."""
         global _last_sweep_at, _sweep_count
 
-        # Initial warm-up wait before first sweep
-        await asyncio.sleep(5)
+        # Initial warm-up wait before first sweep to ensure zero cold-boot interference
+        await asyncio.sleep(45)
 
         interval = max(60, settings.scheduler.fetch_interval_minutes * 60)
 

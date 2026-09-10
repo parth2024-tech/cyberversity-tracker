@@ -17,6 +17,7 @@ COPY pyproject.toml .
 COPY src/ src/
 COPY config/ config/
 COPY web/ web/
+COPY data/ data/
 
 # Install python package
 RUN pip install --no-cache-dir -e .

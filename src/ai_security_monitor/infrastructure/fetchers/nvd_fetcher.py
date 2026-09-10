@@ -62,7 +62,7 @@ class NVDFetcher(BaseFetcher):
                 "title": f"{cve_id}: {description[:200]}",
                 "url": f"https://nvd.nist.gov/vuln/detail/{cve_id}",
                 "content": description,
-                "published_at": datetime.fromisoformat(cve.get("published", "").replace("Z", "+00:00")) if cve.get("published") else datetime.utcnow(),
+                "published_at": datetime.fromisoformat(cve.get("published", "").replace("Z", "+00:00")).replace(tzinfo=None) if cve.get("published") else datetime.utcnow(),
                 "tags": ["cve", "nvd", severity.lower()],
                 "metadata": {
                     "cve_id": cve_id,

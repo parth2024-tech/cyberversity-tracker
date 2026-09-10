@@ -477,3 +477,70 @@ async def export_selected_entries_pdf(payload: ExportPdfRequest):
             "Cache-Control": "no-cache",
         },
     )
+
+
+@entries_router.get("/{entry_id}")
+async def get_entry_by_id(entry_id: str):
+    """Retrieve a single intelligence entry by its UUID."""
+    from uuid import UUID
+
+    from fastapi import HTTPException
+    try:
+        u_id = UUID(entry_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        entry = await uow.entries.get(u_id)
+        if not entry:
+            raise HTTPException(status_code=404, detail="Entry not found")
+
+        sources_map = await _get_sources_map()
+        src = sources_map.get(str(entry.source_id))
+        src_name = src.name if src else "Autonomous AI Radar"
+        src_region = src.config.get("region", "global") if src else "global"
+        src_country = src.config.get("country", "GLOBAL") if src else "GLOBAL"
+        cat_val = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
+        is_ai_cat = cat_val in ("ai_research", "ai_models", "github_trending", "cyber_tools", "ai_tech")
+
+        if entry.analysis:
+            analysis_dict = {
+                "attack_vector": entry.analysis.attack_vector,
+                "risk_assessment": entry.analysis.risk_assessment,
+                "mitigation": entry.analysis.mitigation,
+                "threat_velocity": entry.analysis.threat_velocity,
+                "severity_index": entry.analysis.severity_index,
+                "blast_radius_score": entry.analysis.blast_radius_score,
+                "affected_ecosystem": entry.analysis.affected_ecosystem,
+                "is_pre_cve_warning": entry.analysis.is_pre_cve_warning,
+                "attack_archetype": entry.analysis.attack_archetype,
+                "weaponization_potential": entry.analysis.weaponization_potential,
+                "mitre_attack_id": entry.analysis.mitre_attack_id,
+                "mitre_technique": entry.analysis.mitre_technique,
+                "model": entry.analysis.model.value if hasattr(entry.analysis.model, "value") else str(entry.analysis.model),
+                "is_ai_innovation": is_ai_cat,
+                "innovation_score": entry.analysis.threat_velocity if is_ai_cat else 0,
+                "tech_focus": entry.analysis.attack_vector if is_ai_cat else None,
+                "capability_summary": entry.analysis.risk_assessment if is_ai_cat else None,
+                "actionable_insight": entry.analysis.mitigation if is_ai_cat else None,
+            }
+        else:
+            analysis_dict = None
+
+        return {
+            "id": str(entry.id),
+            "source_id": str(entry.source_id),
+            "source_name": src_name,
+            "region": src_region,
+            "country": src_country,
+            "title": _clean_entry_title(entry.title),
+            "url": entry.url,
+            "content_hash": entry.content_hash,
+            "summary": _clean_entry_summary(entry.summary, entry, entry.title),
+            "published_at": entry.published_at.isoformat() if entry.published_at else None,
+            "fetched_at": entry.fetched_at.isoformat() if entry.fetched_at else None,
+            "category": cat_val,
+            "tags": entry.tags,
+            "metadata": entry.metadata,
+            "analysis": analysis_dict,
+        }

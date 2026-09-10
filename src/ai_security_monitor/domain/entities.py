@@ -84,6 +84,12 @@ class Entry(Entity):
     metadata: dict = field(default_factory=dict)
     analysis: Analysis | None = None
 
+    def __post_init__(self) -> None:
+        if self.published_at and hasattr(self.published_at, "tzinfo") and self.published_at.tzinfo is not None:
+            self.published_at = self.published_at.replace(tzinfo=None)
+        if self.fetched_at and hasattr(self.fetched_at, "tzinfo") and self.fetched_at.tzinfo is not None:
+            self.fetched_at = self.fetched_at.replace(tzinfo=None)
+
 
 @dataclass(kw_only=True)
 class Analysis(Entity):

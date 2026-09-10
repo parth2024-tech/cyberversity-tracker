@@ -280,8 +280,8 @@ class MonitorService:
 
         return log
 
-    async def fetch_all(self, force: bool = False, max_concurrency: int = 12) -> dict:
-        """Fetch intelligence from all enabled sources concurrently with maximum throughput."""
+    async def fetch_all(self, force: bool = False, max_concurrency: int = 4) -> dict:
+        """Fetch intelligence from all enabled sources concurrently with rock-solid stability."""
         async with self._uow_factory() as uow:
             sources = await uow.sources.list(enabled_only=True)
 
@@ -312,6 +312,9 @@ class MonitorService:
                     async with lock:
                         error += 1
                     logger.warning(f"Concurrent sweep error for {src.name}: {e}")
+                finally:
+                    # Cooperative yield to ensure event loop remains responsive for HTTP requests
+                    await asyncio.sleep(0.02)
 
         # Execute all sources concurrently across the worker pool
         await asyncio.gather(*[_worker(src) for src in sources], return_exceptions=True)
@@ -331,13 +334,20 @@ class MonitorService:
         }
 
     async def purge_stale_entries(self, older_than_days: int | None = None) -> dict:
-        """Remove entries older than retention window (defaults to settings.database.retention_days = 7).
+        """Remove entries, logs, and digests older than retention window (defaults to settings.database.retention_days = 7).
 
-        Returns a summary dict with the count of purged entries.
+        Returns a summary dict with the count of purged items.
         """
         days = older_than_days if older_than_days is not None else settings.database.retention_days
         async with self._uow_factory() as uow:
             purged = await uow.entries.purge_old_entries(older_than_days=days)
+            purged_logs = await uow.fetch_logs.purge_old_logs(older_than_days=days)
+            purged_digests = await uow.digests.purge_old_digests(older_than_days=days)
+            try:
+                from sqlalchemy import text
+                await uow.session.execute(text("PRAGMA optimize"))
+            except Exception:
+                pass
             await uow.commit()
 
         # Invalidate caches after data hygiene purge
@@ -347,8 +357,16 @@ class MonitorService:
         response_cache.invalidate("stats_totals")
         response_cache.invalidate("sweep_status")
 
-        logger.info(f"Data hygiene purge complete: removed {purged} entries older than {days} days")
-        return {"purged": purged, "older_than_days": days}
+        logger.info(
+            f"Data hygiene purge complete: removed {purged} entries, "
+            f"{purged_logs} logs, {purged_digests} digests older than {days} days"
+        )
+        return {
+            "purged": purged,
+            "purged_logs": purged_logs,
+            "purged_digests": purged_digests,
+            "older_than_days": days,
+        }
 
     async def get_sweep_status(self) -> dict:
         """Return live sweep freshness data: last sweep time, next sweep ETA, per-source freshness."""
