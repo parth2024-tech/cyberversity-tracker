@@ -24,7 +24,7 @@ class ArxivFetcher(BaseFetcher):
     async def _fetch_raw(self) -> list[dict]:
         """Fetch from arXiv API."""
         query = self.source.query or "cat:cs.AI OR cat:cs.LG OR cat:cs.CL OR cat:cs.CV"
-        url = "http://export.arxiv.org/api/query"
+        url = "https://export.arxiv.org/api/query"
         params = {
             "search_query": query,
             "start": 0,

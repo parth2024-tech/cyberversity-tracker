@@ -2080,7 +2080,7 @@
       _set('total-entries', (stats.total_entries || 0).toLocaleString());
       _set('trending-repos-count', (cats.github_trending || 0).toLocaleString());
       _set('frontier-models-count', (cats.ai_models || 0).toLocaleString());
-      _set('ai-count', (cats.ai_research || (cats.ai_tech || 0)).toLocaleString());
+      _set('ai-count', (cats.ai_research || 0).toLocaleString());
       _set('security-cve-count', ((cats.vulnerabilities || 0) + (cats.cybersecurity || 0) + (cats.exploits_tricks || 0)).toLocaleString());
       _set('developer-tools-count', (cats.cyber_tools || 0).toLocaleString());
       _set('pre-cve-count', (stats.pre_cve_warnings || 0).toLocaleString());
@@ -2336,19 +2336,33 @@
         updateActiveFiltersBar();
 
         if (!data.entries || data.entries.length === 0) {
-          if (reset && container) {
+          if (container) {
+            container.classList.remove('feed-dimmed');
+            if (loadingBar) loadingBar.classList.remove('opacity-100');
+            const catTitle = (currentCategory || 'selected').replace(/_/g, ' ');
             const emptyMsg = currentCategory === 'pinned' 
               ? "No pinned items in your investigation board. Click the ⭐ icon on any card to pin it here!"
               : currentCategory === 'only_new'
-              ? "All caught up! No new intelligence arrived since your last refresh. Click [★ ALL INTEL] or Refresh to view all stories."
-              : "No intelligence items found for selected criteria.";
+              ? "All caught up! No new intelligence arrived since your last session refresh. Click [★ ALL INTEL] or Refresh to view all stories."
+              : `No intelligence items currently found in "${catTitle}". Click below to explore the entire global AI wire.`;
             container.innerHTML = `
-              <div class="glass-panel rounded-2xl p-12 text-center text-cyber-muted space-y-2">
-                <i data-lucide="${currentCategory === 'pinned' ? 'star' : currentCategory === 'only_new' ? 'sparkles' : 'inbox'}" class="w-8 h-8 mx-auto text-gray-500"></i>
-                <p class="font-mono text-sm">${emptyMsg}</p>
+              <div class="glass-panel rounded-2xl p-10 text-center space-y-4 border border-cyan-500/20 col-span-full">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
+                  <i data-lucide="${currentCategory === 'pinned' ? 'star' : currentCategory === 'only_new' ? 'sparkles' : 'inbox'}" class="w-6 h-6"></i>
+                </div>
+                <div class="space-y-1">
+                  <h3 class="text-sm font-semibold text-white font-mono uppercase tracking-wide">Category Ingesting / Awaiting Data</h3>
+                  <p class="text-xs text-slate-400 font-mono max-w-md mx-auto leading-relaxed">${emptyMsg}</p>
+                </div>
+                <div class="flex items-center justify-center gap-3 pt-2">
+                  <button onclick="setCategory('all')" class="px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-medium transition cursor-pointer">★ View All AI Intel</button>
+                  <button onclick="triggerScan()" class="px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-slate-300 font-mono text-xs transition cursor-pointer">⚡ Sweep Global Feeds</button>
+                </div>
               </div>
             `;
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+              lucide.createIcons();
+            }
           }
           const loadMoreBtn = document.getElementById('load-more-btn');
           if (loadMoreBtn) loadMoreBtn.style.display = 'none';
@@ -2360,7 +2374,11 @@
         // Single atomic paint with DocumentFragment to eliminate reflow and visual jitter
         const fragment = document.createDocumentFragment();
         data.entries.forEach(entry => {
-          fragment.appendChild(createCardElement(entry));
+          try {
+            fragment.appendChild(createCardElement(entry));
+          } catch (cardErr) {
+            console.warn("Card rendering error for:", entry.id, cardErr);
+          }
         });
 
         if (container) {
@@ -2369,7 +2387,9 @@
             focusedCardIndex = -1;
           }
           container.appendChild(fragment);
-          lucide.createIcons();
+          if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            lucide.createIcons();
+          }
         }
 
         const loadMoreBtn = document.getElementById('load-more-btn');

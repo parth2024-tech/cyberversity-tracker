@@ -60,29 +60,35 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await monitor_service.init_sources()
         logger.info("Sources configuration synchronized with database")
 
-        # Ensure critical categories (trending repos & dev tools) are primed if empty
+        # Ensure all 5 AI ecosystem pillars are primed if empty on startup
         async def _prime_critical_feeds():
             try:
                 stats = await monitor_service.get_stats()
                 by_cat = stats.get("by_category", {})
-                if (by_cat.get("github_trending", 0) == 0 or by_cat.get("cyber_tools", 0) == 0):
-                    logger.info("Priming trending repositories and developer tools feeds...")
+                ai_pillars = ("ai_research", "ai_models", "github_trending", "cyber_tools", "ai_tech")
+                missing_pillars = [c for c in ai_pillars if by_cat.get(c, 0) == 0]
+                if missing_pillars:
+                    logger.info(f"Priming missing AI ecosystem categories on boot: {missing_pillars}...")
                     from ai_security_monitor.infrastructure.database.unit_of_work import (
                         SqlAlchemyUnitOfWork,
                     )
                     async with SqlAlchemyUnitOfWork() as uow:
                         all_srcs = await uow.sources.list(enabled_only=True)
-                    targets = [s for s in all_srcs if s.category.value in ("github_trending", "cyber_tools")]
-                    for s in targets:
-                        try:
-                            await monitor_service.fetch_source(s)
-                            await asyncio.sleep(0.05)
-                        except Exception:
-                            pass
+                    targets = [s for s in all_srcs if s.category.value in missing_pillars]
+                    sem = asyncio.Semaphore(8)
+
+                    async def _fetch_target(s):
+                        async with sem:
+                            try:
+                                await asyncio.wait_for(monitor_service.fetch_source(s), timeout=25.0)
+                            except Exception as src_err:
+                                logger.warning(f"Error priming source {s.name}: {src_err}")
+
+                    await asyncio.gather(*[_fetch_target(s) for s in targets], return_exceptions=True)
                     from ai_security_monitor.infrastructure.cache import response_cache
                     response_cache.invalidate("stats_totals")
                     response_cache.invalidate_prefix("entries_")
-                    logger.info("Critical feeds successfully primed on boot")
+                    logger.info("Critical AI feeds successfully primed on boot")
             except Exception as prime_err:
                 logger.warning(f"Error priming critical feeds: {prime_err}")
 
