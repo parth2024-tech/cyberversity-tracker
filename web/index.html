@@ -1055,6 +1055,9 @@
             <!-- Category Navigation -->
             <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full pb-1 text-xs font-mono">
               <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.12] text-white border border-white/20 font-medium transition whitespace-nowrap">★ ALL INTEL</button>
+              <button onclick="setCategory('only_new')" id="tab-only_new" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> ⚡ ONLY NEW <span id="new-tab-count-badge" class="hidden px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded-full text-[10px] font-bold">0</span>
+              </button>
               <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-cyan-300 hover:text-cyan-200 border border-cyan-500/25 hover:border-cyan-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
                 <i data-lucide="git-branch" class="w-3.5 h-3.5 text-cyan-400"></i> 🚀 TRENDING REPOS
               </button>
@@ -1188,20 +1191,6 @@
           <div class="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 animate-feed-loading w-1/3 rounded-full"></div>
         </div>
 
-        <!-- Pending New Updates Available Banner (Calm, Non-Intrusive, Click to Refresh) -->
-        <div id="new-updates-banner" class="hidden mb-3 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-cyan-950/90 to-blue-950/90 border border-cyan-500/40 text-cyan-200 text-xs font-mono flex items-center justify-between shadow-lg shadow-cyan-950/40 cursor-pointer hover:border-cyan-400/60 transition active:scale-[0.99]" onclick="refreshFeedNow()">
-          <div class="flex items-center gap-2.5">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-            </span>
-            <span><strong id="new-updates-count" class="text-white font-bold">0</strong> new AI updates available</span>
-          </div>
-          <button type="button" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-[11px] font-mono flex items-center gap-1.5 font-semibold transition">
-            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh Feed
-          </button>
-        </div>
-
         <!-- Feed Cards Container (Grid View by default) -->
         <div id="feed-container" class="grid-view transition-opacity duration-200">
           <!-- Populated dynamically via JS -->
@@ -1293,34 +1282,24 @@
     let audioEnabled = true;
     let categoryChart = null;
     let allFeedItems = [];
-    let pendingNewEntries = [];
+    const REFRESH_TIMESTAMP_KEY = 'aether_last_refresh_timestamp';
+    // Retrieve previous refresh baseline (or 2 hours ago on cold first start)
+    let previousSessionRefreshTime = parseInt(localStorage.getItem(REFRESH_TIMESTAMP_KEY) || '0', 10);
+    if (!previousSessionRefreshTime) {
+      previousSessionRefreshTime = Date.now() - (2 * 3600 * 1000);
+    }
+    // Record current session timestamp for subsequent refresh comparison
+    localStorage.setItem(REFRESH_TIMESTAMP_KEY, Date.now().toString());
+
     let currentViewMode = 'grid'; // 'grid' | 'list'
     let activeTechChip = '';
     let focusedCardIndex = -1;
 
-    function updatePendingBanner() {
-      const count = pendingNewEntries.length;
-      const banner = document.getElementById('new-updates-banner');
-      const countEl = document.getElementById('new-updates-count');
-      const badge = document.getElementById('refresh-pending-badge');
-      if (count > 0) {
-        if (banner) {
-          banner.classList.remove('hidden');
-          if (countEl) countEl.innerText = count;
-        }
-        if (badge) {
-          badge.classList.remove('hidden');
-          badge.innerText = count > 99 ? '99+' : count;
-        }
-      } else {
-        if (banner) banner.classList.add('hidden');
-        if (badge) badge.classList.add('hidden');
-      }
-    }
-
     async function refreshFeedNow() {
-      pendingNewEntries = [];
-      updatePendingBanner();
+      // Advance session baseline to previous refresh time, then update storage to now
+      previousSessionRefreshTime = parseInt(localStorage.getItem(REFRESH_TIMESTAMP_KEY) || Date.now().toString(), 10);
+      localStorage.setItem(REFRESH_TIMESTAMP_KEY, Date.now().toString());
+
       const icon = document.getElementById('scan-icon');
       if (icon) icon.classList.add('animate-spin');
       playBeep('click');
@@ -1819,41 +1798,9 @@
         }
       } else if (msg.type === 'connected') {
         if (msg.stats) renderStats(msg.stats);
-        if (msg.recent_entries && (!allFeedItems || allFeedItems.length === 0)) {
-          allFeedItems = msg.recent_entries;
-          const container = document.getElementById('feed-container');
-          if (container) {
-            container.innerHTML = '';
-            const fragment = document.createDocumentFragment();
-            allFeedItems.forEach(entry => {
-              fragment.appendChild(createCardElement(entry));
-            });
-            container.appendChild(fragment);
-            lucide.createIcons();
-          }
-        }
-      } else if (msg.type === 'emergency_threat_alert') {
-        const item = msg.data;
-        if (item && item.id) {
-          const inFeed = allFeedItems.some(e => e.id === item.id);
-          const inPending = pendingNewEntries.some(e => e.id === item.id);
-          if (!inFeed && !inPending) {
-            pendingNewEntries.unshift(item);
-            updatePendingBanner();
-          }
-        }
-        refreshStats();
-      } else if (msg.type === 'new_entry') {
-        const entry = msg.data;
-        if (entry && entry.id) {
-          const inFeed = allFeedItems.some(e => e.id === entry.id);
-          const inPending = pendingNewEntries.some(e => e.id === entry.id);
-          if (!inFeed && !inPending) {
-            pendingNewEntries.unshift(entry);
-            updatePendingBanner();
-          }
-        }
-        refreshStats();
+      } else if (msg.type === 'emergency_threat_alert' || msg.type === 'new_entry') {
+        // Quiet mode: Never mutate active feed or trigger popups while user is reading.
+        // New information arrives cleanly and strictly when user refreshes the page.
       } else if (msg.type === 'scan_status') {
         const banner = document.getElementById('scan-progress-banner');
         const icon = document.getElementById('scan-icon');
@@ -1866,13 +1813,6 @@
           icon.classList.remove('animate-spin');
           if (msg.results) {
             refreshStats();
-            const newCount = msg.results.new_entries || 0;
-            if (newCount > 0 && pendingNewEntries.length === 0) {
-              const uBanner = document.getElementById('new-updates-banner');
-              const uCount = document.getElementById('new-updates-count');
-              if (uBanner) uBanner.classList.remove('hidden');
-              if (uCount) uCount.innerText = newCount;
-            }
           }
         }
       } else if (msg.type === 'triage_queue_updated') {
@@ -2246,6 +2186,8 @@
           url += `&high_velocity=true`;
         } else if (currentCategory === 'pinned') {
           url = `/api/entries?limit=150&offset=0&sort_by=${sortMode}`;
+        } else if (currentCategory === 'only_new') {
+          url = `/api/entries?limit=150&offset=0&sort_by=${sortMode}`;
         } else if (currentCategory !== 'all') {
           url += `&category=${currentCategory}`;
         }
@@ -2267,7 +2209,32 @@
         const res = await fetch(url, { cache: 'default' });
         let data = await res.json();
 
-        if (currentCategory === 'pinned') {
+        // Calculate is_new_since_refresh relative to previous session refresh baseline
+        let newCount = 0;
+        (data.entries || []).forEach(e => {
+          const entryTime = new Date(e.fetched_at || e.published_at || 0).getTime();
+          if (entryTime > previousSessionRefreshTime) {
+            e.is_new_since_refresh = true;
+            newCount++;
+          } else {
+            e.is_new_since_refresh = false;
+          }
+        });
+
+        // Update ONLY NEW tab badge
+        const newBadgeEl = document.getElementById('new-tab-count-badge');
+        if (newBadgeEl) {
+          if (newCount > 0) {
+            newBadgeEl.classList.remove('hidden');
+            newBadgeEl.innerText = newCount;
+          } else {
+            newBadgeEl.classList.add('hidden');
+          }
+        }
+
+        if (currentCategory === 'only_new') {
+          data.entries = (data.entries || []).filter(e => e.is_new_since_refresh);
+        } else if (currentCategory === 'pinned') {
           const pinnedIds = new Set(getPinnedThreatIds());
           data.entries = (data.entries || []).filter(e => pinnedIds.has(e.id));
         }
@@ -2278,10 +2245,12 @@
           if (reset && container) {
             const emptyMsg = currentCategory === 'pinned' 
               ? "No pinned items in your investigation board. Click the ⭐ icon on any card to pin it here!"
+              : currentCategory === 'only_new'
+              ? "All caught up! No new intelligence arrived since your last refresh. Click [★ ALL INTEL] or Refresh to view all stories."
               : "No intelligence items found for selected criteria.";
             container.innerHTML = `
               <div class="glass-panel rounded-2xl p-12 text-center text-cyber-muted space-y-2">
-                <i data-lucide="${currentCategory === 'pinned' ? 'star' : 'inbox'}" class="w-8 h-8 mx-auto text-gray-500"></i>
+                <i data-lucide="${currentCategory === 'pinned' ? 'star' : currentCategory === 'only_new' ? 'sparkles' : 'inbox'}" class="w-8 h-8 mx-auto text-gray-500"></i>
                 <p class="font-mono text-sm">${emptyMsg}</p>
               </div>
             `;
@@ -2425,6 +2394,11 @@
       const isPinned = isThreatPinned(entry.id);
       const filteredEco = (ecosystem || []).filter(e => e && e !== 'INFRASTRUCTURE' && e !== 'Enterprise Systems');
 
+      let newBadge = '';
+      if (entry.is_new_since_refresh) {
+        newBadge = `<span class="text-[9px] font-mono font-bold text-slate-950 bg-amber-400 px-1.5 py-0.5 rounded-sm shadow-sm flex items-center gap-1">⚡ NEW</span>`;
+      }
+
       // Render mode check: Compact List vs Grid
       if (currentViewMode === 'list') {
         card.className = `feed-card feed-card-compact ${accentClass}`;
@@ -2433,6 +2407,7 @@
             <div class="flex items-center gap-2 mb-1 flex-wrap">
               <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${catLabel}</span>
               ${provenanceBadge}
+              ${newBadge}
               <span class="text-slate-500 text-[10px] font-mono">${flag} ${sourceDisplayName}</span>
               <span class="text-slate-600 text-[10px] font-mono ml-auto sm:ml-0">${pubDate}</span>
             </div>
@@ -2461,6 +2436,7 @@
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${catLabel}</span>
                 ${provenanceBadge}
+                ${newBadge}
                 ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `<span class="text-[9px] font-mono text-indigo-400">✦ AI</span>` : ''}
                 ${(entry.matched_watchlist_rules || []).map(w => `<span class="text-[9px] font-mono text-cyan-400 uppercase">◉ ${w}</span>`).join('')}
               </div>
