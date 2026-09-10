@@ -1775,7 +1775,12 @@
         playBeep('critical');
       } else if (msg.type === 'new_entry') {
         const entry = msg.data;
-        if (entry.matched_watchlist_rules && entry.matched_watchlist_rules.length > 0) {
+        const analysis = entry.analysis || {};
+        const velocity = analysis.threat_velocity !== undefined ? analysis.threat_velocity : 0;
+        const hasWatchlistMatch = Boolean(entry.matched_watchlist_rules && entry.matched_watchlist_rules.length > 0);
+        const isHighImpact = hasWatchlistMatch || velocity >= 80;
+
+        if (hasWatchlistMatch) {
           showHUDToast({
             title: entry.title,
             message: `Target matched active tracking rule: [${entry.matched_watchlist_rules.join(', ')}]`,
@@ -1785,12 +1790,20 @@
             borderClass: "border-sky-500/40 shadow-sky-500/20",
             onClick: () => openInspectModal(entry)
           });
-        } else {
+        } else if (isHighImpact) {
           showToastNotification(entry);
         }
+
         prependFeedItem(entry);
-        const isCritical = entry.category === 'ai_models' || entry.category === 'github_trending';
-        playBeep(isCritical ? 'alert' : 'click');
+
+        // Debounce alert sounds to avoid audio buffer saturation during multi-source sweeps
+        const nowMs = performance.now();
+        if (!window._lastBeepTime || (nowMs - window._lastBeepTime > 2500)) {
+          window._lastBeepTime = nowMs;
+          if (isHighImpact) {
+            playBeep('alert');
+          }
+        }
         refreshStats();
       } else if (msg.type === 'scan_status') {
         const banner = document.getElementById('scan-progress-banner');
@@ -1829,6 +1842,12 @@
     function showHUDToast({ title, message, badge = "SYSTEM", icon = "info", color = "text-sky-400", borderClass = "border-white/[0.08]", onClick = null }) {
       const container = document.getElementById('toast-container');
       if (!container) return;
+
+      // Keep maximum 3 toast notifications on screen to prevent browser UI spam and memory pressure
+      while (container.children.length >= 3) {
+        container.lastElementChild.remove();
+      }
+
       const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
       const toast = document.createElement('div');
       toast.id = toastId;
@@ -1856,13 +1875,18 @@
       }
       container.prepend(toast);
       lucide.createIcons();
-      setTimeout(() => dismissToast(toastId), 6000);
+      setTimeout(() => dismissToast(toastId), 4500);
     }
 
     // Toast Pop-up Notification Engine for Ingested Entries
     function showToastNotification(entry) {
       const container = document.getElementById('toast-container');
       if (!container) return;
+
+      // Ensure no more than 3 notifications accumulate
+      while (container.children.length >= 3) {
+        container.lastElementChild.remove();
+      }
       const isSecurityCategory = ['vulnerabilities', 'cybersecurity', 'exploits_tricks'].includes(entry.category || '');
       const isPreCve = isSecurityCategory && entry.analysis && entry.analysis.is_pre_cve_warning;
       const isCritical = entry.category === 'vulnerabilities' || (isSecurityCategory && entry.analysis && entry.analysis.threat_velocity >= 70);
@@ -2238,9 +2262,14 @@
 
     function prependFeedItem(entry) {
       const container = document.getElementById('feed-container');
+      if (!container) return;
       const card = createCardElement(entry);
       card.classList.add('toast-animate-in');
       container.prepend(card);
+      // Prune excess cards if feed exceeds 100 items in DOM to keep memory low and smooth
+      while (container.children.length > 100) {
+        container.lastElementChild.remove();
+      }
       lucide.createIcons();
     }
 

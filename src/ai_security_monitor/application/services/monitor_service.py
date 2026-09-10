@@ -286,6 +286,8 @@ class MonitorService:
                 total_new += log.entries_new
             else:
                 error += 1
+            # Gentle pacing between source sweeps to avoid network/CPU bursts
+            await asyncio.sleep(0.5)
 
         return {
             "total_sources": len(sources),
