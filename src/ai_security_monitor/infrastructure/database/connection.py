@@ -50,10 +50,16 @@ def _ensure_seed_database(db_path: str) -> None:
             cursor = conn.cursor()
             cursor.execute("SELECT count(*) FROM entries")
             row = cursor.fetchone()
-            cursor.close()
-            conn.close()
             if not row or row[0] < 50:
                 needs_seeding = True
+            else:
+                # Re-seed if existing database contains legacy non-AI categories
+                cursor.execute("SELECT count(*) FROM entries WHERE category IN ('vulnerabilities', 'cybersecurity', 'exploits_tricks')")
+                legacy_row = cursor.fetchone()
+                if legacy_row and legacy_row[0] > 0:
+                    needs_seeding = True
+            cursor.close()
+            conn.close()
         except Exception:
             needs_seeding = True
 

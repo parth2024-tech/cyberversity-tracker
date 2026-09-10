@@ -478,11 +478,21 @@ class MonitorService:
                         "avg_blast": avg_b,
                         "risk_level": risk_label
                     })
-            except Exception as e:
+            except Exception:
                 pass
 
+            # Compute total strictly across the 5 Worldwide AI Ecosystem pillars
+            ai_pillars = (
+                Category.GITHUB_TRENDING.value,
+                Category.AI_MODELS.value,
+                Category.AI_RESEARCH.value,
+                Category.CYBER_TOOLS.value,
+                Category.AI_TECH.value,
+            )
+            total_ai_entries = sum(cats.get(p, 0) for p in ai_pillars)
+
             return {
-                "total_entries": total_entries,
+                "total_entries": total_ai_entries if total_ai_entries > 0 else total_entries,
                 "total_sources": total_sources,
                 "high_velocity_entries": high_velocity,
                 "pre_cve_warnings": pre_cve_warnings,

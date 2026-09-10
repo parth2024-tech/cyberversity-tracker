@@ -1011,32 +1011,37 @@
       </div>
     </div>
 
-    <!-- METRICS TELEMETRY ROW: 5 BALANCED PILLARS -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+    <!-- METRICS TELEMETRY ROW: 6 BALANCED WORLDWIDE AI PILLARS -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       <!-- Total Intelligence -->
-      <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('all')">
+      <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('all')" title="View all combined worldwide AI intelligence">
         <div class="kpi-number" id="total-entries">—</div>
-        <div class="kpi-label">★ Total Intel</div>
+        <div class="kpi-label">★ Total AI Intel</div>
       </div>
       <!-- Trending Repositories -->
-      <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('github_trending')">
+      <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('github_trending')" title="View trending open-source AI codebases & repositories">
         <div class="kpi-number" id="trending-repos-count">—</div>
         <div class="kpi-label">🚀 Trending Repos</div>
       </div>
       <!-- Frontier AI Models -->
-      <div class="kpi-card kpi-violet cursor-pointer" onclick="setCategory('ai_models')">
+      <div class="kpi-card kpi-violet cursor-pointer" onclick="setCategory('ai_models')" title="View frontier foundation models & reasoning weights">
         <div class="kpi-number" id="frontier-models-count">—</div>
         <div class="kpi-label">🤖 Frontier Models</div>
       </div>
       <!-- AI Research Papers -->
-      <div class="kpi-card kpi-green cursor-pointer" onclick="setCategory('ai_research')">
+      <div class="kpi-card kpi-green cursor-pointer" onclick="setCategory('ai_research')" title="View seminal arXiv research & algorithmic breakthroughs">
         <div class="kpi-number" id="ai-count">—</div>
         <div class="kpi-label">🔬 Top Research</div>
       </div>
       <!-- Developer Tools & Infrastructure -->
-      <div class="kpi-card kpi-amber cursor-pointer" onclick="setCategory('cyber_tools')">
+      <div class="kpi-card kpi-amber cursor-pointer" onclick="setCategory('cyber_tools')" title="View AI runtimes, inference engines & developer infrastructure">
         <div class="kpi-number" id="developer-tools-count">—</div>
         <div class="kpi-label">🛠️ Developer Tools</div>
+      </div>
+      <!-- Global AI Tech & Sovereign Ecosystems -->
+      <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('ai_tech')" title="View sovereign AI, national labs & global industry tech">
+        <div class="kpi-number" id="global-tech-count">—</div>
+        <div class="kpi-label">🌐 Global AI Tech</div>
       </div>
     </div>
 
@@ -1955,6 +1960,7 @@
         else if (cat === 'ai_models' || cat === 'frontier_models') incrementKPICounter('frontier-models-count');
         else if (cat === 'ai_research' || cat === 'research_papers') incrementKPICounter('ai-count');
         else if (cat === 'cyber_tools' || cat === 'dev_tools') incrementKPICounter('developer-tools-count');
+        else if (cat === 'ai_tech') incrementKPICounter('global-tech-count');
 
         // 4. Track in pending buffer for reference
         const entryId = entry.id || ('new-' + (entry.url || Date.now()));
@@ -2172,12 +2178,20 @@
       const _set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
       const totalSrcs = stats.total_sources || 0;
       const cats = stats.by_category || {};
-      _set('total-entries', (stats.total_entries || 0).toLocaleString());
-      _set('trending-repos-count', (cats.github_trending || 0).toLocaleString());
-      _set('frontier-models-count', (cats.ai_models || 0).toLocaleString());
-      _set('ai-count', (cats.ai_research || 0).toLocaleString());
-      _set('security-cve-count', ((cats.vulnerabilities || 0) + (cats.cybersecurity || 0) + (cats.exploits_tricks || 0)).toLocaleString());
-      _set('developer-tools-count', (cats.cyber_tools || 0).toLocaleString());
+
+      const trending = cats.github_trending || 0;
+      const models = cats.ai_models || 0;
+      const research = cats.ai_research || 0;
+      const tools = cats.cyber_tools || 0;
+      const tech = cats.ai_tech || 0;
+      const totalAi = trending + models + research + tools + tech;
+
+      _set('total-entries', (totalAi || stats.total_entries || 0).toLocaleString());
+      _set('trending-repos-count', trending.toLocaleString());
+      _set('frontier-models-count', models.toLocaleString());
+      _set('ai-count', research.toLocaleString());
+      _set('developer-tools-count', tools.toLocaleString());
+      _set('global-tech-count', tech.toLocaleString());
       _set('pre-cve-count', (stats.pre_cve_warnings || 0).toLocaleString());
       _set('high-vel-count', (stats.high_velocity_entries || 0).toLocaleString());
       _set('active-sources-count', totalSrcs);
@@ -2250,7 +2264,7 @@
         cats.github_trending || 0,
         cats.ai_models || 0,
         cats.ai_research || 0,
-        (cats.cyber_tools || 0) + (cats.cybersecurity || 0),
+        cats.cyber_tools || 0,
         cats.ai_tech || 0
       ];
 
