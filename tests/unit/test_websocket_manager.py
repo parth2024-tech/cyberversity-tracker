@@ -12,7 +12,6 @@ import pytest
 
 from ai_security_monitor.presentation.api.websocket.manager import ConnectionManager
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -127,12 +126,12 @@ class TestBroadcastConcurrent:
     async def test_broadcast_sends_same_payload_to_all(self):
         """Verify all clients receive exactly the same serialized payload."""
         mgr = ConnectionManager()
-        wsList = [_mock_ws() for _ in range(5)]
-        mgr.active_connections = set(wsList)
+        ws_list = [_mock_ws() for _ in range(5)]
+        mgr.active_connections = set(ws_list)
 
         msg = {"type": "global_broadcast"}
         await mgr.broadcast(msg)
 
         expected = json.dumps(msg)
-        for ws in wsList:
+        for ws in ws_list:
             ws.send_text.assert_awaited_once_with(expected)

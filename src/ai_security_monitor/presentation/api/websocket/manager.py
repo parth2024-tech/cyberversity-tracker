@@ -42,7 +42,7 @@ class ConnectionManager:
         )
 
         # Prune any connections that raised an exception
-        for conn, result in zip(connections, results):
+        for conn, result in zip(connections, results, strict=False):
             if isinstance(result, Exception):
                 logger.warning(f"WebSocket send failed, dropping client: {result}")
                 self.active_connections.discard(conn)
@@ -63,8 +63,12 @@ async def websocket_endpoint(websocket: WebSocket):
             "message": "Connected to Global AI Gazette Autonomous Intelligence Radar",
         }
         try:
-            from ai_security_monitor.presentation.api.routers.entries import query_serialized_entries
-            from ai_security_monitor.presentation.api.routers.stats import get_monitor_service
+            from ai_security_monitor.presentation.api.routers.entries import (
+                query_serialized_entries,
+            )
+            from ai_security_monitor.presentation.api.routers.stats import (
+                get_monitor_service,
+            )
 
             svc = get_monitor_service()
             init_payload["stats"] = await svc.get_stats()

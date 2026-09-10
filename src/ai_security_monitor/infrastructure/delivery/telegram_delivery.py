@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import httpx
 
 from ai_security_monitor.domain.entities import Analysis, Digest, Entry

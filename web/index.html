@@ -1145,6 +1145,15 @@
             </div>
             
             <div class="flex items-center gap-2 flex-shrink-0">
+              <!-- Rocket Live Stream Real-Time Stream Toggle -->
+              <button id="rocket-stream-btn" onclick="toggleRocketStream()" class="px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-cyan-500/15 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 shadow-sm shadow-cyan-500/20" title="Toggle real-time rocket speed popping">
+                <span class="relative flex h-2 w-2">
+                  <span id="rocket-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                  <span id="rocket-dot" class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+                </span>
+                <span id="rocket-stream-label">🚀 ROCKET LIVE: ON</span>
+              </button>
+
               <span class="text-[10px] font-mono text-slate-500 uppercase">SORT:</span>
               <select id="sort-select" onchange="loadFeed(true)" class="glass-input px-3 py-2 text-xs font-mono text-slate-300 cursor-pointer">
                 <option value="top" selected>★ Top News First</option>
@@ -1825,8 +1834,64 @@
       };
     }
 
-    // Pending new stories tracking (Refresh-Only paradigm)
+    // Pending new stories tracking
     let pendingNewEntries = [];
+
+    // Rocket Live Stream Control (Defaults to ON for blazing real-time popping)
+    let rocketStreamActive = true;
+
+    function toggleRocketStream() {
+      rocketStreamActive = !rocketStreamActive;
+      const btn = document.getElementById('rocket-stream-btn');
+      const label = document.getElementById('rocket-stream-label');
+      const ping = document.getElementById('rocket-ping');
+      const dot = document.getElementById('rocket-dot');
+
+      if (rocketStreamActive) {
+        if (btn) {
+          btn.className = 'px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-cyan-500/15 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 shadow-sm shadow-cyan-500/20';
+        }
+        if (label) label.innerText = '🚀 ROCKET LIVE: ON';
+        if (ping) ping.classList.remove('hidden');
+        if (dot) {
+          dot.classList.remove('bg-slate-500');
+          dot.classList.add('bg-cyan-400');
+        }
+        showToast('Rocket Live Stream Active: Incoming intelligence pops at maximum speed', 'info');
+        if (pendingNewEntries.length > 0) {
+          loadFeed(true);
+        }
+      } else {
+        if (btn) {
+          btn.className = 'px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-white/[0.03] border-white/[0.1] text-slate-400 hover:text-slate-200';
+        }
+        if (label) label.innerText = '⏸ ROCKET STREAM: PAUSED';
+        if (ping) ping.classList.add('hidden');
+        if (dot) {
+          dot.classList.remove('bg-cyan-400');
+          dot.classList.add('bg-slate-500');
+        }
+        showToast('Rocket Stream Paused: New stories will wait for manual refresh', 'info');
+      }
+      playBeep('click');
+    }
+
+    // Live KPI Counter Animated Ticker
+    function incrementKPICounter(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const text = el.innerText.trim();
+      if (text === '—') {
+        el.innerText = '1';
+        return;
+      }
+      const current = parseInt(text.replace(/,/g, ''), 10);
+      if (!isNaN(current)) {
+        el.innerText = (current + 1).toLocaleString();
+        el.classList.add('text-cyan-300', 'scale-110');
+        setTimeout(() => el.classList.remove('text-cyan-300', 'scale-110'), 700);
+      }
+    }
 
     function updatePendingBanner() {
       const banner = document.getElementById('new-stories-banner');
@@ -1864,18 +1929,38 @@
       } else if (msg.type === 'connected') {
         if (msg.stats) renderStats(msg.stats);
       } else if (msg.type === 'emergency_threat_alert' || msg.type === 'new_entry') {
-        // Quiet mode: Never mutate active feed or trigger popups while user is reading.
-        // New information arrives cleanly and strictly when user refreshes the page.
         const entry = msg.data || msg.entry;
-        if (entry && entry.id) {
-          if (!pendingNewEntries.some(e => e.id === entry.id)) {
-            pendingNewEntries.push(entry);
-            updatePendingBanner();
+        if (!entry) return;
+
+        // 1. Instant Luxury Toast Popup in the Corner
+        showToastNotification(entry);
+
+        // 2. Real-time Live Popping into Feed (if Rocket Stream active)
+        if (rocketStreamActive) {
+          const matchesCategory = currentCategory === 'all' || currentCategory === entry.category || currentCategory === 'only_new';
+          if (matchesCategory) {
+            const existingCard = document.getElementById('threat-card-' + entry.id);
+            if (!existingCard) {
+              prependFeedItem(entry);
+            }
           }
-        } else if (entry) {
-          const pseudoId = 'new-' + (entry.url || Date.now());
-          if (!pendingNewEntries.some(e => e.id === pseudoId)) {
-            pendingNewEntries.push({ ...entry, id: pseudoId });
+          // Acoustic alert tone
+          playBeep('alert');
+        }
+
+        // 3. Real-Time Telemetry Counter Increments
+        incrementKPICounter('total-entries');
+        const cat = entry.category || '';
+        if (cat === 'github_trending' || cat === 'trending_repos') incrementKPICounter('trending-repos-count');
+        else if (cat === 'ai_models' || cat === 'frontier_models') incrementKPICounter('frontier-models-count');
+        else if (cat === 'ai_research' || cat === 'research_papers') incrementKPICounter('ai-count');
+        else if (cat === 'cyber_tools' || cat === 'dev_tools') incrementKPICounter('developer-tools-count');
+
+        // 4. Track in pending buffer for reference
+        const entryId = entry.id || ('new-' + (entry.url || Date.now()));
+        if (!pendingNewEntries.some(e => e.id === entryId)) {
+          pendingNewEntries.push({ ...entry, id: entryId });
+          if (!rocketStreamActive) {
             updatePendingBanner();
           }
         }
@@ -1964,10 +2049,11 @@
       }
       
       const cat = entry.category || '';
-      const isTrending = cat === 'trending_repos' || cat === 'github';
-      const isPaper = cat === 'research_papers' || cat === 'arxiv';
-      const isModel = cat === 'frontier_models' || cat === 'models';
-      const isTools = cat === 'dev_tools' || cat === 'infrastructure';
+      const isTrending = cat === 'trending_repos' || cat === 'github' || cat === 'github_trending';
+      const isPaper = cat === 'research_papers' || cat === 'arxiv' || cat === 'ai_research';
+      const isModel = cat === 'frontier_models' || cat === 'models' || cat === 'ai_models';
+      const isTools = cat === 'dev_tools' || cat === 'infrastructure' || cat === 'cyber_tools';
+      const isTech = cat === 'ai_tech';
 
       const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
       const toast = document.createElement('div');
@@ -1987,7 +2073,7 @@
         label = 'TRENDING REPO';
       } else if (isPaper) {
         borderClass = 'border-purple-500/40 bg-black/90 shadow-purple-500/15';
-        icon = 'file-text';
+        icon = 'book-open';
         color = 'text-purple-400';
         label = 'AI BREAKTHROUGH';
       } else if (isModel) {
@@ -1997,9 +2083,14 @@
         label = 'FRONTIER MODEL';
       } else if (isTools) {
         borderClass = 'border-amber-500/40 bg-black/90 shadow-amber-500/15';
-        icon = 'tool';
+        icon = 'wrench';
         color = 'text-amber-400';
         label = 'DEV TOOLS / INFRA';
+      } else if (isTech) {
+        borderClass = 'border-sky-500/40 bg-black/90 shadow-sky-500/15';
+        icon = 'globe';
+        color = 'text-sky-400';
+        label = 'GLOBAL AI TECH';
       }
 
       toast.className = `glass-panel pointer-events-auto rounded-xl p-4 shadow-2xl transition-all duration-300 toast-animate-in flex gap-3 border ${borderClass}`;

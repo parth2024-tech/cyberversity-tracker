@@ -1,8 +1,8 @@
 {
-  "edition_id": "chronicle_20260910_2052",
+  "edition_id": "chronicle_20260910_2127",
   "edition_number": 2213,
   "title": "The Global AI Gazette \u2014 10-Page Edition #2213",
-  "generated_at": "2026-09-10T20:52:19.328977+00:00",
+  "generated_at": "2026-09-10T21:27:00.002730+00:00",
   "window_hours": 5,
   "total_stories": 165,
   "total_threats": 165,
@@ -16,8 +16,8 @@
   "ai_hardware_count": 12,
   "autonomous_agents_count": 12,
   "overflow_count": 10,
-  "md_path": "data/newspapers/chronicle_20260910_2052.md",
-  "html_path": "data/newspapers/chronicle_20260910_2052.html",
-  "pdf_path": "data/newspapers/chronicle_20260910_2052.pdf",
+  "md_path": "data/newspapers/chronicle_20260910_2127.md",
+  "html_path": "data/newspapers/chronicle_20260910_2127.html",
+  "pdf_path": "data/newspapers/chronicle_20260910_2127.pdf",
   "has_pdf": true
 }

@@ -7,14 +7,16 @@ Expanded test suite for China intelligence pipeline hardening:
 5. Regional isolation testing
 6. Provenance tagging verification
 """
-import pytest
-from httpx import ASGITransport, AsyncClient
-from ai_security_monitor.infrastructure.fetchers.rss_fetcher import RSSFetcher
-from ai_security_monitor.domain.entities import Source, SourceType, Category, Entry
-from ai_security_monitor.domain.value_objects import ContentHash
-from ai_security_monitor.presentation.api.main import create_app
 import uuid
 from datetime import datetime, timezone
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+from ai_security_monitor.domain.entities import Category, Entry, Source, SourceType
+from ai_security_monitor.domain.value_objects import ContentHash
+from ai_security_monitor.infrastructure.fetchers.rss_fetcher import RSSFetcher
+from ai_security_monitor.presentation.api.main import create_app
 
 
 def test_clean_html_sanitization_strips_malicious_payloads():

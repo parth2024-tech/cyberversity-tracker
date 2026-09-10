@@ -7,19 +7,20 @@ and converts them into clear English security advisories.
 """
 from __future__ import annotations
 
-from uuid import UUID
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ai_security_monitor.application.services.translation_service import (
-    translation_service,
     LANGUAGE_NAMES,
+    translation_service,
 )
+from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
-from ai_security_monitor.infrastructure.cache import response_cache
 
 translation_router = APIRouter(prefix="/translate", tags=["Translation"])
 

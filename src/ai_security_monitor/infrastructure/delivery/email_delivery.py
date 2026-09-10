@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import smtplib
-from pathlib import Path
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.domain.entities import Analysis, Digest, Entry
@@ -96,7 +96,7 @@ class EmailDelivery(BaseDelivery):
         try:
             target_to = to_email or self.config.get("to_email")
             from_email = self.config.get("from_email")
-            
+
             if not target_to or not from_email:
                 return DeliveryResult(
                     success=False,

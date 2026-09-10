@@ -12,7 +12,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from analyzer import create_analyzer, ClaimType
+from analyzer import ClaimType, create_analyzer
 from database import get_db
 from delivery import get_delivery
 from fetchers import get_fetcher
@@ -155,8 +155,10 @@ class AISecurityMonitor:
                     entries_new += 1
                     # Auto-analyze immediately (Features 1, 3, 5) with epistemic tracking
                     try:
-                        from analyzer import create_analyzer, ClaimType
-                        from ai_security_monitor.infrastructure.epistemic.epistemic_engine import EpistemicEngine
+                        from ai_security_monitor.infrastructure.epistemic.epistemic_engine import (
+                            EpistemicEngine,
+                        )
+                        from analyzer import ClaimType, create_analyzer
                         analyzer = create_analyzer(self.config.get('analyzer', {}))
                         epistemic = EpistemicEngine(self.db)
                         raw_dict = {
@@ -367,7 +369,9 @@ class AISecurityMonitor:
         # Get analyzer (automatically manages LLM with fast heuristic fallback)
         analyzer_config = self.config.get('analyzer', {})
         analyzer = create_analyzer(analyzer_config)
-        from ai_security_monitor.infrastructure.epistemic.epistemic_engine import EpistemicEngine
+        from ai_security_monitor.infrastructure.epistemic.epistemic_engine import (
+            EpistemicEngine,
+        )
         epistemic = EpistemicEngine(self.db)
 
         # Analyze batch with epistemic tracking

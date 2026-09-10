@@ -12,7 +12,10 @@ import shutil
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
+import feedparser
+import httpx
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle
@@ -26,10 +29,6 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-
-import feedparser
-import httpx
-from uuid import uuid4
 
 from ai_security_monitor.application.services.article_extractor import article_extractor
 from ai_security_monitor.core.logging import get_logger
@@ -57,7 +56,7 @@ class NumberedCanvas(canvas.Canvas):
         super().__init__(*args, **kwargs)
         self._saved_page_states = []
 
-    def showPage(self):
+    def showPage(self):  # noqa: N802 (ReportLab Canvas override)
         self._saved_page_states.append(dict(self.__dict__))
         self._startPage()
 

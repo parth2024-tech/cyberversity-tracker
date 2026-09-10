@@ -99,8 +99,9 @@ JSON only, no extra text."""
 
     async def _call_ollama(self, prompt: str) -> dict:
         """Call Ollama API with guaranteed JSON format."""
-        import httpx
         import re
+
+        import httpx
 
         payload = {
             "model": self.ollama_model,

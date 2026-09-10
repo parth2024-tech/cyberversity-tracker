@@ -37,7 +37,7 @@ class WatchlistRule:
             if entry.analysis:
                 vel = entry.analysis.threat_velocity
             elif hasattr(entry, "threat_velocity"):
-                vel = getattr(entry, "threat_velocity") or 0
+                vel = entry.threat_velocity or 0
             if vel < self.min_threat_velocity:
                 return False
 

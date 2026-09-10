@@ -5,22 +5,21 @@ Zero-cost monitoring for AI technology launches and cybersecurity news.
 """
 
 import argparse
-import sys
+import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
-
-import json
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from monitor import AISecurityMonitor, run_fetch_job, run_digest_job
+from monitor import AISecurityMonitor, run_digest_job, run_fetch_job
 
 
 def cmd_analyze(args):
     """Run AI analysis on unanalyzed entries."""
-    print(f"Running AI analysis on recent entries...")
+    print("Running AI analysis on recent entries...")
     monitor = AISecurityMonitor(args.config)
     since_dt = None
     if args.since:
@@ -30,7 +29,7 @@ def cmd_analyze(args):
             print(f"Invalid date format: {args.since}. Use ISO format (YYYY-MM-DD).")
             sys.exit(1)
     results = monitor.run_analysis(since=since_dt, limit=args.limit)
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Analyzed: {results['analyzed']}")
     print(f"  Failed:   {results['failed']}")
     print(f"  High Velocity (>=70): {results['high_velocity']}")
@@ -41,7 +40,7 @@ def cmd_enriched_digest(args):
     print(f"Generating {args.schedule} enriched digest via {args.method}...")
 
     monitor = AISecurityMonitor(args.config)
-    
+
     # Parse since date if provided
     since_dt = None
     if args.since:
@@ -108,7 +107,7 @@ def cmd_fetch(args):
     print("Fetching from all sources...")
     monitor = AISecurityMonitor(args.config)
     results = monitor.fetch_all()
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Success: {results['success']}")
     print(f"  Errors:  {results['error']}")
     print(f"  Skipped: {results['skipped']}")
@@ -148,9 +147,12 @@ def cmd_digest(args):
 def cmd_newspaper(args):
     """Generate and optionally send the 5-hour newspaper/newsletter."""
     import asyncio
-    from ai_security_monitor.application.services.newspaper_service import NewspaperService
-    from ai_security_monitor.infrastructure.delivery.base import delivery_registry
+
+    from ai_security_monitor.application.services.newspaper_service import (
+        NewspaperService,
+    )
     from ai_security_monitor.config.settings import settings
+    from ai_security_monitor.infrastructure.delivery.base import delivery_registry
 
     service = NewspaperService()
     print(f"Generating newspaper edition for window {args.window_hours} hours...")
@@ -303,8 +305,10 @@ def cmd_server(args):
 
 def cmd_strategy_init(args):
     """Initialize and populate the first generation of strategy genomes."""
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import (
+        create_evolution_engine,
+    )
     from database import get_db
-    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
 
     db = get_db()
     engine = create_evolution_engine(db, population_size=args.population)
@@ -330,8 +334,10 @@ def cmd_strategy_init(args):
 
 def cmd_strategy_evolve(args):
     """Evolve strategies through N generations."""
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import (
+        create_evolution_engine,
+    )
     from database import get_db
-    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
 
     db = get_db()
     engine = create_evolution_engine(db, population_size=args.population)
@@ -359,8 +365,10 @@ def cmd_strategy_evolve(args):
 
 def cmd_strategy_show(args):
     """Show the current best strategy."""
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import (
+        create_evolution_engine,
+    )
     from database import get_db
-    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
 
     db = get_db()
     engine = create_evolution_engine(db)
@@ -374,16 +382,18 @@ def cmd_strategy_show(args):
     print(f"{'=' * 60}")
     print(f"  Generation: {strategy.generation}")
     print(f"  Fitness:    {strategy.fitness_score:.4f}")
-    print(f"\n  Genes:")
+    print("\n  Genes:")
     for key, value in strategy.genes.items():
         print(f"    {key}: {value}")
 
 
 def cmd_replay(args):
     """Replay historical entries with mutated strategies."""
-    from database import get_db
-    from ai_security_monitor.infrastructure.evolution.replay_harness import create_replay_manager
+    from ai_security_monitor.infrastructure.evolution.replay_harness import (
+        create_replay_manager,
+    )
     from ai_security_monitor.infrastructure.evolution.strategy_genome import StrategyDna
+    from database import get_db
 
     db = get_db()
     manager = create_replay_manager(db)
@@ -397,7 +407,9 @@ def cmd_replay(args):
         sys.exit(1)
 
     # Load best strategy
-    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import (
+        create_evolution_engine,
+    )
     engine = create_evolution_engine(db)
     best = engine.load_strategy(args.strategy_name)
 
@@ -407,7 +419,7 @@ def cmd_replay(args):
 
     # Create a mutated variant
     mutated = best.mutate(mutation_rate=0.3, mutation_strength=0.2)
-    print(f"\nComparing strategies:")
+    print("\nComparing strategies:")
     print(f"  Original: gen={best.generation}, fitness={best.fitness_score:.4f}")
     print(f"  Mutated:  gen={mutated.generation}")
 
@@ -418,7 +430,7 @@ def cmd_replay(args):
     neutral = sum(1 for c in comparisons if c.improvement_score == 0)
     avg_improvement = sum(c.improvement_score for c in comparisons) / len(comparisons)
 
-    print(f"\n  Results:")
+    print("\n  Results:")
     print(f"    Improved: {improvements}/{len(comparisons)}")
     print(f"    Regressed: {regressions}/{len(comparisons)}")
     print(f"    Neutral:  {neutral}/{len(comparisons)}")
@@ -427,55 +439,59 @@ def cmd_replay(args):
 
 def cmd_beliefs(args):
     """Show the system's epistemic beliefs."""
+    from ai_security_monitor.infrastructure.epistemic.epistemic_engine import (
+        EpistemicEngine,
+    )
     from database import get_db
-    from ai_security_monitor.infrastructure.epistemic.epistemic_engine import EpistemicEngine
 
     db = get_db()
     engine = EpistemicEngine(db)
     beliefs = engine.get_system_beliefs()
 
-    print(f"\n🧠 System Beliefs")
+    print("\n🧠 System Beliefs")
     print(f"{'=' * 60}")
     print(f"  Total claims tracked: {beliefs['total_claims']}")
 
-    print(f"\n  Claims by type:")
+    print("\n  Claims by type:")
     for ct, count in beliefs['claims_by_type'].items():
         if count > 0:
             print(f"    {ct}: {count}")
 
-    print(f"\n  Claims by method:")
+    print("\n  Claims by method:")
     for method, count in beliefs['claims_by_method'].items():
         print(f"    {method}: {count}")
 
     if beliefs['top_confidence_claims']:
-        print(f"\n  Top confidence claims:")
+        print("\n  Top confidence claims:")
         for claim in beliefs['top_confidence_claims']:
             print(f"    [{claim['claim_type']}] {claim['target'][:50]}")
             print(f"      Raw: {claim['raw_confidence']:.3f} | Calibrated: {claim['calibrated_confidence']:.3f}")
 
     if beliefs['calibration_stats']:
-        print(f"\n  Calibration stats:")
+        print("\n  Calibration stats:")
         for key, stats in beliefs['calibration_stats'].items():
             print(f"    {key}: {stats['total_outcomes']} outcomes, {stats['confirmed']} confirmed")
 
 
 def cmd_opportunities(args):
     """Show detected improvement opportunities."""
+    from ai_security_monitor.infrastructure.evolution.counterfactual_engine import (
+        create_counterfactual_engine,
+    )
     from database import get_db
-    from ai_security_monitor.infrastructure.evolution.counterfactual_engine import create_counterfactual_engine
 
     db = get_db()
     engine = create_counterfactual_engine(db)
     report = engine.get_analysis_report()
 
-    print(f"\n🔍 Opportunity Detection Report")
+    print("\n🔍 Opportunity Detection Report")
     print(f"{'=' * 60}")
     print(f"  Total decisions tracked: {report['total_decisions']}")
     print(f"  Patterns detected:       {report['patterns_detected']}")
     print(f"  Average regret:          {report['average_regret']:.4f} ({report['regret_assessment']})")
 
     if report['opportunities']:
-        print(f"\n  Actionable Opportunities:")
+        print("\n  Actionable Opportunities:")
         for opp in report['opportunities']:
             print(f"    [{opp['type']}] confidence={opp['confidence']:.2f}")
             print(f"    {opp['recommendation']}")
@@ -483,9 +499,13 @@ def cmd_opportunities(args):
 
 def cmd_validate_strategy(args):
     """Validate that a new strategy improves over the current one."""
+    from ai_security_monitor.infrastructure.evolution.replay_harness import (
+        create_replay_manager,
+    )
+    from ai_security_monitor.infrastructure.evolution.strategy_genome import (
+        create_evolution_engine,
+    )
     from database import get_db
-    from ai_security_monitor.infrastructure.evolution.strategy_genome import create_evolution_engine
-    from ai_security_monitor.infrastructure.evolution.replay_harness import create_replay_manager
 
     db = get_db()
     engine = create_evolution_engine(db)
@@ -514,7 +534,7 @@ def cmd_validate_strategy(args):
 
     details = result.get('details', {})
     if details:
-        print(f"\n  Breakdown:")
+        print("\n  Breakdown:")
         print(f"    Improved:  {details.get('entries_with_improvement', 0)}")
         print(f"    Regressed: {details.get('entries_with_regression', 0)}")
         print(f"    Neutral:   {details.get('entries_neutral', 0)}")

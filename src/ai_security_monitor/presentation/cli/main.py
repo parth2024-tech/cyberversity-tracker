@@ -29,7 +29,9 @@ def server(
     """Launch the real-time web command center and API server."""
     import os
     import socket
+
     import uvicorn
+
     from ai_security_monitor.config.settings import settings
 
     # Support cloud runtime PORT environment variable (Render, Fly.io, etc.)

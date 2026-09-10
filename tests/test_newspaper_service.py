@@ -3,8 +3,9 @@ Unit and integration tests for the 5-Hour Autonomous Newspaper Document Service.
 """
 from datetime import datetime, timedelta
 from pathlib import Path
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
 from ai_security_monitor.domain.entities import Analysis, AnalysisModel, Category, Entry

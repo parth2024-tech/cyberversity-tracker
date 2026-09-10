@@ -4,9 +4,9 @@ Digest API router.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-import yaml
 from pathlib import Path
 
+import yaml
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 

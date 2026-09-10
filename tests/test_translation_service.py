@@ -2,15 +2,16 @@
 Unit and Integration Tests for Autonomous Intelligence Translation Service.
 """
 import uuid
+from datetime import UTC, datetime, timezone
+from unittest.mock import MagicMock, patch
+
 import pytest
-from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
 
 from ai_security_monitor.application.services.translation_service import (
-    TranslationService,
     LANGUAGE_NAMES,
+    TranslationService,
 )
-from ai_security_monitor.domain.entities import Entry, Category
+from ai_security_monitor.domain.entities import Category, Entry
 
 
 def test_language_detection_heuristics():
@@ -39,7 +40,7 @@ def test_translate_text_caching():
     service = TranslationService()
 
     sample_zh = "DeepSeek-V3 模型的提示注入风险分析"
-    
+
     with patch.object(service, "_execute_translation", return_value="Prompt injection risk analysis of DeepSeek-V3 model") as mock_exec:
         trans1, lang1, ok1 = service.translate_text(sample_zh)
         assert ok1 is True
@@ -65,7 +66,7 @@ def test_translate_entry_in_place():
         url="https://cnnvd.org.cn/alert/123",
         content_hash="hash-zh-12345",
         summary="国家信息安全漏洞库监测到针对开源框架的远程攻击风险。",
-        published_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
         category=Category.CYBERSECURITY,
         metadata={"region": "china", "country": "CN"}
     )
@@ -90,6 +91,7 @@ def test_translate_entry_in_place():
 async def test_translation_api_endpoints():
     """Verify /api/translate text and backfill endpoints."""
     from httpx import ASGITransport, AsyncClient
+
     from ai_security_monitor.presentation.api.main import create_app
 
     app = create_app()

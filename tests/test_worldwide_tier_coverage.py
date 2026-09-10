@@ -4,13 +4,14 @@ Verifies source configuration, domain filtering, API query endpoints,
 and sovereign newspaper editorial generation.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from ai_security_monitor.config.sources import load_sources
-from ai_security_monitor.domain.entities import Entry, Category
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
+from ai_security_monitor.config.sources import load_sources
+from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.presentation.api.main import create_app
 
 
@@ -125,7 +126,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             url="https://cert-in.org.in/advisory-01",
             content_hash="test_in_01",
             summary="Indian Computer Emergency Response Team flags high-severity flaws in public perimeter gateways.",
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             category=Category.CYBERSECURITY,
             tags=["India", "CERT-In", "RCE"],
             metadata={"region": "south_asia", "country": "IN"}
@@ -137,7 +138,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             url="https://tii.ae/falcon-3",
             content_hash="test_ae_01",
             summary="Technology Innovation Institute releases Falcon 3 with high-throughput inference weights.",
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             category=Category.AI_MODELS,
             tags=["Falcon", "TII", "UAE", "OpenWeights"],
             metadata={"region": "middle_east", "country": "AE"}
@@ -149,7 +150,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             url="https://digitimes.com/tsmc-2nm",
             content_hash="test_tw_01",
             summary="Taiwan semiconductor ecosystem advances next-generation lithography for edge AI clusters.",
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             category=Category.AI_TECH,
             tags=["TSMC", "Hardware", "Taiwan", "Semiconductor"],
             metadata={"region": "apac", "country": "TW"}
@@ -161,7 +162,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             url="https://research.checkpoint.com/0day-01",
             content_hash="test_il_01",
             summary="Israeli threat intelligence researchers detect active campaign bypassing authentication.",
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             category=Category.CYBERSECURITY,
             tags=["Israel", "CheckPoint", "0day", "ThreatIntel"],
             metadata={"region": "middle_east", "country": "IL"}
@@ -177,5 +178,5 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
     assert len(sov_radar) >= 1
 
     # Verify Markdown generation includes Section VII / Page 7 with sovereign items
-    md = service._render_markdown(sample_entries, categorized, 101, datetime.now(timezone.utc), 24)
+    md = service._render_markdown(sample_entries, categorized, 101, datetime.now(UTC), 24)
     assert "[PAGE 7] SOVEREIGN AI" in md

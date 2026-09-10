@@ -3,9 +3,10 @@ Unit tests for Custom Watchlist Rules and Threat Hunting.
 """
 from datetime import datetime
 from uuid import uuid4
+
 import pytest
 
-from ai_security_monitor.domain.entities import Category, Entry, Analysis, AnalysisModel
+from ai_security_monitor.domain.entities import Analysis, AnalysisModel, Category, Entry
 from ai_security_monitor.domain.watchlist import WatchlistRule
 
 

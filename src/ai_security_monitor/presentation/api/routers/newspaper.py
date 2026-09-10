@@ -4,11 +4,14 @@ Newspaper API router for 5-hour autonomous intelligence broadsheets.
 from __future__ import annotations
 
 from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
-from ai_security_monitor.application.services.newspaper_delivery_tracker import delivery_tracker
+from ai_security_monitor.application.services.newspaper_delivery_tracker import (
+    delivery_tracker,
+)
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.infrastructure.delivery.base import delivery_registry

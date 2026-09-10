@@ -6,8 +6,9 @@ the periodic eviction counter.
 from __future__ import annotations
 
 import time
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from ai_security_monitor.infrastructure.cache import response_cache
 
@@ -138,7 +139,6 @@ class TestPeriodicEviction:
 
     @pytest.mark.asyncio
     async def test_counter_increments_each_call(self):
-        factory = AsyncMock(return_value=0)
         for i in range(5):
             await response_cache.get_or_set(f"k{i}", 60.0, AsyncMock(return_value=i))
         # Counter should be 5 (or 0 if interval was hit — but interval is 50)

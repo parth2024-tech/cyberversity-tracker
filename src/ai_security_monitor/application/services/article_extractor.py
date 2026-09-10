@@ -9,6 +9,7 @@ from __future__ import annotations
 import html
 import re
 from urllib.parse import urlparse
+
 import httpx
 from bs4 import BeautifulSoup
 
@@ -355,7 +356,7 @@ class ArticleExtractor:
 
         # Extract architectural metrics from title and summary
         combined_text = f"{title} {entry.summary or ''}"
-        
+
         # 1. Parameter Scale Detection
         param_match = re.search(r"\b(\d+B|\d+x\d+B|\d+\.\d+B|\d+T|\d+\.\d+T|MoE)\b", combined_text, re.I)
         params = param_match.group(1).upper() if param_match else None

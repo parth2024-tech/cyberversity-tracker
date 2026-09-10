@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 _CACHE: dict[str, tuple[float, Any]] = {}
 _PURGE_INTERVAL = 50       # Run a full sweep every N get_or_set calls

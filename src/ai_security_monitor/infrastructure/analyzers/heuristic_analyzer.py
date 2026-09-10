@@ -395,7 +395,7 @@ class HeuristicAnalyzer(BaseAnalyzer):
             highlight = self._generate_ai_highlight(full_text, entry.category)
             quickstart = self._generate_ai_quickstart(full_text, entry.category, entry.metadata)
             _, ecosystems = self._calculate_blast_radius(full_text, entry.category)
-            
+
             # Compute adoption velocity (70 - 98)
             velocity = 72
             text_lower = full_text.lower()

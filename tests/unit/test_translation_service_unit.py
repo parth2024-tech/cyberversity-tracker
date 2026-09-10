@@ -10,10 +10,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from ai_security_monitor.application.services.translation_service import (
-    TranslationService,
     LANGUAGE_NAMES,
+    TranslationService,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

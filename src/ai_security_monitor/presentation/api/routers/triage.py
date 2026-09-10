@@ -5,6 +5,7 @@ Controls the high-priority queue and backfilling operations.
 from __future__ import annotations
 
 from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, Query
 
 from ai_security_monitor.application.services.autonomous_triage_service import (
