@@ -32,3 +32,7 @@ primary_region = "iad"
   method = "GET"
   timeout = "5s"
   path = "/api/health"
+
+# Pin to free shared-cpu-1x (256MB RAM) — keeps machine alive 24/7 on free tier
+[[vm]]
+  size = "shared-cpu-1x"

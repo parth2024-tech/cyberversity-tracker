@@ -14,8 +14,10 @@ from ai_security_monitor.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Module-level: last sweep timestamp accessible to MonitorService.get_sweep_status()
+# Module-level: last sweep timestamp and count accessible to MonitorService.get_sweep_status()
 _last_sweep_at: datetime | None = None
+_sweep_count: int = 0
+_server_started_at: datetime = datetime.utcnow()
 
 
 class SchedulerService:
@@ -57,7 +59,7 @@ class SchedulerService:
 
     async def _loop(self) -> None:
         """Periodic sweep loop with automatic data hygiene."""
-        global _last_sweep_at
+        global _last_sweep_at, _sweep_count
 
         # Initial warm-up wait before first sweep
         await asyncio.sleep(5)
@@ -69,7 +71,8 @@ class SchedulerService:
                 logger.info("Executing scheduled intelligence radar sweep...")
                 results = await self._monitor.fetch_all()
                 _last_sweep_at = datetime.utcnow()
-                self._sweep_count += 1
+                _sweep_count += 1
+                self._sweep_count = _sweep_count  # keep local copy in sync
 
                 logger.info(
                     f"Sweep #{self._sweep_count} complete: "

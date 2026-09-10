@@ -310,7 +310,11 @@ class MonitorService:
 
     async def get_sweep_status(self) -> dict:
         """Return live sweep freshness data: last sweep time, next sweep ETA, per-source freshness."""
-        from ai_security_monitor.application.services.scheduler_service import _last_sweep_at
+        from ai_security_monitor.application.services.scheduler_service import (
+            _last_sweep_at,
+            _sweep_count,
+            _server_started_at,
+        )
 
         now = datetime.utcnow()
         interval_minutes = settings.scheduler.fetch_interval_minutes
@@ -318,6 +322,7 @@ class MonitorService:
         last_sweep_iso = _last_sweep_at.isoformat() + "Z" if _last_sweep_at else None
         seconds_since = int((now - _last_sweep_at).total_seconds()) if _last_sweep_at else None
         next_sweep_in = max(0, interval_minutes * 60 - seconds_since) if seconds_since is not None else None
+        server_uptime_seconds = int((now - _server_started_at).total_seconds())
 
         async with self._uow_factory() as uow:
             sources = await uow.sources.list(enabled_only=True)
@@ -343,6 +348,8 @@ class MonitorService:
             "next_sweep_in_seconds": next_sweep_in,
             "sweep_interval_minutes": interval_minutes,
             "total_sources": len(sources),
+            "sweep_count": _sweep_count,
+            "server_uptime_seconds": server_uptime_seconds,
             "sources": source_freshness,
         }
 

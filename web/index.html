@@ -5050,7 +5050,24 @@
           else nextLabel = ` | NEXT: ${Math.floor(nextSecs / 60)}m`;
         }
 
-        txt.textContent = `SWEPT: ${age}${nextLabel}`;
+        // Sweep count — proves continuous 24/7 operation
+        const sweepCount = data.sweep_count;
+        let countLabel = '';
+        if (sweepCount !== null && sweepCount !== undefined && sweepCount > 0) {
+          countLabel = ` | #${sweepCount}`;
+        }
+
+        // Server uptime — proves server is always on
+        const uptimeSecs = data.server_uptime_seconds;
+        let uptimeLabel = '';
+        if (uptimeSecs !== null && uptimeSecs !== undefined) {
+          const uptimeH = Math.floor(uptimeSecs / 3600);
+          const uptimeM = Math.floor((uptimeSecs % 3600) / 60);
+          if (uptimeH > 0) uptimeLabel = ` | UP: ${uptimeH}h${uptimeM}m`;
+          else uptimeLabel = ` | UP: ${uptimeM}m`;
+        }
+
+        txt.textContent = `SWEPT: ${age}${countLabel}${nextLabel}${uptimeLabel}`;
 
         // Color-code freshness: green ≤ 35min, amber ≤ 90min, red > 90min
         const mins = secs / 60;
