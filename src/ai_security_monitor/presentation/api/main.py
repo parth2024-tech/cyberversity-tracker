@@ -2,6 +2,7 @@
 FastAPI application factory with lifespan management.
 """
 
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -63,10 +64,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         from ai_security_monitor.application.services.scheduler_service import (
             SchedulerService,
         )
-        scheduler = SchedulerService()
+        from ai_security_monitor.presentation.api.websocket.manager import manager
+
+        def _broadcast_to_ws(msg: dict):
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(manager.broadcast(msg))
+            except Exception:
+                pass
+
+        monitor_service.set_broadcast_callback(_broadcast_to_ws)
+        scheduler = SchedulerService(monitor_service=monitor_service)
         await scheduler.start()
         app.state.scheduler = scheduler
-        logger.info("Background scheduler started")
+        logger.info("Background scheduler started with WebSocket live telemetry broadcast")
 
     # Start Autonomous LLM Triage Worker (if enabled)
     if settings.analyzer.autonomous_triage_enabled:

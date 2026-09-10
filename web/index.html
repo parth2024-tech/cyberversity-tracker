@@ -4871,6 +4871,22 @@
 
       // Poll sweep freshness every 60 seconds
       setInterval(() => { try { updateSweepFreshness(); } catch(e){} }, 60000);
+
+      // Continuous Intelligence Fallback: Check for new entries and refresh telemetry every 45 seconds
+      setInterval(() => {
+        try {
+          // If at the top of the feed or viewing all, refresh telemetry and check latest feed
+          if (window.scrollY < 300) {
+            refreshStats();
+            // Silent refresh if WS is closed or reconnecting
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+              loadFeed(true);
+            }
+          }
+        } catch(e) {
+          console.warn("Continuous telemetry sync:", e);
+        }
+      }, 45000);
     }
 
     if (document.readyState === 'loading') {
