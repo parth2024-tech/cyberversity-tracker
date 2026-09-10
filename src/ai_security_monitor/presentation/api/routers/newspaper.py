@@ -247,8 +247,8 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
             "edition_number": edition["edition_number"],
         }
 
-    bot_token = req.bot_token or settings.delivery.telegram_bot_token or "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
-    chat_id = req.chat_id or settings.delivery.telegram_chat_id or "1650972026"
+    bot_token = req.bot_token or settings.delivery.telegram_bot_token
+    chat_id = req.chat_id or settings.delivery.telegram_chat_id
 
     try:
         tg_delivery = delivery_registry.create("telegram", {

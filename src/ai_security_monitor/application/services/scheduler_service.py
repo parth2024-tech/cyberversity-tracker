@@ -158,8 +158,8 @@ class SchedulerService:
                         logger.info(f"Skipping scheduled Email dispatch: {reason}")
 
                 # Auto-dispatch PDF to Telegram if configured
-                tg_token = settings.delivery.telegram_bot_token or "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
-                tg_chat = settings.delivery.telegram_chat_id or "1650972026"
+                tg_token = settings.delivery.telegram_bot_token
+                tg_chat = settings.delivery.telegram_chat_id
                 if settings.delivery.telegram_enabled and tg_token and tg_chat:
                     pdf_path = meta.get("pdf_path")
                     edition_num = meta["edition_number"]

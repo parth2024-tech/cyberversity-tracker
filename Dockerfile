@@ -21,8 +21,8 @@ COPY web/ web/
 # Install python package
 RUN pip install --no-cache-dir -e .
 
-EXPOSE 8000
+EXPOSE 8080
 
 ENV ENVIRONMENT=production
 
-CMD ["python", "-m", "ai_security_monitor", "server", "--host", "0.0.0.0"]
+CMD ["python", "-m", "ai_security_monitor", "server", "--host", "0.0.0.0", "--port", "8080"]

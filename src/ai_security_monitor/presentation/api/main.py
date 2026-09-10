@@ -58,22 +58,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await monitor_service.init_sources()
         logger.info("Sources configuration synchronized with database")
     except Exception as seed_err:
-        logger.warn(f"Failed to auto-seed sources: {seed_err}")
+        logger.warning(f"Failed to auto-seed sources: {seed_err}")
+
+    # Shared WebSocket broadcast callback for scheduler + triage worker
+    from ai_security_monitor.presentation.api.websocket.manager import manager as _ws_manager
+
+    def _broadcast_to_ws(msg: dict) -> None:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.create_task(_ws_manager.broadcast(msg))
+        except Exception:
+            pass
 
     # Start background scheduler (if enabled)
     if settings.scheduler.enabled:
         from ai_security_monitor.application.services.scheduler_service import (
             SchedulerService,
         )
-        from ai_security_monitor.presentation.api.websocket.manager import manager
-
-        def _broadcast_to_ws(msg: dict):
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(manager.broadcast(msg))
-            except Exception:
-                pass
 
         monitor_service.set_broadcast_callback(_broadcast_to_ws)
         scheduler = SchedulerService(monitor_service=monitor_service)
@@ -83,22 +85,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Start Autonomous LLM Triage Worker (if enabled)
     if settings.analyzer.autonomous_triage_enabled:
-        import asyncio
         from ai_security_monitor.application.services.autonomous_triage_service import (
             get_triage_service,
         )
-        from ai_security_monitor.presentation.api.websocket.manager import manager
 
         triage_service = get_triage_service()
-
-        def _broadcast_to_ws(msg: dict):
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(manager.broadcast(msg))
-            except Exception:
-                pass
-
         triage_service.set_broadcast_callback(_broadcast_to_ws)
         await triage_service.start()
         app.state.triage_service = triage_service
