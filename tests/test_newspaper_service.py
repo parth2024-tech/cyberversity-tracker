@@ -25,8 +25,8 @@ async def test_newspaper_generation_creates_files(temp_output_dir: Path):
     meta = await service.generate_edition(window_hours=5)
 
     assert meta["edition_number"] >= 100
-    assert "The Cyber Intelligence Chronicle" in meta["title"]
-    assert meta["total_threats"] >= 0
+    assert "The Global AI Gazette" in meta["title"]
+    assert meta["total_stories"] >= 0
 
     edition_id = meta["edition_id"]
     md_file = temp_output_dir / f"{edition_id}.md"
@@ -44,15 +44,14 @@ async def test_newspaper_generation_creates_files(temp_output_dir: Path):
     assert latest_json.exists()
 
     md_content = md_file.read_text(encoding="utf-8")
-    assert "THE CYBER INTELLIGENCE CHRONICLE" in md_content
-    assert "CISO" in md_content
+    assert "THE GLOBAL AI GAZETTE" in md_content
+    assert "EXECUTIVE AI BRIEFING" in md_content
     assert "PAGE 1" in md_content
     assert meta["pages_count"] == 10
 
     html_content = html_file.read_text(encoding="utf-8")
     assert "<!DOCTYPE html>" in html_content
-    assert "The Cyber Intelligence Chronicle" in html_content
-    assert "DEFCON 3 (ELEVATED)" in html_content
+    assert "The Global AI Gazette" in html_content
 
 
 @pytest.mark.asyncio
@@ -69,7 +68,7 @@ async def test_newspaper_service_getters_and_listing(temp_output_dir: Path):
 
     html = service.get_latest_html()
     assert html is not None
-    assert "AETHERGUARD" in html
+    assert "The Global AI Gazette" in html
 
     editions = service.list_editions()
     assert len(editions) >= 1
@@ -97,7 +96,7 @@ async def test_newspaper_api_endpoints():
         # 3. GET download as markdown
         res_dl_md = await client.get("/api/newspaper/download?format=md")
         assert res_dl_md.status_code == 200
-        assert "THE CYBER INTELLIGENCE CHRONICLE" in res_dl_md.text
+        assert "THE GLOBAL AI GAZETTE" in res_dl_md.text
 
         # 4. GET download as HTML
         res_dl_html = await client.get("/api/newspaper/download?format=html")

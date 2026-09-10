@@ -7,6 +7,7 @@ import asyncio
 from datetime import datetime
 
 from ai_security_monitor.application.services.monitor_service import MonitorService
+from ai_security_monitor.application.services.newspaper_delivery_tracker import delivery_tracker
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
@@ -110,56 +111,90 @@ class SchedulerService:
 
                 # Auto-email PDF if email delivery is enabled
                 if settings.delivery.email_enabled and settings.delivery.email_to:
-                    try:
-                        from ai_security_monitor.infrastructure.delivery.base import delivery_registry
-                        email_delivery = delivery_registry.create("email", {
-                            "smtp_server": settings.delivery.email_smtp_server,
-                            "smtp_port": settings.delivery.email_smtp_port,
-                            "username": settings.delivery.email_username or "",
-                            "password": settings.delivery.email_password or "",
-                            "from_email": settings.delivery.email_from or settings.delivery.email_username or "noreply@aetherguard.ai",
-                            "to_email": settings.delivery.email_to,
-                        })
-                        pdf_path = meta.get("pdf_path")
-                        if pdf_path:
+                    pdf_path = meta.get("pdf_path")
+                    edition_num = meta["edition_number"]
+                    lead_story = meta.get("lead_story", "")
+                    stories_count = meta.get("total_stories", meta.get("total_threats", 0))
+
+                    can_send, reason = delivery_tracker.should_dispatch(
+                        channel="email",
+                        edition_number=edition_num,
+                        lead_story=lead_story,
+                        min_cooldown_hours=4.0,
+                    )
+                    if can_send and pdf_path:
+                        try:
+                            from ai_security_monitor.infrastructure.delivery.base import delivery_registry
+                            email_delivery = delivery_registry.create("email", {
+                                "smtp_server": settings.delivery.email_smtp_server,
+                                "smtp_port": settings.delivery.email_smtp_port,
+                                "username": settings.delivery.email_username or "",
+                                "password": settings.delivery.email_password or "",
+                                "from_email": settings.delivery.email_from or settings.delivery.email_username or "noreply@aetherguard.ai",
+                                "to_email": settings.delivery.email_to,
+                            })
                             email_res = await email_delivery.send_newspaper_pdf(
                                 pdf_path=pdf_path,
-                                edition_number=meta["edition_number"],
+                                edition_number=edition_num,
                                 to_email=settings.delivery.email_to,
-                                lead_story=meta.get("lead_story", ""),
-                                total_threats=meta.get("total_threats", 0),
+                                lead_story=lead_story,
+                                total_threats=stories_count,
                             )
                             if email_res.success:
-                                logger.info(f"Auto-emailed Newspaper PDF Edition #{meta['edition_number']} to {settings.delivery.email_to}")
+                                delivery_tracker.record_dispatch(
+                                    channel="email",
+                                    edition_number=edition_num,
+                                    lead_story=lead_story,
+                                )
+                                logger.info(f"Auto-emailed Newspaper PDF Edition #{edition_num} to {settings.delivery.email_to}")
                             else:
                                 logger.warning(f"Auto-email PDF delivery notice: {email_res.error}")
-                    except Exception as mail_err:
-                        logger.warning(f"Auto-email newspaper dispatch failed: {mail_err}")
+                        except Exception as mail_err:
+                            logger.warning(f"Auto-email newspaper dispatch failed: {mail_err}")
+                    else:
+                        logger.info(f"Skipping scheduled Email dispatch: {reason}")
 
                 # Auto-dispatch PDF to Telegram if configured
                 tg_token = settings.delivery.telegram_bot_token or "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
                 tg_chat = settings.delivery.telegram_chat_id or "1650972026"
                 if settings.delivery.telegram_enabled and tg_token and tg_chat:
-                    try:
-                        from ai_security_monitor.infrastructure.delivery.base import delivery_registry
-                        tg_delivery = delivery_registry.create("telegram", {
-                            "bot_token": tg_token,
-                            "chat_id": tg_chat,
-                        })
-                        pdf_path = meta.get("pdf_path")
-                        if pdf_path:
+                    pdf_path = meta.get("pdf_path")
+                    edition_num = meta["edition_number"]
+                    lead_story = meta.get("lead_story", "")
+                    stories_count = meta.get("total_stories", meta.get("total_threats", 0))
+
+                    can_send, reason = delivery_tracker.should_dispatch(
+                        channel="telegram",
+                        edition_number=edition_num,
+                        lead_story=lead_story,
+                        min_cooldown_hours=4.0,
+                    )
+                    if can_send and pdf_path:
+                        try:
+                            from ai_security_monitor.infrastructure.delivery.base import delivery_registry
+                            tg_delivery = delivery_registry.create("telegram", {
+                                "bot_token": tg_token,
+                                "chat_id": tg_chat,
+                            })
                             tg_res = await tg_delivery.send_newspaper_document(
                                 pdf_path=pdf_path,
-                                edition_number=meta["edition_number"],
-                                lead_story=meta.get("lead_story", ""),
-                                total_threats=meta.get("total_threats", 0),
+                                edition_number=edition_num,
+                                lead_story=lead_story,
+                                total_threats=stories_count,
                             )
                             if tg_res.success:
-                                logger.info(f"Auto-delivered Newspaper PDF Edition #{meta['edition_number']} to Telegram chat {tg_chat}")
+                                delivery_tracker.record_dispatch(
+                                    channel="telegram",
+                                    edition_number=edition_num,
+                                    lead_story=lead_story,
+                                )
+                                logger.info(f"Auto-delivered Newspaper PDF Edition #{edition_num} to Telegram chat {tg_chat}")
                             else:
                                 logger.warning(f"Telegram PDF delivery notice: {tg_res.error}")
-                    except Exception as tg_err:
-                        logger.warning(f"Auto-telegram newspaper dispatch failed: {tg_err}")
+                        except Exception as tg_err:
+                            logger.warning(f"Auto-telegram newspaper dispatch failed: {tg_err}")
+                    else:
+                        logger.info(f"Skipping scheduled Telegram dispatch: {reason}")
             except Exception as e:
                 logger.error(f"Error in 5-hour newspaper compilation loop: {e}")
 

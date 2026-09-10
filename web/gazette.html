@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>THE AETHER GUARD — Global AI & Technology Gazette</title>
+<title>THE GLOBAL AI GAZETTE — Autonomous Worldwide AI Broadsheet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -575,11 +575,11 @@ footer{
   <div class="masthead">
     <div class="date-row">
       <span id="editionDate">—</span>
-      <span>VOL. II — DAILY BROADSHEET • GLOBAL AI & SECURITY OBSERVATORY • AETHERGUARD</span>
+      <span>VOL. II — DAILY BROADSHEET • GLOBAL AI ECOSYSTEM OBSERVATORY</span>
       <span><span class="live-dot"></span><span id="connStatus">CONNECTING WIRE</span></span>
     </div>
-    <h1>The Aether Guard</h1>
-    <div class="sub">Global AI & Technology Gazette — Frontier Research • Trending Repositories • Developer Tools • AI Models • Security & Governance</div>
+    <h1>The Global AI Gazette</h1>
+    <div class="sub">Worldwide Artificial Intelligence Broadsheet — Frontier Research • Trending Repositories • Developer Infrastructure • Foundation Models • Sovereign AI</div>
   </div>
 
   <!-- Action & Telegraph Audio Bar -->
@@ -614,17 +614,15 @@ footer{
   <!-- Filter & Search Ribbon -->
   <div class="filter-search-ribbon">
     <div class="filter-tabs" id="filterTabs">
-      <button class="tab-btn active" onclick="setCategoryFilter('all')">★ All Intel (<span id="countAll">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('trending')">🚀 Trending Repos (<span id="countTrending">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('tools')">🛠️ AI Tools (<span id="countTools">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('research')">🔬 AI Research (<span id="countResearch">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('ai')">🤖 Frontier Models (<span id="countAi">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('critical')">🚨 Critical 80+ (<span id="countCrit">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('exploits')">⚡ Exploits & PoCs (<span id="countPoc">0</span>)</button>
-      <button class="tab-btn" onclick="setCategoryFilter('china')">🌐 Sovereign & Worldwide (<span id="countChina">0</span>)</button>
+      <button class="tab-btn active" onclick="setCategoryFilter('all', event)">★ All Intel (<span id="countAll">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('trending', event)">🚀 Trending Repos (<span id="countTrending">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('tools', event)">🛠️ AI Tools (<span id="countTools">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('research', event)">🔬 AI Research (<span id="countResearch">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('ai', event)">🤖 Frontier Models (<span id="countAi">0</span>)</button>
+      <button class="tab-btn" onclick="setCategoryFilter('china', event)">🌐 Sovereign & Worldwide (<span id="countChina">0</span>)</button>
     </div>
     <div class="search-box">
-      <input type="text" id="wireSearch" placeholder="Search repos, models, papers, CVEs, tools…" oninput="handleSearch(this.value)">
+      <input type="text" id="wireSearch" placeholder="Search repos, models, papers, runtimes, developer tools…" oninput="handleSearch(this.value)">
     </div>
   </div>
 
@@ -709,13 +707,13 @@ footer{
       <div class="sidebar-box">
         <h4>Classifieds & Notices</h4>
         <div class="classified-entry">
-          <b>[WANTED]</b> High-entropy API keys leaking in public Git repositories. Responsible disclosure rewarded in cryptographic credits.
+          <b>[CALL FOR BENCHMARKS]</b> Evaluating vLLM, SGLang, Ollama, and llama.cpp speculative decoding kernels across CUDA & ROCm.
         </div>
         <div class="classified-entry">
-          <b>[NOTICE TO CISOS]</b> Mandatory migration to phishing-resistant FIDO2 hardware keys effective this publishing cycle.
+          <b>[DISPATCH]</b> Test-time compute scaling and reasoning model weights democratized across global developer collectives.
         </div>
         <div class="classified-entry">
-          <b>[SITUATION OFFERED]</b> Autonomous LLM Triage Engine monitoring 92 sensor nodes at zero latency.
+          <b>[INFRASTRUCTURE NOTICE]</b> Autonomous AI sweeps actively monitoring 92 worldwide feeds across GitHub, arXiv, and open-source models.
         </div>
         <div class="classified-entry">
           <b>[TELEMETRY SOURCES WATCHED]</b>
@@ -727,7 +725,7 @@ footer{
 
   <!-- Colophon & Footer -->
   <footer>
-    The Aether Guard Gazette &copy; <span id="year"></span> — Autonomous Threat Intelligence Broadsheet — Printed on Recycled Electrons
+    The Global AI Gazette &copy; <span id="year"></span> — Autonomous Worldwide AI Intelligence Broadsheet — Printed on Recycled Electrons
   </footer>
 </div>
 
@@ -841,7 +839,16 @@ function renderCurrentView() {
     return true;
   });
 
-  const displayList = filteredEntries.length > 0 ? filteredEntries : allEntries;
+  if (filteredEntries.length === 0) {
+    currentLeadEntry = null;
+    document.getElementById('leadTitle').textContent = 'No matching dispatches found';
+    document.getElementById('leadMeta').textContent = `Wire Filter: ${currentCategory.toUpperCase()} · Query: "${currentSearch}"`;
+    document.getElementById('leadBody').innerHTML = `<p>No intelligence records match the active filter criteria. Try broadening your search or switching categories.</p>`;
+    document.getElementById('articleList').innerHTML = '<div style="padding:40px 20px;text-align:center;font-style:italic;color:#666;">No dispatches match the active telegraph filter or query.</div>';
+    return;
+  }
+
+  const displayList = filteredEntries;
   const lead = displayList[0];
   currentLeadEntry = lead;
   const rest = displayList.slice(1, 15);
@@ -929,12 +936,13 @@ async function loadSources() {
   } catch (e) {}
 }
 
-function setCategoryFilter(cat) {
+function setCategoryFilter(cat, evt) {
   currentCategory = cat;
   const tabs = document.querySelectorAll('.tab-btn');
   tabs.forEach(t => t.classList.remove('active'));
-  if (event && event.target) {
-    event.target.classList.add('active');
+  const trigger = (evt && evt.currentTarget) || (typeof event !== 'undefined' && event && (event.currentTarget || event.target)) || (evt && evt.target);
+  if (trigger) {
+    trigger.classList.add('active');
   }
   renderCurrentView();
 }
@@ -1013,7 +1021,7 @@ function toggleRadioSpeech() {
 
   if (!currentLeadEntry) return;
 
-  const textToSpeak = `This is The Aether Guard Wire Radio broadcast. Top story: ${currentLeadEntry.title}. Details: ${currentLeadEntry.summary || currentLeadEntry.description || 'Details compiling on the wire'}. Mandate: ${currentLeadEntry.mitigation || 'Apply security patches immediately'}.`;
+  const textToSpeak = `This is The Global AI Gazette Wire Radio broadcast. Top story: ${currentLeadEntry.title}. Details: ${currentLeadEntry.summary || currentLeadEntry.description || 'Details compiling on the wire'}. Actionable insight: ${currentLeadEntry.actionable_insight || currentLeadEntry.mitigation || 'Explore official repository documentation'}.`;
   const utterance = new SpeechSynthesisUtterance(textToSpeak);
   utterance.rate = 0.95;
   utterance.pitch = 0.95;
@@ -1037,21 +1045,30 @@ function toggleRadioSpeech() {
 function speakCurrentModal() {
   if (!currentModalEntry || !('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
-  const text = `${currentModalEntry.title}. ${currentModalEntry.summary || currentModalEntry.description || ''}. Mitigation: ${currentModalEntry.mitigation || ''}`;
+  const text = `${currentModalEntry.title}. ${currentModalEntry.summary || currentModalEntry.description || ''}. Insights: ${currentModalEntry.actionable_insight || currentModalEntry.mitigation || ''}`;
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 0.95;
   window.speechSynthesis.speak(u);
 }
 
-async function dispatchTelegramNewspaper() {
+async function dispatchTelegramNewspaper(force = false) {
   const btn = document.getElementById('tgBtn');
   btn.innerHTML = '⏳ <span>Sending...</span>';
   btn.disabled = true;
 
   try {
-    const res = await fetch(`${API_BASE}/newspaper/telegram`, { method: 'POST' });
+    const url = force ? `${API_BASE}/newspaper/telegram?force=true` : `${API_BASE}/newspaper/telegram`;
+    const res = await fetch(url, { method: 'POST' });
     const data = await res.json();
     if (res.ok) {
+      if (data.status === 'skipped') {
+        const confirmForce = confirm(`⚠️ Dispatch Cooldown Active:\n${data.message}\n\nWould you like to force dispatch immediately?`);
+        if (confirmForce) {
+          return dispatchTelegramNewspaper(true);
+        }
+        btn.innerHTML = '⏳ <span>On Cooldown</span>';
+        return;
+      }
       alert(`📰 Telegram Broadcast Dispatched!\n${data.message || 'Sent successfully.'}`);
       btn.innerHTML = '✅ <span>Sent to Telegram</span>';
     } else {

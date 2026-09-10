@@ -84,10 +84,10 @@ class TelegramDelivery(BaseDelivery):
                 )
 
             caption = (
-                f"📰 <b>The Cyber Intelligence Chronicle — Edition #{edition_number}</b>\n\n"
-                f"🚨 <b>Front Page:</b> {self._escape_html(lead_story or 'Autonomous Intelligence Dispatch')}\n"
-                f"📊 <b>Threats Triaged:</b> {total_threats}\n"
-                f"🛡️ <i>5-Hour Autonomous Telemetry Broadsheet attached in PDF.</i>"
+                f"📰 <b>The Global AI Gazette — Edition #{edition_number}</b>\n\n"
+                f"🚨 <b>Lead Story:</b> {self._escape_html(lead_story or 'Worldwide AI Intelligence Dispatch')}\n"
+                f"📊 <b>Stories Analyzed:</b> {total_threats}\n"
+                f"🌐 <i>10-Page Autonomous Worldwide AI Broadsheet attached in PDF.</i>"
             )
 
             url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
@@ -95,7 +95,7 @@ class TelegramDelivery(BaseDelivery):
                 with open(p_path, "rb") as f:
                     files = {
                         "document": (
-                            f"Cyber_Chronicle_Edition_{edition_number}.pdf",
+                            f"Global_AI_Gazette_Edition_{edition_number}.pdf",
                             f.read(),
                             "application/pdf",
                         )

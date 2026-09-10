@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
+from ai_security_monitor.application.services.newspaper_delivery_tracker import delivery_tracker
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.infrastructure.delivery.base import delivery_registry
@@ -28,6 +29,7 @@ class EmailNewspaperRequest(BaseModel):
     smtp_port: int | None = None
     username: str | None = None
     password: str | None = None
+    force: bool = False
 
 
 @newspaper_router.get("/latest")
@@ -79,7 +81,7 @@ async def download_newspaper(format: str = Query(default="md", pattern="^(md|htm
     elif format == "pdf":
         file_path = output_dir / f"{edition['edition_id']}.pdf"
         media_type = "application/pdf"
-        filename = f"The_Cyber_Intelligence_Chronicle_Edition_{edition['edition_number']}.pdf"
+        filename = f"Global_AI_Gazette_Edition_{edition['edition_number']}.pdf"
         if not file_path.exists():
             fallback = output_dir / "latest.pdf"
             if fallback.exists():
@@ -118,9 +120,10 @@ async def list_newspaper_editions(limit: int = 15):
 async def trigger_newspaper_generation(req: GenerateEditionRequest = GenerateEditionRequest()):
     """Manually compile and publish a fresh 5-hour newspaper edition."""
     meta = await _newspaper_service.generate_edition(window_hours=req.window_hours)
+    count = meta.get("total_stories", meta.get("total_threats", 0))
     return {
         "status": "success",
-        "message": f"Successfully published Newspaper Edition #{meta['edition_number']} ({meta['total_threats']} threats compiled).",
+        "message": f"Successfully published Newspaper Edition #{meta['edition_number']} ({count} stories compiled).",
         "edition": meta,
     }
 
@@ -145,6 +148,21 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
     if not pdf_path or not pdf_path.exists():
         raise HTTPException(status_code=500, detail="Failed to locate or generate newspaper PDF.")
 
+    # Check delivery deduplication and cooldown
+    can_send, reason = delivery_tracker.should_dispatch(
+        channel="email",
+        edition_number=edition["edition_number"],
+        lead_story=edition.get("lead_story", ""),
+        min_cooldown_hours=0.5,
+        force=req.force,
+    )
+    if not can_send:
+        return {
+            "status": "skipped",
+            "message": f"Email dispatch skipped: {reason} (Pass force=true to bypass).",
+            "edition_number": edition["edition_number"],
+        }
+
     # Build EmailDelivery config
     email_cfg = {
         "smtp_server": req.smtp_server or settings.delivery.email_smtp_server,
@@ -162,7 +180,7 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
             edition_number=edition["edition_number"],
             to_email=req.to_email,
             lead_story=edition.get("lead_story", ""),
-            total_threats=edition.get("total_threats", 0),
+            total_threats=edition.get("total_stories", edition.get("total_threats", 0)),
         )
     except Exception as e:
         raise HTTPException(
@@ -171,9 +189,15 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
         )
 
     if result.success:
+        delivery_tracker.record_dispatch(
+            channel="email",
+            edition_number=edition["edition_number"],
+            lead_story=edition.get("lead_story", ""),
+            details={"recipient": req.to_email},
+        )
         return {
             "status": "success",
-            "message": f"The Cyber Intelligence Chronicle Edition #{edition['edition_number']} (PDF) was sent successfully to {req.to_email}!",
+            "message": f"The Global AI Gazette Edition #{edition['edition_number']} (PDF) was sent successfully to {req.to_email}!",
             "details": result.message
         }
     else:
@@ -186,6 +210,7 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
 class TelegramNewspaperRequest(BaseModel):
     bot_token: str | None = None
     chat_id: str | None = None
+    force: bool = False
 
 
 @newspaper_router.post("/telegram")
@@ -207,6 +232,21 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
     if not pdf_path or not pdf_path.exists():
         raise HTTPException(status_code=500, detail="Failed to locate or generate newspaper PDF.")
 
+    # Check delivery deduplication and cooldown
+    can_send, reason = delivery_tracker.should_dispatch(
+        channel="telegram",
+        edition_number=edition["edition_number"],
+        lead_story=edition.get("lead_story", ""),
+        min_cooldown_hours=0.5,
+        force=req.force,
+    )
+    if not can_send:
+        return {
+            "status": "skipped",
+            "message": f"Telegram dispatch skipped: {reason} (Pass force=true to bypass).",
+            "edition_number": edition["edition_number"],
+        }
+
     bot_token = req.bot_token or settings.delivery.telegram_bot_token or "8426550330:AAG5lxRf3qoVb6RbovH85rSgN42dO6Q4NlI"
     chat_id = req.chat_id or settings.delivery.telegram_chat_id or "1650972026"
 
@@ -219,7 +259,7 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
             pdf_path=pdf_path,
             edition_number=edition["edition_number"],
             lead_story=edition.get("lead_story", ""),
-            total_threats=edition.get("total_threats", 0),
+            total_threats=edition.get("total_stories", edition.get("total_threats", 0)),
         )
     except Exception as e:
         raise HTTPException(
@@ -228,9 +268,15 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
         )
 
     if result.success:
+        delivery_tracker.record_dispatch(
+            channel="telegram",
+            edition_number=edition["edition_number"],
+            lead_story=edition.get("lead_story", ""),
+            details={"chat_id": chat_id},
+        )
         return {
             "status": "success",
-            "message": f"The Cyber Intelligence Chronicle Edition #{edition['edition_number']} (PDF) sent to Telegram chat {chat_id}!",
+            "message": f"The Global AI Gazette Edition #{edition['edition_number']} (PDF) sent to Telegram chat {chat_id}!",
             "details": result.message
         }
     else:

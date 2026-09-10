@@ -437,12 +437,12 @@ async def export_selected_entries_pdf(payload: ExportPdfRequest):
         PdfExportService,
     )
 
-    all_entries, _ = await query_serialized_entries(limit=150, offset=0, sort_by="velocity")
-
     if payload.ids:
         target_ids = set(payload.ids)
+        all_entries, _ = await query_serialized_entries(limit=max(500, len(payload.ids) * 2), offset=0, sort_by="newest")
         filtered = [e for e in all_entries if e["id"] in target_ids]
     else:
+        all_entries, _ = await query_serialized_entries(limit=150, offset=0, sort_by="velocity")
         filtered = all_entries[:25]
 
     pdf_bytes = PdfExportService.generate_dossier_pdf(

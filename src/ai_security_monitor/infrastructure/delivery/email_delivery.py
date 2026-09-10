@@ -110,24 +110,24 @@ class EmailDelivery(BaseDelivery):
             msg = MIMEMultipart()
             msg["From"] = from_email
             msg["To"] = target_to
-            msg["Subject"] = f"📰 The Cyber Intelligence Chronicle — Edition #{edition_number} (PDF Attached)"
+            msg["Subject"] = f"📰 The Global AI Gazette — Edition #{edition_number} (PDF Attached)"
 
             html_body = f"""
             <html>
             <body style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #1e293b; line-height: 1.6;">
               <div style="background-color: #0f172a; padding: 24px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h1 style="color: #38bdf8; margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;">The Cyber Intelligence Chronicle</h1>
-                <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px;">Edition #{edition_number} • 5-Hour Intelligence Sweep</p>
+                <h1 style="color: #38bdf8; margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;">The Global AI Gazette</h1>
+                <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px;">Edition #{edition_number} • Worldwide AI Intelligence Broadsheet</p>
               </div>
               <div style="background-color: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-radius: 0 0 8px 8px;">
-                <h2 style="color: #0f172a; font-size: 18px; margin-top: 0;">🚨 Front Page: {html.escape(lead_story or 'Threat Intelligence Dispatch')}</h2>
-                <p>Your autonomous 5-hour security intelligence newspaper has been compiled from 79 global monitoring arrays. <strong>{total_threats} threats</strong> were analyzed during this period.</p>
+                <h2 style="color: #0f172a; font-size: 18px; margin-top: 0;">🔥 Lead Story: {html.escape(lead_story or 'Worldwide AI Intelligence Dispatch')}</h2>
+                <p>Your autonomous worldwide AI intelligence broadsheet has been compiled across global developer, research, and foundation model telemetry. <strong>{total_threats} stories</strong> were analyzed during this period.</p>
                 <div style="background-color: #f8fafc; border-left: 4px solid #0ea5e9; padding: 12px 16px; margin: 18px 0;">
                   <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0369a1;">📎 Attached Document:</p>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569;">Please find the attached PDF broadsheet (<code>Cyber_Chronicle_Edition_{edition_number}.pdf</code>) formatted for viewing and printing.</p>
+                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569;">Please find the attached 10-page PDF broadsheet (<code>Global_AI_Gazette_Edition_{edition_number}.pdf</code>) formatted for high-density viewing and printing.</p>
                 </div>
                 <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 12px; text-align: center;">
-                  Published autonomously by AetherGuard Cyber Monitor Engine
+                  Published autonomously by Global AI Intelligence Monitor Engine
                 </p>
               </div>
             </body>
@@ -142,7 +142,7 @@ class EmailDelivery(BaseDelivery):
                     pdf_part.add_header(
                         "Content-Disposition",
                         "attachment",
-                        filename=f"Cyber_Chronicle_Edition_{edition_number}.pdf"
+                        filename=f"Global_AI_Gazette_Edition_{edition_number}.pdf"
                     )
                     msg.attach(pdf_part)
             else:

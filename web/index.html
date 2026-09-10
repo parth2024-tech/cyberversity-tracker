@@ -464,8 +464,8 @@
             <i data-lucide="flask-conical" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-xl font-display font-bold tracking-wide">Interactive AI Triage & Blast Radius Sandbox</h2>
-            <p class="text-xs text-cyber-muted font-mono">Test raw CVE reports, security tweets, or zero-day research in real-time</p>
+            <h2 class="text-xl font-display font-bold tracking-wide">Interactive AI Architecture & Model Sandbox</h2>
+            <p class="text-xs text-cyber-muted font-mono">Test foundation model releases, arXiv papers, or open-source tools in real-time</p>
           </div>
         </div>
         <button onclick="closeTriageModal()" class="text-gray-400 hover:text-white bg-gray-900/80 hover:bg-gray-800 p-2 rounded-xl border border-gray-700 transition">
@@ -475,13 +475,13 @@
 
       <div class="space-y-4 flex-1 overflow-y-auto pr-1">
         <div>
-          <label class="block text-xs font-mono text-gray-400 mb-1.5 uppercase font-semibold">Threat Title / CVE Identifier</label>
-          <input id="triage-title" type="text" placeholder="e.g. PyTorch Remote Code Execution via TorchScript Deserialization" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono focus:border-cyber-purple">
+          <label class="block text-xs font-mono text-gray-400 mb-1.5 uppercase font-semibold">Model Title / Paper / Repository Identifier</label>
+          <input id="triage-title" type="text" placeholder="e.g. DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono focus:border-cyber-purple">
         </div>
 
         <div>
-          <label class="block text-xs font-mono text-gray-400 mb-1.5 uppercase font-semibold">Raw Threat Advisory / Research Paper Abstract</label>
-          <textarea id="triage-content" rows="4" placeholder="Paste vulnerability description, proof of concept, or academic paper abstract here..." class="w-full glass-input rounded-xl px-4 py-2.5 text-xs font-mono focus:border-cyber-purple"></textarea>
+          <label class="block text-xs font-mono text-gray-400 mb-1.5 uppercase font-semibold">Research Abstract / Architecture Specs / Benchmark Notes</label>
+          <textarea id="triage-content" rows="4" placeholder="Paste model weights description, training regime, or arXiv research paper abstract here..." class="w-full glass-input rounded-xl px-4 py-2.5 text-xs font-mono focus:border-cyber-purple"></textarea>
         </div>
 
         <div class="flex items-center justify-between gap-4 flex-wrap pt-1">
@@ -494,7 +494,7 @@
           </div>
           <div class="flex items-center gap-3">
             <button onclick="fillTriageSample()" class="text-xs font-mono text-cyber-purple hover:underline flex items-center gap-1">
-              <i data-lucide="file-code" class="w-3.5 h-3.5"></i> Sample Zero-Day
+              <i data-lucide="file-code" class="w-3.5 h-3.5"></i> Sample Paper
             </button>
             <button id="run-triage-btn" onclick="runSandboxTriage()" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-medium text-xs font-mono uppercase tracking-wider flex items-center gap-2 shadow-sm transition">
               <i data-lucide="zap" class="w-4 h-4 text-white"></i> Run AI Triage
@@ -575,7 +575,7 @@
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white" id="newspaper-modal-title">The Aether Guard — AI & Cyber Threat Gazette</h2>
+              <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white" id="newspaper-modal-title">The Global AI Gazette — Autonomous Broadsheet</h2>
               <span id="newspaper-edition-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-bold">5-HOUR CYCLE</span>
             </div>
             <p class="text-xs text-slate-400 font-mono mt-0.5" id="newspaper-modal-date">Autonomous Editorial Document // Loading...</p>
@@ -592,9 +592,9 @@
             <i data-lucide="printer" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>Print / Web View</span>
           </button>
-          <a href="/gazette.html" target="_blank" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-300 hover:text-white transition flex items-center gap-1.5" title="Open The Aether Guard Gazette in dedicated tab">
+          <a href="/gazette" target="_blank" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-300 hover:text-white transition flex items-center gap-1.5" title="Open The Global AI Gazette in dedicated tab">
             <i data-lucide="newspaper" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span>Aether Gazette</span>
+            <span>Global AI Gazette</span>
           </a>
           <button onclick="narrateChronicle()" id="chronicle-narrate-btn" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-emerald-300 hover:text-white transition flex items-center gap-1.5" title="Listen to AI radio voice narration of this Chronicle edition">
             <i data-lucide="volume-2" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -641,7 +641,7 @@
       <!-- Document Content Body -->
       <div class="flex-1 overflow-hidden mt-3 rounded-xl border border-white/[0.08] relative min-h-[500px] flex flex-col">
         <!-- 1. Visual Web Newspaper Frame -->
-        <iframe id="newspaper-iframe" src="/api/newspaper/latest/html" class="w-full h-full flex-1 bg-[#fbf9f4] border-none rounded-xl" title="The Cyber Intelligence Chronicle Broadsheet"></iframe>
+        <iframe id="newspaper-iframe" src="/api/newspaper/latest/html" class="w-full h-full flex-1 bg-[#fbf9f4] border-none rounded-xl" title="The Global AI Gazette Broadsheet"></iframe>
 
         <!-- 2. Markdown Document Viewer -->
         <div id="newspaper-markdown-view" class="hidden w-full h-full flex-1 p-5 overflow-y-auto bg-black/60 font-mono text-xs text-slate-200 leading-relaxed whitespace-pre-wrap selection:bg-cyan-500 selection:text-black">
@@ -1068,12 +1068,6 @@
               </button>
               <button onclick="setCategory('ai_tech')" id="tab-ai_tech" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-sky-300 hover:text-sky-200 border border-sky-500/25 hover:border-sky-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
                 <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> 🌐 GLOBAL TECH
-              </button>
-              <button onclick="setCategory('vulnerabilities')" id="tab-vulnerabilities" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-rose-300 hover:text-rose-200 border border-rose-500/25 hover:border-rose-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-rose-400"></i> 🛡️ CVEs & DEFENSE
-              </button>
-              <button onclick="setCategory('exploits_tricks')" id="tab-exploits_tricks" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-amber-300 hover:text-amber-200 border border-amber-500/25 hover:border-amber-500/45 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> ⚡ EXPLOITS & PoCs
               </button>
               <button onclick="setCategory('pinned')" id="tab-pinned" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
                 <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i> PINNED (<span id="pinned-count">0</span>)
@@ -2024,17 +2018,18 @@
       const chartCanvas = document.getElementById('categoryChart');
       if (!chartCanvas) return;
       const ctx = chartCanvas.getContext('2d');
-      const labels = ['Frontier AI Tech', 'arXiv AI Research', 'Cybersecurity Threats', 'CVE Vulnerabilities', 'Trending Repos'];
+      const labels = ['Trending Repos', 'Frontier AI Models', 'arXiv AI Research', 'AI Developer Tools', 'Global Sovereign Tech'];
       const dataValues = [
-        cats.ai_tech || 0,
+        cats.github_trending || 0,
+        cats.ai_models || 0,
         cats.ai_research || 0,
-        cats.cybersecurity || 0,
-        cats.vulnerabilities || 0,
-        cats.github_trending || 0
+        (cats.cyber_tools || 0) + (cats.cybersecurity || 0),
+        cats.ai_tech || 0
       ];
 
       if (categoryChart) {
         categoryChart.data.datasets[0].data = dataValues;
+        categoryChart.data.labels = labels;
         categoryChart.update();
         return;
       }
@@ -2046,11 +2041,11 @@
           datasets: [{
             data: dataValues,
             backgroundColor: [
-              '#38BDF8', // Celestial Azure (Frontier AI)
-              '#818CF8', // Indigo Iris (Research)
-              '#34D399', // Mint Jade (Cybersecurity)
-              '#FB7185', // Rose Damask (Vulnerabilities)
-              '#FBBF24'  // Champagne Gold (Trending)
+              '#06B6D4', // Cyan (Trending Repos)
+              '#A855F7', // Purple (Frontier Models)
+              '#6366F1', // Indigo (arXiv Research)
+              '#10B981', // Emerald (Developer Tools)
+              '#38BDF8'  // Sky Blue (Global Sovereign Tech)
             ],
             borderColor: 'rgba(14, 18, 27, 0.95)',
             borderWidth: 2,
@@ -2339,7 +2334,7 @@
           </div>
           <div class="flex items-center gap-2 flex-shrink-0 text-[10px] font-mono">
             <button onclick="togglePinThreat('${entry.id}', event)" class="p-1 text-slate-500 hover:text-amber-400 transition" title="Pin / Star">
-              <i data-lucide="star" class="w-3.5 h-3.5 ${isPinned ? 'text-amber-400' : ''}"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 ${isPinned ? 'text-amber-400 fill-amber-400' : ''}"></i>
             </button>
             <button onclick="event.stopPropagation(); VoiceRadar.speakSingleEntry('${entry.id}')" class="p-1 text-slate-500 hover:text-cyan-400 transition" title="Read Aloud">
               <i data-lucide="volume-2" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -2366,7 +2361,7 @@
               <div class="flex items-center gap-2 flex-shrink-0 text-[9px] font-mono">
                 <span class="text-slate-500">${flag} ${sourceDisplayName}</span>
                 <button onclick="togglePinThreat('${entry.id}', event)" class="text-slate-500 hover:text-amber-400 transition" title="Pin / Star">
-                  <i data-lucide="star" class="w-3 h-3 ${isPinned ? 'text-amber-400' : ''}"></i>
+                  <i data-lucide="star" class="w-3 h-3 ${isPinned ? 'text-amber-400 fill-amber-400' : ''}"></i>
                 </button>
               </div>
             </div>
@@ -2593,8 +2588,8 @@
     async function triggerScan() {
       const btn = document.getElementById('scan-btn');
       const icon = document.getElementById('scan-icon');
-      btn.disabled = true;
-      icon.classList.add('animate-spin');
+      if (btn) btn.disabled = true;
+      if (icon) icon.classList.add('animate-spin');
       playBeep('alert');
 
       try {
@@ -2607,8 +2602,9 @@
         console.error("Scan error: ", e);
       } finally {
         setTimeout(() => {
-          btn.disabled = false;
-        }, 2000);
+          if (btn) btn.disabled = false;
+          if (icon) icon.classList.remove('animate-spin');
+        }, 1500);
       }
     }
 
@@ -2747,8 +2743,8 @@
       document.getElementById('triage-modal').classList.add('hidden');
     }
     function fillTriageSample() {
-      document.getElementById('triage-title').value = "CVE-2024-34359: LangChain Expression Language (LCEL) Remote Code Execution";
-      document.getElementById('triage-content').value = "A critical remote code execution vulnerability was identified in LangChain LCEL parser where untrusted prompt template inputs permit dynamic AST evaluation, granting full shell execution inside PyTorch and vLLM server environments.";
+      document.getElementById('triage-title').value = "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning";
+      document.getElementById('triage-content').value = "We introduce DeepSeek-R1-Zero and DeepSeek-R1. DeepSeek-R1-Zero is trained via large-scale reinforcement learning without supervised fine-tuning, demonstrating emergent reasoning capabilities including self-reflection, chain-of-thought verification, and mathematical derivation across complex benchmarks.";
       playBeep('click');
     }
 
@@ -2990,7 +2986,7 @@
     }
 
     // Telegram & Voice Dispatchers for Newspaper
-    async function dispatchNewspaperToTelegram() {
+    async function dispatchNewspaperToTelegram(force = false) {
       const btn = document.getElementById('chronicle-telegram-btn');
       if (btn) {
         btn.disabled = true;
@@ -3000,10 +2996,19 @@
       playBeep('alert');
 
       try {
-        const res = await fetch('/api/newspaper/telegram', { method: 'POST' });
+        const res = await fetch('/api/newspaper/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ force })
+        });
         const data = await res.json();
-        if (res.ok) {
-          showToast(data.message || "Newspaper PDF sent to Telegram!", "info");
+        if (data.status === 'skipped') {
+          showToast(data.message, "alert");
+          if (!force && confirm(`${data.message}\n\nDo you want to FORCE send it to Telegram anyway?`)) {
+            return dispatchNewspaperToTelegram(true);
+          }
+        } else if (res.ok) {
+          showToast(data.message || "The Global AI Gazette PDF sent to Telegram!", "info");
         } else {
           showToast("Failed to send to Telegram: " + (data.detail || "Error"), "alert");
         }
@@ -3024,24 +3029,24 @@
         return;
       }
       const rawMd = window._currentNewspaperMarkdown || "";
-      let narrative = "Good day. This is your Autonomous Intelligence Chronicle summary. Global AI telemetry active across 50+ hubs. ";
+      let narrative = "Good day. This is your Global AI Gazette audio edition. Worldwide AI telemetry active across fifty verified research hubs and developer codebases. ";
 
       if (rawMd) {
-        const leadMatch = rawMd.match(/# 🚨 FRONT PAGE:\s*(.+)/);
+        const leadMatch = rawMd.match(/##? (?:🚀 LEAD STORY:|LEAD STORY:)\s*(.+)/i) || rawMd.match(/#+ (?:FRONT PAGE|BREAKING):\s*(.+)/i);
         if (leadMatch) {
-          narrative += "Front page breaking advisory: " + leadMatch[1].replace(/[*_~`]/g, '') + ". ";
+          narrative += "Lead story: " + leadMatch[1].replace(/[*_~`#]/g, '') + ". ";
         }
-        const cisoMatch = rawMd.match(/## 👔 CISO EXECUTIVE INTELLIGENCE BRIEF\n+([^#\n]+)/);
-        if (cisoMatch) {
-          narrative += "Executive briefing: " + cisoMatch[1].replace(/[*_~`]/g, '') + ". ";
+        const execMatch = rawMd.match(/## (?:🌐 EXECUTIVE AI STRATEGIC BRIEFING|👔 CISO EXECUTIVE INTELLIGENCE BRIEF)\n+([^#\n]+)/i);
+        if (execMatch) {
+          narrative += "Executive briefing: " + execMatch[1].replace(/[*_~`#]/g, '') + ". ";
         }
-        narrative += "Tactical directives: Restrict autonomous tool permissions, validate deserialization endpoints, and inspect RAG embeddings. End of broadcast.";
+        narrative += "Strategic vectors: Optimize test-time compute, benchmark KV-cache quantization, and evaluate open-weights foundation architectures. End of broadcast.";
       } else {
-        narrative += "Threat intelligence telemetry active across seventy-nine global sensors. All arrays operational.";
+        narrative += "Global AI telemetry active across developer hubs, frontier model releases, and arXiv research preprints. All feeds operational.";
       }
 
       window.VoiceRadar.speak(narrative, { priority: true });
-      showToast("🎙️ Voice AI reading Chronicle broadcast...", "info");
+      showToast("🎙️ Voice AI reading Global AI Gazette broadcast...", "info");
     }
 
     // Email PDF Dispatcher
@@ -3059,7 +3064,7 @@
       if (modal) modal.classList.add('hidden');
     }
 
-    async function sendNewspaperPdfEmail() {
+    async function sendNewspaperPdfEmail(force = false) {
       const targetInput = document.getElementById('email-pdf-target');
       const statusBox = document.getElementById('email-pdf-status');
       const btn = document.getElementById('send-pdf-email-btn');
@@ -3079,23 +3084,31 @@
         const res = await fetch('/api/newspaper/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to_email: toEmail })
+          body: JSON.stringify({ to_email: toEmail, force })
         });
         const data = await res.json();
         
-        if (res.ok) {
-          statusBox.classList.remove('hidden', 'bg-rose-500/20', 'text-rose-300', 'border-rose-500/30');
+        if (data.status === 'skipped') {
+          statusBox.classList.remove('hidden', 'bg-rose-500/20', 'text-rose-300', 'bg-emerald-500/15', 'text-emerald-300');
+          statusBox.classList.add('bg-amber-500/20', 'text-amber-300', 'border', 'border-amber-500/30');
+          statusBox.textContent = data.message;
+          showToast(data.message, "alert");
+          if (!force && confirm(`${data.message}\n\nDo you want to FORCE send the email anyway?`)) {
+            return sendNewspaperPdfEmail(true);
+          }
+        } else if (res.ok) {
+          statusBox.classList.remove('hidden', 'bg-rose-500/20', 'text-rose-300', 'bg-amber-500/20', 'text-amber-300');
           statusBox.classList.add('bg-emerald-500/15', 'text-emerald-300', 'border', 'border-emerald-500/30');
           statusBox.textContent = data.message || `PDF Edition emailed successfully to ${toEmail}!`;
-          showToast(`PDF Edition sent to ${toEmail}!`, "info");
+          showToast(`The Global AI Gazette sent to ${toEmail}!`, "info");
         } else {
-          statusBox.classList.remove('hidden', 'bg-emerald-500/15', 'text-emerald-300', 'border-emerald-500/30');
+          statusBox.classList.remove('hidden', 'bg-emerald-500/15', 'text-emerald-300', 'bg-amber-500/20', 'text-amber-300');
           statusBox.classList.add('bg-rose-500/20', 'text-rose-300', 'border', 'border-rose-500/30');
           statusBox.textContent = data.detail || "Email delivery failed. Please check SMTP configuration.";
           showToast("Failed to email PDF: " + (data.detail || "SMTP error"), "alert");
         }
       } catch (e) {
-        statusBox.classList.remove('hidden', 'bg-emerald-500/15', 'text-emerald-300', 'border-emerald-500/30');
+        statusBox.classList.remove('hidden', 'bg-emerald-500/15', 'text-emerald-300', 'bg-amber-500/20', 'text-amber-300');
         statusBox.classList.add('bg-rose-500/20', 'text-rose-300', 'border', 'border-rose-500/30');
         statusBox.textContent = "Error sending email: " + e.message;
       } finally {
@@ -4989,7 +5002,7 @@
     </button>
     <button onclick="openNewspaperModal()" class="flex flex-col items-center gap-0.5 text-cyan-400 hover:text-cyan-300 text-[10px] font-mono">
       <i data-lucide="newspaper" class="w-4 h-4"></i>
-      <span>Chronicle</span>
+      <span>Gazette</span>
     </button>
     <button onclick="VoiceRadar.startBriefing()" class="flex flex-col items-center gap-0.5 text-purple-400 hover:text-purple-300 text-[10px] font-mono">
       <i data-lucide="mic" class="w-4 h-4 animate-pulse"></i>

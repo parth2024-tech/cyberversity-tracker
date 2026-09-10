@@ -28,17 +28,32 @@ def server(
 ):
     """Launch the real-time web command center and API server."""
     import os
+    import socket
     import uvicorn
+    from ai_security_monitor.config.settings import settings
+
     # Support cloud runtime PORT environment variable (Render, Fly.io, etc.)
-    env_port = os.environ.get("PORT") or os.environ.get("API_PORT")
+    api_cfg_port = getattr(settings.api, "port", 8000)
+    env_port = os.environ.get("PORT") or os.environ.get("API_PORT") or (str(api_cfg_port) if api_cfg_port != 8000 else None)
     if env_port and port == 8000:
         try:
             port = int(env_port)
         except ValueError:
             pass
 
+    # If still 8000, verify if port 8000 is occupied by another local service (e.g. laptop-monitor)
+    if port == 8000:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("127.0.0.1", 8000)) == 0:
+                console.print("[yellow]⚠️ Port 8000 is in use by another service. Switching automatically to port 8080.[/yellow]")
+                port = 8080
+
     console.print(f"[bold cyan]🚀 Launching AI Security Monitor Command Center on http://{host}:{port}[/bold cyan]")
     uvicorn.run("ai_security_monitor.presentation.api.main:app", host=host, port=port, reload=reload)
+
+
+# Register alias for serve
+app.command(name="serve")(server)
 
 
 @app.command()

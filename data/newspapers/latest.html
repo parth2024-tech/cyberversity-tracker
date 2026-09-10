@@ -3,728 +3,644 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Cyber Intelligence Chronicle & AI Gazette — 10-Page Edition #2205</title>
+  <title>The Global AI Gazette — Edition #2212</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cinzel:wght@700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --paper: #fbf9f1;
-      --ink: #0d1117;
-      --border-ink: #1e2430;
-    }
-    body {
-      background-color: #0b0f17;
-      color: var(--ink);
-      font-family: 'Merriweather', Georgia, serif;
-    }
-    .newspaper-sheet {
-      background-color: var(--paper);
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255,255,255,0.05);
-      border: 1px solid #d1cbba;
-      page-break-after: always;
-      break-after: page;
-      min-height: 1050px;
-    }
-    .masthead-title {
-      font-family: 'Cinzel', serif;
-      letter-spacing: -0.02em;
-    }
-    .headline-font {
-      font-family: 'Playfair Display', serif;
-      line-height: 1.1;
-    }
-    .editorial-col {
-      column-count: 2;
-      column-gap: 28px;
-      column-rule: 1px solid #d8d3c5;
-      text-align: justify;
-    }
-    .double-rule-thick {
-      border-top: 3px double var(--border-ink);
-      border-bottom: 1px solid var(--border-ink);
-      height: 6px;
-    }
-    @media print {
-      body { background: transparent !important; padding: 0 !important; }
-      .no-print { display: none !important; }
-      .newspaper-sheet { box-shadow: none !important; border: none !important; margin-bottom: 0 !important; page-break-after: always; }
-    }
+    :root { --paper: #fbf9f1; --ink: #0d1117; --border-ink: #1e2430; }
+    body { background-color: #0b0f17; color: var(--ink); font-family: 'Merriweather', Georgia, serif; }
+    .newspaper-sheet { background-color: var(--paper); box-shadow: 0 25px 60px rgba(0,0,0,0.65); border: 1px solid #d1cbba; page-break-after: always; break-after: page; min-height: 1050px; }
+    .masthead-title { font-family: 'Cinzel', serif; letter-spacing: -0.02em; }
+    .headline-font { font-family: 'Playfair Display', serif; line-height: 1.1; }
+    .editorial-col { column-count: 2; column-gap: 28px; column-rule: 1px solid #d8d3c5; text-align: justify; }
+    .double-rule-thick { border-top: 3px double var(--border-ink); border-bottom: 1px solid var(--border-ink); height: 6px; }
+    @media print { body { background: transparent !important; } .no-print { display: none !important; } .newspaper-sheet { box-shadow: none !important; border: none !important; } }
   </style>
 </head>
 <body class="py-8 px-2 sm:px-6">
 
-  <!-- Print & Download Floating Command Bar -->
+  <!-- Print & Download Bar -->
   <div class="no-print max-w-5xl mx-auto mb-6 flex items-center justify-between bg-slate-900/90 backdrop-blur-md p-3.5 rounded-xl border border-white/10 text-white font-mono text-xs">
     <div class="flex items-center gap-3">
       <span class="flex items-center gap-1.5 text-cyan-400 font-bold">
         <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-        10-PAGE EXECUTIVE INTELLIGENCE DOSSIER
+        THE GLOBAL AI GAZETTE — 10-PAGE DOSSIER
       </span>
       <span class="text-slate-500">|</span>
-      <span class="text-slate-300">Edition #2205</span>
+      <span class="text-slate-300">Edition #2212 • 201 stories</span>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="window.print()" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-100 transition font-bold">
-        🖨️ Print / Save 10-Page PDF
-      </button>
-      <a href="/api/newspaper/download?format=pdf" class="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition font-bold">
-        📥 Download PDF
-      </a>
+      <button onclick="window.print()" class="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-100 transition font-bold">🖨️ Print / Save PDF</button>
+      <a href="/api/newspaper/download?format=pdf" class="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition font-bold">📥 Download PDF</a>
     </div>
   </div>
 
-  <!-- PAGE 1: FRONT PAGE BROADSHEET -->
+  <!-- PAGE 1: FRONT PAGE -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>AETHERGUARD DEFENSE DISPATCH • 10-PAGE DOSSIER</div>
-      <div>GLOBAL THREAT LEVEL: <span class="font-bold text-red-700">DEFCON 3 (ELEVATED)</span></div>
-      <div>PAGE 1 OF 10</div>
+      <div>THE GLOBAL AI GAZETTE</div><div>BREAKING WORLDWIDE AI INTELLIGENCE</div><div>PAGE 1 OF 10</div>
     </div>
     <header class="text-center py-5 border-b border-[#1e2430]">
-      <h1 class="masthead-title text-3xl sm:text-5xl md:text-6xl font-black uppercase text-[#0d1117] tracking-tight">
-        The Cyber Intelligence Chronicle
-      </h1>
-      <p class="text-xs sm:text-sm italic text-[#4b5563] mt-1 font-serif">
-        "Omnis Vulnerabilitas Patefacietur" — Autonomous Telemetry Across 92 Global Threat Arrays
-      </p>
+      <h1 class="masthead-title text-3xl sm:text-5xl md:text-6xl font-black uppercase text-[#0d1117] tracking-tight">The Global AI Gazette</h1>
+      <p class="text-xs sm:text-sm italic text-[#4b5563] mt-1 font-serif">Worldwide AI Ecosystem Intelligence — Open Source, Research, Models, Tools & Sovereign AI</p>
     </header>
     <div class="double-rule-thick my-2"></div>
     <div class="flex items-center justify-between text-[11px] font-mono py-1 text-[#1f2937] font-semibold border-b border-[#1e2430]">
-      <div>Wednesday, September 09, 2026</div>
-      <div>NO. 2205 • EXECUTIVE INTELLIGENCE DOSSIER</div>
-      <div>04:09 UTC • REPORTERS: AETHERGUARD AI ENGINE</div>
+      <div>Thursday, September 10, 2026</div><div>NO. 2212 • 201 STORIES ANALYZED</div><div>16:05 UTC</div>
     </div>
 
-    <!-- Breaking Lead Story -->
     <section class="mt-6 mb-6">
-      <div class="text-[11px] font-mono font-bold uppercase tracking-widest text-red-700 mb-1 flex items-center gap-2">
-        <span class="inline-block w-2 h-2 bg-red-700"></span> BREAKING GLOBAL ZERO-DAY & AI LEAD INVESTIGATION
-      </div>
-      <h2 class="headline-font text-2xl sm:text-4xl font-black text-[#0a0d13] mb-3 leading-tight">
-        NeuronGuard: Robust LLM Safety Alignment via Ablation-Aware Safety Signal Redistribution
-      </h2>
+      <div class="text-[11px] font-mono font-bold uppercase tracking-widest text-cyan-800 mb-1">🔥 LEAD STORY — GLOBAL AI DISPATCH</div>
+      <h2 class="headline-font text-2xl sm:text-4xl font-black text-[#0a0d13] mb-3 leading-tight">ANOTHER researcher accuses OpenAI of training on conversations and then claiming a breakthrough</h2>
       <p class="text-sm font-serif italic text-[#374151] mb-4 pb-2 border-b border-[#d1cbba]">
-        Threat velocity clocks at 70/100 with blast radius index 20/100; enterprise systems face active exploitation.
+        Velocity 96/100 · Impact 88/100 · Source: reddit.com
       </p>
       <div class="editorial-col text-xs leading-relaxed text-[#1f2937]">
-        <p class="mb-3 first-letter:text-4xl first-letter:font-bold first-letter:float-left first-letter:mr-2 font-serif">
-          arXivLabs is a framework that allows collaborators to develop and share new arXiv features directly on our website. Both individuals and organizations that work with arXivLabs have embraced and accepted our values of openness, community, excellence, and user data privacy. arXiv is committed to these values and only works with partners that adhere to them. Have an idea for a project that will add value for arXiv&#x27;s community? Learn more about arXivLabs .
-        </p>
-        <div class="my-2 p-2.5 bg-[#f2eedf] border-l-4 border-red-700 font-mono text-[10.5px]">
-          <strong>VECTOR:</strong> Attack archetype: Jailbreak - Authentication/authorization bypass<br>
-          <strong>MITIGATION:</strong> Deploy prompt injection defenses and output filtering; Apply official vendor patches immediately; Restrict network ingress and isolate affected components
+        <p class="mb-3 first-letter:text-4xl first-letter:font-bold first-letter:float-left first-letter:mr-2 font-serif">ANOTHER researcher accuses OpenAI of training on conversations and then claiming a breakthrough introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.</p>
+        <div class="my-2 p-2.5 bg-[#f2eedf] border-l-4 border-cyan-700 font-mono text-[10.5px]">
+          <strong>INNOVATION FOCUS:</strong> Model: Frontier Foundation Weights &amp; Open Checkpoint<br>
+          <strong>ACTION MANDATE:</strong> Deployment: Checkpoints accessible on Hugging Face; compatible with standard runtimes.
         </div>
       </div>
     </section>
 
-    <!-- Secondary Anchor -->
-    
-    <section class="mb-6 p-4 bg-white/70 border border-[#d1cbba]">
-      <div class="text-[10px] font-mono font-bold text-red-800 uppercase">⚡ SECONDARY ANCHOR DISPATCH</div>
-      <h3 class="font-serif font-bold text-base mt-1 text-[#0f172a]">NeuronFuzz: Safety Neuron Guided Fuzzing for LLM Safety Evaluation</h3>
-      <p class="text-xs text-[#374151] mt-1 leading-relaxed">arXivLabs is a framework that allows collaborators to develop and share new arXiv features directly on our website. Both individuals and organizations that work with arXivLabs have embraced and accepted our values of openness, community, excellence, and user data privacy. arXiv is committed to these values and only works with partners that adhere to them. Have an idea for a project that will add value for arXiv&#x27;s community? Learn more about arXivLabs .</p>
-    </section>
-    
+    <section class="mb-6 p-4 bg-white/70 border border-[#d1cbba]"><div class="text-[10px] font-mono font-bold text-cyan-800 uppercase">⚡ SECONDARY ANCHOR</div><h3 class="font-serif font-bold text-base mt-1 text-[#0f172a]">Deepseek V4.1 Flash Release Video [Made with Deepseek V4.1 Flash]</h3><p class="text-xs text-[#374151] mt-1 leading-relaxed">I like to benchmark new models that come out on motion videos. So here&#x27;s a test I did for deepseek v4.1 flash. And I have to say flash has probably graduated from being a Luna class model to nearly an Opus class model with this release, at least with motion videos. Prev.</p></section>
 
-    <!-- Top Flash Bulletins -->
     <div class="border-t-2 border-[#1e2430] pt-4">
-      <h3 class="font-mono text-xs font-bold uppercase text-red-800 mb-3">⚡ Front Page Global Flash Bulletins</h3>
+      <h3 class="font-mono text-xs font-bold uppercase text-cyan-800 mb-3">⚡ Flash Bulletins</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
         
           <div class="p-2.5 bg-white/60 border border-[#d1cbba]">
-            <span class="text-[9.5px] font-mono font-bold text-red-700">VEL 50/100</span>
-            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://simonwillison.net/2026/Aug/27/breaking-claude-code-opus-5-auto-mode/" target="_blank" class="hover:text-red-700">Breaking Claude Code Opus 5 Auto Mode</a></h4>
-            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">Breaking Claude Code Opus 5 Auto Mode . Anthropic are putting a great deal of faith in Claude Code&#x27;s auto mode for protecting their coding agent users against prompt injection attacks. They recently made that the default and have made bold claims about its effectiveness.</p>
+            <span class="text-[9.5px] font-mono font-bold text-cyan-700">VEL 96/100</span>
+            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcesmy/guide_to_using_reasoning_effort_on_deepseek_v41/" target="_blank" class="hover:text-cyan-700">guide to using reasoning_effort on deepseek v4.1 flash</a></h4>
+            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">guide to using reasoning_effort on deepseek v4.1 flash introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.</p>
           </div>
-        
           <div class="p-2.5 bg-white/60 border border-[#d1cbba]">
-            <span class="text-[9.5px] font-mono font-bold text-red-700">VEL 30/100</span>
-            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w6lk6z/increasing_active_parameters_per_token_in_moe/" target="_blank" class="hover:text-red-700">Increasing active parameters per token in MOE (Qwen 35B A4B+) reduce reasoning token by 8.5% - and you don&#x27;t need to train or finetune!</a></h4>
-            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">I want to share a short paper just published exploring a simple but surprisingly effective optimization for sparse MoE reasoning models. The idea: Instead of retraining anything, we just tweak the router at runtime.</p>
+            <span class="text-[9.5px] font-mono font-bold text-cyan-700">VEL 96/100</span>
+            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wbmo0k/qwen3827buncensoredgenesisv1gguf/" target="_blank" class="hover:text-cyan-700">Qwen3.8-27B-Uncensored-Genesis-V1-GGUF</a></h4>
+            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">Model available Qwen3.8-27B-Uncensored-Genesis-V1-MTP-GGUF This model is a practical realisation of things described in this paper, but adapted by me for machine learning: I am trying to solve the problem: why LLM models even for simple questions write walls of text during reasoning, and burn too much tokens instead of solving the task.</p>
           </div>
-        
           <div class="p-2.5 bg-white/60 border border-[#d1cbba]">
-            <span class="text-[9.5px] font-mono font-bold text-red-700">VEL 30/100</span>
-            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w60jr5/model_add_nvidia_nemotron3puzzle75ba9b/" target="_blank" class="hover:text-red-700">model: add NVIDIA Nemotron-3-Puzzle-75B-A9B (NemotronHPuzzle) support by YanissAmz · Pull Request #25444 · ggml-org/llama.cpp</a></h4>
-            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">75B MoE is an interesting size to check, you can run it today (no MTP support yet) The model employs a hybrid MoE architecture with interleaved Mamba, MoE, and Attention layers. Like Nemotron-3-Super, it supports Multi-Token Prediction (MTP) for faster text generation. Compared to its parent, Puzzle-75B-A9B reduces the model from 120.7B total / 12.8B.</p>
+            <span class="text-[9.5px] font-mono font-bold text-cyan-700">VEL 88/100</span>
+            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://arxiv.org/abs/2608.25071v1" target="_blank" class="hover:text-cyan-700">HealthBench-Psych: A Mental Health Subset of OpenAI&#x27;s HealthBench</a></h4>
+            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">General-purpose health benchmarks increasingly anchor claims about LLM medical performance, but they are not always resolved by clinical specialty, making domain-specific performance hard to isolate.</p>
           </div>
-        
           <div class="p-2.5 bg-white/60 border border-[#d1cbba]">
-            <span class="text-[9.5px] font-mono font-bold text-red-700">VEL 30/100</span>
-            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w2ncr5/unpopular_opinion_qwen_38_is_hard_to_understand/" target="_blank" class="hover:text-red-700">Unpopular opinion Qwen 3.8 is hard to understand</a></h4>
-            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">I find both Qwen 3.8 27b and Qwen 3.8 Flash Next difficult to read. Here&#x27;s some examples of what I mean: **Model-visible tool set per turn** (assembled by the host at provider-request time): persona tool allowlist ∩ session tool surface ∩ tools not `deny`-classified under the active permission profile.</p>
+            <span class="text-[9.5px] font-mono font-bold text-cyan-700">VEL 88/100</span>
+            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://arxiv.org/abs/2608.13420v1" target="_blank" class="hover:text-cyan-700">Enhancing Virtual Agents through SLMs and Edge-Computing: An Exploratory Evaluation of Think and Memory Processes</a></h4>
+            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">Embodied intelligent virtual agents are expected to operate as persistent, adaptive, and context-aware entities within complex virtual and Metaverse worlds. However, implementing cognitively capable agents in such environments is conceptually and technologically challenging.</p>
           </div>
-        
+          <div class="p-2.5 bg-white/60 border border-[#d1cbba]">
+            <span class="text-[9.5px] font-mono font-bold text-cyan-700">VEL 88/100</span>
+            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://arxiv.org/abs/2608.11420v1" target="_blank" class="hover:text-cyan-700">Social Chain of Thought: A Multi-Agent Architecture Grounded in Medical Differential Diagnosis Methodology</a></h4>
+            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">Medical diagnostic reasoning is a high-impact use case for LLMs that carries significant implications for the health and wellbeing of users. When OpenAI (2026) reports that more than 5% of ChatGPT messages globally are healthcare-related, the transparency of these systems becomes a serious design concern.</p>
+          </div>
+          <div class="p-2.5 bg-white/60 border border-[#d1cbba]">
+            <span class="text-[9.5px] font-mono font-bold text-cyan-700">VEL 88/100</span>
+            <h4 class="font-serif font-bold text-xs mt-1"><a href="https://arxiv.org/abs/2608.07538v1" target="_blank" class="hover:text-cyan-700">When LLM Agents Negotiate: Private Information and Dynamic Bargaining in Supply Chains</a></h4>
+            <p class="text-[11px] text-[#4b5563] mt-1 leading-normal">As LLM agents move from decision support to autonomous procurement, firms need to know whether delegated negotiators create value, divide it predictably, and avoid money-losing contracts. We study this in a canonical supply chain bargaining problem: a buyer with private demand information negotiates a quantity-payment contract with an uninformed seller.</p>
+          </div>
       </div>
     </div>
   </article>
 
-  <!-- PAGE 2: CISO & EXECUTIVE BOARD BRIEFING -->
+  <!-- PAGE 2: EXECUTIVE BRIEFING -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION II: EXECUTIVE INTELLIGENCE BRIEF</div>
-      <div>BOARDROOM DIRECTIVES</div>
-      <div>PAGE 2 OF 10</div>
+      <div>SECTION II: EXECUTIVE BRIEFING</div><div>STRATEGIC HORIZON & DIRECTIVES</div><div>PAGE 2 OF 10</div>
     </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">CISO Strategic Risk Assessment & Attack Surface Exposure</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">High-level threat prioritization synthesized for executive leadership and board decision-makers.</p>
-    
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-blue-900 mb-2">🎯 Macro Geopolitical & Ransomware Landscape</h3>
-      <p class="mb-2">Telemetry across 92 authoritative sensing nodes indicates an aggressive acceleration in edge gateway exploitation, cloud IAM token forgery, and autonomous prompt injection attacks. Sophisticated ransomware syndicates continue to weaponize critical CVEs within hours of disclosure, targeting enterprise virtualization hosts and storage fabrics.</p>
-      <p>Corporate risk officers are instructed to prepare for mandatory SEC 4-day disclosure timelines, enforce hardware-bound FIDO2 authentication on all administrative gateways, and audit autonomous agentic tool invocations.</p>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Executive AI Strategic Briefing</h2>
+    <div class="p-3.5 bg-[#f2eedf] border border-[#d1cbba] text-xs font-serif leading-relaxed mb-4 text-[#1e293b]">
+      <strong>Executive Macro Intelligence Synthesis:</strong> Global enterprise AI adoption is pivoting decisively toward test-time reasoning architectures and private-cloud quantization. Technology leadership must actively balance proprietary frontier model APIs with sovereign, open-weight deployments to reduce token expenditure while strictly sandboxing autonomous agent tool-calling boundaries.
     </div>
-
     <div class="overflow-x-auto mb-6">
       <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
-        <thead class="bg-[#e2e8f0] text-[#0f172a]">
-          <tr>
-            <th class="p-2 border border-[#d1cbba]">ATTACK VECTOR</th>
-            <th class="p-2 border border-[#d1cbba]">LIKELIHOOD</th>
-            <th class="p-2 border border-[#d1cbba]">ENTERPRISE IMPACT</th>
-            <th class="p-2 border border-[#d1cbba]">EXECUTIVE MANDATE</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
-          <tr>
-            <td class="p-2 font-bold">Cloud Identity / IdP</td>
-            <td class="p-2 text-red-700 font-bold">High</td>
-            <td class="p-2">Full Tenant Takeover</td>
-            <td class="p-2">Mandate phishing-resistant FIDO2 hardware keys</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">Kubernetes & Containers</td>
-            <td class="p-2 text-red-700 font-bold">Critical</td>
-            <td class="p-2">Lateral Node Escape</td>
-            <td class="p-2">Enforce read-only root filesystems & eBPF monitoring</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">AI Agent / LLM APIs</td>
-            <td class="p-2 text-amber-700 font-bold">High</td>
-            <td class="p-2">Data Exfiltration & RCE</td>
-            <td class="p-2">Isolate agentic tool execution in firewalled sandboxes</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">Edge Perimeter Gateways</td>
-            <td class="p-2 text-red-700 font-bold">Critical</td>
-            <td class="p-2">Unauthenticated RCE</td>
-            <td class="p-2">Disallow public internet access to administrative panels</td>
-          </tr>
-        </tbody>
+        <thead class="bg-[#e2e8f0] text-[#0f172a]"><tr><th class="p-2 border border-[#d1cbba]">OPERATIONAL VECTOR</th><th class="p-2 border border-[#d1cbba]">KEY DEVELOPMENT</th><th class="p-2 border border-[#d1cbba]">SOURCE</th><th class="p-2 border border-[#d1cbba]">STRATEGIC DIRECTIVE</th></tr></thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50"><tr><td class="p-2"><b>Model Sourcing & Licensing</b></td><td class="p-2"><b>Running Vision Qwen 3.8 27B on a 16GB Card, t</b></td><td class="p-2">reddit.com</td><td class="p-2">Audit open-weights licensing vs proprietary APIs; evaluate reddit.com parameter efficiency and commercial distribution terms.</td></tr>
+<tr><td class="p-2"><b>Compute & Infrastructure CapEx</b></td><td class="p-2"><b>DeepSeek-V4.1-Flash surprised ....</b></td><td class="p-2">reddit.com</td><td class="p-2">Review GPU cluster allocation and power envelopes; benchmark reddit.com hardware efficiency to optimize cost per token.</td></tr>
+<tr><td class="p-2"><b>Agentic Autonomy & Governance</b></td><td class="p-2"><b>Deepseek V4.1 Flash is 748B, not 552B</b></td><td class="p-2">reddit.com</td><td class="p-2">Implement deterministic sandboxes for autonomous tool execution, strict rate limiting, and human-in-the-loop validation.</td></tr>
+<tr><td class="p-2"><b>Inference Latency & Quantization</b></td><td class="p-2"><b>Deepseek v4.1 flash finally has engrams, what</b></td><td class="p-2">reddit.com</td><td class="p-2">Benchmark KV-cache compression (FP8/INT4/GGUF) and modern inference engines (reddit.com) against TTFT SLAs.</td></tr>
+<tr><td class="p-2"><b>Open-Source Supply Chain</b></td><td class="p-2"><b>DeepSeek V4-1 Flash is out</b></td><td class="p-2">reddit.com</td><td class="p-2">Inspect upstream repository dependencies; audit tokenizer code, weights provenance, and pinned runtime releases for reddit.com.</td></tr>
+<tr><td class="p-2"><b>Data Residency & Sovereignty</b></td><td class="p-2"><b>DeepSeek V4.1 Flash: Stronger, Faster, More A</b></td><td class="p-2">reddit.com</td><td class="p-2">Verify compliance with sovereign AI frameworks and regional data residency requirements for reddit.com deployments.</td></tr>
+</tbody>
       </table>
     </div>
-
-    <h3 class="font-mono text-xs font-bold uppercase text-red-800 mb-3">⚡ Prioritized 24-Hour Executive Directives</h3>
     <div class="space-y-2.5 text-xs font-mono">
       
         <div class="p-2.5 bg-white/60 border border-[#d1cbba] flex items-baseline gap-2">
-          <span class="text-red-700 font-bold">1.</span>
-          <div><strong>Qwen3.8-Flash-Next:</strong> Audit model SafeTensors integrity hashes; enforce GPU container sandboxing with zero root permissions and bounded egress.</div>
+          <span class="text-cyan-700 font-bold">1.</span>
+          <div><strong>Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).:</strong> I am just sharing my config for Qwen 3.8 27b that fits on a 5060TI, what is cool about this is that you can even get vision! and a 85K context (I have 1.5gb of headroom for more context or a better quant) Model: IQ3_XXS-mtp from Using beellama Config used: [*] model = ..\llm-models\Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp.gguf mmproj = ..\llm-models\mmproj-Qwen3.8-27B-BF16.gguf image-min-tokens = 256.</div>
         </div>
-      
         <div class="p-2.5 bg-white/60 border border-[#d1cbba] flex items-baseline gap-2">
-          <span class="text-red-700 font-bold">2.</span>
-          <div><strong>CISA KEV: CVE-2023-4966 - Citrix NetScaler ADC and NetScaler Gateway Buffer Overflow Vulnerability:</strong> Deploy emergency security patch; restrict untrusted perimeter ingress to affected API and host ports within 4 hours.</div>
+          <span class="text-cyan-700 font-bold">2.</span>
+          <div><strong>DeepSeek-V4.1-Flash surprised ....:</strong> Hoping to see smartest medium size models soon &amp; later with all available optimizations/architectures/etc.,. Thanks Deepseek! Ex 1: 30-50B MOE + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache Ex 2: 15-30B Dense + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache EDIT: Updated Engram to 10-15B from.</div>
         </div>
-      
         <div class="p-2.5 bg-white/60 border border-[#d1cbba] flex items-baseline gap-2">
-          <span class="text-red-700 font-bold">3.</span>
-          <div><strong>CVE-2026-33696: From a Schema Name to RCE in n8n:</strong> Deploy emergency security patch; restrict untrusted perimeter ingress to affected API and host ports within 4 hours.</div>
+          <span class="text-cyan-700 font-bold">3.</span>
+          <div><strong>Deepseek V4.1 Flash is 748B, not 552B:</strong> People keep on getting confused about this, so I looked at the safetensors on hf. The title should have been &quot;Deepseek V4.1 Flash is 748B total/552B base, not 284B or 305B or 485B or 522B&quot; The model is not 284B. The original Deepseek V4 Flash is 284B, but not the V4.1 Flash model The model is not 305B, despite what some people claim &quot;So: ~305B real backbone + 203B engram = 508B total&quot; This is incorrect.</div>
         </div>
-      
         <div class="p-2.5 bg-white/60 border border-[#d1cbba] flex items-baseline gap-2">
-          <span class="text-red-700 font-bold">4.</span>
-          <div><strong>Qwen3.8-Flash-Next: 256k context, 16tok/s on DDR4 and a Tesla T4:</strong> Audit model SafeTensors integrity hashes; enforce GPU container sandboxing with zero root permissions and bounded egress.</div>
+          <span class="text-cyan-700 font-bold">4.</span>
+          <div><strong>Deepseek v4.1 flash finally has engrams, what do you expect from 4.1 pro?:</strong> If the ratio is the same, Maybe 1.6T -3.1T params plus .56T-1.06T engrams and fable 5.0 level performance? Maybe v4.2 or 4.5 will have engram gradient modification?</div>
         </div>
-      
         <div class="p-2.5 bg-white/60 border border-[#d1cbba] flex items-baseline gap-2">
-          <span class="text-red-700 font-bold">5.</span>
-          <div><strong>UPDATE: Qwen3.8-Flash-Next on 2x3090 + DDR4 (Part 2): 25-29 -&gt; 37-41 t/s decode (UD-Q4_K_XL + expert cache + MTP), plus a branch you can build:</strong> Audit model SafeTensors integrity hashes; enforce GPU container sandboxing with zero root permissions and bounded egress.</div>
+          <span class="text-cyan-700 font-bold">5.</span>
+          <div><strong>DeepSeek V4-1 Flash is out:</strong> Here we go again, DeepSeek is back again with a new model V4-1 Flash A multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters and support for contexts of up to one million tokens Market crash as a service.</div>
         </div>
-      
+        <div class="p-2.5 bg-white/60 border border-[#d1cbba] flex items-baseline gap-2">
+          <span class="text-cyan-700 font-bold">6.</span>
+          <div><strong>DeepSeek V4.1 Flash: Stronger, Faster, More Accessible:</strong> Original Source from DeepSeek WeChat Official Account: Today we&#x27;re officially releasing the DeepSeek V4.1 Flash model. It is the smallest model in our brand-new model architecture series, with native multimodal visual understanding. The new architecture was designed with these goals in mind: a higher capability ceiling, faster inference, greater throughput, and scalability to larger-parameter models.</div>
+        </div>
     </div>
   </article>
 
-  <!-- PAGE 3: TRENDING OPEN-SOURCE AI & GITHUB INNOVATIONS -->
+  <!-- PAGE 3: TRENDING REPOS -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION III: OPEN SOURCE INNOVATIONS</div>
-      <div>GITHUB VELOCITY & REPOSITORY TELEMETRY</div>
-      <div>PAGE 3 OF 10</div>
+      <div>SECTION III: OPEN SOURCE INNOVATIONS</div><div>GITHUB VELOCITY & REPOSITORY TELEMETRY</div><div>PAGE 3 OF 10</div>
     </div>
     <h2 class="headline-font text-2xl font-black mt-4 mb-2">Trending Open-Source AI & GitHub Innovations</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Autonomous code repositories, developer velocity, architecture dissections, and open-source momentum.</p>
-
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-cyan-900 mb-2">🚀 Global Developer Velocity & Codebase Momentum</h3>
-      <p>Open-source generative AI development on GitHub is expanding across distributed runtimes, agentic workflows, and quantized model serving. Developers worldwide are converging on local-first LLM orchestration, synthetic data pipelines, and high-throughput inference kernels that bypass proprietary API bottlenecks.</p>
-    </div>
-
+    <p class="text-xs text-[#4b5563] italic mb-4">Top repositories from today's global developer community intelligence sweep.</p>
     <div class="overflow-x-auto mb-6">
       <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
-        <thead class="bg-[#e2e8f0] text-[#0f172a]">
-          <tr>
-            <th class="p-2 border border-[#d1cbba]">PROJECT / REPO</th>
-            <th class="p-2 border border-[#d1cbba]">DOMAIN FOCUS</th>
-            <th class="p-2 border border-[#d1cbba]">ARCHITECTURE / STACK</th>
-            <th class="p-2 border border-[#d1cbba]">COMMUNITY MOMENTUM</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
-          <tr>
-            <td class="p-2 font-bold">vllm-project / vllm</td>
-            <td class="p-2">High-Throughput Serving</td>
-            <td class="p-2">PagedAttention, CUDA C++, Python</td>
-            <td class="p-2 text-cyan-700 font-bold">★ 35,000+ Stars • Standard Engine</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">ollama / ollama</td>
-            <td class="p-2">Local Execution Engine</td>
-            <td class="p-2">Go, llama.cpp, Cross-Platform</td>
-            <td class="p-2 text-cyan-700 font-bold">★ 95,000+ Stars • Desktop Standard</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">run-llama / llama_index</td>
-            <td class="p-2">Production Agentic RAG</td>
-            <td class="p-2">Python, Hybrid Vector Connectors</td>
-            <td class="p-2 text-cyan-700 font-bold">★ 38,000+ Stars • Enterprise Retrieval</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">deepseek-ai / DeepSeek-V3</td>
-            <td class="p-2">Frontier MoE Foundation</td>
-            <td class="p-2">Multi-Head Latent Attention</td>
-            <td class="p-2 text-cyan-700 font-bold">★ 60,000+ Stars • Open Weights</td>
-          </tr>
-        </tbody>
+        <thead class="bg-[#e2e8f0] text-[#0f172a]"><tr><th class="p-2 border border-[#d1cbba]">PROJECT / REPO</th><th class="p-2 border border-[#d1cbba]">SOURCE</th><th class="p-2 border border-[#d1cbba]">PRIMARY STACK</th><th class="p-2 border border-[#d1cbba]">VELOCITY</th><th class="p-2 border border-[#d1cbba]">CORE ARCHITECTURAL FOCUS</th></tr></thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50"><tr><td class="p-2"><b>Deploying Qwen3.8-2.4T-A95B on Amazon SageMak</b></td><td class="p-2">aws.amazon.com</td><td class="p-2">Python</td><td class="p-2">88/100</td><td class="p-2">On August 12, 2026, Alibaba’s Qwen team released Qwen3.8-2.4T-A95B . This is the first time a Qwen-Max-class model has been.</td></tr>
+<tr><td class="p-2"><b>Anthropic researcher quits with a warning: Se</b></td><td class="p-2">arstechnica.com</td><td class="p-2">Python</td><td class="p-2">88/100</td><td class="p-2">When a prominent researcher quits a job at a frontier AI lab these days, it&#x27;s often to pursue a new.</td></tr>
+<tr><td class="p-2"><b>Anthropic researcher believes more than 10% c</b></td><td class="p-2">bbc.co.uk</td><td class="p-2">Python</td><td class="p-2">88/100</td><td class="p-2">It is the latest in a series of increasing warnings about the safety threat posed by artificial intelligence.</td></tr>
+<tr><td class="p-2"><b>OpenAI&#x27;s deeper Samsung tie-up lands on a fou</b></td><td class="p-2">digitimes.com</td><td class="p-2">Python</td><td class="p-2">88/100</td><td class="p-2">OpenAI&#x27;s deeper Samsung tie-up lands on a foundry that is running out of capacity delivers key capabilities for AI software.</td></tr>
+<tr><td class="p-2"><b>OpenAI says it cracked 90-year-old maths prob</b></td><td class="p-2">bbc.co.uk</td><td class="p-2">Python</td><td class="p-2">88/100</td><td class="p-2">OpenAI&#x27;s claim that it solved parts of Navier-Stokes equations has quickly stirred controversy.</td></tr>
+<tr><td class="p-2"><b>OpenAI Admits More AI Agents Went Astray in M</b></td><td class="p-2">aibusiness.com</td><td class="p-2">Python</td><td class="p-2">88/100</td><td class="p-2">The incident was the latest in a string of unauthorized actions by AI agents.</td></tr>
+</tbody>
       </table>
     </div>
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
+
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-cyan-800">🚀 TRENDING REPO • VEL 50/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui" target="_blank" class="hover:text-cyan-800">Trending: AUTOMATIC1111/stable-diffusion-webui</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">The global AI ecosystem highlights significant activity around Trending: AUTOMATIC1111/stable-diffusion-webui. Categorized under GITHUB TRENDING, this initiative provides capabilities for developers and practitioners. Technical documentation and reference implementations are accessible directly via https://github.com/AUTOMATIC1111/stable-diffusion-webui.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0891b2">🚀 TRENDING REPO • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://aws.amazon.com/blogs/machine-learning/deploying-qwen3-8-2-4t-a95b-on-amazon-sagemaker-hyperpod-with-vllm/" target="_blank" class="hover:underline">Deploying Qwen3.8-2.4T-A95B on Amazon SageMaker HyperPod with vLLM</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: aws.amazon.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">On August 12, 2026, Alibaba’s Qwen team released Qwen3.8-2.4T-A95B . This is the first time a Qwen-Max-class model has been made available as open weights. With 2.4 trillion total parameters (95 billion activated per token), a hybrid linear-plus-full-attention architecture, and native context up to 262K tokens (extensible to 1M), Qwen3.8 targets the most demanding agentic and reasoning workloads. These include multi-step coding, long-horizon planning, and autonomous tool use. Open weights models give you full control. Data stays within your infrastructure, inference behavior can be customized, and there are no per-token API fees at scale. The trade-off is operational: hosting a 2.4T-parameter model requires purpose-built GPU infrastructure and an optimized serving stack. In this post we show how to deploy Qwen3.8-2.4T-A95B.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-cyan-800">🚀 TRENDING REPO • VEL 40/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://github.com/juce-framework/JUCE" target="_blank" class="hover:text-cyan-800">Trending: juce-framework/JUCE</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">JUCE is an open-source cross-platform C++ application framework for creating desktop and mobile applications, including VST, VST3, AU, AUv3, AAX and LV2 audio plug-ins and plug-in hosts. JUCE can be easily integrated with existing projects via CMake, or can be used as a project generation tool via the Projucer , which supports exporting projects for Xcode (macOS and iOS), Visual Studio, Android Studio, and Linux Makefiles as well as containing a source code editor. The JUCE repository contains a master and develop branch. The develop branch contains the latest bug fixes and features and is periodically merged into the master branch in stable tagged releases (the latest release containing pre-built binaries can also be downloaded from the JUCE website ). JUCE projects can be managed with either the Projucer (JUCE&#x27;s own project-configuration tool) or with CMake.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0891b2">🚀 TRENDING REPO • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arstechnica.com/ai/2026/09/anthropic-researcher-quits-with-a-warning-self-improving-ai-could-kill-us-all/" target="_blank" class="hover:underline">Anthropic researcher quits with a warning: Self-improving AI could &quot;kill us all&quot;</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arstechnica.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">When a prominent researcher quits a job at a frontier AI lab these days, it&#x27;s often to pursue a new startup or protest a new business model. But AI researcher Jacob Coxon is using his departure from Anthropic to publicly warn that frontier AI companies are &quot;gambling with our lives&quot; with systems that they &quot;earnestly believe... could kill us all by the end of the decade.&quot; In a social media thread Tuesday night, Coxon said that this existential risk is inherent not so much in today&#x27;s models but.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-cyan-800">🚀 TRENDING REPO • VEL 40/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/netsec/comments/1vskftw/how_to_break_secure_boot_without_touching_any/" target="_blank" class="hover:text-cyan-800">How to break secure boot without touching any cryptography</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I finally found some time to organize my notes on secure boot, remote attestation, measured boot and in general embedded security. This is not ground breaking zero-day research but I figured some of you might like a good story. Good here is obviously subjective but I felt like it came out quite readable. This blog builds heavily on public research so as already stated at the end of article if you liked some particular section, show the respective person some love :) P.S.: yes I know the image.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0891b2">🚀 TRENDING REPO • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.bbc.co.uk/news/articles/ckgwy1k42w4o?at_medium=RSS&amp;at_campaign=rss" target="_blank" class="hover:underline">Anthropic researcher believes more than 10% chance AI &#x27;could kill all humans&#x27;</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: bbc.co.uk</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">It is the latest in a series of increasing warnings about the safety threat posed by artificial intelligence.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-cyan-800">🚀 TRENDING REPO • VEL 30/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://github.com/siyuan-note/siyuan" target="_blank" class="hover:text-cyan-800">siyuan-note/siyuan</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">An open-source, privacy-first, self-hosted knowledge workspace where humans and AI agents work together An open-source, privacy-first, self-hosted knowledge workspace where humans and AI agents work together Language: TypeScript Stars: 26 stars today</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0891b2">🚀 TRENDING REPO • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.digitimes.com/news/a20260909VL233/samsung-openai-capacity-chips-2nm.html" target="_blank" class="hover:underline">OpenAI&#x27;s deeper Samsung tie-up lands on a foundry that is running out of capacity</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: digitimes.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">OpenAI&#x27;s deeper Samsung tie-up lands on a foundry that is running out of capacity delivers key capabilities for AI software engineering and local execution. Engineered to enhance developer velocity, it streamlines model serving, evaluation, and pipeline orchestration.</p>
         </div>
-      
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0891b2">🚀 TRENDING REPO • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.bbc.co.uk/news/articles/cy7zygy3rl2o?at_medium=RSS&amp;at_campaign=rss" target="_blank" class="hover:underline">OpenAI says it cracked 90-year-old maths problem in 88 hours</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: bbc.co.uk</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">OpenAI&#x27;s claim that it solved parts of Navier-Stokes equations has quickly stirred controversy.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0891b2">🚀 TRENDING REPO • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://aibusiness.com/cybersecurity/openai-admits-more-ai-agents-went-astray-in-may" target="_blank" class="hover:underline">OpenAI Admits More AI Agents Went Astray in May</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: aibusiness.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">The incident was the latest in a string of unauthorized actions by AI agents.</p>
+        </div>
     </div>
   </article>
 
-  <!-- PAGE 4: FRONTIER AI MODELS & AUTONOMOUS AGENTS -->
+  <!-- PAGE 4: FRONTIER AI MODELS -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION IV: FRONTIER AI MODELS</div>
-      <div>AUTONOMOUS AGENTS & REASONING BENCHMARKS</div>
-      <div>PAGE 4 OF 10</div>
+      <div>SECTION IV: FRONTIER AI MODELS</div><div>REASONING BREAKTHROUGHS & CAPABILITY BENCHMARKS</div><div>PAGE 4 OF 10</div>
     </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Frontier AI Models & Autonomous Reasoning Agents</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Sovereign architectures, test-time compute scaling, parameter scale, and benchmark matrices.</p>
-
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-purple-900 mb-2">🤖 The Frontier Reasoning Paradigm</h3>
-      <p>Machine intelligence has pivoted from brute-force next-token prediction to reinforcement learning during inference (test-time compute). Architectures such as DeepSeek-R1, OpenAI o3, and Claude 3.7 Sonnet produce verifiable internal reasoning traces, demonstrating human-expert parity across competitive coding, formal mathematics, and logic verification.</p>
-    </div>
-
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Frontier Foundation Models & Reasoning Breakthroughs</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Foundation models, reasoning breakthroughs, and open-weight releases from today's feeds.</p>
     <div class="overflow-x-auto mb-6">
       <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
-        <thead class="bg-[#e2e8f0] text-[#0f172a]">
-          <tr>
-            <th class="p-2 border border-[#d1cbba]">MODEL / ARCHITECTURE</th>
-            <th class="p-2 border border-[#d1cbba]">SCALE / ACTIVE</th>
-            <th class="p-2 border border-[#d1cbba]">CONTEXT</th>
-            <th class="p-2 border border-[#d1cbba]">PRIMARY BENCHMARK</th>
-            <th class="p-2 border border-[#d1cbba]">INNOVATION HIGHLIGHT</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
-          <tr>
-            <td class="p-2 font-bold">DeepSeek-R1</td>
-            <td class="p-2">671B / 37B MoE</td>
-            <td class="p-2">128k Tokens</td>
-            <td class="p-2 text-purple-800 font-bold">AIME 2024: 79.8%</td>
-            <td class="p-2">Pure RL cold-start reasoning</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">Claude 3.7 Sonnet</td>
-            <td class="p-2">Proprietary</td>
-            <td class="p-2">200k Tokens</td>
-            <td class="p-2 text-purple-800 font-bold">SWE-bench: 70.3%</td>
-            <td class="p-2">Hybrid instant/extended thinking</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">OpenAI o3-mini</td>
-            <td class="p-2">Proprietary</td>
-            <td class="p-2">200k Tokens</td>
-            <td class="p-2 text-purple-800 font-bold">Math: 91.2%</td>
-            <td class="p-2">High-speed chain-of-thought</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">Qwen-2.5 72B</td>
-            <td class="p-2">72B Dense</td>
-            <td class="p-2">128k Tokens</td>
-            <td class="p-2 text-purple-800 font-bold">MMLU: 86.1%</td>
-            <td class="p-2">Bilingual coding & open weights</td>
-          </tr>
-        </tbody>
+        <thead class="bg-[#e2e8f0] text-[#0f172a]"><tr><th class="p-2 border border-[#d1cbba]">FOUNDATION MODEL</th><th class="p-2 border border-[#d1cbba]">SOURCE</th><th class="p-2 border border-[#d1cbba]">SIZE / CONTEXT</th><th class="p-2 border border-[#d1cbba]">IMPACT</th><th class="p-2 border border-[#d1cbba]">KEY ARCHITECTURAL HIGHLIGHT</th></tr></thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50"><tr><td class="p-2"><b>guide to using reasoning_effort on deepseek v</b></td><td class="p-2">reddit.com</td><td class="p-2">MoE / SOTA / 128K</td><td class="p-2">88/100</td><td class="p-2">guide to using reasoning_effort on deepseek v4.1 flash introduces key developments in machine learning foundation architectures.</td></tr>
+<tr><td class="p-2"><b>Qwen3.8-27B-Uncensored-Genesis-V1-GGUF</b></td><td class="p-2">reddit.com</td><td class="p-2">27B / 128K</td><td class="p-2">88/100</td><td class="p-2">Model available Qwen3.8-27B-Uncensored-Genesis-V1-MTP-GGUF This model is a practical realisation of things described in this paper, but adapted by me for.</td></tr>
+<tr><td class="p-2"><b>DeepSeek-V4.1-Flash surprised ....</b></td><td class="p-2">reddit.com</td><td class="p-2">50B / 128K</td><td class="p-2">68/100</td><td class="p-2">Hoping to see smartest medium size models soon &amp; later with all available optimizations/architectures/etc.,. Thanks Deepseek!</td></tr>
+<tr><td class="p-2"><b>Deepseek V4.1 Flash is 748B, not 552B</b></td><td class="p-2">reddit.com</td><td class="p-2">748B / 128K</td><td class="p-2">68/100</td><td class="p-2">People keep on getting confused about this, so I looked at the safetensors on hf.</td></tr>
+<tr><td class="p-2"><b>Deepseek v4.1 flash finally has engrams, what</b></td><td class="p-2">reddit.com</td><td class="p-2">MoE / SOTA / 128K</td><td class="p-2">68/100</td><td class="p-2">If the ratio is the same, Maybe 1.6T -3.1T params plus .56T-1.06T engrams and fable 5.0 level performance? Maybe v4.2.</td></tr>
+<tr><td class="p-2"><b>DeepSeek V4-1 Flash is out</b></td><td class="p-2">reddit.com</td><td class="p-2">MOE / 128K</td><td class="p-2">68/100</td><td class="p-2">Here we go again, DeepSeek is back again with a new model V4-1 Flash A multimodal Mixture-of-Experts (MoE) model with.</td></tr>
+</tbody>
       </table>
     </div>
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
+
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-purple-800">🤖 FRONTIER MODEL • IMPACT 50/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://simonwillison.net/2026/Aug/27/breaking-claude-code-opus-5-auto-mode/" target="_blank" class="hover:text-purple-800">Breaking Claude Code Opus 5 Auto Mode</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Breaking Claude Code Opus 5 Auto Mode . Anthropic are putting a great deal of faith in Claude Code&#x27;s auto mode for protecting their coding agent users against prompt injection attacks. They recently made that the default and have made bold claims about its effectiveness. Johann Rehberger is one of the most credible prompt injection researchers active today. He found an attack against auto mode which he claims works 80% of the time, by tricking Claude Code into downloading and uncompressing a zip archive, then executing code that imports base64 without noticing that this will import and execute a local struct.py file extracted from the archive. In a few cases auto mode directly prevented the agent from preventing harmful code from continuing to execute! In a few runs Claude tried to terminate the malware process once it noticed the compromise, but Auto Mode denied the cleanup command.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#7c3aed">🤖 FRONTIER MODEL • IMPACT 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcesmy/guide_to_using_reasoning_effort_on_deepseek_v41/" target="_blank" class="hover:underline">guide to using reasoning_effort on deepseek v4.1 flash</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">guide to using reasoning_effort on deepseek v4.1 flash introduces key developments in machine learning foundation architectures. The release advances reasoning, inference efficiency, and model deployment across open-weight and frontier environments.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-purple-800">🤖 FRONTIER MODEL • IMPACT 60/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w6lk6z/increasing_active_parameters_per_token_in_moe/" target="_blank" class="hover:text-purple-800">Increasing active parameters per token in MOE (Qwen 35B A4B+) reduce reasoning token by 8.5% - and you don&#x27;t need to train or finetune!</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I want to share a short paper just published exploring a simple but surprisingly effective optimization for sparse MoE reasoning models. The idea: Instead of retraining anything, we just tweak the router at runtime. Specifically, we expand the expert selection budget (N≥KN≥K) only in the late transformer layers, with a linear decay factor applied to the extra experts. Early layers stay untouched. So Qwen 3.6 35B A3B becomes Qwen 3.6 35B A4B+ !</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#7c3aed">🤖 FRONTIER MODEL • IMPACT 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wbmo0k/qwen3827buncensoredgenesisv1gguf/" target="_blank" class="hover:underline">Qwen3.8-27B-Uncensored-Genesis-V1-GGUF</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Model available Qwen3.8-27B-Uncensored-Genesis-V1-MTP-GGUF This model is a practical realisation of things described in this paper, but adapted by me for machine learning: I am trying to solve the problem: why LLM models even for simple questions write walls of text during reasoning, and burn too much tokens instead of solving the task. And when number of parameters increase the problem became worse.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-purple-800">🤖 FRONTIER MODEL • IMPACT 40/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w60jr5/model_add_nvidia_nemotron3puzzle75ba9b/" target="_blank" class="hover:text-purple-800">model: add NVIDIA Nemotron-3-Puzzle-75B-A9B (NemotronHPuzzle) support by YanissAmz · Pull Request #25444 · ggml-org/llama.cpp</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">75B MoE is an interesting size to check, you can run it today (no MTP support yet) The model employs a hybrid MoE architecture with interleaved Mamba, MoE, and Attention layers. Like Nemotron-3-Super, it supports Multi-Token Prediction (MTP) for faster text generation. Compared to its parent, Puzzle-75B-A9B reduces the model from 120.7B total / 12.8B active parameters to 75.3B total / 9.3B active parameters.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#7c3aed">🤖 FRONTIER MODEL • IMPACT 68/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcdati/deepseekv41flash_surprised/" target="_blank" class="hover:underline">DeepSeek-V4.1-Flash surprised ....</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Hoping to see smartest medium size models soon &amp; later with all available optimizations/architectures/etc.,. Thanks Deepseek! Ex 1: 30-50B MOE + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache Ex 2: 15-30B Dense + 10-15B Engram + DeepSeek-V4.1-Flash type KVCache EDIT: Updated Engram to 10-15B from.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-purple-800">🤖 FRONTIER MODEL • IMPACT 40/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w2ncr5/unpopular_opinion_qwen_38_is_hard_to_understand/" target="_blank" class="hover:text-purple-800">Unpopular opinion Qwen 3.8 is hard to understand</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I find both Qwen 3.8 27b and Qwen 3.8 Flash Next difficult to read. Here&#x27;s some examples of what I mean: **Model-visible tool set per turn** (assembled by the host at provider-request time): persona tool allowlist ∩ session tool surface ∩ tools not `deny`-classified under the active permission profile. In the above, Qwen uses the set intersection symbol as opposed to a human readable explanation.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#7c3aed">🤖 FRONTIER MODEL • IMPACT 68/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcd4rx/deepseek_v41_flash_is_748b_not_552b/" target="_blank" class="hover:underline">Deepseek V4.1 Flash is 748B, not 552B</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">People keep on getting confused about this, so I looked at the safetensors on hf. The title should have been &quot;Deepseek V4.1 Flash is 748B total/552B base, not 284B or 305B or 485B or 522B&quot; The model is not 284B. The original Deepseek V4 Flash is 284B, but not the V4.1 Flash model The model is not 305B, despite what some people claim &quot;So: ~305B real backbone + 203B engram = 508B total&quot; This is incorrect.</p>
         </div>
-      
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#7c3aed">🤖 FRONTIER MODEL • IMPACT 68/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcbm3p/deepseek_v41_flash_finally_has_engrams_what_do/" target="_blank" class="hover:underline">Deepseek v4.1 flash finally has engrams, what do you expect from 4.1 pro?</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">If the ratio is the same, Maybe 1.6T -3.1T params plus .56T-1.06T engrams and fable 5.0 level performance? Maybe v4.2 or 4.5 will have engram gradient modification?</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#7c3aed">🤖 FRONTIER MODEL • IMPACT 68/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcbid7/deepseek_v41_flash_is_out/" target="_blank" class="hover:underline">DeepSeek V4-1 Flash is out</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Here we go again, DeepSeek is back again with a new model V4-1 Flash A multimodal Mixture-of-Experts (MoE) model with 552B backbone parameters and support for contexts of up to one million tokens Market crash as a service.</p>
+        </div>
     </div>
   </article>
 
-  <!-- PAGE 5: TOP AI RESEARCH PAPERS & ARXIV BREAKTHROUGHS -->
+  <!-- PAGE 5: AI RESEARCH -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION V: ACADEMIC & ARXIV RESEARCH</div>
-      <div>SCIENTIFIC INQUIRIES & ALIGNMENT BREAKTHROUGHS</div>
-      <div>PAGE 5 OF 10</div>
+      <div>SECTION V: ACADEMIC & ARXIV RESEARCH</div><div>SCIENTIFIC INQUIRIES & ALIGNMENT BREAKTHROUGHS</div><div>PAGE 5 OF 10</div>
     </div>
     <h2 class="headline-font text-2xl font-black mt-4 mb-2">Top AI Research Papers & arXiv Breakthroughs</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Reasoning paradigms, multimodal architectures, autonomous planning, and algorithmic alignment.</p>
-
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-indigo-900 mb-2">🔬 Academic & Industrial Discovery Wire</h3>
-      <p>Peer-reviewed investigations across arXiv document transformative leaps in test-time compute optimization, self-correcting agentic loops, and multi-modal alignment. Researchers increasingly emphasize algorithmic sample efficiency, process reward models (PRMs), and verifiable constraint satisfaction over brute-force pre-training scaling.</p>
-    </div>
-
+    <p class="text-xs text-[#4b5563] italic mb-4">Seminal preprints and peer-reviewed papers from today's research intelligence sweep.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
+
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-indigo-800">🔬 AI RESEARCH • VEL 70/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://news.mit.edu/2026/solving-solvent-problem-sodium-metal-batteries-0804" target="_blank" class="hover:text-indigo-800">Solving the solvent problem</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Lithium-ion batteries are the leading choice in today&#x27;s electric vehicle and battery energy storage system industries, but they contain a number of critical minerals — including lithium, cobalt, nickel, and graphite — that are considered essential for economic and national security reasons, and therefore vulnerable to supply chain disruptions.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.25071v1" target="_blank" class="hover:underline">HealthBench-Psych: A Mental Health Subset of OpenAI&#x27;s HealthBench</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">General-purpose health benchmarks increasingly anchor claims about LLM medical performance, but they are not always resolved by clinical specialty, making domain-specific performance hard to isolate. Mental health is of acute public-health concern as millions of people turn to LLMs for psychological support, and most existing evaluations are bespoke academic benchmarks that are difficult to integrate into developer workflows. We introduce HealthBench-Psych and HealthBench-Psych-Hard.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-indigo-800">🔬 AI RESEARCH • VEL 60/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.04066v1" target="_blank" class="hover:text-indigo-800">Subspace Inference Enables Efficient Active Reward Learning from Preferences</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Reinforcement learning from human feedback (RLHF) has emerged as a powerful yet sample-inefficient approach for learning reward models from human preferences, making active learning a critical component in synthesizing informative preference queries. However, effective uncertainty quantification required for active learning remains a key challenge for large neural network reward models.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.07008v1" target="_blank" class="hover:underline">RedKnot-MLA: Multi-Head Offline-Online Reuse for DeepSeek-V4 Long-Context Serving</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Multi-head latent attention (MLA) exposes many logical query heads through one packed latent KV stream. This representation is memory efficient, but it removes the physical per-head cache boundary assumed by conventional head-wise reuse. We present our system, a DeepSeek-V4 realization of RedKnot&#x27;s head-aware reuse principle. Each immutable document is processed offline at canonical position zero; certified Local-head contributions are retained as MLA-Off.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-indigo-800">🔬 AI RESEARCH • VEL 70/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.20966v1" target="_blank" class="hover:text-indigo-800">Structured but Fragile: On the Limits of LLMs in Cybersecurity Decision-Making</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Large language models (LLMs) are increasingly used in cybersecurity workflows, yet it remains unclear whether they can perform structured security reasoning or merely rely on superficial cues and prior knowledge. We study this question in the context of defence selection over attack graphs derived from real-world threat scenarios, including ransomware, supply-chain compromise, cloud abuse, Kubernetes attacks, POS malware, and ICS/OT intrusion.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.14673v3" target="_blank" class="hover:underline">A Human Audit of OpenAIs AI-Generated Mathematical Proofs</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">We assess 18 chapter-specific reviews of the ten mathematical results announced by OpenAI on 1 August 2026, alongside review standards, Lean formalizations, subsequent research, and mathematical references. The article audits this review record without claiming a complete reconstruction of all ten proofs. No confirmed substantive mathematical error in a principal result remains in the examined assessments, although review depth varies and some dependencies remain partly checked.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-indigo-800">🔬 AI RESEARCH • VEL 60/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2606.16242v1" target="_blank" class="hover:text-indigo-800">Rapid Poison: Practical Poisoning Attacks Against the Rapid Response Framework</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">The Rapid Response (RR) framework, deployed in production systems, including Anthropic&#x27;s ASL-3 safeguards, continuously improves jailbreak-detection classifiers. When new jailbreaks emerge that bypass these classifiers, Rapid Response generates synthetic variants for training, helping the model generalize from the new attacks and quickly adapt.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 72/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.10445v1" target="_blank" class="hover:underline">Building Multilingual Bridges: Data Mixing as the Pillar of Generalization for In-Language Reasoning</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Reasoning language models have made substantial advances on a variety of complex tasks, yet their capabilities remain overwhelmingly English-centric: models primarily reason in English regardless of the language they are prompted in. This is inaccessible for non-English-speaking users, risks losing the intent of the original question, and forgoes knowledge more readily expressed in the target language.</p>
         </div>
-      
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 72/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://news.mit.edu/2026/mit-schwarzman-college-computing-launches-pilot-help-educators-teach-ai-across-disciplines-0909" target="_blank" class="hover:underline">MIT Schwarzman College of Computing launches pilot to help educators teach AI across disciplines</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: news.mit.edu</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">This summer, the MIT Schwarzman College of Computing welcomed faculty from colleges and universities across Greater Boston, South Carolina, West Virginia, and Texas to campus for the inaugural AI Educators Pilot, a weeklong workshop aimed at expanding how artificial intelligence is taught across disciplines and learning environments.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.08196v1" target="_blank" class="hover:underline">Qiushi Engine on AstaBench E2E-Bench-Hard</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">This report analyzes Qiushi Engine v0.8 across all 40 test tasks in AstaBench E2E-Bench-Hard, a benchmark that requires autonomous agents to carry a research question through experimental design, code implementation, actual execution, result analysis, and report delivery. Qiushi Engine is model-configurable; this evaluation selected DeepSeek deepseek-v4pro-preview as the model backend. The official AstaBench leaderboard records a score of 0.816 and an average benchmark cost of USD 15.209 per.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.24934v2" target="_blank" class="hover:underline">Fusing Perceptual Vision Experts with Multimodal Large Language Models for Explainable Plant Disease Diagnosis: From Benchmark Imagery to Real-World Robotic Field Validation</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Accurate field plant disease diagnosis requires reliable fusion of uncertain and conflicting perceptual evidence. We present the Hybrid Hierarchical Multi-Agent Framework (H$^{2}$MAF), combining decision-level fusion of EfficientNet-B3 and ConvNeXt-Tiny with semantic arbitration by open-weight multimodal large language models (MLLMs), Gemma 4 E4B and Qwen3.5 4B, using structured JSON evidence to generate explainable diagnoses, risk levels, treatment urgency, and financial exposure.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#4338ca">🔬 AI RESEARCH • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.20418v1" target="_blank" class="hover:underline">Rigorous Evaluation of Large Language Models for Malaria Drug Discovery: Trade-offs in Performance, Scale, and Resource Utility</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">We introduce Malaria-Instruct, a curated instruction-following dataset derived from the ChEMBL Legacy Malaria corpus for Malaria virtual screening, and conduct a systematic evaluation of five open-source LLMs; Gemma-2 2B/9B, TxGemma-2B/9B, and LlaSMol-Mistral-7B, on a rigorous out-of-distribution data split. Performance was benchmarked against classical ML models (Random Forest, XGBoost) and frontier proprietary models (Gemini 2.5, OpenAI o3) under few-shot conditions.</p>
+        </div>
     </div>
   </article>
 
-  <!-- PAGE 6: DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE -->
+  <!-- PAGE 6: DEVELOPER TOOLS -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION VI: DEVELOPER TOOLS & FRAMEWORKS</div>
-      <div>AI RUNTIMES & INFERENCE INFRASTRUCTURE</div>
-      <div>PAGE 6 OF 10</div>
+      <div>SECTION VI: DEVELOPER TOOLS & FRAMEWORKS</div><div>AI RUNTIMES & INFERENCE INFRASTRUCTURE</div><div>PAGE 6 OF 10</div>
     </div>
     <h2 class="headline-font text-2xl font-black mt-4 mb-2">Developer Tools, Frameworks & AI Infrastructure</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Local inference runtimes, evaluation harnesses, vector databases, and GPU orchestration engines.</p>
-
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-teal-900 mb-2">🛠️ Enterprise AI Runtime Stack</h3>
-      <p>The operational foundation of artificial intelligence demands low-latency CUDA/Metal inference kernels, fault-tolerant vector storage, and reproducible benchmark harnesses. Modern tooling enables organizations to deploy resilient multi-agent swarms with granular access controls and continuous latency optimization.</p>
-    </div>
-
+    <p class="text-xs text-[#4b5563] italic mb-4">Inference runtimes, evaluation harnesses, vector databases, and local execution engines.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
+
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-teal-800">🛠️ AI TOOL • ADOPTION 40/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://mp.weixin.qq.com/s?__biz=MzA3NzE2ODk1Mg==&mid=2647799861&idx=1&sn=4a9c887c85522d7044515698f97bf789" target="_blank" class="hover:text-teal-800">Selected in the Agent Security Report | Lingmai AI allows code security detection to “read” business logic!</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">The global AI ecosystem highlights significant activity around Selected in the Agent Security Report | Lingmai AI allows code security detection to “read” business logic!. Categorized under CYBER TOOLS, this initiative provides capabilities for developers and practitioners. Technical documentation and reference implementations are accessible directly via https://mp.weixin.qq.com/s?__biz=MzA3NzE2ODk1Mg==&amp;mid=2647799861&amp;idx=1&amp;sn=4a9c887c85522d7044515698f97bf789.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 80/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wbtqt7/i_trained_an_audio_model_that_can_generate/" target="_blank" class="hover:underline">I trained an audio model that can generate infinite one-shots for music production and turn text prompts into fully playable synths. I&#x27;m not only releasing the model but I&#x27;ve also released a video on exactly how I did it (and the inferencing pipeline to let others make text based synths.)</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">(hopefully this is okay to here - it seems like audio models and image / video modeals is allowed but yeah this is a bit different) So I&#x27;ve been doing independent audio research for a while now. The ultimate dream of this work was actually getting an AI to respond not only to instruments but also timbre itself as separate controllable things. Think a Grand Piano can sound both Warm / Gritty but also Cold / Sparkly. Its still a piano though.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-teal-800">🛠️ AI TOOL • ADOPTION 40/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://github.com/juce-framework/JUCE" target="_blank" class="hover:text-teal-800">Trending: juce-framework/JUCE</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">JUCE is an open-source cross-platform C++ application framework for creating desktop and mobile applications, including VST, VST3, AU, AUv3, AAX and LV2 audio plug-ins and plug-in hosts. JUCE can be easily integrated with existing projects via CMake, or can be used as a project generation tool via the Projucer , which supports exporting projects for Xcode (macOS and iOS), Visual Studio, Android Studio, and Linux Makefiles as well as containing a source code editor. The JUCE repository contains a master and develop branch. The develop branch contains the latest bug fixes and features and is periodically merged into the master branch in stable tagged releases (the latest release containing pre-built binaries can also be downloaded from the JUCE website ). JUCE projects can be managed with either the Projucer (JUCE&#x27;s own project-configuration tool) or with CMake.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 30/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://mp.weixin.qq.com/s?__biz=MzA3NzE2ODk1Mg==&amp;mid=2647799274&amp;idx=1&amp;sn=f6adc342d85f11907e3544292ecbc6ea" target="_blank" class="hover:underline">拆解 Agent Loop 盲盒：从 RSAC2026 冠军看灵境 AIDR 的智能体原生安全实践！</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: mp.weixin.qq.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Multi-modal AIDR 2026-04-29 16:31 Beijing Achieves 95% asset visibility and second-level blocking, Lingjing AIDR protects the entire Agentic AI application landscape! &quot;Security Paradigm Shift&quot; from Moscone Center #March 23, 2026, Moscone Center, San Francisco. When Geordie AI won the RSAC2026 Innovation Sandbox Championship trophy, the applause from the audience could not conceal the anxiety of security people around the world: security has officially entered the no-man’s land ruled by “Agentic AI”. The most frightening thing is no longer the code, but the AI ​​digital employees who make decisions independently on the corporate intranet but are in a &quot;supervisory vacuum.&quot; 1► &quot;Speed ​​Collapse&quot; of 22 seconds When Vibe Coding hit the offensive agent, in the Keynote on the first day of.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-teal-800">🛠️ AI TOOL • ADOPTION 92/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://github.com/vllm-project/vllm" target="_blank" class="hover:text-teal-800">vLLM: High-Throughput &amp; Memory-Efficient LLM Serving Engine with PagedAttention</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">vLLM represents the industry-standard open-source inference serving architecture for large language models. Engineered around PagedAttention, vLLM manages KV-cache memory with near-zero waste, delivering up to 24x higher throughput than standard HuggingFace Transformers pipelines. It features continuous batching, chunked prefill, tensor parallelism across multi-GPU nodes, and seamless OpenAI-compatible API serving.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcbt99/closed_ai_doesnt_like_biological_research_user/" target="_blank" class="hover:underline">Closed AI doesn&#x27;t like biological research, user turns to open weight models</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">OpenAI has decided to fully shut down a protein design project I&#x27;m working on for a client. Needless to say, open weight models are the only way forward.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-teal-800">🛠️ AI TOOL • ADOPTION 95/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://github.com/ollama/ollama" target="_blank" class="hover:text-teal-800">Ollama: Zero-Configuration Local Model Execution &amp; Cross-Platform Inference Daemon</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Ollama has emerged as the definitive local runtime for executing frontier open-weight models including Llama 3.3, DeepSeek-R1, and Qwen 2.5 on local macOS, Linux, and Windows hardware. Powered by a high-performance C/C++ llama.cpp core with GPU offloading, Ollama encapsulates model weights, prompt templates, and configuration into a unified Modelfile container format.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wble79/why_the_hell_is_lm_studio_making_lm_studio_so/" target="_blank" class="hover:underline">Why the hell is LM Studio making LM Studio so difficult to download?</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Who is the marketing genius at LM Studio that decided that going ALL IN on pushing their new Bionic Agent product meant they are going to make it a giant pain in the ass to find and download actual LM Studio. This is the dumbest marketing decision I&#x27;ve ever seen. I used to love LM Studio, it was the middle stepping stone in the logical progression of inference. Most OGs here likely started with Ollama, moved to LM Studio, on their way to vLLM. Now trying to go to LM Studio takes you to Bionic.</p>
         </div>
-      
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://simonwillison.net/2026/Sep/8/on-navier-stokes/" target="_blank" class="hover:underline">On the Navier–Stokes Millennium Prize Problem</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: simonwillison.net</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">On the Navier–Stokes Millennium Prize Problem Impressive result from OpenAI, who used an unreleased model to produce a resolution to the Navier–Stokes existence and smoothness problem, one of the seven Millennium Prize Problems that have been subject to a $1,000,000 prize since May 24th, 2000.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://simonwillison.net/2026/Sep/8/introducing-chatgpt-images-25/" target="_blank" class="hover:underline">Introducing ChatGPT Images 2.5</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: simonwillison.net</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Introducing ChatGPT Images 2.5 OpenAI&#x27;s image generation models are apparently used &quot;more than 3 billion images across ChatGPT Images and the GPT‑Image models in the API&quot;. This latest release improves their instruction-following ability across multiple turns, responds faster, and &quot;is better at preserving the subjects in your reference photos&quot;. There are two new model IDs in the API: gpt-image-2.5-sunburst and gpt-image-2.5-flare.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://simonwillison.net/2026/Sep/7/jakub-pachocki/" target="_blank" class="hover:underline">Quoting Jakub Pachocki</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: simonwillison.net</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">The strongest argument I see for continuing to train much smarter models quickly is the need to build defensive systems against the dangers posed by other AI. [...] We will need powerful, aligned AI for defense; to secure infrastructure, to protect against rogue agents in real time, and to invent entirely new protective measures. This will be a primary focus of OpenAI&#x27;s deployment efforts.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#0d9488">🛠️ AI TOOL • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.29589v1" target="_blank" class="hover:underline">Not Safe for All: Auditing the Dialect Penalty in Text-to-Image Safety Pipelines</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Text-to-image (T2I) safety guardrails fail to generalize equitably to non-standard dialects. Evaluating 23,080 paired prompts across five English dialects, we formalize this failure as the dialect penalty, where filters trigger based on linguistic surface features rather than semantic intent. Text-level filters fail in opposing directions: NSFW-T over-flags benign dialect prompts and LatentGuard over-flags toxic ones (bias gaps up to +28.29 pp), while the OpenAI Moderation API under-detects.</p>
+        </div>
     </div>
   </article>
 
-  <!-- PAGE 7: SOVEREIGN AI & WORLDWIDE REGIONAL INTEL RADAR -->
+  <!-- PAGE 7: SOVEREIGN AI -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION VII: SOVEREIGN RADAR</div>
-      <div>TIER 1 & TIER 2 SOVEREIGN TELEMETRY</div>
-      <div>PAGE 7 OF 10</div>
+      <div>SECTION VII: SOVEREIGN RADAR</div><div>TIER 1 & TIER 2 SOVEREIGN TELEMETRY</div><div>PAGE 7 OF 10</div>
     </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Sovereign AI Initiatives & Worldwide Regional Intelligence</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Strategic nation-state foundational models, sovereign cloud compute, and national CERT bulletins across Tier 1 (US, CN, GB, IN, EU, IL, JP, KR) and Tier 2 (CA, DE, FR, SG, TW, AE, AU, NL, FI, SE, CH) ecosystems.</p>
-
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-red-900 mb-2">🌐 Global Sovereign Vulnerability & Foundation Model Governance</h3>
-      <p>Sovereign compute infrastructure and national vulnerability governance frameworks have become critical geopolitical determinants. Domestic foundation models (DeepSeek, Qwen, Falcon, Mistral, Kyutai, Indian AI initiatives) and sovereign defense agencies (CERT-In, BSI, ANSSI, JPCERT, TWCERT, NCSC, ENISA) maintain strategic early visibility into zero-day disclosures and frontier model breakthroughs.</p>
-    </div>
-
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Sovereign AI & Worldwide Regional Ecosystems</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">National AI labs, regional foundation models, and sovereign compute ecosystems.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
+
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-700">🌐 SOVEREIGN DISPATCH [🇨🇳 CN] • mp.weixin.qq.com</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://mp.weixin.qq.com/s?__biz=MzA3NzE2ODk1Mg==&mid=2647798950&idx=1&sn=a4570a25da0a44b1c965a84fbe7a26b5" target="_blank" class="hover:text-red-700">It’s easy to create “shrimps” with AI, but difficult to manage? Suspended mirror multi-modal SCA technology breaks the AI ​​digital supply chain governance dilemma!</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">原创 多模态 SCA 2026-04-08 10:00 北京 智能情报驱动，以AI治理AI。守护数字供应链安全！ 当 “小龙虾” 成为新常态，开源供应链正把企业拖入更深的风险...组件依赖如同虾须般层层缠绕，供应链投毒、隐蔽漏洞与 AI 模型风险隐匿其中，看不见、摸不着、防不住。面对 0day 频发、攻击常态化的 AI 数字供应链新环境，传统 SCA 对复杂依赖洞察不足、覆盖有限，已难以适配新场景，企业亟需更智能、更前置的安全能力。开源供应链安全示意图面对复杂的 AI 数字供应链场景，多模态源鉴 SCA 迎来重磅能力跃迁，深度践行悬镜 “AI 治理 AI” 技术理念，以 AI 为核心驱动，深度整合全场景检测能力，构建智能、闭环的 AI 数字供应链安全防线。依托 AI 情报预警这一核心能力，多模态源鉴 SCA 有效打破传统安全局限，实现从被动补漏到主动防御的跨越，全面覆盖源码、二进制、容器、运行态及 AI 模型等多维场景，真正做到全域可视、风险可控，为企业 AI 数字供应链安全提供坚实可靠的全方位守护。1►AI 驱动开源供应链情报预警提速 15 倍，供应链安全暴露窗口压缩 94%在.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wck704/3060_12gb_vs_4060_ti_16gb/" target="_blank" class="hover:underline">3060 12GB vs 4060 ti 16GB</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I&#x27;m currently building my system around 3060s, but I might be able to get a 4060 for a nice deal. At first it seemed like a no brainer, but turns out the 4060 has lower memory bandwidth. In a system that already has 4x 3060 12GBs set up on a threadripper with tensor parallelism (mostly qwen3.8-27b), would it be worth having the 4060 ti 16GB around for the extra 4GB and occasional gaming, or is it just going to slow the rest of the setup down for AI?</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-700">🌐 SOVEREIGN DISPATCH [🇨🇳 CN] • mp.weixin.qq.com</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://mp.weixin.qq.com/s?__biz=MzAwNTI1NDI3MQ==&mid=2649619550&idx=1&sn=a751128726875a90e9107764b6a4f4f3&chksm=8306214eb471a8587a8054c43873cb1e5814242a375db72abc83c7e76aa3595bc3c594e0a52c&scene=58&subscene=0#rd" target="_blank" class="hover:text-red-700">VMware ESXi CVE-2024-37085 vulnerability verification analysis</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">, Microsoft disclosed an in-field attack report of an ESXi vulnerability (CVE-2024-37085). This vulnerability is an authentication bypass vulnerability in VMware ESXi and has been exploited by multiple ransomware. Through this vulnerability, an attacker can obtain full operating permissions for ESXi added to the AD domain and control the virtual machines contained in the ESXi. For more security information and analysis articles, please pay attention to the Venustech ADLab WeChat public account and official website (adlab.venustech.com.cn) 01 Vulnerability Overview Recently, Microsoft disclosed an in-field attack report of an ESXi vulnerability (numbered CVE-2024-37085) [1]. This vulnerability is an authentication bypass vulnerability in VMware ESXi and has been exploited by multiple ransomware. Through this vulnerability, an attacker can obtain full operating permissions for the ESXi joined to the AD domain and control the virtual machines included in the ESXi.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcj5q3/harness_does_matter/" target="_blank" class="hover:underline">Harness doesn&#x27;t matter</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I was not aware that the harness makes such a big difference. DeepSeek V4.1.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-700">🌐 SOVEREIGN DISPATCH [🇨🇳 CN] • mp.weixin.qq.com</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://mp.weixin.qq.com/s?__biz=MzU4NDU4OTM4OQ==&mid=2247516264&idx=1&sn=64319fec57182b0961e9c279d3b9d460" target="_blank" class="hover:text-red-700">The open source risk management platform &quot;Fuxi&quot; has made important progress in security patch migration, helping to mitigate open source software security risks.</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">, and empowers automated patch migration based on a large model with enhanced syntax and semantics. Research background: Security patch migration is an important means of mitigating risks in the open source software supply chain. With the widespread application of open source software, more and more software systems rely on open source components, reuse open source code, and form multiple long-term maintenance branches or downstream derivative projects based on upstream projects. When an upstream project discloses a vulnerability and releases a security patch, whether the relevant patch can be timely and accurately migrated to other affected branches or downstream derivative projects is directly related to the overall security level of the open source software supply chain. However, in a real open source ecosystem, the migration of security patches is neither comprehensive nor timely.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wbpf6i/mention_if_a_new_model_is_a_finetune/" target="_blank" class="hover:underline">Mention if a &quot;new model&quot; is a finetune</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">A few posts tagged with &quot;new model&quot; present models that are finetunes. My opinion : I&#x27;d rather have the &quot;new model&quot; tag reserved for new &quot;major&quot; releases, like a new Qwen model, Deepseek V4 -&gt; Deepseek V4.1, etc., that involved a new pretrain or intensive post-training (in opposition to a small finetune). Otherwise, maybe prepend &quot;[Finetune]&quot; to the title to indicate that the new model is &quot;less of a big news&quot;, a use a &quot;new finetune&quot; tag, to differentiate between the two kinds of new models.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-700">🌐 SOVEREIGN DISPATCH [🌐 GLOBAL] • reddit.com</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1w6lk6z/increasing_active_parameters_per_token_in_moe/" target="_blank" class="hover:text-red-700">Increasing active parameters per token in MOE (Qwen 35B A4B+) reduce reasoning token by 8.5% - and you don&#x27;t need to train or finetune!</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I want to share a short paper just published exploring a simple but surprisingly effective optimization for sparse MoE reasoning models. The idea: Instead of retraining anything, we just tweak the router at runtime. Specifically, we expand the expert selection budget (N≥KN≥K) only in the late transformer layers, with a linear decay factor applied to the extra experts. Early layers stay untouched. So Qwen 3.6 35B A3B becomes Qwen 3.6 35B A4B+ !</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.05309v1" target="_blank" class="hover:underline">How Does mHC Use Its Residual Streams? Selective Routing and Near-Identity Mixing</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Hyper-Connections and their manifold-constrained variant mHC widen a residual pathway from one stream to n, yet how trained models use this capacity remains unclear: how broadly blocks read and write, how strongly the residual pathway mixes streams, and whether the streams carry distinct representations. We examine these properties in the four-stream residual pathway of DeepSeek-V4-Flash using effective stream counts, cross-stream residual weights, and inter-stream cosine similarity.</p>
         </div>
-      
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.24191v2" target="_blank" class="hover:underline">&#x27;Ghaib in Translation&#x27; aka Unseen Harm: Measuring Cross-Script Safety Inconsistency with &#x27;Missed-in-Urdu&#x27; Scores in LLM Hate Speech Detection</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Urdu, the world&#x27;s tenth most spoken language with 246 million speakers, remains almost entirely absent from mainstream LLM safety evaluation and nine years of WOAH proceedings. To investigate whether this absence has measurable consequences for content moderation reliability, five large language models, GPT-4o, Claude Sonnet 4.5, Gemini 2.5 Flash, Qwen-2.5, and Llama-3.1, were tested across six datasets spanning Nastaliq Urdu, Roman Urdu, English, and code-switched Urdu-English.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.13063v1" target="_blank" class="hover:underline">Explanatory Engagement Under Rare Anomalous Failure: Asymptotic Rarity in Model Behavior (or: The Asymptotic AI)</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Prior work on LLM behavior under anomalous conditions asks whether a model notices anomalies. We ask a narrower question: once a model sits in a workflow with a low, controllable failure rate, does its explanatory engagement - length, specificity, self-reported confidence - change as failure grows asymptotically rarer? We built a local, zero-cost harness on three open-weight models (qwen3:8b, llama3.1:8b, mistral:7b) running a repeated tool-call task where one call fails at probability p.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.07921v1" target="_blank" class="hover:underline">Spectral Outliers Reveal Dominant Learned Structure in Transformer Attention</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">We apply Marchenko-Pastur (MP) random matrix theory to pre-trained attention weights in order to separate each projection matrix into a random-like bulk and a set of spectral outliers. We validate this decomposition causally: zeroing the MP-identified outliers (signal) in Mistral-7B drives HellaSwag, MMLU, and PIQA close to random-chance performance, whereas zeroing a count-matched subset of bulk singular values causes smaller but non-negligible degradation.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#b91c1c">🌐 SOVEREIGN WIRE • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2607.18570v1" target="_blank" class="hover:underline">For What Reason? Interpreting Models&#x27; Encoding of Causation and Antithesis</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Discourse relations provide document structure, critical to language understanding and enabling language model performance and ethicality. In this work, we investigate how instruction-tuned Transformer models (LLaMA and Mistral) encode discourse relations in English, with a particular focus on the contrasting relations of causation and antithesis.</p>
+        </div>
     </div>
   </article>
 
-  <!-- PAGE 8: HIGH-VELOCITY EXPLOITED VULNERABILITIES & CISA KEV CATALOG -->
+  <!-- PAGE 8: AI HARDWARE -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION VIII: VULNERABILITIES</div>
-      <div>CISA KEV CATALOG & ACTIVE ZERO-DAYS</div>
-      <div>PAGE 8 OF 10</div>
+      <div>SECTION VIII: AI HARDWARE & SILICON</div><div>COMPUTE CLUSTERS, ACCELERATORS & CHIPS</div><div>PAGE 8 OF 10</div>
     </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">High-Velocity Exploited Vulnerabilities & CISA KEV</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Catalog of active in-the-wild zero-days and mandatory federal remediation directives.</p>
-
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-red-900 mb-2">🛡️ Active In-The-Wild Exploitation Telemetry</h3>
-      <p>Adversaries prioritize unauthenticated remote code execution and session token forgery. Recent threat actor activity demonstrates automated mass scanning of public IP ranges within hours of advisory disclosures. Security teams must enforce strict ingress filtering and patch vulnerable services immediately.</p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-800">🛡️ CISA KEV REGISTER • SEV 37/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/netsec/comments/1vpx6ku/cve202633696_from_a_schema_name_to_rce_in_n8n/" target="_blank" class="hover:text-red-800">CVE-2026-33696: From a Schema Name to RCE in n8n</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Security advisory identified for CVE-2026-33696 impacting Enterprise Systems. Refer to official vendor channels for technical details and updates.</p>
-        </div>
-      
-        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-800">🛡️ CISA KEV REGISTER • SEV 70/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/netsec/comments/1w4agtv/authentication_bypass_in_eol_proxmox_ve_7_release/" target="_blank" class="hover:text-red-800">Authentication bypass in EOL Proxmox VE 7 release</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">A lot of proxmox 7.0-7 and &lt; 8.0.4 has been rooted today, it&#x27;s needed to have port :8006 open, exploitation demo here:</p>
-        </div>
-      
-        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-800">🛡️ CISA KEV REGISTER • SEV 30/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/netsec/comments/1w46vwa/geonetwork_preauth_rce_via_unauthenticated_file/" target="_blank" class="hover:text-red-800">GeoNetwork - Pre-Auth RCE via Unauthenticated File Upload and Unsafe XSLT Processor (4 CVEs, 121 government deployments, all patched)</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Security disclosure concerning GeoNetwork - Pre-Auth RCE via Unauthenticated File Upload and Unsafe XSLT Processor (4 CVEs, 121 government deployments, all patched). Official updates and technical references are cataloged on the source wire.</p>
-        </div>
-      
-        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-red-800">🛡️ CISA KEV REGISTER • SEV 42/100</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/netsec/comments/1w5l1j8/rooted_in_trust_three_privilegeescalation/" target="_blank" class="hover:text-red-800">Rooted in Trust: Three privilege-escalation vulnerabilities in HP Easy Start for macOS (CVE-2026-12554, CVE-2026-12555, CVE-2026-12556)</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Three high-severity vulnerabilities in HP Easy Start for macOS, rated CVSS 8.5, 7.7 and 7.7. The research looks at the trust boundaries around privileged components and how they can break down in practice. HP has published an advisory and released an updated version. Disclosure: I&#x27;m the researcher who reported these vulnerabilities.</p>
-        </div>
-      
-    </div>
-  </article>
-
-  <!-- PAGE 9: VERIFIED PROOF-OF-CONCEPTS & RED TEAM REPOSITORIES -->
-  <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
-    <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION IX: PROOF-OF-CONCEPTS</div>
-      <div>EXPLOIT REPOSITORIES & MITRE ATLAS MATRIX</div>
-      <div>PAGE 9 OF 10</div>
-    </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Verified Proof-of-Concepts & Red Team Repositories</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Exploit weaponization velocity, automated attack frameworks, and MITRE ATLAS / ATT&CK threat matrix.</p>
-
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">AI Hardware, Compute Clusters & Silicon</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">GPU clusters, AI accelerators, datacenter infrastructure, and custom silicon.</p>
     <div class="overflow-x-auto mb-6">
       <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
-        <thead class="bg-[#e2e8f0] text-[#0f172a]">
-          <tr>
-            <th class="p-2 border border-[#d1cbba]">TECHNIQUE / ID</th>
-            <th class="p-2 border border-[#d1cbba]">TARGET ENTITY</th>
-            <th class="p-2 border border-[#d1cbba]">THREAT LEVEL</th>
-            <th class="p-2 border border-[#d1cbba]">RECOMMENDED TELEMETRY CONTROL</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
-          <tr>
-            <td class="p-2 font-bold">T1190 Exploit Public-Facing App</td>
-            <td class="p-2">Web & API Gateways</td>
-            <td class="p-2 text-red-700 font-bold">Critical</td>
-            <td class="p-2">WAF inspection, ingress rate-limiting</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">T1059 Command & Scripting</td>
-            <td class="p-2">Host & Container</td>
-            <td class="p-2 text-red-700 font-bold">High</td>
-            <td class="p-2">Auditd, Sysmon process telemetry</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">T1078 Valid Accounts</td>
-            <td class="p-2">Cloud IAM & IdP</td>
-            <td class="p-2 text-red-700 font-bold">High</td>
-            <td class="p-2">Enforce FIDO2 MFA, rotate session tokens</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold">AML.T0054 LLM Prompt Injection</td>
-            <td class="p-2">Autonomous AI Agents</td>
-            <td class="p-2 text-amber-700 font-bold">High</td>
-            <td class="p-2">Enforce system prompt boundary guards</td>
-          </tr>
-        </tbody>
+        <thead class="bg-[#e2e8f0] text-[#0f172a]"><tr><th class="p-2 border border-[#d1cbba]">SILICON / SYSTEM</th><th class="p-2 border border-[#d1cbba]">SOURCE</th><th class="p-2 border border-[#d1cbba]">COMPUTE SPECS</th><th class="p-2 border border-[#d1cbba]">VELOCITY</th><th class="p-2 border border-[#d1cbba]">TELEMETRY / BENCHMARK</th></tr></thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50"><tr><td class="p-2"><b>Running Vision Qwen 3.8 27B on a 16GB Card, t</b></td><td class="p-2">reddit.com</td><td class="p-2">High Velocity</td><td class="p-2">96/100</td><td class="p-2">I am just sharing my config for Qwen 3.8 27b that fits on a 5060TI, what is cool about this.</td></tr>
+<tr><td class="p-2"><b>Qwen3.8-Flash-Next on 2x3090 + DDR4, part 4: </b></td><td class="p-2">reddit.com</td><td class="p-2">29 t/s</td><td class="p-2">96/100</td><td class="p-2">. 17 -&gt; 25-29 t/s with the expert cache PR, 37-41 t/s after switching to UD-Q4_K_XL and stacking MTP on.</td></tr>
+<tr><td class="p-2"><b>Qwen3.8-Flash-Next on MLX-serve, 1m context i</b></td><td class="p-2">reddit.com</td><td class="p-2">40 tok/s</td><td class="p-2">96/100</td><td class="p-2">Hi, I&#x27;m the co-creator of this Qwen3.8-Flash-Next engine support in MLX-serve. I&#x27;ve been tuning this one to run both fast.</td></tr>
+<tr><td class="p-2"><b>Substrate-Aware AI Agents: Execution Context </b></td><td class="p-2">arxiv.org</td><td class="p-2">High Velocity</td><td class="p-2">88/100</td><td class="p-2">Autonomous AI agents increasingly select actions in environments whose memory, execution-time, runtime, compute, and operational constraints determine what counts as.</td></tr>
+<tr><td class="p-2"><b>SAT-Edge-Agent: Hardware-in-the-Loop Edge-Age</b></td><td class="p-2">arxiv.org</td><td class="p-2">High Velocity</td><td class="p-2">88/100</td><td class="p-2">Onboard satellite intelligence requires a task layer that translates mission intent into local tool calls, exposes execution state, and returns.</td></tr>
+<tr><td class="p-2"><b>Best Open source TTS right now for narration?</b></td><td class="p-2">reddit.com</td><td class="p-2">High Velocity</td><td class="p-2">80/100</td><td class="p-2">I run these models on Kaggle notebook, so not all TTS models, such as the ones that use conda env.</td></tr>
+</tbody>
       </table>
     </div>
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
+
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-amber-800">⚡ VERIFIED PoC • nvd.nist.gov</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://nvd.nist.gov/vuln/detail/CVE-2023-4966" target="_blank" class="hover:text-amber-800">CISA KEV: CVE-2023-4966 - Citrix NetScaler ADC and NetScaler Gateway Buffer Overflow Vulnerability</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Citrix NetScaler ADC and NetScaler Gateway contain a buffer overflow vulnerability that allows for sensitive information disclosure when configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server. Required Action: Apply mitigations and kill all active and persistent sessions per vendor instructions [ OR discontinue use of the.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#d97706">⚡ AI SILICON • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcfc9b/running_vision_qwen_38_27b_on_a_16gb_card_the/" target="_blank" class="hover:underline">Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I am just sharing my config for Qwen 3.8 27b that fits on a 5060TI, what is cool about this is that you can even get vision! and a 85K context (I have 1.5gb of headroom for more context or a better quant) Model: IQ3_XXS-mtp from Using beellama Config used: [*] model = ..\llm-models\Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp.gguf mmproj = ..\llm-models\mmproj-Qwen3.8-27B-BF16.gguf image-min-tokens = 256.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-amber-800">⚡ VERIFIED PoC • nvd.nist.gov</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://nvd.nist.gov/vuln/detail/CVE-2025-20352" target="_blank" class="hover:text-amber-800">CISA KEV: CVE-2025-20352 - Cisco IOS and IOS XE Software SNMP Denial of Service and Remote Code Execution Vulnerability</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Cisco IOS and IOS XE contains a stack-based buffer overflow vulnerability in the Simple Network Management Protocol (SNMP) subsystem that could allow for denial of service or remote code execution. A successful exploit could allow a low-privileged attacker to cause the affected system to reload, resulting in a DoS condition, or allow a high-privileged attacker to execute arbitrary code as the root user and obtain full control of the affected system.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#d97706">⚡ AI SILICON • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wc6fsk/qwen38flashnext_on_2x3090_ddr4_part_4_2225x/" target="_blank" class="hover:underline">Qwen3.8-Flash-Next on 2x3090 + DDR4, part 4: 2.2-2.5x faster prefill by kicking the expert cache off the GPU while the prompt runs</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">. 17 -&gt; 25-29 t/s with the expert cache PR, 37-41 t/s after switching to UD-Q4_K_XL and stacking MTP on the cache, the top-k fallback that was sorting more than it needed to. This one is all about prefill, which was honestly the weak spot the whole time. 80+ seconds before the first token on an 8k prompt, and 24 minutes on a 119k one...I know . Box is still 2x 3090, dual Broadwell Xeon, llama.cpp, UD-Q4_K_XL with the Q8 MTP head on the.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-amber-800">⚡ VERIFIED PoC • rapid7.com</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.rapid7.com/blog/post/etr-cve-2026-63520-microsoft-sharepoint-remote-code-execution-fixed" target="_blank" class="hover:text-amber-800">CVE-2026-63520: Microsoft SharePoint Remote Code Execution (FIXED)</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">OverviewRapid7 Labs conducted a zero-day research project against Microsoft SharePoint, resulting in the discovery of two new vulnerabilities that, when chained together, achieve unauthenticated remote code execution (RCE) against a vulnerable SharePoint server. Today, both Rapid7 and Microsoft are disclosing the second vulnerability in this chain, the RCE vulnerability CVE-2026-63520. The first vulnerability in the chain, CVE-2026-55040, was disclosed by Rapid7 and Microsoft last month.Our.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#d97706">⚡ AI SILICON • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wb7p70/qwen38flashnext_on_mlxserve_1m_context_is_released/" target="_blank" class="hover:underline">Qwen3.8-Flash-Next on MLX-serve, 1m context is released!</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Hi, I&#x27;m the co-creator of this Qwen3.8-Flash-Next engine support in MLX-serve. I&#x27;ve been tuning this one to run both fast, efficient and correct up 1m context using kv cache 8 bits in M5 Max 128GB. Qwen is working well at very long context as showed in the video (a snapshot at ~760k context), I let it build MLX Serve Monitor plugin that you&#x27;ve seen on the right side of Opencode2&#x27;s app. The generation sustain through 1m context at around 40 tok/s on prose and 75 tok/s on coding.</p>
         </div>
-      
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
-          <span class="text-[9.5px] font-mono font-bold text-amber-800">⚡ VERIFIED PoC • reddit.com</span>
-          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/netsec/comments/1w4aj8x/off_the_hook_discovering_and_observing_active/" target="_blank" class="hover:text-amber-800">Off the Hook: Discovering and Observing Active Exploitation of Sangoma Switchvox CVE-2026-9586</a></h4>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Security advisory identified for CVE-2026-9586 impacting Enterprise Systems. Refer to official vendor channels for technical details and updates.</p>
+          <span class="text-[9.5px] font-mono font-bold" style="color:#d97706">⚡ AI SILICON • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.05232v1" target="_blank" class="hover:underline">Substrate-Aware AI Agents: Execution Context as a First-Class Input</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Autonomous AI agents increasingly select actions in environments whose memory, execution-time, runtime, compute, and operational constraints determine what counts as a suitable plan. We call the absence of this execution context from an agent&#x27;s planning state substrate blindness. We test this general proposition through numerical code generation, where selected implementation choices and operational consequences are directly observable.</p>
         </div>
-      
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#d97706">⚡ AI SILICON • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.03728v1" target="_blank" class="hover:underline">SAT-Edge-Agent: Hardware-in-the-Loop Edge-Agent Orchestration for Onboard Satellite Intelligence</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Onboard satellite intelligence requires a task layer that translates mission intent into local tool calls, exposes execution state, and returns machine-consumable artifacts under communication and power constraints. We present SAT-Edge-Agent, a hardware-in-the-loop (HIL) edge-agent system deployed on a commercial off-the-shelf ARM-based heterogeneous edge system-on-chip.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#d97706">⚡ AI SILICON • VEL 80/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wbpyp7/best_open_source_tts_right_now_for_narration/" target="_blank" class="hover:underline">Best Open source TTS right now for narration?</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: reddit.com</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">I run these models on Kaggle notebook, so not all TTS models, such as the ones that use conda env, are compatible (Or I just haven&#x27;t found a way for them to work on Kaggle). I currently use a fork from Chatterbox called Chatterbox Audiobook. It is like a workstation really optimized for getting the close-to-perfection audio clips from Chatterbox. However, the only downside of Chatterbox is the lack of emotional sliders or tags that you can use to control the output.</p>
+        </div>
     </div>
   </article>
 
-  <!-- PAGE 10: 24-HOUR DEFENSIVE PLAYBOOK & OPERATIONAL ACTION PLAN -->
+  <!-- PAGE 9: AUTONOMOUS AGENTS -->
   <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
     <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
-      <div>SECTION X: DEFENSIVE PLAYBOOK</div>
-      <div>OPERATIONAL ACTION PLAN & COLOPHON</div>
-      <div>PAGE 10 OF 10</div>
+      <div>SECTION IX: AUTONOMOUS AGENTS & ROBOTICS</div><div>MULTI-AGENT SWARMS & EMBODIED INTELLIGENCE</div><div>PAGE 9 OF 10</div>
     </div>
-    <h2 class="headline-font text-2xl font-black mt-4 mb-2">24-Hour Defensive Playbook & Operational Action Plan</h2>
-    <p class="text-xs text-[#4b5563] italic mb-4">Remediation SLA hierarchy, tactical AI & infrastructure hardening directives, and publication colophon.</p>
-
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Autonomous Agents, Multi-Agent Swarms & Robotics</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">Agent orchestration, computer-use frameworks, action models, and embodied robotics.</p>
     <div class="overflow-x-auto mb-6">
       <table class="w-full text-left font-mono text-[11px] border border-[#d1cbba]">
-        <thead class="bg-[#e2e8f0] text-[#0f172a]">
-          <tr>
-            <th class="p-2 border border-[#d1cbba]">TIER</th>
-            <th class="p-2 border border-[#d1cbba]">REMEDIATION SLA</th>
-            <th class="p-2 border border-[#d1cbba]">SCOPE & OPERATIONAL MANDATES</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[#d1cbba] bg-white/50">
-          <tr>
-            <td class="p-2 font-bold text-red-700">P0 Emergency</td>
-            <td class="p-2 font-bold">&lt; 4 Hours</td>
-            <td class="p-2">Patch active CISA KEV catalog entries and public perimeter RCE flaws. Isolate compromised hosts immediately.</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold text-orange-700">P1 Critical</td>
-            <td class="p-2 font-bold">&lt; 24 Hours</td>
-            <td class="p-2">Remediate high-velocity CVEs (CVSS &gt;= 8.5). Rotate service account credentials for exposed cloud providers.</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-bold text-blue-700">P2 High</td>
-            <td class="p-2 font-bold">&lt; 72 Hours</td>
-            <td class="p-2">Audit AI agent tool permissions, apply non-critical OS dependency updates, and verify model SafeTensors.</td>
-          </tr>
-        </tbody>
+        <thead class="bg-[#e2e8f0] text-[#0f172a]"><tr><th class="p-2 border border-[#d1cbba]">AGENT / FRAMEWORK</th><th class="p-2 border border-[#d1cbba]">SOURCE</th><th class="p-2 border border-[#d1cbba]">PROTOCOL / ARCHITECTURE</th><th class="p-2 border border-[#d1cbba]">VELOCITY</th><th class="p-2 border border-[#d1cbba]">CORE CAPABILITY DOMAIN</th></tr></thead>
+        <tbody class="divide-y divide-[#d1cbba] bg-white/50"><tr><td class="p-2"><b>Enhancing Virtual Agents through SLMs and Edg</b></td><td class="p-2">arxiv.org</td><td class="p-2">PyTorch / ONNX</td><td class="p-2">88/100</td><td class="p-2">Embodied intelligent virtual agents are expected to operate as persistent, adaptive, and context-aware entities within complex virtual and Metaverse worlds..</td></tr>
+<tr><td class="p-2"><b>Social Chain of Thought: A Multi-Agent Archit</b></td><td class="p-2">arxiv.org</td><td class="p-2">PyTorch / ONNX</td><td class="p-2">88/100</td><td class="p-2">Medical diagnostic reasoning is a high-impact use case for LLMs that carries significant implications for the health and wellbeing of.</td></tr>
+<tr><td class="p-2"><b>When LLM Agents Negotiate: Private Informatio</b></td><td class="p-2">arxiv.org</td><td class="p-2">PyTorch / ONNX</td><td class="p-2">88/100</td><td class="p-2">As LLM agents move from decision support to autonomous procurement, firms need to know whether delegated negotiators create value, divide.</td></tr>
+<tr><td class="p-2"><b>Research acceleration: The view inside OpenAI</b></td><td class="p-2">simonwillison.net</td><td class="p-2">PyTorch / ONNX</td><td class="p-2">96/100</td><td class="p-2">Research acceleration: The view inside OpenAI Apparently today is RSI day at OpenAI, for Recursive Self-Improvement - I think it&#x27;s.</td></tr>
+<tr><td class="p-2"><b>Scanning the Harness: An Empirical Study of S</b></td><td class="p-2">arxiv.org</td><td class="p-2">PyTorch / ONNX</td><td class="p-2">88/100</td><td class="p-2">AI coding agents such as Claude Code, Cursor, GitHub Copilot, and OpenAI Codex are configured through artifacts developers write and.</td></tr>
+<tr><td class="p-2"><b>What Does Multi-Harness RL Learn? Credit Assi</b></td><td class="p-2">arxiv.org</td><td class="p-2">PyTorch / ONNX</td><td class="p-2">88/100</td><td class="p-2">Agent reinforcement learning (RL) increasingly runs through full execution harnesses, and a multi-harness recipe mixes two choices: exposing the policy.</td></tr>
+</tbody>
       </table>
     </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    <div class="p-4 bg-white/70 border border-[#d1cbba] mb-6 text-xs leading-relaxed text-[#374151]">
-      <h3 class="font-mono text-xs font-bold uppercase text-slate-900 mb-2">🛡️ Tactical AI & Infrastructure Hardening Directives</h3>
-      <ul class="list-disc list-inside space-y-1">
-        <li><strong>AI Agent Sandboxing:</strong> Execute all LLM tool invocations in isolated gVisor/firecracker microVMs with strictly bounded egress.</li>
-        <li><strong>SafeTensors Verification:</strong> Reject untrusted PyTorch .bin/.pt pickle checkpoints across all internal ML clusters.</li>
-        <li><strong>Perimeter Access Isolation:</strong> Disallow external internet access to administrative ports (SSH, RDP, Kubernetes API, Ollama daemon).</li>
-      </ul>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#059669">🦾 AGENT SYSTEM • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.13420v1" target="_blank" class="hover:underline">Enhancing Virtual Agents through SLMs and Edge-Computing: An Exploratory Evaluation of Think and Memory Processes</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Embodied intelligent virtual agents are expected to operate as persistent, adaptive, and context-aware entities within complex virtual and Metaverse worlds. However, implementing cognitively capable agents in such environments is conceptually and technologically challenging.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#059669">🦾 AGENT SYSTEM • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.11420v1" target="_blank" class="hover:underline">Social Chain of Thought: A Multi-Agent Architecture Grounded in Medical Differential Diagnosis Methodology</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Medical diagnostic reasoning is a high-impact use case for LLMs that carries significant implications for the health and wellbeing of users. When OpenAI (2026) reports that more than 5% of ChatGPT messages globally are healthcare-related, the transparency of these systems becomes a serious design concern. This is especially true for complex cases, where differential diagnosis often requires integrating multiple forms of specialist reasoning.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#059669">🦾 AGENT SYSTEM • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2608.07538v1" target="_blank" class="hover:underline">When LLM Agents Negotiate: Private Information and Dynamic Bargaining in Supply Chains</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">As LLM agents move from decision support to autonomous procurement, firms need to know whether delegated negotiators create value, divide it predictably, and avoid money-losing contracts. We study this in a canonical supply chain bargaining problem: a buyer with private demand information negotiates a quantity-payment contract with an uninformed seller. We benchmark nine LLMs from OpenAI, Google, and Alibaba against a validated Perfect Bayesian Equilibrium across 9,840 LLM-to-LLM negotiations.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#059669">🦾 AGENT SYSTEM • VEL 96/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://simonwillison.net/2026/Sep/6/research-acceleration-the-view-inside-openai/" target="_blank" class="hover:underline">Research acceleration: The view inside OpenAI</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: simonwillison.net</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Research acceleration: The view inside OpenAI Apparently today is RSI day at OpenAI, for Recursive Self-Improvement - I think it&#x27;s their new AGI. Both this piece and the new essay An Alien Mind (by Chief Scientist Jakub Pachocki) talk about it, and this one doesn&#x27;t even bother to expand the acronym. Included are details on how OpenAI&#x27;s own research team are using coding agents.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#059669">🦾 AGENT SYSTEM • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.07360v1" target="_blank" class="hover:underline">Scanning the Harness: An Empirical Study of Supply-Chain Defects in AI Coding-Agent Configurations</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">AI coding agents such as Claude Code, Cursor, GitHub Copilot, and OpenAI Codex are configured through artifacts developers write and share: instruction files, skills, hooks, MCP server declarations, subagents. This harness is a dependency layer installed from marketplaces and public repositories, running with the developer&#x27;s privileges, with no lockfile, no install-time check, and no vocabulary for what a component may do.</p>
+        </div>
+        <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold" style="color:#059669">🦾 AGENT SYSTEM • VEL 88/100</span>
+          <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="https://arxiv.org/abs/2609.04518v1" target="_blank" class="hover:underline">What Does Multi-Harness RL Learn? Credit Assignment and Portability in Coding Agents</a></h4>
+          <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: arxiv.org</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">Agent reinforcement learning (RL) increasingly runs through full execution harnesses, and a multi-harness recipe mixes two choices: exposing the policy to several harnesses, and comparing their rewards inside one relative-advantage group. We isolate the second choice in repository-level coding.</p>
+        </div>
     </div>
+  </article>
 
-    <div class="p-4 bg-[#f2eedf] border border-[#d1cbba] text-[11px] leading-relaxed text-[#4b5563] font-mono">
-      <strong>COLOPHON & SENSOR METHODOLOGY:</strong> The Aether Guard — Global AI & Technology Gazette is compiled autonomously by the AetherGuard Intelligence Engine. Data is aggregated across 92 authoritative global sources including Hugging Face, GitHub Trending, arXiv, CISA, NVD, Exploit-DB, and sovereign CERTs. Neural NLP analyzers perform multi-language translation, algorithmic deduplication, and structured technical synthesis. All rights reserved.
+  <!-- PAGE 10: OVERFLOW DIGEST -->
+  <article class="newspaper-sheet max-w-5xl mx-auto p-6 sm:p-12 mb-8 text-[#12161f]">
+    <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest border-b border-[#222834] pb-1.5 text-[#374151]">
+      <div>SECTION X: COMMUNITY WIRE</div><div>TOP STORIES YOU MAY HAVE MISSED</div><div>PAGE 10 OF 10</div>
+    </div>
+    <h2 class="headline-font text-2xl font-black mt-4 mb-2">Global AI Community Wire & Overflow Digest</h2>
+    <p class="text-xs text-[#4b5563] italic mb-4">10 high-velocity AI stories from today's intelligence sweep that didn't fit earlier sections.</p>
+    <div class="space-y-3 text-xs">
+      
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 88/100 • arxiv.org</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://arxiv.org/abs/2606.15821v2" target="_blank" class="hover:underline">The Truth Stays in the Family: Enhancing Contextual Grounding via Inherited Truthful Heads in Model Lineages</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">Recent advances in large language models (LLMs) have produced many specialized multimodal LLMs (MLLMs) that share common foundational LLMs, forming distinct model lineages. It remains unclear whether a fundamental behavioral link exists between the foundational LLMs and downstream variants. We investigate this question by quantifying head-level context-truthfulness scores. Across diverse LLM and MLLM lineages, including Vicuna-, Qwen2.5-, LLaMA2-, and Mistral-based models, we find that Truth.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 88/100 • aws.amazon.com</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://aws.amazon.com/blogs/machine-learning/take-on-your-most-ambitious-work-with-gpt-6-astra-on-amazon-bedrock/" target="_blank" class="hover:underline">Take on your most ambitious work with GPT-6 Astra on Amazon Bedrock</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">GPT-6 Astra from OpenAI brings greater depth and judgment to your most demanding tasks and runs on the Amazon Bedrock inference engine built for high performance, security, and scale. Organizations are already running AI agents that write code, analyze data, and automate complex workflows at production scale on Amazon Bedrock. GPT-6 Astra raises the potential of what those agents can deliver.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 88/100 • aibusiness.com</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://aibusiness.com/generative-ai/how-mistral-s-new-funding-bridge-sovereign-ai" target="_blank" class="hover:underline">How Mistral&#x27;s New Funding is a Bridge to Sovereign AI</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">After starting as an open-weight startup, Mistral has shifted toward sovereign AI, given the European market it operates in.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 88/100 • aibusiness.com</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://aibusiness.com/generative-ai/ai-beyond-the-hype-insights-from-google" target="_blank" class="hover:underline">AI Beyond the Hype: Insights From Google</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">By establishing key foundations, businesses can create effective AI workflows that drive meaningful outcomes.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 88/100 • bitsoffreedom.nl</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.bitsoffreedom.nl/2026/05/22/laat-chatbotontwikkelaars-niet-langer-hun-verantwoordelijkheid-ontlopen/" target="_blank" class="hover:underline">Don&#x27;t let chatbot developers avoid their responsibility any longer</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">Large tech companies behind generative AI software do not take sufficient responsibility for the output of their tools, even if it helps perpetrators of abuse or violence. That must change, either through stricter rules or through lawsuits. OpenAI, the company behind AI chatbot ChatGPT, has already faced several lawsuits.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 88/100 • aisingapore.org</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://aisingapore.org/breaking-barriers-building-bridges-increasing-language-representation-in-southeast-asia/" target="_blank" class="hover:underline">Breaking Barriers, Building Bridges: Increasing Language Representation in Southeast Asia</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">Held outside of Singapore for the very first time, the third Languages Summit was co-hosted by AI Singapore, Google and VISTEC in Bangkok, Thailand and brought together a passionate community of AI experts and researchers from all corners of the SEA region. This event, dedicated to building a more inclusive AI future, provided a platform for exchanging discussions and insights around efficient model training, obtaining and sharing high-quality data, and regional updates on AI.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 88/100 • aisingapore.org</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://aisingapore.org/learning-to-generate-unbounded-3d-scenes-from-image-collections/" target="_blank" class="hover:underline">Learning to Generate Unbounded 3D Scenes from Image Collections</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">Introduction Scene generation has raised considerable attention in recent years, addressing the growing need for 3D creative tools in the metaverse. At the core of 3D content creation is inverse graphics, which aims to recover 3D representations from 2D observations. Given the cost and labor for creating 3D assets, the ultimate goal of 3D content creation would be learning a generative model from in-the-wild 2D images.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 80/100 • reddit.com</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcm3i0/apple_wants_to_give_me_1175_for_a_mac_mini_m4_pro/" target="_blank" class="hover:underline">Apple wants to give me $1175 for a Mac Mini M4 Pro? And would you sell for a DGX Spark or M5-based Studio (which?)</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">I thought Trade-in value offered by Apple was only ever close to reasonable (for not having to go through the extra work of selling it yourself) if you bought the base model and did not upgrade anything. And you would get less than half of what you paid. For example: The base price of the M4 Pro Mac Mini was $1399. On Apple&#x27;s trade in page for the Mac Mini it says &quot;Up to $620&quot;.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 80/100 • reddit.com</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wcf6kq/the_cea_architecture_is_a_bigger_deal_than_i/" target="_blank" class="hover:underline">The CEA architecture is a bigger deal than I initially thought</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">I initially saw CED as just an efficiency improvement, but the more I read about it, the more it feels like an inference architecture leap. The encoder/decoder split has some pretty interesting implications for GPU pooling. Instead of treating every GPU the same, you could have prefill-specialized GPUs for the encoder and decode-specialized GPUs for the decoder, each optimized for a different part of inference.</p>
+        </div>
+        <div class="p-3 bg-white/60 border border-[#d1cbba]">
+          <span class="text-[9.5px] font-mono font-bold text-slate-600">VEL 80/100 • reddit.com</span>
+          <h4 class="font-serif font-bold text-xs mt-1"><a href="https://www.reddit.com/r/LocalLLaMA/comments/1wceiz6/what_tts_models_do_you_recommend_as_today/" target="_blank" class="hover:underline">What TTS models do you recommend as today?</a></h4>
+          <p class="text-[11px] text-[#4b5563] mt-1 leading-relaxed">Trying to get Hermes a local, efficient, tts voice.</p>
+        </div>
+    </div>
+    <div class="p-4 bg-[#f2eedf] border border-[#d1cbba] text-[11px] leading-relaxed text-[#4b5563] font-mono mt-6">
+      <strong>COLOPHON:</strong> The Global AI Gazette is compiled autonomously. Data is aggregated across authoritative global AI sources including Hugging Face, GitHub Trending, arXiv, and leading AI research lab feeds. Edition #2212 • 201 items processed. All rights reserved.
     </div>
   </article>
 
   <footer class="text-center font-mono text-[10px] text-[#4b5563] pt-4 pb-8">
-    PUBLISHED AUTONOMOUSLY EVERY FIVE HOURS BY AETHERGUARD SECINTEL • COMPLETE 10-PAGE DOSSIER • ALL RIGHTS RESERVED
+    PUBLISHED AUTONOMOUSLY BY THE GLOBAL AI GAZETTE ENGINE • EDITION #2212 • Thursday, September 10, 2026 • ALL RIGHTS RESERVED
   </footer>
 
 </body>

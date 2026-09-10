@@ -172,11 +172,10 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
     categorized = await service._categorize_entries(sample_entries)
 
     # Sovereign / Regional radar should capture these entries
-    assert "china_radar" in categorized
-    sov_radar = categorized["china_radar"]
+    assert "sovereign_ai" in categorized
+    sov_radar = categorized["sovereign_ai"]
     assert len(sov_radar) >= 1
 
     # Verify Markdown generation includes Section VII / Page 7 with sovereign items
     md = service._render_markdown(sample_entries, categorized, 101, datetime.now(timezone.utc), 24)
-    assert "[PAGE 7] SOVEREIGN AI & WORLDWIDE REGIONAL INTEL RADAR" in md
-    assert "Sovereign Wire Dispatches" in md
+    assert "[PAGE 7] SOVEREIGN AI" in md

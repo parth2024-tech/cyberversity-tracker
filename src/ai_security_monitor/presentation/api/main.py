@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from ai_security_monitor.config.settings import settings
@@ -155,10 +156,18 @@ def create_app() -> FastAPI:
     from ai_security_monitor.presentation.api.routers.sources import trigger_fetch_sweep
     app.post("/api/fetch", tags=["Sources"])(trigger_fetch_sweep)
 
-    # Serve static web UI
+    # Serve static web UI & dedicated gazette page
     import os
     web_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "web"))
     if os.path.exists(web_dir):
+        @app.get("/gazette", include_in_schema=False)
+        @app.get("/gazette/", include_in_schema=False)
+        async def serve_gazette():
+            gazette_path = os.path.join(web_dir, "gazette.html")
+            if os.path.exists(gazette_path):
+                return FileResponse(gazette_path, media_type="text/html")
+            return FileResponse(os.path.join(web_dir, "index.html"), media_type="text/html")
+
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 
     return app

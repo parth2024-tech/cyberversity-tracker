@@ -80,7 +80,7 @@ def cmd_enriched_digest(args):
         delivery_config.update(config_delivery)
 
     # Send via delivery method
-    from src.delivery import get_delivery
+    from delivery import get_delivery
     delivery = get_delivery(args.method, delivery_config)
 
     subject = f"AI & Security Digest (Enriched) - {datetime.now().strftime('%Y-%m-%d')}"
@@ -271,7 +271,7 @@ def cmd_test_delivery(args):
         if args.telegram_token: delivery_config['bot_token'] = args.telegram_token
         if args.telegram_chat: delivery_config['chat_id'] = args.telegram_chat
 
-    from src.delivery import get_delivery
+    from delivery import get_delivery
     delivery = get_delivery(args.method, delivery_config)
 
     test_content = "This is a test message from AI Security Monitor."

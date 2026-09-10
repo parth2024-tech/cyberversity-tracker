@@ -16,17 +16,19 @@ analysis_router = APIRouter(prefix="/analysis")
 
 
 class QuickAnalyzeRequest(BaseModel):
-    title: str
+    title: str = ""
     summary: str | None = ""
     content: str | None = ""
-    category: str = "vulnerabilities"
+    raw_text: str | None = None
+    category: str = "ai_tech"
     model: str = "heuristic"
     tags: list[str] = []
 
 
 @analysis_router.post("/quick")
+@analysis_router.post("/triage")
 async def quick_analyze(req: QuickAnalyzeRequest):
-    """Perform on-demand AI triage and blast radius correlation on raw text using heuristic or real Ollama LLM."""
+    """Perform on-demand AI triage and architecture correlation on raw text using heuristic or real Ollama LLM."""
     analyzer_name = "ollama" if req.model in ["ollama", "llm", "groq", "openrouter", "local"] else "heuristic"
     try:
         triage_analyzer = analyzer_registry.create(analyzer_name)
@@ -41,13 +43,19 @@ async def quick_analyze(req: QuickAnalyzeRequest):
         "ai_research": Category.AI_RESEARCH,
         "cybersecurity": Category.CYBERSECURITY,
         "github_trending": Category.GITHUB_TRENDING,
+        "ai_models": Category.AI_MODELS,
+        "cyber_tools": Category.CYBER_TOOLS,
     }
-    cat = cat_map.get(req.category.lower(), Category.VULNERABILITIES)
-    summary_text = req.summary or req.content or ""
+    cat = cat_map.get(req.category.lower(), Category.AI_TECH)
+    summary_text = req.raw_text or req.summary or req.content or ""
+    effective_title = req.title.strip()
+    if not effective_title:
+        first_line = summary_text.strip().split("\n")[0].strip()
+        effective_title = first_line[:80] if first_line else "AI Technology Analysis"
 
     dummy_entry = Entry(
         source_id=uuid4(),
-        title=req.title,
+        title=effective_title,
         url="https://example.com/sandbox-triage",
         content_hash="sandbox_hash",
         summary=summary_text,
@@ -60,7 +68,7 @@ async def quick_analyze(req: QuickAnalyzeRequest):
     blast_res = await blast_analyzer.analyze(dummy_entry)
 
     return {
-        "title": req.title,
+        "title": effective_title,
         "threat_velocity": triage_res.threat_velocity,
         "severity_index": triage_res.severity_index,
         "blast_radius_score": blast_res.blast_radius_score,
