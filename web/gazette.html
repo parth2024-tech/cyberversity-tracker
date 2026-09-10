@@ -908,7 +908,7 @@ function renderCurrentView() {
 async function loadFeed(force = false) {
   try {
     document.getElementById('connStatus').textContent = 'SWEEPING WIRE';
-    const res = await fetch(`${API_BASE}/entries?limit=100&sort=newest${force ? '&_t=' + Date.now() : ''}`);
+    const res = await fetch(`${API_BASE}/entries?limit=150&sort=newest${force ? '&_t=' + Date.now() : ''}`);
     if (!res.ok) throw new Error('Telegraph wire unavailable');
     const data = await res.json();
     allEntries = data.entries || data || [];

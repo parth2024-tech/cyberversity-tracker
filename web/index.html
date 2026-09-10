@@ -1273,7 +1273,7 @@
       exploits_tricks: 'text-amber-300 border-amber-500/40 bg-amber-500/20'
     };
     let offset = 0;
-    const limit = 25;
+    const limit = 100;
     let ws = null;
     let audioEnabled = true;
     let categoryChart = null;
@@ -1768,6 +1768,19 @@
         }
       } else if (msg.type === 'connected') {
         if (msg.stats) renderStats(msg.stats);
+        if (msg.recent_entries && (!allFeedItems || allFeedItems.length === 0)) {
+          allFeedItems = msg.recent_entries;
+          const container = document.getElementById('feed-container');
+          if (container) {
+            container.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            allFeedItems.forEach(entry => {
+              fragment.appendChild(createCardElement(entry));
+            });
+            container.appendChild(fragment);
+            lucide.createIcons();
+          }
+        }
       } else if (msg.type === 'emergency_threat_alert') {
         const item = msg.data;
         showHUDToast({
@@ -2298,8 +2311,8 @@
       const card = createCardElement(entry);
       card.classList.add('toast-animate-in');
       container.prepend(card);
-      // Prune excess cards if feed exceeds 100 items in DOM to keep memory low and smooth
-      while (container.children.length > 100) {
+      // Retain up to 250 cards in DOM to stream rich intelligence while keeping browser light
+      while (container.children.length > 250) {
         container.lastElementChild.remove();
       }
       lucide.createIcons();

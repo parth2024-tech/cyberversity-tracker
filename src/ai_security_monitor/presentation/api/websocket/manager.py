@@ -57,11 +57,24 @@ websocket_router = APIRouter()
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
-        # Send initial connected status
-        await websocket.send_text(json.dumps({
+        # Send initial connected status enriched with live telemetry and latest entries
+        init_payload: dict = {
             "type": "connected",
-            "message": "Connected to AetherGuard Autonomous Intelligence Radar"
-        }))
+            "message": "Connected to Global AI Gazette Autonomous Intelligence Radar",
+        }
+        try:
+            from ai_security_monitor.presentation.api.routers.entries import query_serialized_entries
+            from ai_security_monitor.presentation.api.routers.stats import get_monitor_service
+
+            svc = get_monitor_service()
+            init_payload["stats"] = await svc.get_stats()
+            entries_list, total_cnt = await query_serialized_entries(limit=50)
+            init_payload["recent_entries"] = entries_list
+            init_payload["total_entries"] = total_cnt
+        except Exception as hydrate_err:
+            logger.debug(f"Failed to attach live telemetry to WS connected message: {hydrate_err}")
+
+        await websocket.send_text(json.dumps(init_payload))
 
         while True:
             # Handle incoming ping / messages

@@ -132,7 +132,7 @@ async def query_serialized_entries(
     region: str | None = None,
     country: str | None = None,
     sort_by: str = "newest",
-    limit: int = 50,
+    limit: int = 100,
     offset: int = 0,
 ) -> tuple[list[dict], int]:
     """Internal helper to retrieve and serialize filtered entries."""
@@ -335,7 +335,7 @@ async def list_entries(
     country: str | None = Query(None),
     sort: str | None = Query(None),
     sort_by: str = Query("newest"),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
     """Query intelligence entries with pagination, search, watchlist, and feature filters — cached 6s."""
