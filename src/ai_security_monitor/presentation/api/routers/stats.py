@@ -48,11 +48,9 @@ async def get_sweep_status(service: MonitorService = Depends(get_monitor_service
 
 @stats_router.post("/purge")
 async def purge_stale_entries(
-    days: int = Query(default=30, ge=1, le=365, description="Delete entries older than this many days"),
+    days: int = Query(default=7, ge=1, le=365, description="Delete entries older than this many days (default 7 days / 1 week)"),
     service: MonitorService = Depends(get_monitor_service),
 ):
-    """Manually trigger data hygiene: delete all entries older than `days` days."""
+    """Manually trigger data hygiene: delete all entries older than `days` days (1-week retention)."""
     result = await service.purge_stale_entries(older_than_days=days)
-    # Invalidate stats cache after purge
-    response_cache.invalidate("stats_totals")
     return result

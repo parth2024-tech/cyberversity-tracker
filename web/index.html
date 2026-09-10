@@ -697,9 +697,15 @@
             <p class="text-xs text-slate-400 font-sans">38 active verified channels across Frontier AI Labs, Global Journalism, arXiv Pre-CVE & Vuln Radars</p>
           </div>
         </div>
-        <button onclick="closeSourcesModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="btn-sweep-modal" onclick="triggerScan()" class="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-xs flex items-center gap-1.5 transition active:scale-95" title="Fetch intelligence immediately across all sources">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Sweep All Feeds Now</span>
+          </button>
+          <button onclick="closeSourcesModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
 
       <div id="sources-list" class="overflow-y-auto mt-4 pr-1 space-y-2.5 flex-1">
@@ -926,6 +932,11 @@
                 <span id="triage-dot" class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
                 <span id="triage-status-text" class="text-indigo-400">QUEUE: 0</span>
               </span>
+              <span class="text-slate-700">│</span>
+              <span id="retention-badge" class="flex items-center gap-1 text-slate-400" title="Data retention: 7 days / 1 week rolling persistent storage">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                <span class="text-cyan-300">RETENTION: 1W</span>
+              </span>
             </div>
           </div>
         </div>
@@ -1037,7 +1048,7 @@
       </span>
       <div class="marquee-track flex-1">
         <span class="marquee-inner text-[10px] font-mono text-slate-400">
-          GLOBAL AI OBSERVATORY ACTIVE &nbsp;·&nbsp; 🚀 Trending Open-Source Repositories & Tools &nbsp;·&nbsp; 🤖 Frontier Reasoning Models (DeepSeek, OpenAI, Anthropic, Qwen, Meta) &nbsp;·&nbsp; 🔬 arXiv Breakthrough Papers & Benchmarks &nbsp;·&nbsp; 🛠️ Developer Infrastructure & Runtimes &nbsp;·&nbsp; ⚡ Distributed Inference & Test-Time Compute Scaling &nbsp;·&nbsp; 24/7 Global Telemetry Across 50+ Verified Hubs &nbsp;·&nbsp;
+          GLOBAL AI OBSERVATORY ACTIVE &nbsp;·&nbsp; 🚀 Trending Open-Source Repositories & Tools &nbsp;·&nbsp; 🤖 Frontier Reasoning Models (DeepSeek, OpenAI, Anthropic, Qwen, Meta) &nbsp;·&nbsp; 🔬 arXiv Breakthrough Papers & Benchmarks &nbsp;·&nbsp; 🛠️ Developer Infrastructure & Runtimes &nbsp;·&nbsp; ⚡ Distributed Inference & Test-Time Compute Scaling &nbsp;·&nbsp; 💾 1-Week Rolling Retention (7 Days Persistent Storage) &nbsp;·&nbsp; 24/7 Global Telemetry Across 50+ Verified Hubs &nbsp;·&nbsp;
         </span>
       </div>
       <button onclick="setCategory('all')" class="flex-shrink-0 text-[10px] font-mono font-bold text-cyan-400 hover:text-cyan-300 uppercase tracking-wider border border-cyan-500/25 px-3 py-1 rounded-sm transition">EXPLORE ALL →</button>
@@ -1304,7 +1315,11 @@
       if (icon) icon.classList.add('animate-spin');
       playBeep('click');
       try {
-        await loadFeed(true);
+        await Promise.allSettled([
+          loadFeed(true),
+          refreshStats(),
+          updateSweepFreshness(),
+        ]);
       } finally {
         setTimeout(() => {
           if (icon) icon.classList.remove('animate-spin');
@@ -2236,8 +2251,9 @@
           effectiveSearch = effectiveSearch ? (effectiveSearch + ' ' + activeTechChip) : activeTechChip;
         }
         if (effectiveSearch) url += `&search=${encodeURIComponent(effectiveSearch)}`;
+        if (reset) url += `&_t=${Date.now()}`;
 
-        const res = await fetch(url, { cache: 'default' });
+        const res = await fetch(url, { cache: reset ? 'no-cache' : 'default' });
         let data = await res.json();
 
         // Calculate is_new_since_refresh relative to previous session refresh baseline
@@ -2701,23 +2717,37 @@
     async function triggerScan() {
       const btn = document.getElementById('scan-btn');
       const icon = document.getElementById('scan-icon');
+      const modalSweepBtn = document.getElementById('btn-sweep-modal');
       if (btn) btn.disabled = true;
       if (icon) icon.classList.add('animate-spin');
+      if (modalSweepBtn) {
+        modalSweepBtn.disabled = true;
+        modalSweepBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Sweeping...`;
+      }
       playBeep('alert');
 
       try {
         const res = await fetch('/api/fetch', { method: 'POST' });
         const data = await res.json();
         console.log("Sweep initiated:", data);
-        refreshStats();
-        loadFeed(true);
+        await Promise.allSettled([
+          refreshStats(),
+          updateSweepFreshness(),
+          loadFeed(true),
+          loadSources(),
+        ]);
       } catch (e) {
         console.error("Scan error: ", e);
       } finally {
         setTimeout(() => {
           if (btn) btn.disabled = false;
           if (icon) icon.classList.remove('animate-spin');
-        }, 1500);
+          if (modalSweepBtn) {
+            modalSweepBtn.disabled = false;
+            modalSweepBtn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sweep All Feeds Now</span>`;
+            lucide.createIcons();
+          }
+        }, 1200);
       }
     }
 

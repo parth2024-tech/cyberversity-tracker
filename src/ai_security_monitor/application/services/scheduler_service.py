@@ -7,7 +7,9 @@ import asyncio
 from datetime import datetime
 
 from ai_security_monitor.application.services.monitor_service import MonitorService
-from ai_security_monitor.application.services.newspaper_delivery_tracker import delivery_tracker
+from ai_security_monitor.application.services.newspaper_delivery_tracker import (
+    delivery_tracker,
+)
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
@@ -80,14 +82,15 @@ class SchedulerService:
                     f"{results.get('success', 0)}/{results.get('total_sources', 0)} sources."
                 )
 
-                # Nightly data hygiene purge:
-                # At 30-min intervals, every 48 sweeps ≈ 24 hours.
-                if self._sweep_count % max(1, 48) == 0:
+                # 1-Week Rolling Data Hygiene Purge:
+                # Clean up any entries older than 7 days (runs on sweep #1 and daily every 48 sweeps)
+                if self._sweep_count == 1 or self._sweep_count % max(1, 48) == 0:
                     try:
-                        purge_result = await self._monitor.purge_stale_entries(older_than_days=30)
+                        retention = settings.database.retention_days
+                        purge_result = await self._monitor.purge_stale_entries(older_than_days=retention)
                         logger.info(
                             f"Data hygiene: purged {purge_result['purged']} entries "
-                            f"older than {purge_result['older_than_days']} days."
+                            f"older than {purge_result['older_than_days']} days (1-week retention)."
                         )
                     except Exception as purge_err:
                         logger.warning(f"Data hygiene purge failed: {purge_err}")
@@ -127,7 +130,9 @@ class SchedulerService:
                     )
                     if can_send and pdf_path:
                         try:
-                            from ai_security_monitor.infrastructure.delivery.base import delivery_registry
+                            from ai_security_monitor.infrastructure.delivery.base import (
+                                delivery_registry,
+                            )
                             email_delivery = delivery_registry.create("email", {
                                 "smtp_server": settings.delivery.email_smtp_server,
                                 "smtp_port": settings.delivery.email_smtp_port,
@@ -174,7 +179,9 @@ class SchedulerService:
                     )
                     if can_send and pdf_path:
                         try:
-                            from ai_security_monitor.infrastructure.delivery.base import delivery_registry
+                            from ai_security_monitor.infrastructure.delivery.base import (
+                                delivery_registry,
+                            )
                             tg_delivery = delivery_registry.create("telegram", {
                                 "bot_token": tg_token,
                                 "chat_id": tg_chat,

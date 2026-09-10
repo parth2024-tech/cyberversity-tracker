@@ -118,7 +118,9 @@ class MonitorService:
                         # Automatically detect non-English text and translate title/summary to English.
                         # Uses asyncio.to_thread() internally — does not block the event loop.
                         try:
-                            from ai_security_monitor.application.services.translation_service import translation_service
+                            from ai_security_monitor.application.services.translation_service import (
+                                translation_service,
+                            )
                             await translation_service.translate_entry_async(entry)
                         except Exception as trans_e:
                             logger.debug(f"Translation skipped: {trans_e}")
@@ -196,7 +198,9 @@ class MonitorService:
                             if (analysis.threat_velocity >= settings.analyzer.triage_velocity_threshold
                                     or analysis.is_pre_cve_warning):
                                 try:
-                                    from ai_security_monitor.application.services.autonomous_triage_service import get_triage_service
+                                    from ai_security_monitor.application.services.autonomous_triage_service import (
+                                        get_triage_service,
+                                    )
                                     await get_triage_service().enqueue(added_entry.id)
                                 except Exception as triage_err:
                                     logger.warn(f"Failed to auto-enqueue entry for LLM triage: {triage_err}")
@@ -225,7 +229,9 @@ class MonitorService:
                                 tg_token = getattr(settings, 'telegram_bot_token', None) or os.getenv('TELEGRAM_BOT_TOKEN')
                                 tg_chat = getattr(settings, 'telegram_chat_id', None) or os.getenv('TELEGRAM_CHAT_ID')
                                 if tg_token and tg_chat:
-                                    from ai_security_monitor.infrastructure.delivery.telegram_delivery import TelegramDelivery
+                                    from ai_security_monitor.infrastructure.delivery.telegram_delivery import (
+                                        TelegramDelivery,
+                                    )
                                     tg_delivery = TelegramDelivery({'bot_token': tg_token, 'chat_id': tg_chat})
                                     asyncio.create_task(tg_delivery.send_alert(added_entry, analysis))
                             except Exception as tg_err:
@@ -289,6 +295,13 @@ class MonitorService:
             # Gentle pacing between source sweeps to avoid network/CPU bursts
             await asyncio.sleep(0.5)
 
+        # Invalidate response caches so freshly ingested entries and updated stats are immediately visible on website
+        from ai_security_monitor.infrastructure.cache import response_cache
+        response_cache.invalidate_prefix("entries_")
+        response_cache.invalidate("total_unfiltered_count")
+        response_cache.invalidate("stats_totals")
+        response_cache.invalidate("sweep_status")
+
         return {
             "total_sources": len(sources),
             "success": success,
@@ -296,24 +309,32 @@ class MonitorService:
             "total_new": total_new
         }
 
-    async def purge_stale_entries(self, older_than_days: int = 30) -> dict:
-        """Remove entries older than `older_than_days` days to keep the database fresh.
+    async def purge_stale_entries(self, older_than_days: int | None = None) -> dict:
+        """Remove entries older than retention window (defaults to settings.database.retention_days = 7).
 
         Returns a summary dict with the count of purged entries.
         """
+        days = older_than_days if older_than_days is not None else settings.database.retention_days
         async with self._uow_factory() as uow:
-            purged = await uow.entries.purge_old_entries(older_than_days=older_than_days)
+            purged = await uow.entries.purge_old_entries(older_than_days=days)
             await uow.commit()
 
-        logger.info(f"Data hygiene purge complete: removed {purged} entries older than {older_than_days} days")
-        return {"purged": purged, "older_than_days": older_than_days}
+        # Invalidate caches after data hygiene purge
+        from ai_security_monitor.infrastructure.cache import response_cache
+        response_cache.invalidate_prefix("entries_")
+        response_cache.invalidate("total_unfiltered_count")
+        response_cache.invalidate("stats_totals")
+        response_cache.invalidate("sweep_status")
+
+        logger.info(f"Data hygiene purge complete: removed {purged} entries older than {days} days")
+        return {"purged": purged, "older_than_days": days}
 
     async def get_sweep_status(self) -> dict:
         """Return live sweep freshness data: last sweep time, next sweep ETA, per-source freshness."""
         from ai_security_monitor.application.services.scheduler_service import (
             _last_sweep_at,
-            _sweep_count,
             _server_started_at,
+            _sweep_count,
         )
 
         now = datetime.utcnow()
@@ -356,8 +377,14 @@ class MonitorService:
 
     async def get_stats(self) -> dict:
         """Get aggregate system metrics and stats using high-performance scalar and group-by queries."""
-        from sqlalchemy import select, func, text
-        from ai_security_monitor.infrastructure.database.models import EntryModel, SourceModel, AnalysisModel, WatchlistRuleModel
+        from sqlalchemy import func, select, text
+
+        from ai_security_monitor.infrastructure.database.models import (
+            AnalysisModel,
+            EntryModel,
+            SourceModel,
+            WatchlistRuleModel,
+        )
 
         async with self._uow_factory() as uow:
             # Fast scalar count queries (single table index scans, no entity conversions)

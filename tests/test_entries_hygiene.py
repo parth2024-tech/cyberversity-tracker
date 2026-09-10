@@ -2,6 +2,7 @@
 Unit and integration tests for entries data hygiene, title/summary sanitization, and API formatting.
 """
 from datetime import datetime
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -100,3 +101,36 @@ async def test_api_entries_serialization_hygiene():
             assert "submitted by /u/" not in e["summary"]
             assert "[link] [comments]" not in e["summary"]
             assert e["summary"].endswith((".", "!", "?", '"', "'"))
+
+
+def test_database_retention_days_setting():
+    from ai_security_monitor.config.settings import settings
+    assert settings.database.retention_days == 7
+
+
+@pytest.mark.asyncio
+async def test_purge_old_entries_1_week_retention():
+    from datetime import timedelta
+
+    from sqlalchemy import select
+
+    from ai_security_monitor.infrastructure.database.connection import db_manager
+    from ai_security_monitor.infrastructure.database.models import EntryModel
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    await db_manager.init_db()
+    async with SqlAlchemyUnitOfWork() as uow:
+        # Check that purge runs cleanly with 7 days retention
+        purged = await uow.entries.purge_old_entries(older_than_days=7)
+        assert isinstance(purged, int)
+        assert purged >= 0
+        await uow.commit()
+
+        # Verify no remaining entries are older than 7 days based on fetched_at
+        cutoff = datetime.utcnow() - timedelta(days=7)
+        stale_entries = (await uow.session.execute(
+            select(EntryModel).where(EntryModel.fetched_at < cutoff)
+        )).scalars().all()
+        assert len(stale_entries) == 0

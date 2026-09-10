@@ -13,6 +13,8 @@ primary_region = "iad"
   API_PORT = "8080"
   SCHEDULER_ENABLED = "true"
   DATA_DIR = "/app/data"
+  DB_URL = "sqlite+aiosqlite:////app/data/monitor.db"
+  DB_RETENTION_DAYS = "7"
 
 [mounts]
   source = "aether_data"

@@ -3,18 +3,28 @@ Application configuration using Pydantic Settings.
 All settings loaded from environment variables and config files.
 """
 
+import os
 from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _get_default_db_url() -> str:
+    data_dir = os.environ.get("DATA_DIR")
+    if data_dir:
+        clean_dir = data_dir.rstrip("/")
+        return f"sqlite+aiosqlite:///{clean_dir}/monitor.db"
+    return "sqlite+aiosqlite:///data/monitor.db"
+
+
 class DatabaseSettings(BaseSettings):
     """Database configuration."""
     url: str = Field(
-        default="sqlite+aiosqlite:///data/monitor.db",
+        default_factory=_get_default_db_url,
         description="SQLAlchemy async database URL"
     )
+    retention_days: int = Field(default=7, description="Data retention period in days (1 week)")
     echo: bool = Field(default=False, description="Log SQL queries")
     pool_size: int = Field(default=5, description="Connection pool size")
     max_overflow: int = Field(default=10, description="Max pool overflow")
@@ -77,7 +87,7 @@ class AnalyzerSettings(BaseSettings):
     groq_model: str = Field(default="llama-3.1-70b-versatile", description="Groq model name")
     max_tokens: int = Field(default=400, description="Max tokens for LLM response")
     temperature: float = Field(default=0.1, description="LLM temperature")
-    
+
     # Local LLM routing via Hermes gateway
     use_local_llm: bool = Field(default=True, description="Route LLM calls through local gateway (auto/offline)")
     local_model: str = Field(default="auto/offline", description="Local model via gateway")

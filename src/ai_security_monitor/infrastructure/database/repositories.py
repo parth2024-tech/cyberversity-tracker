@@ -22,7 +22,6 @@ from ai_security_monitor.domain.entities import (
     Source,
     SourceType,
 )
-from ai_security_monitor.domain.watchlist import WatchlistRule
 from ai_security_monitor.domain.exceptions import (
     DuplicateEntryError,
     EntityNotFoundError,
@@ -36,6 +35,7 @@ from ai_security_monitor.domain.repositories import (
     PaginationParams,
     SourceRepository,
 )
+from ai_security_monitor.domain.watchlist import WatchlistRule
 from ai_security_monitor.infrastructure.database.models import (
     AnalysisModel as AnalysisModelDB,
 )
@@ -112,20 +112,26 @@ class SQLAlchemyEntryRepository(EntryRepository):
         if filters and filters.sort_by == "velocity":
             stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
                 desc(AnalysisModelDB.threat_velocity),
+                desc(EntryModel.fetched_at),
                 desc(EntryModel.published_at)
             )
         elif filters and filters.sort_by == "blast":
             stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
                 desc(AnalysisModelDB.blast_radius_score),
+                desc(EntryModel.fetched_at),
                 desc(EntryModel.published_at)
             )
         elif filters and filters.sort_by == "severity":
             stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
                 desc(AnalysisModelDB.severity_index),
+                desc(EntryModel.fetched_at),
                 desc(EntryModel.published_at)
             )
-        else:
+        elif filters and filters.sort_by == "published":
             stmt = stmt.order_by(desc(EntryModel.published_at))
+        else:
+            # Default "newest": order by fetched_at so fresh intelligence appears immediately at top
+            stmt = stmt.order_by(desc(EntryModel.fetched_at), desc(EntryModel.published_at))
 
         if pagination:
             stmt = stmt.limit(pagination.limit).offset(pagination.offset)
@@ -192,8 +198,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 
-    async def purge_old_entries(self, older_than_days: int = 30) -> int:
-        """Delete entries (and their cascaded analyses) older than `older_than_days` days.
+    async def purge_old_entries(self, older_than_days: int = 7) -> int:
+        """Delete entries (and their cascaded analyses) older than `older_than_days` days (1-week retention).
 
         Returns the number of rows purged.
         """
@@ -201,23 +207,16 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         cutoff = datetime.utcnow() - timedelta(days=older_than_days)
 
-        # Fetch IDs to purge first (so cascade to analyses works via ORM delete)
-        stmt = select(EntryModel.id).where(EntryModel.published_at < cutoff)
-        result = await self._session.execute(stmt)
-        old_ids = [row[0] for row in result.fetchall()]
-
-        if not old_ids:
-            return 0
-
-        # Delete associated analyses first (avoid FK constraint errors if no cascade)
+        # Delete associated analyses first via subquery to avoid parameter limit issues
+        subquery = select(EntryModel.id).where(EntryModel.fetched_at < cutoff)
         await self._session.execute(
-            sa_delete(AnalysisModelDB).where(AnalysisModelDB.entry_id.in_(old_ids))
+            sa_delete(AnalysisModelDB).where(AnalysisModelDB.entry_id.in_(subquery))
         )
-        # Delete the entries themselves
+        # Delete entries older than retention window (1 week / 7 days)
         del_result = await self._session.execute(
-            sa_delete(EntryModel).where(EntryModel.id.in_(old_ids))
+            sa_delete(EntryModel).where(EntryModel.fetched_at < cutoff)
         )
-        return del_result.rowcount or len(old_ids)
+        return del_result.rowcount or 0
 
     async def get_by_category(
         self,
