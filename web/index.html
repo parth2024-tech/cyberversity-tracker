@@ -950,9 +950,10 @@
           <i data-lucide="mic" class="w-3.5 h-3.5 text-purple-400 animate-pulse"></i>
           <span class="hidden md:inline">AUDIO BRIEF</span>
         </button>
-        <button id="scan-btn" onclick="triggerScan()" class="flex items-center gap-2 px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/20">
+        <button id="scan-btn" onclick="refreshFeedNow()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/20" title="Refresh Feed & Load New Updates">
           <i id="scan-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-          <span>Scan</span>
+          <span>Refresh</span>
+          <span id="refresh-pending-badge" class="hidden px-1.5 py-0.2 bg-slate-950 text-cyan-300 rounded-full text-[10px] font-bold">0</span>
         </button>
       </div>
     </header>
@@ -1187,6 +1188,20 @@
           <div class="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 animate-feed-loading w-1/3 rounded-full"></div>
         </div>
 
+        <!-- Pending New Updates Available Banner (Calm, Non-Intrusive, Click to Refresh) -->
+        <div id="new-updates-banner" class="hidden mb-3 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-cyan-950/90 to-blue-950/90 border border-cyan-500/40 text-cyan-200 text-xs font-mono flex items-center justify-between shadow-lg shadow-cyan-950/40 cursor-pointer hover:border-cyan-400/60 transition active:scale-[0.99]" onclick="refreshFeedNow()">
+          <div class="flex items-center gap-2.5">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+            </span>
+            <span><strong id="new-updates-count" class="text-white font-bold">0</strong> new AI updates available</span>
+          </div>
+          <button type="button" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-[11px] font-mono flex items-center gap-1.5 font-semibold transition">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh Feed
+          </button>
+        </div>
+
         <!-- Feed Cards Container (Grid View by default) -->
         <div id="feed-container" class="grid-view transition-opacity duration-200">
           <!-- Populated dynamically via JS -->
@@ -1278,9 +1293,45 @@
     let audioEnabled = true;
     let categoryChart = null;
     let allFeedItems = [];
+    let pendingNewEntries = [];
     let currentViewMode = 'grid'; // 'grid' | 'list'
     let activeTechChip = '';
     let focusedCardIndex = -1;
+
+    function updatePendingBanner() {
+      const count = pendingNewEntries.length;
+      const banner = document.getElementById('new-updates-banner');
+      const countEl = document.getElementById('new-updates-count');
+      const badge = document.getElementById('refresh-pending-badge');
+      if (count > 0) {
+        if (banner) {
+          banner.classList.remove('hidden');
+          if (countEl) countEl.innerText = count;
+        }
+        if (badge) {
+          badge.classList.remove('hidden');
+          badge.innerText = count > 99 ? '99+' : count;
+        }
+      } else {
+        if (banner) banner.classList.add('hidden');
+        if (badge) badge.classList.add('hidden');
+      }
+    }
+
+    async function refreshFeedNow() {
+      pendingNewEntries = [];
+      updatePendingBanner();
+      const icon = document.getElementById('scan-icon');
+      if (icon) icon.classList.add('animate-spin');
+      playBeep('click');
+      try {
+        await loadFeed(true);
+      } finally {
+        setTimeout(() => {
+          if (icon) icon.classList.remove('animate-spin');
+        }, 500);
+      }
+    }
 
     function setViewMode(mode) {
       currentViewMode = mode;
@@ -1783,50 +1834,23 @@
         }
       } else if (msg.type === 'emergency_threat_alert') {
         const item = msg.data;
-        showHUDToast({
-          title: item.title,
-          message: `AI BREAKTHROUGH: ${item.archetype || 'Frontier AI Release'} from ${item.source_name}! Intelligence Velocity: ${item.velocity}/100.`,
-          badge: "AI BREAKTHROUGH",
-          icon: "sparkles",
-          color: "text-amber-400",
-          borderClass: "border-amber-500/40 shadow-amber-500/20",
-          onClick: () => {
-            const input = document.getElementById('search-input');
-            if (input) input.value = item.title.slice(0, 30);
-            searchQuery = item.title.slice(0, 30);
-            loadFeed(true);
+        if (item && item.id) {
+          const inFeed = allFeedItems.some(e => e.id === item.id);
+          const inPending = pendingNewEntries.some(e => e.id === item.id);
+          if (!inFeed && !inPending) {
+            pendingNewEntries.unshift(item);
+            updatePendingBanner();
           }
-        });
-        playBeep('critical');
+        }
+        refreshStats();
       } else if (msg.type === 'new_entry') {
         const entry = msg.data;
-        const analysis = entry.analysis || {};
-        const velocity = analysis.threat_velocity !== undefined ? analysis.threat_velocity : 0;
-        const hasWatchlistMatch = Boolean(entry.matched_watchlist_rules && entry.matched_watchlist_rules.length > 0);
-        const isHighImpact = hasWatchlistMatch || velocity >= 80;
-
-        if (hasWatchlistMatch) {
-          showHUDToast({
-            title: entry.title,
-            message: `Target matched active tracking rule: [${entry.matched_watchlist_rules.join(', ')}]`,
-            badge: "RADAR MATCH",
-            icon: "target",
-            color: "text-sky-400",
-            borderClass: "border-sky-500/40 shadow-sky-500/20",
-            onClick: () => openInspectModal(entry)
-          });
-        } else if (isHighImpact) {
-          showToastNotification(entry);
-        }
-
-        prependFeedItem(entry);
-
-        // Debounce alert sounds to avoid audio buffer saturation during multi-source sweeps
-        const nowMs = performance.now();
-        if (!window._lastBeepTime || (nowMs - window._lastBeepTime > 2500)) {
-          window._lastBeepTime = nowMs;
-          if (isHighImpact) {
-            playBeep('alert');
+        if (entry && entry.id) {
+          const inFeed = allFeedItems.some(e => e.id === entry.id);
+          const inPending = pendingNewEntries.some(e => e.id === entry.id);
+          if (!inFeed && !inPending) {
+            pendingNewEntries.unshift(entry);
+            updatePendingBanner();
           }
         }
         refreshStats();
@@ -1835,14 +1859,20 @@
         const icon = document.getElementById('scan-icon');
         if (msg.status === 'started') {
           banner.classList.remove('hidden');
-          document.getElementById('scan-banner-text').innerText = msg.message || "Active intelligence sweep & AI correlation in progress...";
+          document.getElementById('scan-banner-text').innerText = msg.message || "Active intelligence sweep in progress...";
           icon.classList.add('animate-spin');
         } else {
           banner.classList.add('hidden');
           icon.classList.remove('animate-spin');
           if (msg.results) {
             refreshStats();
-            loadFeed(true);
+            const newCount = msg.results.new_entries || 0;
+            if (newCount > 0 && pendingNewEntries.length === 0) {
+              const uBanner = document.getElementById('new-updates-banner');
+              const uCount = document.getElementById('new-updates-count');
+              if (uBanner) uBanner.classList.remove('hidden');
+              if (uCount) uCount.innerText = newCount;
+            }
           }
         }
       } else if (msg.type === 'triage_queue_updated') {
@@ -2170,6 +2200,8 @@
       if (reset) {
         offset = 0;
         allFeedItems = [];
+        pendingNewEntries = [];
+        updatePendingBanner();
       }
 
       const container = document.getElementById('feed-container');
@@ -4980,20 +5012,15 @@
         try { updateSweepFreshness(); } catch(e){}
       }, 60000);
 
-      // Continuous Intelligence Fallback: Check for new entries and refresh telemetry every 45 seconds (dormant when tab is backgrounded)
+      // Background Telemetry Sync: Refresh stats counters quietly every 45 seconds (dormant when tab is backgrounded)
       setInterval(() => {
         if (document.hidden) return;
         try {
-          // If at the top of the feed or viewing all, refresh telemetry and check latest feed
           if (window.scrollY < 300) {
             refreshStats();
-            // Silent refresh if WS is closed or reconnecting
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-              loadFeed(true);
-            }
           }
         } catch(e) {
-          console.warn("Continuous telemetry sync:", e);
+          console.warn("Telemetry sync:", e);
         }
       }, 45000);
 
