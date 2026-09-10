@@ -82,18 +82,18 @@ class SchedulerService:
                     f"{results.get('success', 0)}/{results.get('total_sources', 0)} sources."
                 )
 
-                # 1-Week Rolling Data Hygiene Purge:
-                # Clean up any entries older than 7 days (runs on sweep #1 and daily every 48 sweeps)
-                if self._sweep_count == 1 or self._sweep_count % max(1, 48) == 0:
-                    try:
-                        retention = settings.database.retention_days
-                        purge_result = await self._monitor.purge_stale_entries(older_than_days=retention)
+                # 1-Week Rolling Data Retention Purge:
+                # Automatically enforce 7-day retention on every sweep cycle (24/7 continuous hygiene)
+                try:
+                    retention = settings.database.retention_days
+                    purge_result = await self._monitor.purge_stale_entries(older_than_days=retention)
+                    if purge_result.get("purged", 0) > 0:
                         logger.info(
-                            f"Data hygiene: purged {purge_result['purged']} entries "
-                            f"older than {purge_result['older_than_days']} days (1-week retention)."
+                            f"1-Week retention hygiene: auto-purged {purge_result['purged']} expired entries "
+                            f"(retaining all intelligence strictly for {retention} days)."
                         )
-                    except Exception as purge_err:
-                        logger.warning(f"Data hygiene purge failed: {purge_err}")
+                except Exception as purge_err:
+                    logger.warning(f"Data hygiene retention purge failed: {purge_err}")
 
             except Exception as e:
                 logger.error(f"Scheduler execution error: {e}")

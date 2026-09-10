@@ -280,8 +280,8 @@ class MonitorService:
 
         return log
 
-    async def fetch_all(self, force: bool = False) -> dict:
-        """Fetch intelligence from all enabled sources."""
+    async def fetch_all(self, force: bool = False, max_concurrency: int = 12) -> dict:
+        """Fetch intelligence from all enabled sources concurrently with maximum throughput."""
         async with self._uow_factory() as uow:
             sources = await uow.sources.list(enabled_only=True)
 
@@ -290,19 +290,31 @@ class MonitorService:
             async with self._uow_factory() as uow:
                 sources = await uow.sources.list(enabled_only=True)
 
+        sem = asyncio.Semaphore(max_concurrency)
         total_new = 0
         success = 0
         error = 0
+        lock = asyncio.Lock()
 
-        for src in sources:
-            log = await self.fetch_source(src)
-            if log.status == FetchStatus.SUCCESS:
-                success += 1
-                total_new += log.entries_new
-            else:
-                error += 1
-            # Gentle pacing between source sweeps to avoid network/CPU bursts
-            await asyncio.sleep(0.5)
+        async def _worker(src: Source) -> None:
+            nonlocal total_new, success, error
+            async with sem:
+                try:
+                    # Timeout per source so slow network endpoints never stall the global sweep
+                    log = await asyncio.wait_for(self.fetch_source(src), timeout=25.0)
+                    async with lock:
+                        if log.status == FetchStatus.SUCCESS:
+                            success += 1
+                            total_new += log.entries_new
+                        else:
+                            error += 1
+                except Exception as e:
+                    async with lock:
+                        error += 1
+                    logger.warning(f"Concurrent sweep error for {src.name}: {e}")
+
+        # Execute all sources concurrently across the worker pool
+        await asyncio.gather(*[_worker(src) for src in sources], return_exceptions=True)
 
         # Invalidate response caches so freshly ingested entries and updated stats are immediately visible on website
         from ai_security_monitor.infrastructure.cache import response_cache

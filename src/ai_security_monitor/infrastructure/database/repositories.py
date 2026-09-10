@@ -109,7 +109,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         if filters:
             stmt = self._apply_filters(stmt, filters)
 
-        if filters and filters.sort_by == "velocity":
+        if filters and filters.sort_by in ("top", "velocity"):
             stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id).order_by(
                 desc(AnalysisModelDB.threat_velocity),
                 desc(EntryModel.published_at),

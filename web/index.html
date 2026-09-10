@@ -1147,6 +1147,7 @@
             <div class="flex items-center gap-2 flex-shrink-0">
               <span class="text-[10px] font-mono text-slate-500 uppercase">SORT:</span>
               <select id="sort-select" onchange="loadFeed(true)" class="glass-input px-3 py-2 text-xs font-mono text-slate-300 cursor-pointer">
+                <option value="top" selected>★ Top News First</option>
                 <option value="newest">Newest First</option>
                 <option value="velocity">Velocity / Stars</option>
                 <option value="blast">Impact / Blast</option>
@@ -1195,6 +1196,15 @@
             <p id="scan-banner-text" class="text-xs font-mono text-sky-300 font-medium">Scanning 38 global intelligence feeds...</p>
           </div>
           <span class="text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-medium">SWEEP ACTIVE</span>
+        </div>
+
+        <!-- New Stories In-Feed Banner (Refresh-Only Paradigm) -->
+        <div id="new-stories-banner" class="hidden mb-3 transition-all duration-300">
+          <button onclick="loadFeed(true)" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-indigo-500/20 hover:from-cyan-500/30 hover:via-sky-500/30 hover:to-indigo-500/30 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 text-xs font-mono font-medium flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/10 cursor-pointer group transition">
+            <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            <span>⚡ <strong id="new-stories-count">0</strong> New Intelligence Reports Available — Click to Refresh Feed</span>
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500"></i>
+          </button>
         </div>
 
         <!-- Micro Feed Loading Indicator Bar (smooth in-place transition) -->
@@ -1815,6 +1825,34 @@
       };
     }
 
+    // Pending new stories tracking (Refresh-Only paradigm)
+    let pendingNewEntries = [];
+
+    function updatePendingBanner() {
+      const banner = document.getElementById('new-stories-banner');
+      const countEl = document.getElementById('new-stories-count');
+      const pill = document.getElementById('new-stories-floating-pill');
+      const pillCount = document.getElementById('new-stories-floating-count');
+
+      const count = pendingNewEntries.length;
+      if (count > 0) {
+        if (banner) {
+          banner.classList.remove('hidden');
+          if (countEl) countEl.innerText = count;
+        }
+        if (pill) {
+          pill.classList.remove('hidden');
+          if (pillCount) pillCount.innerText = count;
+        }
+      } else {
+        if (banner) banner.classList.add('hidden');
+        if (pill) pill.classList.add('hidden');
+      }
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    }
+
     // Handle incoming WebSocket messages
     function handleWebSocketMessage(msg) {
       if (msg.type === 'pong') {
@@ -1828,6 +1866,15 @@
       } else if (msg.type === 'emergency_threat_alert' || msg.type === 'new_entry') {
         // Quiet mode: Never mutate active feed or trigger popups while user is reading.
         // New information arrives cleanly and strictly when user refreshes the page.
+        if (msg.entry && msg.entry.id) {
+          if (!pendingNewEntries.some(e => e.id === msg.entry.id)) {
+            pendingNewEntries.push(msg.entry);
+            updatePendingBanner();
+          }
+        } else {
+          pendingNewEntries.push({ id: Date.now() });
+          updatePendingBanner();
+        }
       } else if (msg.type === 'scan_status') {
         const banner = document.getElementById('scan-progress-banner');
         const icon = document.getElementById('scan-icon');
@@ -2222,7 +2269,7 @@
       }
 
       try {
-        const sortMode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'newest';
+        const sortMode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'top';
         let url = `/api/entries?limit=${limit}&offset=${offset}&sort_by=${sortMode}`;
         if (currentCategory === 'watchlist') {
           url += `&watchlist_only=true`;
@@ -4085,7 +4132,7 @@
           window.open('/api/entries/export/pdf?limit=30', '_blank');
         });
       } else {
-        const sortMode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'velocity';
+        const sortMode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'top';
         let url = `/api/entries/export/pdf?sort_by=${sortMode}&limit=30`;
         if (currentCategory !== 'all') url += `&category=${currentCategory}`;
         if (currentRegion !== 'all') url += `&region=${currentRegion}`;
@@ -5227,6 +5274,18 @@
       <span>Feeds</span>
     </button>
   </nav>
+
+  <!-- Floating New Stories Available Notification (Bottom-Center, Non-Disruptive) -->
+  <div id="new-stories-floating-pill" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 transform">
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'}); loadFeed(true);" class="px-5 py-2.5 rounded-full bg-slate-900/95 backdrop-blur-md border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-mono font-medium shadow-2xl shadow-cyan-500/25 flex items-center gap-2.5 cursor-pointer hover:scale-105 transition">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+      </span>
+      <span>⚡ <strong id="new-stories-floating-count">0</strong> New Stories Available — Click to Refresh</span>
+      <i data-lucide="arrow-up" class="w-3.5 h-3.5 text-cyan-400"></i>
+    </button>
+  </div>
 
 </body>
 </html>

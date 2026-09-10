@@ -133,7 +133,7 @@ async def query_serialized_entries(
     hours: int | None = None,
     region: str | None = None,
     country: str | None = None,
-    sort_by: str = "newest",
+    sort_by: str = "top",
     limit: int = 100,
     offset: int = 0,
 ) -> tuple[list[dict], int]:
@@ -179,7 +179,7 @@ async def query_serialized_entries(
         pre_cve_only=bool(pre_cve),
         high_velocity_only=bool(high_velocity),
         since=since,
-        sort_by=sort_by if isinstance(sort_by, str) else "newest",
+        sort_by=sort_by if isinstance(sort_by, str) else "top",
         region=region if region and region != "all" and isinstance(region, str) else None,
         country=country if country and country != "all" and isinstance(country, str) else None,
     )
@@ -347,7 +347,7 @@ async def list_entries(
     region: str | None = Query(None),
     country: str | None = Query(None),
     sort: str | None = Query(None),
-    sort_by: str = Query("newest"),
+    sort_by: str = Query("top"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
