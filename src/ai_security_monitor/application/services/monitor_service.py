@@ -71,6 +71,15 @@ class MonitorService:
                     if s_cfg.url and existing.url != s_cfg.url:
                         existing.url = s_cfg.url
                         changed = True
+                    if s_cfg.category and existing.category.value != s_cfg.category:
+                        existing.category = Category(s_cfg.category) if isinstance(s_cfg.category, str) else s_cfg.category
+                        changed = True
+                    if s_cfg.type and existing.type.value != s_cfg.type:
+                        existing.type = SourceType(s_cfg.type) if isinstance(s_cfg.type, str) else s_cfg.type
+                        changed = True
+                    if s_cfg.rate_limit_seconds and existing.rate_limit_seconds != s_cfg.rate_limit_seconds:
+                        existing.rate_limit_seconds = s_cfg.rate_limit_seconds
+                        changed = True
                     if s_cfg.query and existing.query != s_cfg.query:
                         existing.query = s_cfg.query
                         changed = True

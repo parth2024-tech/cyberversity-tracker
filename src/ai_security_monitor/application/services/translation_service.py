@@ -8,11 +8,12 @@ advisories, and abstracts into English with multi-engine fallback and LRU cachin
 from __future__ import annotations
 
 import asyncio
-import re
 import html
-import structlog
-from datetime import datetime, timezone
+import re
+from datetime import UTC, datetime, timezone
 from typing import Optional
+
+import structlog
 
 logger = structlog.get_logger(__name__)
 
@@ -66,13 +67,17 @@ class TranslationService:
         if re.search(r"[\u0600-\u06ff]", clean):
             return "ar"
 
+        # Pure ASCII short strings (repo names, release tags, versions) are English
+        if all(ord(c) < 128 for c in clean) and (len(clean) < 35 or len(clean.split()) <= 3):
+            return "en"
+
         # Check with langdetect for European / Latin script languages
         try:
-            from langdetect import detect, DetectorFactory
+            from langdetect import DetectorFactory, detect
             DetectorFactory.seed = 0
             # Strip URLs and numbers before detection
             clean_detect = re.sub(r"https?://\S+|CVE-\d+-\d+|\b\d+\b", "", clean).strip()
-            if len(clean_detect) >= 5:
+            if len(clean_detect) >= 20:
                 lang = detect(clean_detect)
                 return lang
         except Exception:
@@ -158,14 +163,14 @@ class TranslationService:
         entry.metadata["detected_language"] = detected_code
         entry.metadata["detected_language_name"] = friendly_name
         entry.metadata["detected_language_flag"] = flag
-        entry.metadata["translated_at"] = datetime.now(timezone.utc).isoformat()
+        entry.metadata["translated_at"] = datetime.now(UTC).isoformat()
 
         logger.info(
             f"Automatically translated entry from {flag} {friendly_name} ({detected_code}): {entry.title[:60]}..."
         )
         return True
 
-    def _execute_translation(self, text: str, source_lang: str, target: str) -> Optional[str]:
+    def _execute_translation(self, text: str, source_lang: str, target: str) -> str | None:
         """Execute translation via deep_translator with fallback providers."""
         # 1. Primary: GoogleTranslator
         try:
@@ -195,7 +200,7 @@ class TranslationService:
             src_locale = mymemory_map.get(source_lang.lower(), source_lang)
             target_locale = "en-US" if target == "en" else target
             mm = MyMemoryTranslator(source=src_locale, target=target_locale)
-            
+
             # Chunk long texts to respect 500-char limit
             if len(text) > 480:
                 chunks = [text[i:i+450] for i in range(0, min(len(text), 1500), 450)]

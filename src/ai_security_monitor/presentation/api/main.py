@@ -53,15 +53,47 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Auto-seed sources from configuration
     try:
-        from ai_security_monitor.application.services.monitor_service import MonitorService
+        from ai_security_monitor.application.services.monitor_service import (
+            MonitorService,
+        )
         monitor_service = MonitorService()
         await monitor_service.init_sources()
         logger.info("Sources configuration synchronized with database")
+
+        # Ensure critical categories (trending repos & dev tools) are primed if empty
+        async def _prime_critical_feeds():
+            try:
+                stats = await monitor_service.get_stats()
+                by_cat = stats.get("by_category", {})
+                if (by_cat.get("github_trending", 0) == 0 or by_cat.get("cyber_tools", 0) == 0):
+                    logger.info("Priming trending repositories and developer tools feeds...")
+                    from ai_security_monitor.infrastructure.database.unit_of_work import (
+                        SqlAlchemyUnitOfWork,
+                    )
+                    async with SqlAlchemyUnitOfWork() as uow:
+                        all_srcs = await uow.sources.list(enabled_only=True)
+                    targets = [s for s in all_srcs if s.category.value in ("github_trending", "cyber_tools")]
+                    for s in targets:
+                        try:
+                            await monitor_service.fetch_source(s)
+                            await asyncio.sleep(0.05)
+                        except Exception:
+                            pass
+                    from ai_security_monitor.infrastructure.cache import response_cache
+                    response_cache.invalidate("stats_totals")
+                    response_cache.invalidate_prefix("entries_")
+                    logger.info("Critical feeds successfully primed on boot")
+            except Exception as prime_err:
+                logger.warning(f"Error priming critical feeds: {prime_err}")
+
+        asyncio.create_task(_prime_critical_feeds())
     except Exception as seed_err:
         logger.warning(f"Failed to auto-seed sources: {seed_err}")
 
     # Shared WebSocket broadcast callback for scheduler + triage worker
-    from ai_security_monitor.presentation.api.websocket.manager import manager as _ws_manager
+    from ai_security_monitor.presentation.api.websocket.manager import (
+        manager as _ws_manager,
+    )
 
     def _broadcast_to_ws(msg: dict) -> None:
         try:

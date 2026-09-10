@@ -106,6 +106,12 @@ class RSSFetcher(BaseFetcher):
             raw_title = getattr(item, "title", "Untitled")
             clean_title = self._clean_html(raw_title)
 
+            # If this is a GitHub repository releases feed, prepend the project name for clarity
+            if "releases.atom" in self.source.url or "releases" in self.source.url:
+                prefix = self.source.name.split("Releases")[0].strip()
+                if prefix and not clean_title.lower().startswith(prefix.lower()):
+                    clean_title = f"{prefix}: {clean_title}"
+
             entries.append({
                 "title": clean_title,
                 "url": getattr(item, "link", ""),

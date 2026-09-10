@@ -493,23 +493,77 @@ sources:
   # ==========================================
   # GITHUB TRENDING REPOSITORIES (WORLDWIDE)
   # ==========================================
-  - name: "GitHub Trending Security (Daily)"
+  - name: "GitHub Trending AI Repositories (Daily)"
     category: "github_trending"
     type: "github_trending"
     since: "daily"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "GitHub Trending AI Repositories (Weekly)"
+    category: "github_trending"
+    type: "github_trending"
+    since: "weekly"
     rate_limit_seconds: 3600
     enabled: true
     region: "global"
     country: "GLOBAL"
 
-  - name: "GitHub Trending Security (Weekly)"
+  - name: "Open-WebUI Releases & Codebase"
     category: "github_trending"
-    type: "github_trending"
-    since: "weekly"
-    rate_limit_seconds: 86400
+    type: "rss"
+    url: "https://github.com/open-webui/open-webui/releases.atom"
+    rate_limit_seconds: 1800
     enabled: true
     region: "global"
     country: "GLOBAL"
+
+  - name: "AutoGPT Agent Runtime Releases"
+    category: "github_trending"
+    type: "rss"
+    url: "https://github.com/Significant-Gravitas/AutoGPT/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Dify AI Application Platform Releases"
+    category: "github_trending"
+    type: "rss"
+    url: "https://github.com/langgenius/dify/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "ComfyUI Generative Workflow Releases"
+    category: "github_trending"
+    type: "rss"
+    url: "https://github.com/comfyanonymous/ComfyUI/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "DeepSeek-V3 Open Model Codebase"
+    category: "github_trending"
+    type: "rss"
+    url: "https://github.com/deepseek-ai/DeepSeek-V3/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "CN"
+
+  - name: "Qwen Open Source Releases"
+    category: "github_trending"
+    type: "rss"
+    url: "https://github.com/QwenLM/Qwen2.5/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "apac"
+    country: "CN"
 
   # ==========================================
   # NEW AI MODELS, WEIGHTS & QUANTIZATIONS
@@ -532,8 +586,101 @@ sources:
     region: "north_america"
     country: "US"
 
+  # ==========================================
+  # AI DEVELOPER TOOLS & INFERENCE RUNTIMES
+  # ==========================================
+  - name: "vLLM Inference Engine Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/vllm-project/vllm/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Ollama Local Inference Runtime Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/ollama/ollama/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "llama.cpp High-Performance LLM Engine Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/ggerganov/llama.cpp/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "SGLang Fast Serving Engine Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/sgl-project/sglang/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "LangChain AI Application Framework Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/langchain-ai/langchain/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "LlamaIndex Data Framework Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/run-llama/llama_index/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Hugging Face Transformers Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/huggingface/transformers/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Unsloth Fast LLM Fine-Tuning Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/unslothai/unsloth/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Chroma Vector Database Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/chroma-core/chroma/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
+  - name: "Qdrant Vector Search Engine Releases"
+    category: "cyber_tools"
+    type: "rss"
+    url: "https://github.com/qdrant/qdrant/releases.atom"
+    rate_limit_seconds: 1800
+    enabled: true
+    region: "global"
+    country: "GLOBAL"
+
   - name: "Simon Willison AI & LLM Tools"
-    category: "ai_models"
+    category: "cyber_tools"
     type: "rss"
     url: "https://simonwillison.net/atom/everything/"
     rate_limit_seconds: 1800
@@ -541,9 +688,6 @@ sources:
     region: "global"
     country: "GLOBAL"
 
-  # ==========================================
-  # NEW SECURITY & DEVELOPER TOOLS (GITHUB)
-  # ==========================================
   - name: "KitPloit Security Tools & Repos"
     category: "cyber_tools"
     type: "rss"

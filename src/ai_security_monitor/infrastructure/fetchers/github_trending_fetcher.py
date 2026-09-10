@@ -1,6 +1,6 @@
 # GitHub Trending Security repos fetcher.
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import httpx
 from bs4 import BeautifulSoup
@@ -27,6 +27,24 @@ class GitHubTrendingFetcher(BaseFetcher):
         self.frequency = source.config.get("frequency", "daily")
 
     async def _fetch_raw(self) -> list[dict]:
+        entries = []
+        try:
+            entries = await self._fetch_raw_scraping()
+        except Exception as scrape_err:
+            print(f"GitHub trending HTML scraping failed: {scrape_err}")
+            entries = []
+
+        # If scraping failed or returned 0 entries (common on datacenter IPs like Fly.io),
+        # automatically fallback to official GitHub Search REST API
+        if not entries:
+            try:
+                entries = await self._fetch_raw_api()
+            except Exception as api_err:
+                print(f"GitHub Search API fallback failed: {api_err}")
+
+        return entries
+
+    async def _fetch_raw_scraping(self) -> list[dict]:
         since = self.frequency  # daily, weekly, monthly
         url = f"https://github.com/trending?since={since}"
         params = {"spoken_language_code": "en"}
@@ -84,8 +102,6 @@ class GitHubTrendingFetcher(BaseFetcher):
                 combined_info = f"{repo_name} {description}".lower()
                 if any(w in combined_info for w in ("ai", "llm", "agent", "gpt", "model", "diffusion", "rag", "neural", "vision", "deepseek", "qwen", "transformer")):
                     tags.append("ai")
-                if any(w in combined_info for w in ("security", "exploit", "cve", "poc", "audit", "pentest", "vulnerability")):
-                    tags.append("security")
 
                 entries.append({
                     "title": clean_title,
@@ -106,11 +122,95 @@ class GitHubTrendingFetcher(BaseFetcher):
 
         return entries
 
+    async def _fetch_raw_api(self) -> list[dict]:
+        """Fetch trending AI repositories using GitHub REST Search API."""
+        from datetime import timedelta, timezone
+        now = datetime.now(UTC)
+        days = 2 if self.frequency == "daily" else 8
+        since_date = (now - timedelta(days=days)).strftime("%Y-%m-%d")
+
+        url = "https://api.github.com/search/repositories"
+        headers = {
+            "User-Agent": "AetherGuard-AI-Monitor/1.0",
+            "Accept": "application/vnd.github.v3+json",
+        }
+        params = {
+            "q": f"stars:>100 pushed:>={since_date} topic:ai",
+            "sort": "stars",
+            "order": "desc",
+            "per_page": 30,
+        }
+
+        async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
+            response = await client.get(url, params=params)
+            if response.status_code != 200:
+                params["q"] = "stars:>500 topic:llm OR topic:ai-agents OR topic:inference"
+                params["sort"] = "updated"
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+
+        data = response.json()
+        items = data.get("items", [])
+        entries = []
+
+        for repo in items[:30]:
+            try:
+                repo_name = repo.get("full_name", "")
+                repo_url = repo.get("html_url", "")
+                description = (repo.get("description") or "").strip()
+                language = repo.get("language") or ""
+                stars = repo.get("stargazers_count", 0)
+                forks = repo.get("forks_count", 0)
+                topics = repo.get("topics", [])
+
+                content_parts = []
+                if description:
+                    content_parts.append(description)
+                if language:
+                    content_parts.append(f"Language: {language}")
+                content_parts.append(f"Stars: {stars:,} | Forks: {forks:,}")
+                if topics:
+                    content_parts.append(f"Topics: {', '.join(topics[:8])}")
+                content = "\n".join(content_parts)
+
+                clean_title = f"{repo_name}: {description[:80]}..." if description and len(description) > 10 else f"Trending Repo: {repo_name}"
+                tags = ["github", "trending", "open-source", "ai", self.frequency]
+                if language:
+                    tags.append(language.lower())
+                tags.extend([t.lower() for t in topics[:5]])
+
+                published_at = datetime.utcnow()
+                if repo.get("pushed_at"):
+                    try:
+                        published_at = datetime.fromisoformat(repo["pushed_at"].replace("Z", "+00:00")).replace(tzinfo=None)
+                    except Exception:
+                        pass
+
+                entries.append({
+                    "title": clean_title,
+                    "url": repo_url,
+                    "content": content,
+                    "published_at": published_at,
+                    "tags": list(dict.fromkeys(tags)),
+                    "metadata": {
+                        "repo_name": repo_name,
+                        "language": language,
+                        "stars": stars,
+                        "forks": forks,
+                        "frequency": self.frequency,
+                    }
+                })
+            except Exception:
+                continue
+
+        return entries
+
     def _parse_entry(self, raw: dict) -> Entry:
+        date_str = raw["published_at"].strftime("%Y-%m-%d") if isinstance(raw["published_at"], datetime) else str(raw["published_at"])[:10]
         content_hash = ContentHash.from_content(
             raw["title"],
             raw["url"],
-            str(raw["published_at"]),
+            date_str,
         )
         return Entry(
             source_id=self.source.id,

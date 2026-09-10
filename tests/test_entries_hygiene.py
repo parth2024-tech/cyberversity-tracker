@@ -134,3 +134,50 @@ async def test_purge_old_entries_1_week_retention():
             select(EntryModel).where(EntryModel.fetched_at < cutoff)
         )).scalars().all()
         assert len(stale_entries) == 0
+
+
+@pytest.mark.asyncio
+async def test_github_trending_fetcher_api_fallback():
+    from unittest.mock import patch
+
+    from ai_security_monitor.domain.entities import Category, Source, SourceType
+    from ai_security_monitor.infrastructure.fetchers.github_trending_fetcher import (
+        GitHubTrendingFetcher,
+    )
+
+    src = Source(name="Test Trending Fallback", category=Category.GITHUB_TRENDING, type=SourceType.GITHUB_TRENDING)
+    fetcher = GitHubTrendingFetcher(src)
+
+    # Force scraping failure to verify fallback triggers
+    with patch.object(fetcher, "_fetch_raw_scraping", side_effect=Exception("Datacenter 429")):
+        with patch.object(fetcher, "_fetch_raw_api", return_value=[{
+            "title": "vllm-project/vllm: High-throughput LLM serving...",
+            "url": "https://github.com/vllm-project/vllm",
+            "content": "A high-throughput and memory-efficient LLM inference engine",
+            "published_at": datetime.utcnow(),
+            "tags": ["github", "trending", "open-source", "ai"],
+            "metadata": {"repo_name": "vllm-project/vllm", "stars": 30000},
+        }]):
+            res = await fetcher.fetch()
+            assert res.status.value == "success"
+            assert len(res.entries) == 1
+            assert "vllm" in res.entries[0].title
+            assert res.entries[0].category == Category.GITHUB_TRENDING
+
+
+def test_ai_developer_tools_and_repos_sources():
+    from ai_security_monitor.config.sources import load_sources
+
+    cfg = load_sources()
+    cyber_tools = [s for s in cfg.sources if s.category == "cyber_tools"]
+    github_trending = [s for s in cfg.sources if s.category == "github_trending"]
+
+    assert len(cyber_tools) >= 10
+    assert len(github_trending) >= 6
+
+    # Verify key inference runtimes and tools are present
+    tool_names = " ".join(s.name for s in cyber_tools).lower()
+    assert "vllm" in tool_names
+    assert "ollama" in tool_names
+    assert "llama.cpp" in tool_names
+    assert "sglang" in tool_names
