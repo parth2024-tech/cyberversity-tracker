@@ -27,10 +27,20 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+import feedparser
+import httpx
+from uuid import uuid4
+
 from ai_security_monitor.application.services.article_extractor import article_extractor
 from ai_security_monitor.core.logging import get_logger
-from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.entities import (
+    Analysis,
+    AnalysisModel,
+    Category,
+    Entry,
+)
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
+from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -66,7 +76,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Running Header on pages > 1
         if self._pageNumber > 1:
-            self.drawString(36, 756, "THE AETHER GUARD — GLOBAL AI & TECHNOLOGY GAZETTE • 10-PAGE DOSSIER")
+            self.drawString(36, 756, "THE GLOBAL AI GAZETTE — WORLDWIDE AI ECOSYSTEM • 10-PAGE INTELLIGENCE DOSSIER")
             self.drawRightString(576, 756, f"PAGE {self._pageNumber} OF {page_count}")
             self.setStrokeColor(colors.HexColor("#94a3b8"))
             self.setLineWidth(0.75)
@@ -77,7 +87,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setLineWidth(0.75)
         self.line(36, 32, 576, 32)
         self.setFont("Helvetica", 7)
-        self.drawString(36, 22, "THE AETHER GUARD GLOBAL AI & DEFENSE SECINTEL • AUTONOMOUS TELEMETRY • STRICTLY CONFIDENTIAL")
+        self.drawString(36, 22, "THE GLOBAL AI GAZETTE • WORLDWIDE AI ECOSYSTEM INTELLIGENCE • ALL RIGHTS RESERVED")
         self.drawRightString(576, 22, f"PAGE {self._pageNumber} OF {page_count}")
         self.restoreState()
 
@@ -109,6 +119,162 @@ class NewspaperService:
             dt = dt.replace(tzinfo=UTC)
         hours = int((dt - epoch).total_seconds() // 3600)
         return 1000 + (hours // 5)
+
+    async def _fetch_live_ai_intelligence(self) -> list[Entry]:
+        """Autonomously fetch live cutting-edge AI entries from arXiv, Hugging Face, and leading AI feeds."""
+        live_entries: list[Entry] = []
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AIResearchBot/3.0"}
+
+        async with httpx.AsyncClient(timeout=10.0, headers=headers, follow_redirects=True) as client:
+            # 1. arXiv cs.AI & cs.LG API
+            try:
+                r = await client.get(
+                    "http://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=30"
+                )
+                if r.status_code == 200:
+                    feed = feedparser.parse(r.content)
+                    for item in feed.entries:
+                        t = getattr(item, "title", "").replace("\n", " ").strip()
+                        u = getattr(item, "link", "")
+                        s = getattr(item, "summary", "").replace("\n", " ").strip()
+                        now = datetime.now(UTC)
+                        ch = str(ContentHash.from_content(t, u, str(now)))
+                        e_id = uuid4()
+                        live_entries.append(Entry(
+                            id=e_id,
+                            source_id=uuid4(),
+                            title=t,
+                            url=u,
+                            summary=s,
+                            content_hash=ch,
+                            category=Category.AI_RESEARCH,
+                            published_at=now,
+                            tags=["arxiv", "research", "cs.AI"],
+                            analysis=Analysis(
+                                id=uuid4(),
+                                entry_id=e_id,
+                                attack_vector="Algorithmic Architecture",
+                                risk_assessment="Empirical research milestone",
+                                mitigation="Evaluate theoretical bounds and experimental architecture",
+                                threat_velocity=88,
+                                severity_index=84,
+                            ),
+                            metadata={"source_name": "arXiv.org"}
+                        ))
+            except Exception as ex:
+                logger.warning(f"Live arXiv fetch failed: {ex}")
+
+            # 2. Hugging Face Trending Foundation Models
+            try:
+                r = await client.get("https://huggingface.co/api/models?sort=trendingScore&direction=-1&limit=30")
+                if r.status_code == 200:
+                    for m in r.json():
+                        m_id = m.get("id", "")
+                        likes = m.get("likes", 0)
+                        now = datetime.now(UTC)
+                        t = f"Trending Foundation Model: {m_id}"
+                        u = f"https://huggingface.co/{m_id}"
+                        s = f"{m_id} is trending across the global Hugging Face open-source ecosystem with {likes} developer likes."
+                        ch = str(ContentHash.from_content(t, u, str(now)))
+                        e_id = uuid4()
+                        live_entries.append(Entry(
+                            id=e_id,
+                            source_id=uuid4(),
+                            title=t,
+                            url=u,
+                            summary=s,
+                            content_hash=ch,
+                            category=Category.AI_MODELS,
+                            published_at=now,
+                            tags=["huggingface", "weights", "open-source"],
+                            analysis=Analysis(
+                                id=uuid4(),
+                                entry_id=e_id,
+                                attack_vector="Open-Weights Checkpoint",
+                                risk_assessment="High velocity developer adoption",
+                                mitigation="Benchmark in production vLLM and SGLang clusters",
+                                threat_velocity=92,
+                                severity_index=88,
+                            ),
+                            metadata={"source_name": "huggingface.co"}
+                        ))
+            except Exception as ex:
+                logger.warning(f"Live Hugging Face fetch failed: {ex}")
+
+            # 3. AWS Machine Learning Blog RSS
+            try:
+                r = await client.get("https://aws.amazon.com/blogs/machine-learning/feed/")
+                if r.status_code == 200:
+                    feed = feedparser.parse(r.content)
+                    for item in feed.entries[:15]:
+                        t = getattr(item, "title", "").strip()
+                        u = getattr(item, "link", "")
+                        s = getattr(item, "summary", "").strip()
+                        now = datetime.now(UTC)
+                        ch = str(ContentHash.from_content(t, u, str(now)))
+                        e_id = uuid4()
+                        live_entries.append(Entry(
+                            id=e_id,
+                            source_id=uuid4(),
+                            title=t,
+                            url=u,
+                            summary=s,
+                            content_hash=ch,
+                            category=Category.AI_TECH,
+                            published_at=now,
+                            tags=["aws", "infrastructure", "enterprise-ai"],
+                            analysis=Analysis(
+                                id=uuid4(),
+                                entry_id=e_id,
+                                attack_vector="Cloud AI Infrastructure",
+                                risk_assessment="Hyperscale deployment patterns",
+                                mitigation="Optimize serving topology and GPU cluster allocation",
+                                threat_velocity=84,
+                                severity_index=80,
+                            ),
+                            metadata={"source_name": "aws.amazon.com"}
+                        ))
+            except Exception as ex:
+                logger.warning(f"Live AWS ML fetch failed: {ex}")
+
+            # 4. MarkTechPost AI Engineering News RSS
+            try:
+                r = await client.get("https://www.marktechpost.com/feed/")
+                if r.status_code == 200:
+                    feed = feedparser.parse(r.content)
+                    for item in feed.entries[:15]:
+                        t = getattr(item, "title", "").strip()
+                        u = getattr(item, "link", "")
+                        s = getattr(item, "summary", "").strip()
+                        now = datetime.now(UTC)
+                        ch = str(ContentHash.from_content(t, u, str(now)))
+                        e_id = uuid4()
+                        live_entries.append(Entry(
+                            id=e_id,
+                            source_id=uuid4(),
+                            title=t,
+                            url=u,
+                            summary=s,
+                            content_hash=ch,
+                            category=Category.CYBER_TOOLS,
+                            published_at=now,
+                            tags=["engineering", "frameworks", "marktechpost"],
+                            analysis=Analysis(
+                                id=uuid4(),
+                                entry_id=e_id,
+                                attack_vector="AI Software Framework",
+                                risk_assessment="Developer tooling capability",
+                                mitigation="Integrate into automated evaluation pipelines",
+                                threat_velocity=86,
+                                severity_index=82,
+                            ),
+                            metadata={"source_name": "marktechpost.com"}
+                        ))
+            except Exception as ex:
+                logger.warning(f"Live MarkTechPost fetch failed: {ex}")
+
+        logger.info(f"Live AI intelligence sweep yielded {len(live_entries)} authoritative stories.")
+        return live_entries
 
     async def generate_edition(self, window_hours: int = 24) -> dict[str, Any]:
         """Compile an authentic, 100% AI-focused 10-page intelligence broadsheet dossier."""
@@ -211,6 +377,20 @@ class NewspaperService:
                         if item.id not in existing_ids and not is_security_item(item) and is_ai_relevant(item) and calculate_content_quality(item):
                             entries.append(item)
                             existing_ids.add(item.id)
+
+        # Autonomous Live Extraction Fallback: If database yielded fewer than 45 verified AI stories,
+        # immediately execute a live sweep across arXiv, Hugging Face, and leading AI feeds.
+        if len(entries) < 45:
+            logger.info(f"Database contains only {len(entries)} stories; executing autonomous live AI intelligence sweep...")
+            try:
+                live_items = await self._fetch_live_ai_intelligence()
+                for item in live_items:
+                    if item.id not in existing_ids and not is_security_item(item) and is_ai_relevant(item):
+                        entries.append(item)
+                        existing_ids.add(item.id)
+                logger.info(f"Total stories after live sweep: {len(entries)}")
+            except Exception as live_err:
+                logger.warning(f"Live AI intelligence sweep error: {live_err}")
 
         edition_num = self._compute_edition_number(now)
         timestamp_str = now.strftime("%Y%m%d_%H%M")
@@ -436,6 +616,9 @@ class NewspaperService:
         text = re.sub(r"\s+", " ", text).strip()
 
         words = text.split()
+        # Fall back to deep technical synthesis if summary is too brief or contains repetitive canned boilerplate
+        if (len(words) < min_words or article_extractor._is_generic_canned(text)) and entry:
+            return article_extractor.synthesize_technical_analysis(entry)
         if len(words) < 8:
             if entry:
                 return article_extractor.synthesize_technical_analysis(entry)
@@ -462,48 +645,52 @@ class NewspaperService:
 
     def _generate_executive_directive(self, entry: Entry | None, vector: str | None = None) -> str:
         """Synthesize tailored, context-specific executive directives for AI ecosystem categories."""
-        src = self._get_source_name(entry) if entry else "industry"
-        title_l = (entry.title or "").lower() if entry else ""
+        if not entry:
+            return "Review the latest AI developments and evaluate strategic alignment with organizational automation priorities."
+
+        t = entry.title or ""
+        t_clean = self._clean_title(t)
+        match = re.search(r"\b(DeepSeek|Qwen|Llama|Mistral|OpenAI|Anthropic|Claude|Gemini|vLLM|Ollama|SGLang|Nvidia|TSMC|Apple|Meta|Google|Microsoft|Blackwell|Groq|Cerebras|Krutrim|Falcon)\b", t, re.I)
+        subj = match.group(1) if match else t_clean[:28]
 
         vector_map = {
-            "Model Sourcing & Licensing": f"Audit open-weights licensing vs proprietary APIs; evaluate {src} parameter efficiency and commercial distribution terms.",
-            "Compute & Infrastructure CapEx": f"Review GPU cluster allocation and power envelopes; benchmark {src} hardware efficiency to optimize cost per token.",
-            "Agentic Autonomy & Governance": "Implement deterministic sandboxes for autonomous tool execution, strict rate limiting, and human-in-the-loop validation.",
-            "Inference Latency & Quantization": f"Benchmark KV-cache compression (FP8/INT4/GGUF) and modern inference engines ({src}) against TTFT SLAs.",
-            "Open-Source Supply Chain": f"Inspect upstream repository dependencies; audit tokenizer code, weights provenance, and pinned runtime releases for {src}.",
-            "Data Residency & Sovereignty": f"Verify compliance with sovereign AI frameworks and regional data residency requirements for {src} deployments.",
+            "Model Sourcing & Licensing": f"Audit open-weights licensing vs proprietary APIs; evaluate {subj} parameter efficiency and commercial distribution terms.",
+            "Compute & Infrastructure CapEx": f"Review GPU cluster allocation and power envelopes; benchmark {subj} hardware efficiency to optimize cost per token.",
+            "Agentic Autonomy & Governance": f"Implement deterministic sandboxes for {subj} autonomous tool execution, strict rate limiting, and human-in-the-loop validation.",
+            "Inference Latency & Quantization": f"Benchmark KV-cache compression (FP8/INT4/GGUF) and modern inference engines for {subj} against TTFT SLAs.",
+            "Open-Source Supply Chain": f"Inspect upstream repository dependencies; audit tokenizer code, weights provenance, and pinned runtime releases for {subj}.",
+            "Data Residency & Sovereignty": f"Verify compliance with sovereign AI frameworks and regional data residency requirements for {subj} deployments.",
         }
         if vector and vector in vector_map:
             return vector_map[vector]
 
-        if not entry:
-            return "Review the latest AI developments and evaluate strategic alignment with organizational automation priorities."
         cat = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
+        title_l = t.lower()
 
         # AI Hardware & Compute
         if any(k in title_l for k in ("nvidia", "gpu", "tpu", "blackwell", "h100", "b200", "amd", "rocm", "cerebras", "groq", "silicon", "semiconductor", "tsmc", "asml", "datacenter", "hbm")):
-            return f"Review infrastructure compute quotas with cloud providers; assess {src} hardware efficiency benchmarks to reduce inference cost per token."
+            return f"Review infrastructure compute quotas with cloud providers; assess {subj} hardware efficiency benchmarks to reduce inference cost per token."
         # Autonomous Agents & Robotics
         elif any(k in title_l for k in ("agent", "swarm", "robot", "robotics", "embodied", "computer-use", "browser-use", "action model", "autogen", "crewai", "langgraph", "tool use", "mcp")):
-            return "Pilot agentic capabilities in sandboxed environments; enforce strict tool-execution schemas, rate limits, and human-in-the-loop validation."
+            return f"Pilot {subj} agentic capabilities in sandboxed environments; enforce strict tool-execution schemas, rate limits, and human-in-the-loop validation."
         # Foundation Models
         elif cat == "ai_models" or any(k in title_l for k in ("model", "deepseek", "qwen", "llama", "claude", "gpt", "gemini", "mistral", "grok", "weights", "gguf")):
-            return f"Benchmark {src} model against current production baselines; evaluate token economics, quantization tradeoffs, and commercial license terms."
+            return f"Benchmark {subj} model against current production baselines; evaluate token economics, quantization tradeoffs, and commercial license terms."
         # Trending GitHub repos
-        elif cat == "github_trending" or "github" in src:
-            return "Assess repository architecture and licensing (Apache/MIT); test deployment in an isolated staging environment before production integration."
+        elif cat == "github_trending" or "github" in (entry.url or ""):
+            return f"Assess {subj} repository architecture and licensing (Apache/MIT); test deployment in an isolated staging environment before production integration."
         # AI Research & ArXiv
-        elif cat == "ai_research" or "arxiv" in src or "paper" in title_l:
-            return f"Review research findings from {src}; schedule ML engineering briefing to evaluate test-time compute scaling and algorithmic applicability."
+        elif cat == "ai_research" or "arxiv" in (entry.url or "") or "paper" in title_l:
+            return f"Review research findings for {subj}; schedule ML engineering briefing to evaluate test-time compute scaling and algorithmic applicability."
         # Developer Tools & Inference Frameworks
         elif cat == "cyber_tools" or any(k in title_l for k in ("framework", "runtime", "sdk", "library", "tool", "engine", "inference", "rag", "vector", "vllm", "ollama", "sglang")):
-            return f"Deploy {src} runtime in a proof-of-concept environment; evaluate throughput gains, KV-cache memory efficiency, and API compatibility."
+            return f"Deploy {subj} runtime in a proof-of-concept environment; evaluate throughput gains, KV-cache memory efficiency, and API compatibility."
         # Sovereign AI
         elif any(k in title_l for k in ("sovereign", "national", "falcon", "kyutai", "tsmc", "france", "india", "japan", "germany", "china")):
-            return "Monitor regional sovereign AI regulatory frameworks and data residency requirements for global deployment."
+            return f"Monitor regional sovereign AI regulatory frameworks and data residency requirements for {subj} deployment."
         # General AI Tech
         else:
-            return f"Evaluate {src} intelligence dispatch; assess technological impact and relevance to your organizational AI adoption roadmap."
+            return f"Evaluate {subj} intelligence dispatch; assess technological impact and relevance to your organizational AI adoption roadmap."
 
     def _get_country_flag(self, country_code: str | None) -> str:
         """Get national flag emoji for ISO country code."""
@@ -713,25 +900,7 @@ class NewspaperService:
         front_page_briefs = remaining[:6]
         ciso_briefs = remaining[6:12] if len(remaining) >= 12 else remaining[:6]
 
-        # Deep web content extraction for top featured stories across all sections
-        featured_candidates = [lead, secondary_anchor] + trending_repos[:2] + ai_models_list[:2] + ai_research_list[:2] + ai_tools_list[:2] + ai_hardware[:2] + autonomous_agents[:2]
-        featured_entries = [e for e in featured_candidates if e]
-
-        async def enrich_entry(entry: Entry):
-            try:
-                content = await article_extractor.extract_article_content(entry)
-                if content and len(content.split()) >= 45:
-                    entry.summary = content
-            except Exception as ex:
-                logger.debug(f"Web extraction skipped for {entry.title}: {ex}")
-
-        if featured_entries:
-            try:
-                await asyncio.gather(*[enrich_entry(e) for e in featured_entries], return_exceptions=True)
-            except Exception:
-                pass
-
-        # Clean all titles and summaries
+        # Universal Deep Web Extraction across ALL sections and overflow stories
         all_dossier_entries = (
             [lead, secondary_anchor]
             + front_page_briefs
@@ -744,19 +913,41 @@ class NewspaperService:
             + ai_hardware
             + autonomous_agents
         )
-        for item in all_dossier_entries:
-            if item:
-                item.title = self._clean_title(item.title)
-                item.summary = self._clean_and_format_summary(item.summary, entry=item, min_words=25, max_words=140)
 
-        # Build overflow set
         used_ids = {e.id for e in all_dossier_entries if e}
         overflow = [e for e in remaining if e.id not in used_ids]
         overflow.sort(key=lambda e: e.analysis.threat_velocity if e.analysis else 0, reverse=True)
         overflow = overflow[:10]
+
+        candidates_to_enrich = [e for e in all_dossier_entries + overflow if e]
+        logger.info(f"Initiating deep autonomous extraction across all {len(candidates_to_enrich)} dossier stories...")
+
+        sem = asyncio.Semaphore(8)
+
+        async def enrich_entry(entry: Entry):
+            async with sem:
+                try:
+                    content = await article_extractor.extract_article_content(entry, min_words=60)
+                    if content and len(content.split()) >= 30:
+                        entry.summary = content
+                except Exception as ex:
+                    logger.debug(f"Web extraction skipped for {entry.title}: {ex}")
+
+        if candidates_to_enrich:
+            try:
+                await asyncio.gather(*[enrich_entry(e) for e in candidates_to_enrich], return_exceptions=True)
+            except Exception:
+                pass
+
+        # Clean all titles and format summaries
+        for item in all_dossier_entries:
+            if item:
+                item.title = self._clean_title(item.title)
+                item.summary = self._clean_and_format_summary(item.summary, entry=item, min_words=25, max_words=160)
+
         for item in overflow:
             item.title = self._clean_title(item.title)
-            item.summary = self._clean_and_format_summary(item.summary, entry=item, min_words=20, max_words=100)
+            item.summary = self._clean_and_format_summary(item.summary, entry=item, min_words=20, max_words=120)
 
         return {
             "lead": lead,
@@ -1328,12 +1519,20 @@ class NewspaperService:
             title_text = f"<b>{html.escape(self._clean_title(item.title))}</b>"
             meta_text = (
                 f"<font color='{tag_color}'><b>[{tag_label}]</b></font> "
-                f"<b>SOURCE:</b> {html.escape(src[:22])} | <b>{stat_label}:</b> {stat_val}/100"
+                f"<b>SOURCE:</b> {html.escape(src[:24])} | <b>{stat_label}:</b> {stat_val}/100"
             )
-            body_text = html.escape(self._clean_and_format_summary(item.summary, entry=item, min_words=25, max_words=100))
+            specs = self.extract_technical_specs(item.title, item.summary or "")
+            specs_text = (
+                f"<font color='#047857'><b>ARCH:</b> {html.escape(specs['size'])}</font> • "
+                f"<font color='#4338ca'><b>CTX:</b> {html.escape(specs['ctx'])}</font> • "
+                f"<font color='#b45309'><b>QUANT:</b> {html.escape(specs['quant'])}</font> • "
+                f"<font color='#0e7490'><b>STACK:</b> {html.escape(specs['engine'])}</font>"
+            )
+            body_text = html.escape(self._clean_and_format_summary(item.summary, entry=item, min_words=25, max_words=115))
             return [
                 Paragraph(meta_text, item_meta),
                 Paragraph(title_text, item_title),
+                Paragraph(specs_text, ParagraphStyle("SpecBadge", fontName="Helvetica", fontSize=6.5, leading=8.5, textColor=colors.HexColor("#334155"))),
                 Spacer(1, 1),
                 Paragraph(body_text, item_summary),
                 Spacer(1, 4),
