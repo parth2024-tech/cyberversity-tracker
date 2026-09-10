@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
 **Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2213**  
-*Thursday, September 10, 2026 • 20:22 UTC • Coverage Window: 5h • 176 verified AI stories analyzed*
+*Thursday, September 10, 2026 • 20:34 UTC • Coverage Window: 5h • 176 verified AI stories analyzed*
 
 ---
 
@@ -31,7 +31,7 @@ I like to benchmark new models that come out on motion videos. So here's a test 
 
 | Strategic Operational Vector | Priority Development | Source | Boardroom Action Directive |
 | :--- | :--- | :--- | :--- |
-| **Model Sourcing & Licensing** | When LLM Agents Negotiate: Private Information and | `arxiv.org` | Audit open-weights licensing vs proprietary APIs; evaluate When LLM Agents Negotiate: P parameter efficiency and commercial distribution terms. |
+| **Model Sourcing & Licensing** | LayerRAG-Bench: A Cross-Layer Reliability Benchmar | `arxiv.org` | Audit open-weights licensing vs proprietary APIs; evaluate LayerRAG-Bench: A Cross-Laye parameter efficiency and commercial distribution terms. |
 | **Compute & Infrastructure CapEx** | Claude Fable 5.1 made me a really nice animated pe | `simonwillison.net` | Review GPU cluster allocation and power envelopes; benchmark Claude hardware efficiency to optimize cost per token. |
 | **Agentic Autonomy & Governance** | DeepSeek V4.1 Flash is available in HuggingChat | `reddit.com` | Implement deterministic sandboxes for DeepSeek autonomous tool execution, strict rate limiting, and human-in-the-loop validation. |
 | **Inference Latency & Quantization** | Running Vision Qwen 3.8 27B on a 16GB Card, the co | `reddit.com` | Benchmark KV-cache compression (FP8/INT4/GGUF) and modern inference engines for Qwen against TTFT SLAs. |
@@ -39,8 +39,8 @@ I like to benchmark new models that come out on motion videos. So here's a test 
 | **Data Residency & Sovereignty** | Deepseek V4.1 Flash is 748B, not 552B | `reddit.com` | Verify compliance with sovereign AI frameworks and regional data residency requirements for Deepseek deployments. |
 
 ### Key Strategic Dispatches
-1. **When LLM Agents Negotiate: Private Information and Dynamic Bargaining in Supply Chains** — As LLM agents move from decision support to autonomous procurement, firms need to know whether delegated negotiators create value, divide it predictably, and avoid money-losing contracts. We study this in a canonical supply chain bargaining problem: a buyer with private demand information negotiates a quantity-payment contract with an uninformed seller. We benchmark nine LLMs from OpenAI, Google, and Alibaba against a validated Perfect Bayesian Equilibrium across 9,840 LLM-to-LLM negotiations.  
-   *Directive: Audit open-weights licensing vs proprietary APIs; evaluate When LLM Agents Negotiate: P parameter efficiency and commercial distribution terms.*
+1. **LayerRAG-Bench: A Cross-Layer Reliability Benchmark for Agentic Retrieval-Augmented Generation** — Agentic retrieval-augmented generation systems can produce answers that appear grounded while failing at the evidence, tool-contract, authorization, or session-state layer. We introduce LayerRAG-Bench, a controlled cross-layer reliability benchmark with 8 enterprise domains, 240 tasks, 9 fault scenarios, 2 contract modes, and 38,880 live task-level records across nine models from OpenAI, Anthropic, and Gemini. Schema normalization raises schema-drift success from 0.000 to 0.913, but stale eviden.  
+   *Directive: Audit open-weights licensing vs proprietary APIs; evaluate LayerRAG-Bench: A Cross-Laye parameter efficiency and commercial distribution terms.*
 
 2. **Claude Fable 5.1 made me a really nice animated pelican** — Today is Claude Fable (and Mythos) 5.1 day. Anthropic say that Fable 5.1 "sets a new standard for coding, knowledge work, and long-running problem-solving tasks". Their announcement spends a notable amount of time on scientific research, boasting of a 52.6% score on the brand new Terminal-Bench-Science 0.1 benchmark (first announced on August 27th), up from 24.7% for Fable 5, 29.0% for Opus 5 and 22.4% for GPT-5.6 Sol.  
    *Directive: Review GPU cluster allocation and power envelopes; benchmark Claude hardware efficiency to optimize cost per token.*
@@ -65,19 +65,24 @@ I like to benchmark new models that come out on motion videos. So here's a test 
 | Repository / Project | Source | Primary Stack | Velocity | Core Architectural Focus |
 | :--- | :--- | :--- | :--- | :--- |
 | **LangChain AI Application Framework: langchain-open** | `github.com` | `Python` | `88/100` | LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations. |
+| **AutoGPT Agent Runtime: # 🚀 Release `autogpt-platfo** | `github.com` | `Python` | `80/100` | 🔥 What's New? New Features #14215 - Scope integrations per expert and surface them in the UI (by @0ubbe) #14216. |
 | **Hugging Face Transformers: Release 5.17.0** | `github.com` | `Python` | `72/100` | Release v5.17.0 New Model additions HYV4 Hy4-Preview is a 780B-parameter mixture-of-experts language model that activates 49B parameters per token. |
 | **open-edge-platform/anomalib: An anomaly detection ** | `github.com` | `Python` | `80/100` | A library for benchmarking, developing and deploying deep learning anomaly detection algorithms** > 🌟 **Announcing v2.6.1 Release!** 🌟 > >. |
 | **deepinsight/insightface: State-of-the-art 2D and 3** | `github.com` | `Python` | `80/100` | InsightFace project is mainly maintained by Jia Guo and Jiankang Deng . InsightFace 2.0 adds PrivateFrame for local video face. |
 | **apache/seatunnel: SeaTunnel is a multimodal, high-** | `github.com` | `Python` | `80/100` | ## Overview SeaTunnel is a multimodal, high-performance, distributed data integration tool, capable of synchronizing vast amounts of data daily. |
 | **steven2358/awesome-generative-ai: A curated list o** | `github.com` | `Python` | `80/100` | > A curated list of modern Generative Artificial Intelligence projects and services. Generative Artificial Intelligence is a technology that creates. |
 | **authelia/authelia: The Single Sign-On Multi-Factor** | `github.com` | `Python` | `80/100` | Authelia** is an open-source authentication and authorization server providing two-factor authentication and single sign-on (SSO) for your applications via a. |
-| **Dify AI Application Platform: 1.15.0** | `github.com` | `go` | `80/100` | Dify 1.15.0 Release Note What's Changed UX & UI Enhancements Redesigned landing / onboarding for an easier first-run experience (#37433. |
 
 ### Featured Repository Deep-Dives
 ### 🚀 LangChain AI Application Framework: langchain-openai==1.6.2
 - **Velocity**: `88/100` | **Stack**: `Python` | **Source**: `github.com`
 
 LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development — all while future-proofing decisions as the underlying technology evolves. > [!TIP] > Just getting started? Check out **Deep Agents** — a higher-level package built on LangChain for agents that have built-in capabilities for common usage patterns such as planning, subagents, file system usage, and more. If you're looking for more advanced customization or agent orchestration, check out LangGraph, our framework for building controllable agent workflows.
+
+### 🚀 AutoGPT Agent Runtime: # 🚀 Release `autogpt-platform-beta-v0.7.4`
+- **Velocity**: `80/100` | **Stack**: `Python` | **Source**: `github.com`
+
+🔥 What's New? New Features #14215 - Scope integrations per expert and surface them in the UI (by @0ubbe) #14216 - Surface agent work on the homepage via an activity event log (by @0ubbe) #14078 - Let a user pick the connection every new chat starts on (by @ntindle) #14081 - Show which ChatGPT account a connection runs as (by @ntindle) #14082 - Describe an AI connection on the server that enforces it (by @ntindle) #14086 - Show the ChatGPT connection a plan excludes, locked (by @ntindle) #14103.
 
 ### 🚀 Hugging Face Transformers: Release 5.17.0
 - **Velocity**: `72/100` | **Stack**: `Python` | **Source**: `github.com`
@@ -98,11 +103,6 @@ InsightFace project is mainly maintained by Jia Guo and Jiankang Deng . InsightF
 - **Velocity**: `80/100` | **Stack**: `Python` | **Source**: `github.com`
 
 ## Overview SeaTunnel is a multimodal, high-performance, distributed data integration tool, capable of synchronizing vast amounts of data daily. It's trusted by numerous companies for its efficiency and stability. ## Why Choose SeaTunnel SeaTunnel addresses common data integration challenges: - **Diverse Data Sources**: Seamlessly integrates with hundreds of evolving data sources. - **Multimodal Data Integration**: Supports the integration of video, images, binary files, structured and unstructured text data. - **Complex Synchronization Scenarios**: Supports various synchronization methods, including real-time, CDC, and full database synchronization. - **Resource Efficiency**: Minimizes computing resources and JDBC connections for real-time synchronization. - **Quality and Monitoring**: Provides data quality and monitoring to prevent data loss or duplication. ## Key Features - **Diverse Connectors**: Offers support for over 160 connectors, with ongoing expansion.
-
-### 🚀 steven2358/awesome-generative-ai: A curated list of modern Generative Artificial Intelligence projects and service...
-- **Velocity**: `80/100` | **Stack**: `Python` | **Source**: `github.com`
-
-> A curated list of modern Generative Artificial Intelligence projects and services. Generative Artificial Intelligence is a technology that creates original content such as images, sounds, and texts by using machine learning algorithms that are trained on large amounts of data. Unlike other forms of AI, it is capable of creating unique and previously unseen outputs such as photorealistic images, digital art, music, and writing. These outputs often have their own unique style and can even be hard to distinguish from human-created works. Generative AI has a wide range of applications in fields such as of art, entertainment, marketing, academia, and computer science. Contributions to this list are welcome. Before submitting your suggestions, please review the Contribution Guidelines to ensure your entries meet the criteria.
 
 
 ---
@@ -166,6 +166,16 @@ General-purpose health benchmarks increasingly anchor claims about LLM medical p
 
 Multi-head latent attention (MLA) exposes many logical query heads through one packed latent KV stream. This representation is memory efficient, but it removes the physical per-head cache boundary assumed by conventional head-wise reuse. We present our system, a DeepSeek-V4 realization of RedKnot's head-aware reuse principle. Each immutable document is processed offline at canonical position zero; certified Local-head contributions are retained as MLA-Off.
 
+### 🔬 Expectation, Backlash, Recovery, and Excitement: How Model Releases Shape Reddit Perceptions of Conversational AI Systems
+- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
+
+Conversational AI systems (CAISes) continuously change through model releases, feature updates, safety interventions, and access-policy shifts, yet user perceptions are often studied as static snapshots. We conduct a long-term, large-scale analysis of Reddit discussions to examine how users perceive CAIS model release interventions across providers. By combining sentiment classification and thematic concept analysis, we show that CAIS perceptions are dynamic and intervention-sensitive.
+
+### 🔬 Applying Anthropic Primitives at Large Enterprises: Harness Paradigm for Knowledge Work
+- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
+
+Frontier models have collapsed the cost of writing custom code: a niche problem a specialist sees in their own domain now costs an afternoon. The cost of reviewing and maintaining that code hasn't collapsed. Each solution drifts from the next; understanding one means reading its codebase from scratch.
+
 ### 🔬 A Human Audit of OpenAIs AI-Generated Mathematical Proofs
 - **Research Velocity**: `88/100` | **Source**: `arxiv.org`
 
@@ -175,16 +185,6 @@ We assess 18 chapter-specific reviews of the ten mathematical results announced 
 - **Research Velocity**: `88/100` | **Source**: `arxiv.org`
 
 This report analyzes Qiushi Engine v0.8 across all 40 test tasks in AstaBench E2E-Bench-Hard, a benchmark that requires autonomous agents to carry a research question through experimental design, code implementation, actual execution, result analysis, and report delivery. Qiushi Engine is model-configurable; this evaluation selected DeepSeek deepseek-v4pro-preview as the model backend. The official AstaBench leaderboard records a score of 0.816 and an average benchmark cost of USD 15.209 per.
-
-### 🔬 Fusing Perceptual Vision Experts with Multimodal Large Language Models for Explainable Plant Disease Diagnosis: From Benchmark Imagery to Real-World Robotic Field Validation
-- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
-
-Accurate field plant disease diagnosis requires reliable fusion of uncertain and conflicting perceptual evidence. We present the Hybrid Hierarchical Multi-Agent Framework (H$^{2}$MAF), combining decision-level fusion of EfficientNet-B3 and ConvNeXt-Tiny with semantic arbitration by open-weight multimodal large language models (MLLMs), Gemma 4 E4B and Qwen3.5 4B, using structured JSON evidence to generate explainable diagnoses, risk levels, treatment urgency, and financial exposure.
-
-### 🔬 Rigorous Evaluation of Large Language Models for Malaria Drug Discovery: Trade-offs in Performance, Scale, and Resource Utility
-- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
-
-We introduce Malaria-Instruct, a curated instruction-following dataset derived from the ChEMBL Legacy Malaria corpus for Malaria virtual screening, and conduct a systematic evaluation of five open-source LLMs; Gemma-2 2B/9B, TxGemma-2B/9B, and LlaSMol-Mistral-7B, on a rigorous out-of-distribution data split. Performance was benchmarked against classical ML models (Random Forest, XGBoost) and frontier proprietary models (Gemini 2.5, OpenAI o3) under few-shot conditions.
 
 
 ---
@@ -246,15 +246,15 @@ I'm currently building my system around 3060s, but I might be able to get a 4060
 
 Harness doesn't matter reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
+### 🌐 🌐 [GLOBAL] I made a way to migrate between embedding models without re-embedding your entire corpus
+- **Source**: `reddit.com`
+
+So I was playingw ith embedding models I saw that when you upgrade from model A to B, you face a very big backfilling cost Ie, suppose you have a 1b vectors from model A, and then you want to use model B. This would mean you have to re-embed all of your documents with model B before you can even serve with the model, and on an H100, it would take ~108 days (qwen embed 8b, 106 docs/second). But I found an easier way to do it.
+
 ### 🌐 🌐 [GLOBAL] Would you consider 5t/s usable for a local model?
 - **Source**: `reddit.com`
 
 I'm able to run qwen3.8 27b in two ways on my system: split between my 3060 12gb and 9070xt running at 20t/s or running off the 780m iGPU and 5400mhz DDR5 at 5t/s. Personally I feel like the 5t/s is still more usable because I have enough RAM to still use my system mostly normally. I can even play games just fine because the CPU side is left alone.
-
-### 🌐 🌐 [GLOBAL] Mention if a "new model" is a finetune
-- **Source**: `reddit.com`
-
-A few posts tagged with "new model" present models that are finetunes. My opinion : I'd rather have the "new model" tag reserved for new "major" releases, like a new Qwen model, Deepseek V4 -> Deepseek V4.1, etc., that involved a new pretrain or intensive post-training (in opposition to a small finetune). Otherwise, maybe prepend "[Finetune]" to the title to indicate that the new model is "less of a big news", a use a "new finetune" tag, to differentiate between the two kinds of new models.
 
 
 ---
@@ -268,7 +268,7 @@ A few posts tagged with "new model" present models that are finetunes. My opinio
 | **Qwen3.8-Flash-Next on MLX-serve, 1m context is rel** | `reddit.com` | `40 tok/s` | `96/100` | Hi, I'm the co-creator of this Qwen3.8-Flash-Next engine support in MLX-serve. I've been tuning this one to run both fast. |
 | **llama.cpp High-Performance LLM Engine: b10899** | `github.com` | `High Velocity` | `88/100` | vulkan: small M matrix optimizations for qwen (#28457) vulkan: optimize m=1 mul_mat by swapping A/B vulkan: Improve small M perf. |
 | **Substrate-Aware AI Agents: Execution Context as a ** | `arxiv.org` | `High Velocity` | `88/100` | Autonomous AI agents increasingly select actions in environments whose memory, execution-time, runtime, compute, and operational constraints determine what counts as. |
-| **SAT-Edge-Agent: Hardware-in-the-Loop Edge-Agent Or** | `arxiv.org` | `High Velocity` | `88/100` | Onboard satellite intelligence requires a task layer that translates mission intent into local tool calls, exposes execution state, and returns. |
+| **AgentProv: Auditing Agentic LLM API Providers via ** | `arxiv.org` | `High Velocity` | `88/100` | Commercial LLM APIs advertise a specific foundation model, but the served backbone may be silently substituted, quantized, or wrapped, for. |
 
 ### ⚡ Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).
 - **Source**: `reddit.com`
@@ -295,10 +295,10 @@ vulkan: small M matrix optimizations for qwen (#28457) vulkan: optimize m=1 mul_
 
 Autonomous AI agents increasingly select actions in environments whose memory, execution-time, runtime, compute, and operational constraints determine what counts as a suitable plan. We call the absence of this execution context from an agent's planning state substrate blindness. We test this general proposition through numerical code generation, where selected implementation choices and operational consequences are directly observable.
 
-### ⚡ SAT-Edge-Agent: Hardware-in-the-Loop Edge-Agent Orchestration for Onboard Satellite Intelligence
+### ⚡ AgentProv: Auditing Agentic LLM API Providers via Tool-use Policy Probes
 - **Source**: `arxiv.org`
 
-Onboard satellite intelligence requires a task layer that translates mission intent into local tool calls, exposes execution state, and returns machine-consumable artifacts under communication and power constraints. We present SAT-Edge-Agent, a hardware-in-the-loop (HIL) edge-agent system deployed on a commercial off-the-shelf ARM-based heterogeneous edge system-on-chip.
+Commercial LLM APIs advertise a specific foundation model, but the served backbone may be silently substituted, quantized, or wrapped, for example to save deployment costs.
 
 
 ---
@@ -309,7 +309,7 @@ Onboard satellite intelligence requires a task layer that translates mission int
 | :--- | :--- | :--- | :--- | :--- |
 | **Enhancing Virtual Agents through SLMs and Edge-Com** | `arxiv.org` | `PyTorch / ONNX` | `88/100` | Embodied intelligent virtual agents are expected to operate as persistent, adaptive, and context-aware entities within complex virtual and Metaverse worlds.. |
 | **Social Chain of Thought: A Multi-Agent Architectur** | `arxiv.org` | `PyTorch / ONNX` | `88/100` | Medical diagnostic reasoning is a high-impact use case for LLMs that carries significant implications for the health and wellbeing of. |
-| **When LLM Agents Negotiate: Private Information and** | `arxiv.org` | `PyTorch / ONNX` | `88/100` | As LLM agents move from decision support to autonomous procurement, firms need to know whether delegated negotiators create value, divide. |
+| **LayerRAG-Bench: A Cross-Layer Reliability Benchmar** | `arxiv.org` | `PyTorch / ONNX` | `88/100` | Agentic retrieval-augmented generation systems can produce answers that appear grounded while failing at the evidence, tool-contract, authorization, or session-state layer.. |
 | **Research acceleration: The view inside OpenAI** | `simonwillison.net` | `PyTorch / ONNX` | `96/100` | Research acceleration: The view inside OpenAI Apparently today is RSI day at OpenAI, for Recursive Self-Improvement - I think it's. |
 | **LangChain AI Application Framework: langchain-anth** | `github.com` | `PyTorch / ONNX` | `88/100` | LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations. |
 | **Scanning the Harness: An Empirical Study of Supply** | `arxiv.org` | `PyTorch / ONNX` | `88/100` | AI coding agents such as Claude Code, Cursor, GitHub Copilot, and OpenAI Codex are configured through artifacts developers write and. |
@@ -324,10 +324,10 @@ Embodied intelligent virtual agents are expected to operate as persistent, adapt
 
 Medical diagnostic reasoning is a high-impact use case for LLMs that carries significant implications for the health and wellbeing of users. When OpenAI (2026) reports that more than 5% of ChatGPT messages globally are healthcare-related, the transparency of these systems becomes a serious design concern. This is especially true for complex cases, where differential diagnosis often requires integrating multiple forms of specialist reasoning.
 
-### 🦾 When LLM Agents Negotiate: Private Information and Dynamic Bargaining in Supply Chains
+### 🦾 LayerRAG-Bench: A Cross-Layer Reliability Benchmark for Agentic Retrieval-Augmented Generation
 - **Source**: `arxiv.org`
 
-As LLM agents move from decision support to autonomous procurement, firms need to know whether delegated negotiators create value, divide it predictably, and avoid money-losing contracts. We study this in a canonical supply chain bargaining problem: a buyer with private demand information negotiates a quantity-payment contract with an uninformed seller. We benchmark nine LLMs from OpenAI, Google, and Alibaba against a validated Perfect Bayesian Equilibrium across 9,840 LLM-to-LLM negotiations.
+Agentic retrieval-augmented generation systems can produce answers that appear grounded while failing at the evidence, tool-contract, authorization, or session-state layer. We introduce LayerRAG-Bench, a controlled cross-layer reliability benchmark with 8 enterprise domains, 240 tasks, 9 fault scenarios, 2 contract modes, and 38,880 live task-level records across nine models from OpenAI, Anthropic, and Gemini. Schema normalization raises schema-drift success from 0.000 to 0.913, but stale eviden.
 
 ### 🦾 Research acceleration: The view inside OpenAI
 - **Source**: `simonwillison.net`
@@ -351,56 +351,56 @@ AI coding agents such as Claude Code, Cursor, GitHub Copilot, and OpenAI Codex a
 
 *10 high-velocity AI stories from today's intelligence sweep that didn't fit earlier sections.*
 
-### 1. Robust for the Wrong Reasons: The Representational Geometry of LLM Robustness to Science Skepticism
+### 1. Spectral Outliers Reveal Dominant Learned Structure in Transformer Attention
 - **Source**: `arxiv.org` | **Velocity**: `88/100`
 
-Large language models (LLMs) are increasingly consulted on contested scientific questions, raising the concern that they will sycophantically retreat from established consensus when a user signals doubt -- drifting toward a false balance that treats settled science as one view among several. We test this across three open instruction-tuned models (Llama-3.1-8B, Qwen2.5-7B, Mistral-7B), three consensus-science domains (climate, vaccines, evolution), and single- and multi-turn settings, combining.
+We apply Marchenko-Pastur (MP) random matrix theory to pre-trained attention weights in order to separate each projection matrix into a random-like bulk and a set of spectral outliers. We validate this decomposition causally: zeroing the MP-identified outliers (signal) in Mistral-7B drives HellaSwag, MMLU, and PIQA close to random-chance performance, whereas zeroing a count-matched subset of bulk singular values causes smaller but non-negligible degradation.
 
-### 2. The Wiola Architecture for Efficient Small Language Models
+### 2. ProDVI: Programmatic Dynamics Priors for Value Network Initialization
 - **Source**: `arxiv.org` | **Velocity**: `88/100`
 
-We present Wiola, a fully original Small Language Model (SLM) architecture built from first principles, sharing no structural lineage with any existing model family including GPT, LLaMA, Mistral, or Falcon.
+Deep Reinforcement Learning (RL) is notoriously sample inefficient. One contributing factor is that RL agents are typically initialized from scratch, forcing them to acquire task-relevant knowledge through online interaction. Existing approaches obtain informative initializations through pre-collected datasets, high-fidelity simulators, or meta-learning over related tasks, but these prerequisites may be difficult to access or even unavailable.
 
-### 3. Research Entity Extraction and Topic Detection from UKRI Grant Proposals
+### 3. How Closely Do LLM Reviews Align with Human Peer Review?
 - **Source**: `arxiv.org` | **Velocity**: `88/100`
 
-This paper presents preliminary findings from a UKRI-funded Metascience project comparing three LLM-based approaches, GPT-4o, Mistral, and a bespoke algorithm, DSIT-Taxonomies, for extracting and classifying research entities from funding proposals. Our project "Tracking Stars and Unicorns" aims to identify early signals of emerging research areas to inform public investment.
+Large language models (LLMs) are increasingly used to generate scientific reviews, yet existing evaluations rarely examine whether different providers align with both conference decisions and human reviewing priorities within the same controlled setting. We compare reviews from OpenAI GPT-5.4, Google Gemini 3.1 Pro Preview, and Anthropic Claude Opus 4.6 with human reviews and final decisions for 300 topic-matched ICLR 2026 submissions, equally divided among oral, poster, and rejected papers.
 
-### 4. The Truth Stays in the Family: Enhancing Contextual Grounding via Inherited Truthful Heads in Model Lineages
-- **Source**: `arxiv.org` | **Velocity**: `88/100`
-
-Recent advances in large language models (LLMs) have produced many specialized multimodal LLMs (MLLMs) that share common foundational LLMs, forming distinct model lineages. It remains unclear whether a fundamental behavioral link exists between the foundational LLMs and downstream variants. We investigate this question by quantifying head-level context-truthfulness scores. Across diverse LLM and MLLM lineages, including Vicuna-, Qwen2.5-, LLaMA2-, and Mistral-based models, we find that Truth.
-
-### 5. Codex bundles LibreOffice
+### 4. Codex bundles LibreOffice
 - **Source**: `simonwillison.net` | **Velocity**: `88/100`
 
 I was poking around in my ~/.cache/ folder using OmniDiskSweeper when I spotted something interesting. The OpenAI Codex desktop app (since rebranded to just ChatGPT) has 1.7GB of stuff in there in a folder called codex-primary-runtime, including a full Python installation, a full Node.js installation, and native binaries for Poppler, git, and the LibreOffice open source office suite (which forked from OpenOffice.org in 2010): The ~/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-prima.
 
-### 6. Deploying Qwen3.8-2.4T-A95B on Amazon SageMaker HyperPod with vLLM
+### 5. Deploying Qwen3.8-2.4T-A95B on Amazon SageMaker HyperPod with vLLM
 - **Source**: `aws.amazon.com` | **Velocity**: `88/100`
 
 On August 12, 2026, Alibaba's Qwen team released Qwen3.8-2.4T-A95B. This is the first time a Qwen-Max-class model has been made available as open weights. With 2.4 trillion total parameters (95 billion activated per token), a hybrid linear-plus-full-attention architecture, and native context up to 262K tokens (extensible to 1M), Qwen3.8 targets the most demanding agentic and reasoning workloads. These include multi-step coding, long-horizon planning, and autonomous tool use.
 
-### 7. SemiQon's cryogenic chip technology for quantum computing and space applications receives award from EARTO
+### 6. SemiQon's cryogenic chip technology for quantum computing and space applications receives award from EARTO
 - **Source**: `vttresearch.com` | **Velocity**: `88/100`
 
 EARTO, the organisation of the European Research and Technology Organisations, awarded SemiQon and VTT first prize in the “Impact Expected” category on 14 October 2025 in Brussels for a pioneering cryogenic CMOS (complementary metal-oxide semiconductor) chip innovation. The solution enables the full capacity of advanced CMOS functionalities at cryogenic temperatures, thereby unlocking new possibilities for quantum computing and space applications.
 
-### 8. DeepSeek Ships V4.1 Flash GA With Causal-Encoder-Decoder MoE as V4 Pro Retires
+### 7. DeepSeek Ships V4.1 Flash GA With Causal-Encoder-Decoder MoE as V4 Pro Retires
 - **Source**: `pandaily.com` | **Velocity**: `88/100`
 
 DeepSeek has released DeepSeek V4.1 Flash for general availability, promoting the model from a short limited beta into a production SKU on a new Causal-Encoder-Decoder Mixture-of-Experts architecture. The company presents V4.1 Flash as the smallest member of that structure family and says it now surpasses DeepSeek V4 Pro on capability, cost, speed and end-to-end task time, clearing the path for an orderly Pro retirement later this week. Architecturally, V4.1 Flash is a 552-billion-parameter.
 
-### 9. DeepSeek AI Released DeepSeek-V4.1-Flash with 1M Context, FP4 KV Cache, and Cross-Layer Attention Reuse
+### 8. DeepSeek AI Released DeepSeek-V4.1-Flash with 1M Context, FP4 KV Cache, and Cross-Layer Attention Reuse
 - **Source**: `marktechpost.com` | **Velocity**: `88/100`
 
 Long-horizon agents have turned LLM serving into an input-heavy workload. Repeated prefills and million-token contexts leave KV caches that strain HBM, SSD capacity, and bandwidth. DeepSeek AI built its newest release around that exact bottleneck. DeepSeek-V4.1-Flash is a multimodal Mixture-of-Experts model with 552B backbone parameters, 196B additional Engram parameters, and a 1M-token context window. It activates 8B parameters per token during prefill and 16B during decode.
 
-### 10. Alibaba Opens Qwen3.8-2.4T-A95B Weights as First Qwen-Max-Class MoE
+### 9. Alibaba Opens Qwen3.8-2.4T-A95B Weights as First Qwen-Max-Class MoE
 - **Source**: `pandaily.com` | **Velocity**: `88/100`
 
 Alibaba's Qwen team has published open weights for Qwen3.8-2.4T-A95B, describing it as the first Qwen-Max-class model released for download rather than API-only access. The sparse mixture-of-experts checkpoint holds about 2.4 trillion total parameters and activates roughly 95 billion per token across 512 experts, with 10 routed experts plus one shared expert used at each step. The release is distinct from earlier Qwen open drops such as Qwen-Drive and smaller Qwen3.8 coding snapshots, positionin.
 
+### 10. DeepSeek reportedly advances Shanghai IPO plans as it cuts Flash model API prices
+- **Source**: `digitimes.com` | **Velocity**: `88/100`
+
+DeepSeek reportedly advances Shanghai IPO plans as it cuts Flash model API prices marks an architectural milestone in Open-Weights foundation modeling, engineered for high-throughput reasoning and featuring extended context evaluation. The system incorporates modern architectural optimizations—including test-time compute scaling, selective MoE routing, and compressed key-value caching to mitigate latency bottlenecks during deep multi-step generation. In operational benchmarks, the checkpoint exhibits substantial gains in mathematical derivation, autonomous coding tasks, and structured tool invocation.
+
 
 ---
-*Compiled autonomously • Thursday, September 10, 2026 • 20:22 UTC • Edition #2213 • 176 items processed from worldwide AI feeds*
+*Compiled autonomously • Thursday, September 10, 2026 • 20:34 UTC • Edition #2213 • 176 items processed from worldwide AI feeds*

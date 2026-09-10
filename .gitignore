@@ -8,6 +8,7 @@ __pycache__/
 
 # Database and logs
 data/*.db
+!data/seed_monitor.db
 data/*.db-shm
 data/*.db-wal
 logs/*.log

@@ -48,10 +48,23 @@ class DatabaseManager:
         # For SQLite, ensure directory exists and use NullPool
         if self._url.startswith("sqlite"):
             import os
+            import shutil
             db_path = self._url.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "").split("?")[0]
             dir_name = os.path.dirname(db_path)
             if dir_name:
                 os.makedirs(dir_name, exist_ok=True)
+
+            # Auto-seed initial intelligence database on fresh cloud boot
+            seed_candidate = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "data", "seed_monitor.db")
+            if not os.path.exists(seed_candidate):
+                seed_candidate = "data/seed_monitor.db"
+
+            if os.path.exists(seed_candidate):
+                if not os.path.exists(db_path) or os.path.getsize(db_path) < 1024:
+                    try:
+                        shutil.copy2(seed_candidate, db_path)
+                    except Exception:
+                        pass
 
             engine = create_async_engine(
                 self._url,
