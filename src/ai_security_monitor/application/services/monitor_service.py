@@ -280,8 +280,8 @@ class MonitorService:
 
         return log
 
-    async def fetch_all(self, force: bool = False, max_concurrency: int = 8) -> dict:
-        """Fetch intelligence from all enabled sources concurrently with maximum throughput."""
+    async def fetch_all(self, force: bool = False, max_concurrency: int = 4) -> dict:
+        """Fetch intelligence from all enabled sources concurrently with balanced throughput."""
         async with self._uow_factory() as uow:
             sources = await uow.sources.list(enabled_only=True)
 
@@ -313,8 +313,8 @@ class MonitorService:
                         error += 1
                     logger.warning(f"Concurrent sweep error for {src.name}: {e}")
                 finally:
-                    # Micro cooperative yield to keep event loop responsive while streaming fast
-                    await asyncio.sleep(0.005)
+                    # Balanced cooperative yield to keep SQLite and event loop fluid for user HTTP requests
+                    await asyncio.sleep(0.02)
 
         # Execute all sources concurrently across the worker pool
         await asyncio.gather(*[_worker(src) for src in sources], return_exceptions=True)

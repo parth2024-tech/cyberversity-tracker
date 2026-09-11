@@ -351,7 +351,7 @@ async def list_entries(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
-    """Query intelligence entries with pagination, search, watchlist, and feature filters — cached 6s."""
+    """Query intelligence entries with pagination, search, watchlist, and feature filters — cached 60s."""
     effective_sort = sort or sort_by
     cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{hours}_{region}_{country}_{effective_sort}_{limit}_{offset}"
 
@@ -376,8 +376,8 @@ async def list_entries(
             "offset": offset,
         }
 
-    payload = await response_cache.get_or_set(cache_key, 6.0, _fetch)
-    headers = {"Cache-Control": "public, max-age=5, stale-while-revalidate=20"}
+    payload = await response_cache.get_or_set(cache_key, 60.0, _fetch)
+    headers = {"Cache-Control": "public, max-age=15, stale-while-revalidate=60"}
     return JSONResponse(content=payload, headers=headers)
 
 

@@ -243,9 +243,8 @@
       animation: feed-progress 1.2s infinite ease-in-out;
     }
     .feed-dimmed {
-      opacity: 0.55;
+      opacity: 0.9;
       transition: opacity 0.2s ease;
-      pointer-events: none;
     }
 
     .panel-section { padding: 14px 0; border-bottom: 1px solid var(--border); }
@@ -1150,13 +1149,10 @@
             </div>
             
             <div class="flex items-center gap-2 flex-shrink-0">
-              <!-- Rocket Live Stream Real-Time Stream Toggle -->
-              <button id="rocket-stream-btn" onclick="toggleRocketStream()" class="px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-cyan-500/15 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 shadow-sm shadow-cyan-500/20" title="Toggle real-time rocket speed popping">
-                <span class="relative flex h-2 w-2">
-                  <span id="rocket-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                  <span id="rocket-dot" class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
-                </span>
-                <span id="rocket-stream-label">🚀 ROCKET LIVE: ON</span>
+              <!-- Manual Intelligence Refresh Action -->
+              <button id="feed-refresh-status-btn" onclick="loadFeed(true)" class="px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-white/[0.03] border-white/[0.1] text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 hover:bg-cyan-500/10" title="Refresh feed to show new intelligence">
+                <i data-lucide="refresh-cw" id="refresh-btn-icon" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span id="refresh-btn-label">REFRESH FEED</span>
               </button>
 
               <span class="text-[10px] font-mono text-slate-500 uppercase">SORT:</span>
@@ -1842,44 +1838,8 @@
     // Pending new stories tracking
     let pendingNewEntries = [];
 
-    // Rocket Live Stream Control (Defaults to ON for blazing real-time popping)
-    let rocketStreamActive = true;
-
-    function toggleRocketStream() {
-      rocketStreamActive = !rocketStreamActive;
-      const btn = document.getElementById('rocket-stream-btn');
-      const label = document.getElementById('rocket-stream-label');
-      const ping = document.getElementById('rocket-ping');
-      const dot = document.getElementById('rocket-dot');
-
-      if (rocketStreamActive) {
-        if (btn) {
-          btn.className = 'px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-cyan-500/15 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/25 shadow-sm shadow-cyan-500/20';
-        }
-        if (label) label.innerText = '🚀 ROCKET LIVE: ON';
-        if (ping) ping.classList.remove('hidden');
-        if (dot) {
-          dot.classList.remove('bg-slate-500');
-          dot.classList.add('bg-cyan-400');
-        }
-        showToast('Rocket Live Stream Active: Incoming intelligence pops at maximum speed', 'info');
-        if (pendingNewEntries.length > 0) {
-          loadFeed(true);
-        }
-      } else {
-        if (btn) {
-          btn.className = 'px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-white/[0.03] border-white/[0.1] text-slate-400 hover:text-slate-200';
-        }
-        if (label) label.innerText = '⏸ ROCKET STREAM: PAUSED';
-        if (ping) ping.classList.add('hidden');
-        if (dot) {
-          dot.classList.remove('bg-cyan-400');
-          dot.classList.add('bg-slate-500');
-        }
-        showToast('Rocket Stream Paused: New stories will wait for manual refresh', 'info');
-      }
-      playBeep('click');
-    }
+    // Refresh-Only Stream Paradigm: Incoming stories accumulate quietly until manual refresh
+    let rocketStreamActive = false;
 
     // Live KPI Counter Animated Ticker
     function incrementKPICounter(elementId) {
@@ -1893,8 +1853,8 @@
       const current = parseInt(text.replace(/,/g, ''), 10);
       if (!isNaN(current)) {
         el.innerText = (current + 1).toLocaleString();
-        el.classList.add('text-cyan-300', 'scale-110');
-        setTimeout(() => el.classList.remove('text-cyan-300', 'scale-110'), 700);
+        el.classList.add('text-cyan-300');
+        setTimeout(() => el.classList.remove('text-cyan-300'), 500);
       }
     }
 
@@ -1923,7 +1883,7 @@
       }
     }
 
-    // Handle incoming WebSocket messages
+    // Handle incoming WebSocket messages (Strict Refresh-Only: zero lag, zero DOM thrash)
     function handleWebSocketMessage(msg) {
       if (msg.type === 'pong') {
         const pingTimeEl = document.getElementById('ping-time');
@@ -1937,23 +1897,14 @@
         const entry = msg.data || msg.entry;
         if (!entry) return;
 
-        // 1. Instant Luxury Toast Popup in the Corner
-        showToastNotification(entry);
-
-        // 2. Real-time Live Popping into Feed (if Rocket Stream active)
-        if (rocketStreamActive) {
-          const matchesCategory = currentCategory === 'all' || currentCategory === entry.category || currentCategory === 'only_new';
-          if (matchesCategory) {
-            const existingCard = document.getElementById('threat-card-' + entry.id);
-            if (!existingCard) {
-              prependFeedItem(entry);
-            }
-          }
-          // Acoustic alert tone
-          playBeep('alert');
+        // 1. Refresh-Only Paradigm: Buffer incoming story quietly (no feed shifts, no layout lag)
+        const entryId = entry.id || ('new-' + (entry.url || Date.now()));
+        if (!pendingNewEntries.some(e => e.id === entryId)) {
+          pendingNewEntries.push({ ...entry, id: entryId });
+          updatePendingBanner();
         }
 
-        // 3. Real-Time Telemetry Counter Increments
+        // 2. Soft Real-Time Telemetry Counter Increment
         incrementKPICounter('total-entries');
         const cat = entry.category || '';
         if (cat === 'github_trending' || cat === 'trending_repos') incrementKPICounter('trending-repos-count');
@@ -1961,15 +1912,6 @@
         else if (cat === 'ai_research' || cat === 'research_papers') incrementKPICounter('ai-count');
         else if (cat === 'cyber_tools' || cat === 'dev_tools') incrementKPICounter('developer-tools-count');
         else if (cat === 'ai_tech') incrementKPICounter('global-tech-count');
-
-        // 4. Track in pending buffer for reference
-        const entryId = entry.id || ('new-' + (entry.url || Date.now()));
-        if (!pendingNewEntries.some(e => e.id === entryId)) {
-          pendingNewEntries.push({ ...entry, id: entryId });
-          if (!rocketStreamActive) {
-            updatePendingBanner();
-          }
-        }
       } else if (msg.type === 'scan_status') {
         const banner = document.getElementById('scan-progress-banner');
         const icon = document.getElementById('scan-icon');
@@ -2165,11 +2107,14 @@
     // Refresh Telemetry Stats
     async function refreshStats() {
       try {
-        const res = await fetch('/api/stats');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch('/api/stats', { signal: controller.signal });
+        clearTimeout(timeout);
         const data = await res.json();
         renderStats(data);
       } catch (e) {
-        console.error("Stats refresh error: ", e);
+        // Silently ignore transient network aborts to prevent console noise
       }
     }
 
@@ -2350,11 +2295,19 @@
       const loadingBar = document.getElementById('feed-loading-bar');
       const hasExistingCards = Boolean(container && container.querySelector('.feed-card'));
 
+      const refreshIcon = document.getElementById('refresh-btn-icon');
+      let loadingBarTimer = null;
+
       if (reset) {
+        if (refreshIcon) refreshIcon.classList.add('animate-spin');
         if (hasExistingCards) {
-          // Keep existing cards in place without harsh DOM destruction or flickering
-          container.classList.add('feed-dimmed');
-          if (loadingBar) loadingBar.classList.add('opacity-100');
+          // Keep existing cards fully crisp and interactive without dimming
+          if (loadingBar) {
+            loadingBar.classList.add('opacity-100');
+            loadingBarTimer = setTimeout(() => {
+              if (loadingBar) loadingBar.classList.remove('opacity-100');
+            }, 1200);
+          }
         } else if (container) {
           // Initial cold boot skeleton cards — calm hardware-accelerated shimmer, no opacity pulsing/fluctuating
           const skeletonCard = () => `
@@ -2407,10 +2360,16 @@
           effectiveSearch = effectiveSearch ? (effectiveSearch + ' ' + activeTechChip) : activeTechChip;
         }
         if (effectiveSearch) url += `&search=${encodeURIComponent(effectiveSearch)}`;
-        if (reset) url += `&_t=${Date.now()}`;
 
-        const res = await fetch(url, { cache: reset ? 'no-cache' : 'default' });
-        let data = await res.json();
+        const controller = new AbortController();
+        const fetchTimer = setTimeout(() => controller.abort(), 9000);
+        let data;
+        try {
+          const res = await fetch(url, { signal: controller.signal });
+          data = await res.json();
+        } finally {
+          clearTimeout(fetchTimer);
+        }
 
         // Calculate is_new_since_refresh relative to previous session refresh baseline
         let newCount = 0;
@@ -2518,8 +2477,10 @@
           lucide.createIcons();
         }
       } finally {
+        if (loadingBarTimer) clearTimeout(loadingBarTimer);
         if (container) container.classList.remove('feed-dimmed');
         if (loadingBar) loadingBar.classList.remove('opacity-100');
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
       }
     }
 
