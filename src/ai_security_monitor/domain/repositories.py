@@ -47,6 +47,7 @@ class EntryFilters:
     sort_by: str = "newest"
     region: str | None = None
     country: str | None = None
+    important_only: bool = False
 
 
 class EntryRepository(ABC):
@@ -108,6 +109,21 @@ class EntryRepository(ABC):
         limit: int = 50,
     ) -> list[Entry]:
         """Get entries by category."""
+        ...
+
+    @abstractmethod
+    async def toggle_importance(
+        self,
+        entry_id: UUID,
+        is_important: bool | None = None,
+        reason: str | None = None,
+    ) -> Entry:
+        """Toggle or set importance status in vault."""
+        ...
+
+    @abstractmethod
+    async def save_user_notes(self, entry_id: UUID, notes: str) -> Entry:
+        """Attach user research and analysis notes to entry."""
         ...
 
 

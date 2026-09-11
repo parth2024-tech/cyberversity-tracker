@@ -17,8 +17,9 @@ import re
 from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from ai_security_monitor.domain.entities import Category
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
@@ -130,6 +131,7 @@ async def query_serialized_entries(
     pre_cve: bool = False,
     high_velocity: bool = False,
     watchlist_only: bool = False,
+    important_only: bool = False,
     hours: int | None = None,
     region: str | None = None,
     country: str | None = None,
@@ -144,12 +146,14 @@ async def query_serialized_entries(
 
     cat_enum = None
     categories_filter = None
-    if category and category != "all" and isinstance(category, str):
+    if category in ("important", "vault"):
+        important_only = True
+    elif category and category != "all" and isinstance(category, str):
         try:
             cat_enum = Category(category)
         except ValueError:
             pass
-    elif not pre_cve and not high_velocity:
+    elif not pre_cve and not high_velocity and not important_only:
         # Default stream: Prioritize worldwide AI ecosystem (5 pillars) and omit security/CVEs
         categories_filter = [
             Category.AI_RESEARCH,
@@ -178,6 +182,7 @@ async def query_serialized_entries(
         keywords=wl_keywords,
         pre_cve_only=bool(pre_cve),
         high_velocity_only=bool(high_velocity),
+        important_only=bool(important_only),
         since=since,
         sort_by=sort_by if isinstance(sort_by, str) else "top",
         region=region if region and region != "all" and isinstance(region, str) else None,
@@ -186,7 +191,7 @@ async def query_serialized_entries(
     pagination = PaginationParams(limit=limit, offset=offset)
 
     # Cache total count when query has no filters
-    has_custom_filters = bool(cat_enum or search or pre_cve or high_velocity or watchlist_only or since or (region and region != "all") or (country and country != "all"))
+    has_custom_filters = bool(cat_enum or search or pre_cve or high_velocity or watchlist_only or important_only or since or (region and region != "all") or (country and country != "all"))
 
     async def _list_entries():
         async with SqlAlchemyUnitOfWork() as uow:
@@ -296,6 +301,9 @@ async def query_serialized_entries(
         cleaned_title = _clean_entry_title(e.title)
         cleaned_summary = _clean_entry_summary(e.summary, e, cleaned_title)
 
+        meta_dict = e.metadata or {}
+        is_imp = bool(meta_dict.get("is_important", False) or meta_dict.get("is_saved", False) or meta_dict.get("is_pinned", False))
+
         serialized_entries.append(
             {
                 "id": str(e.id),
@@ -313,6 +321,10 @@ async def query_serialized_entries(
                 "category": cat_val,
                 "tags": e.tags,
                 "metadata": e.metadata,
+                "is_important": is_imp,
+                "importance_reason": meta_dict.get("importance_reason"),
+                "user_notes": meta_dict.get("user_notes", ""),
+                "saved_at": meta_dict.get("saved_at"),
                 "matched_watchlist_rules": matched_rules,
                 "analysis": analysis_dict,
                 "severity": severity or (analysis_dict["severity_index"] if analysis_dict else 0),
@@ -343,6 +355,7 @@ async def list_entries(
     pre_cve: bool | None = Query(False),
     high_velocity: bool | None = Query(False),
     watchlist_only: bool | None = Query(False),
+    important_only: bool | None = Query(False),
     hours: int | None = Query(None),
     region: str | None = Query(None),
     country: str | None = Query(None),
@@ -351,9 +364,10 @@ async def list_entries(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
-    """Query intelligence entries with pagination, search, watchlist, and feature filters — cached 60s."""
+    """Query intelligence entries with pagination, search, watchlist, vault, and feature filters — cached 60s."""
     effective_sort = sort or sort_by
-    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{hours}_{region}_{country}_{effective_sort}_{limit}_{offset}"
+    is_vault = bool(important_only or category in ("important", "vault"))
+    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{is_vault}_{hours}_{region}_{country}_{effective_sort}_{limit}_{offset}"
 
     async def _fetch():
         serialized_entries, total = await query_serialized_entries(
@@ -362,6 +376,7 @@ async def list_entries(
             pre_cve=bool(pre_cve),
             high_velocity=bool(high_velocity),
             watchlist_only=bool(watchlist_only),
+            important_only=is_vault,
             hours=hours,
             region=region,
             country=country,
@@ -434,7 +449,7 @@ async def export_entries_pdf(
     )
 
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 
 class ExportPdfRequest(BaseModel):
@@ -544,3 +559,98 @@ async def get_entry_by_id(entry_id: str):
             "metadata": entry.metadata,
             "analysis": analysis_dict,
         }
+
+
+@entries_router.post("/{entry_id}/toggle-vault")
+async def toggle_entry_vault(
+    entry_id: str,
+    reason: str | None = Query(None),
+):
+    """Toggle entry in the Permanent Important Vault with SQLite persistence."""
+    from uuid import UUID
+
+    from ai_security_monitor.domain.exceptions import EntityNotFoundError
+
+    try:
+        uid = UUID(entry_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid entry UUID")
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        try:
+            updated = await uow.entries.toggle_importance(uid, reason=reason)
+            await uow.commit()
+        except EntityNotFoundError:
+            raise HTTPException(status_code=404, detail="Entry not found")
+
+    response_cache.invalidate_prefix("entries_")
+    response_cache.invalidate("total_unfiltered_count")
+
+    meta = updated.metadata or {}
+    return {
+        "status": "ok",
+        "id": str(updated.id),
+        "is_important": bool(meta.get("is_important", False)),
+        "importance_reason": meta.get("importance_reason"),
+        "saved_at": meta.get("saved_at"),
+    }
+
+
+class NotesPayload(BaseModel):
+    notes: str
+
+
+@entries_router.post("/{entry_id}/notes")
+async def save_entry_notes(
+    entry_id: str,
+    payload: NotesPayload,
+):
+    """Save user personal technical research and analysis notes for an entry."""
+    from uuid import UUID
+
+    from ai_security_monitor.domain.exceptions import EntityNotFoundError
+
+    try:
+        uid = UUID(entry_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid entry UUID")
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        try:
+            updated = await uow.entries.save_user_notes(uid, payload.notes)
+            await uow.commit()
+        except EntityNotFoundError:
+            raise HTTPException(status_code=404, detail="Entry not found")
+
+    response_cache.invalidate_prefix("entries_")
+
+    meta = updated.metadata or {}
+    return {
+        "status": "ok",
+        "id": str(updated.id),
+        "user_notes": meta.get("user_notes", ""),
+        "notes_updated_at": meta.get("notes_updated_at"),
+    }
+
+
+@entries_router.get("/{entry_id}/deep-analysis")
+async def get_entry_deep_analysis(entry_id: str):
+    """Generate or retrieve structured deep technical analysis dossier for later research."""
+    from uuid import UUID
+
+    from ai_security_monitor.application.services.deep_analysis_service import (
+        deep_analysis_service,
+    )
+
+    try:
+        uid = UUID(entry_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid entry UUID")
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        entry = await uow.entries.get(uid)
+        if not entry:
+            raise HTTPException(status_code=404, detail="Entry not found")
+
+    dossier = deep_analysis_service.generate_dossier(entry)
+    return JSONResponse(content=dossier)

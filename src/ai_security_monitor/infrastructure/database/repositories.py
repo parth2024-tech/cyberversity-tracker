@@ -207,27 +207,98 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
     async def purge_old_entries(self, older_than_days: int = 7) -> int:
         """Delete entries (and their cascaded analyses) older than `older_than_days` days (1-week retention).
+        Entries marked as important or saved in the vault are permanently exempted and preserved.
 
         Returns the number of rows purged.
         """
         from sqlalchemy import delete as sa_delete
+        from sqlalchemy import not_
 
         cutoff = datetime.utcnow() - timedelta(days=older_than_days)
 
-        # Delete associated analyses first via subquery to avoid parameter limit issues
-        expired_cond = or_(
-            EntryModel.fetched_at < cutoff,
-            and_(EntryModel.published_at.is_not(None), EntryModel.published_at < cutoff)
+        # Exclude entries marked important, saved, or pinned in the vault from being purged
+        not_vaulted_cond = or_(
+            EntryModel.extra_metadata.is_(None),
+            and_(
+                not_(EntryModel.extra_metadata.like('%"is_important": true%')),
+                not_(EntryModel.extra_metadata.like('%"is_saved": true%')),
+                not_(EntryModel.extra_metadata.like('%"is_pinned": true%')),
+            )
         )
+        expired_cond = and_(
+            or_(
+                EntryModel.fetched_at < cutoff,
+                and_(EntryModel.published_at.is_not(None), EntryModel.published_at < cutoff)
+            ),
+            not_vaulted_cond
+        )
+
         subquery = select(EntryModel.id).where(expired_cond)
         await self._session.execute(
             sa_delete(AnalysisModelDB).where(AnalysisModelDB.entry_id.in_(subquery))
         )
-        # Delete entries older than retention window (1 week / 7 days)
+        # Delete non-vaulted entries older than retention window (1 week / 7 days)
         del_result = await self._session.execute(
             sa_delete(EntryModel).where(expired_cond)
         )
         return del_result.rowcount or 0
+
+    async def toggle_importance(
+        self,
+        entry_id: UUID,
+        is_important: bool | None = None,
+        reason: str | None = None,
+    ) -> Entry:
+        """Toggle or explicitly set an entry's vault/importance status with metadata persistence."""
+        stmt = select(EntryModel).options(selectinload(EntryModel.analysis)).where(EntryModel.id == _uuid_to_str(entry_id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("Entry", str(entry_id))
+
+        meta = dict(model.extra_metadata or {})
+        current_state = bool(meta.get("is_important", False) or meta.get("is_saved", False))
+        new_state = (not current_state) if is_important is None else bool(is_important)
+
+        meta["is_important"] = new_state
+        meta["is_saved"] = new_state
+        meta["is_pinned"] = new_state
+        if new_state:
+            meta["saved_at"] = datetime.utcnow().isoformat()
+            if reason:
+                meta["importance_reason"] = reason
+            elif not meta.get("importance_reason"):
+                meta["importance_reason"] = "Saved to Vault for In-Depth Analysis"
+        else:
+            meta.pop("saved_at", None)
+
+        model.extra_metadata = meta
+        model.updated_at = datetime.utcnow()
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def save_user_notes(self, entry_id: UUID, notes: str) -> Entry:
+        """Attach user research, annotations, and analysis notes to an entry."""
+        stmt = select(EntryModel).options(selectinload(EntryModel.analysis)).where(EntryModel.id == _uuid_to_str(entry_id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("Entry", str(entry_id))
+
+        meta = dict(model.extra_metadata or {})
+        meta["user_notes"] = notes.strip()
+        meta["notes_updated_at"] = datetime.utcnow().isoformat()
+        if not meta.get("is_important"):
+            meta["is_important"] = True
+            meta["is_saved"] = True
+            meta["saved_at"] = datetime.utcnow().isoformat()
+            if not meta.get("importance_reason"):
+                meta["importance_reason"] = "User Technical Analysis Attached"
+
+        model.extra_metadata = meta
+        model.updated_at = datetime.utcnow()
+        await self._session.flush()
+        return self._model_to_entity(model)
 
     async def get_by_category(
         self,
@@ -310,6 +381,15 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
                 analysis_joined = True
             stmt = stmt.where(AnalysisModelDB.entry_id.is_(None))
+
+        if getattr(filters, "important_only", False):
+            stmt = stmt.where(
+                or_(
+                    EntryModel.extra_metadata.like('%"is_important": true%'),
+                    EntryModel.extra_metadata.like('%"is_saved": true%'),
+                    EntryModel.extra_metadata.like('%"is_pinned": true%'),
+                )
+            )
 
         source_joined = False
 

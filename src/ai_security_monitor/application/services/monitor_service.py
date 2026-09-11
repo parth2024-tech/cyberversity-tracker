@@ -167,6 +167,26 @@ class MonitorService:
                         await uow.analyses.add(analysis)
                         added_entry.analysis = analysis
 
+                        # Auto-curate landmark AI breakthroughs into the Permanent Important Vault
+                        title_lower = (added_entry.title or "").lower()
+                        cat_val = added_entry.category.value if hasattr(added_entry.category, "value") else str(added_entry.category)
+                        is_landmark = (
+                            analysis.threat_velocity >= 85
+                            or any(k in title_lower for k in ("deepseek", "r1", "frontier", "qwen", "llama", "breakthrough", "sota", "vllm", "sglang", "reasoning", "reasoner"))
+                            or (cat_val == "ai_models" and any(k in title_lower for k in ("release", "weights", "checkpoint", "model", "moe")))
+                            or (cat_val == "ai_research" and analysis.threat_velocity >= 75)
+                        )
+                        if is_landmark:
+                            added_entry.metadata = dict(added_entry.metadata or {})
+                            added_entry.metadata["is_important"] = True
+                            added_entry.metadata["importance_reason"] = (
+                                "Frontier Reasoning Architecture" if any(k in title_lower for k in ("reasoning", "deepseek", "r1"))
+                                else "Major Foundation Model Weights Release" if cat_val == "ai_models"
+                                else "Critical AI Developer Infrastructure" if any(k in title_lower for k in ("vllm", "sglang", "runtime", "engine"))
+                                else "High-Impact Seminal Breakthrough"
+                            )
+                            await uow.entries.update(added_entry)
+
                         # Real-time WebSocket Broadcast
                         if self._broadcast_callback:
                             try:
