@@ -162,7 +162,8 @@ class ArticleExtractor:
                         parsed = self._parse_markdown_readme(res.text, repo)
                         if parsed and len(parsed.split()) >= 40:
                             return parsed
-                except Exception:
+                except Exception as _fetch_err:
+                    logger.debug(f"GitHub README fetch failed for {raw_url}: {_fetch_err}")
                     continue
         return None
 
@@ -214,8 +215,8 @@ class ArticleExtractor:
             async with httpx.AsyncClient(timeout=self.timeout, headers=self._headers, follow_redirects=True) as client:
                 res = await client.get(api_url)
                 if res.status_code == 200 and res.text:
-                    import xml.etree.ElementTree as ET
-                    root = ET.fromstring(res.content)
+                    from defusedxml.ElementTree import fromstring as safe_xml_fromstring
+                    root = safe_xml_fromstring(res.content)
                     raw_abs = None
                     for elem in root.iter():
                         if elem.tag.endswith("summary") and elem.text:

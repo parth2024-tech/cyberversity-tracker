@@ -6,12 +6,15 @@ import httpx
 from bs4 import BeautifulSoup
 
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry, Source
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
     fetcher_registry,
 )
+
+logger = get_logger(__name__)
 
 
 class GitHubTrendingFetcher(BaseFetcher):
@@ -118,7 +121,7 @@ class GitHubTrendingFetcher(BaseFetcher):
                     "title": clean_title,
                     "url": repo_url,
                     "content": content,
-                    "published_at": datetime.utcnow(),
+                    "published_at": datetime.now(UTC),
                     "tags": tags,
                     "metadata": {
                         "repo_name": repo_name,
@@ -128,14 +131,14 @@ class GitHubTrendingFetcher(BaseFetcher):
                     }
                 })
             except Exception as e:
-                print(f"Failed to parse GitHub trending repo: {e}")
+                logger.warning(f"Failed to parse GitHub trending repo: {e}")
                 continue
 
         return entries
 
     async def _fetch_raw_api(self) -> list[dict]:
         """Fetch trending AI repositories using GitHub REST Search API."""
-        from datetime import timedelta, timezone
+        from datetime import timedelta
         now = datetime.now(UTC)
         days = 2 if self.frequency == "daily" else 8
         since_date = (now - timedelta(days=days)).strftime("%Y-%m-%d")
@@ -190,7 +193,7 @@ class GitHubTrendingFetcher(BaseFetcher):
                     tags.append(language.lower())
                 tags.extend([t.lower() for t in topics[:5]])
 
-                published_at = datetime.utcnow()
+                published_at = datetime.now(UTC)
                 if repo.get("pushed_at"):
                     try:
                         published_at = datetime.fromisoformat(repo["pushed_at"].replace("Z", "+00:00")).replace(tzinfo=None)

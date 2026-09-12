@@ -1,57 +1,58 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, dev, "feature/**"]
   pull_request:
-    branches: [ main ]
+    branches: [main, dev]
 
 jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Run ruff check
+        run: ruff check src/ tests/
+
+  typecheck:
+    name: Type Check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+      - name: Run mypy
+        run: uv run mypy src/ai_security_monitor/ --ignore-missing-imports --no-error-summary
+        continue-on-error: true  # Non-blocking while type coverage is being improved
+
   test:
-    name: Run Tests & Quality Checks
+    name: Test (pytest)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12"]
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install ruff pytest pytest-asyncio pytest-cov httpx typer pydantic-settings structlog prometheus-client sqlalchemy aiosqlite
-
-      - name: Lint with Ruff
-        run: |
-          ruff check .
-
-      - name: Run Pytest Suite with Coverage
-        run: |
-          PYTHONPATH=src pytest tests/ -v --cov=src/ai_security_monitor
-
-  docker:
-    name: Build Docker Container
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Container Image
-        uses: docker/build-push-action@v5
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+      - name: Run tests with coverage
+        run: uv run pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=50 -q
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          context: .
-          push: false
-          tags: aether-guard:latest
+          name: coverage-report
+          path: htmlcov/

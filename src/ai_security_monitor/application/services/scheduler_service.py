@@ -4,7 +4,7 @@ Application scheduler service for periodic intelligence sweeps.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ai_security_monitor.application.services.monitor_service import MonitorService
 from ai_security_monitor.application.services.newspaper_delivery_tracker import (
@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 # Module-level: last sweep timestamp and count accessible to MonitorService.get_sweep_status()
 _last_sweep_at: datetime | None = None
 _sweep_count: int = 0
-_server_started_at: datetime = datetime.utcnow()
+_server_started_at: datetime = datetime.now(UTC)
 
 
 class SchedulerService:
@@ -72,7 +72,7 @@ class SchedulerService:
             try:
                 logger.info("Executing scheduled intelligence radar sweep...")
                 results = await self._monitor.fetch_all()
-                _last_sweep_at = datetime.utcnow()
+                _last_sweep_at = datetime.now(UTC)
                 _sweep_count += 1
                 self._sweep_count = _sweep_count  # keep local copy in sync
 

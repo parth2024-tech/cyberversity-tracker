@@ -1,18 +1,21 @@
 # RSS/Atom feed fetcher implementation.
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 
 import feedparser
 import httpx
 
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
     fetcher_registry,
 )
+
+logger = get_logger(__name__)
 
 
 class RSSFetcher(BaseFetcher):
@@ -81,7 +84,7 @@ class RSSFetcher(BaseFetcher):
 
         if feed.bozo and feed.bozo_exception:
             # Log but continue - feedparser can handle many malformed feeds
-            print(f"Feed parse warning for {self.source.name}: {feed.bozo_exception}")
+            logger.debug(f"Feed parse warning for {self.source.name}: {feed.bozo_exception}")
 
         entries = []
         for item in feed.entries:
@@ -98,7 +101,7 @@ class RSSFetcher(BaseFetcher):
             content = self._clean_html(content)
 
             # Get published date
-            published_at = datetime.utcnow()
+            published_at = datetime.now(UTC)
             if hasattr(item, "published_parsed") and item.published_parsed:
                 published_at = datetime(*item.published_parsed[:6])
             elif hasattr(item, "updated_parsed") and item.updated_parsed:
@@ -168,7 +171,6 @@ class RSSFetcher(BaseFetcher):
         if not text:
             return ""
 
-        import re
         # 1. Remove dangerous script, iframe, object, embed, applet, style tags
         text = re.sub(r"<(script|style|iframe|object|embed|applet|meta|link|form|svg)[^>]*>.*?</\1>", "", text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<(script|style|iframe|object|embed|applet|meta|link|form|svg)[^>]*>", "", text, flags=re.IGNORECASE)

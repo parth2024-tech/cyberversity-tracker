@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import html
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -142,7 +142,7 @@ async def query_serialized_entries(
     """Internal helper to retrieve and serialize filtered entries."""
     since = None
     if hours and isinstance(hours, int):
-        since = datetime.utcnow() - timedelta(hours=hours)
+        since = datetime.now(UTC) - timedelta(hours=hours)
 
     cat_enum = None
     categories_filter = None
@@ -434,7 +434,7 @@ async def export_entries_pdf(
         subtitle=f"Frontier AI & Technology Intelligence Analysis ({len(entries_list)} Reports)",
     )
 
-    timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M")
+    timestamp_str = datetime.now(UTC).strftime("%Y%m%d_%H%M")
     filename = f"ai_intelligence_dossier_{timestamp_str}.pdf"
 
     from fastapi.responses import Response
@@ -479,7 +479,7 @@ async def export_selected_entries_pdf(payload: ExportPdfRequest):
         subtitle=payload.subtitle or f"Executive AI & Technology Brief ({len(filtered)} items)",
     )
 
-    timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M")
+    timestamp_str = datetime.now(UTC).strftime("%Y%m%d_%H%M")
     filename = f"ai_intelligence_dossier_{timestamp_str}.pdf"
 
     from fastapi.responses import Response

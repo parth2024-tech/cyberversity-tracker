@@ -1,6 +1,6 @@
 # NVD CVE API fetcher implementation.
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
@@ -23,7 +23,7 @@ class NVDFetcher(BaseFetcher):
     async def _fetch_raw(self) -> list[dict]:
         """Fetch recent CVEs from NVD API."""
         # Last 24 hours by default
-        pub_start = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.000")
+        pub_start = (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.000")
         url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
         params = {
             "pubStartDate": pub_start,
@@ -62,7 +62,7 @@ class NVDFetcher(BaseFetcher):
                 "title": f"{cve_id}: {description[:200]}",
                 "url": f"https://nvd.nist.gov/vuln/detail/{cve_id}",
                 "content": description,
-                "published_at": datetime.fromisoformat(cve.get("published", "").replace("Z", "+00:00")).replace(tzinfo=None) if cve.get("published") else datetime.utcnow(),
+                "published_at": datetime.fromisoformat(cve.get("published", "").replace("Z", "+00:00")).replace(tzinfo=None) if cve.get("published") else datetime.now(UTC),
                 "tags": ["cve", "nvd", severity.lower()],
                 "metadata": {
                     "cve_id": cve_id,

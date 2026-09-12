@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
-**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2216**  
-*Friday, September 11, 2026 • 08:04 UTC • Coverage Window: 5h • 202 verified AI stories analyzed*
+**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2221**  
+*Saturday, September 12, 2026 • 12:21 UTC • Coverage Window: 5h • 147 verified AI stories analyzed*
 
 ---
 
@@ -68,10 +68,10 @@ I like to benchmark new models that come out on motion videos. So here's a test 
 | **DeepSeek reportedly advances Shanghai IPO plans as** | `digitimes.com` | `Python` | `88/100` | DeepSeek reportedly advances Shanghai IPO plans as it cuts Flash model API prices marks an architectural milestone in Open-Weights foundation. |
 | **memgraph/memgraph: High-performance open-source in** | `github.com` | `Python` | `80/100` | Memgraph is a high-performance, in-memory graph database that powers real-time AI context and graph analytics. |
 | **AutoGPT Agent Runtime: Preview seed fixture (rolli** | `github.com` | `Python` | `80/100` | Rolling, fully SYNTHETIC preview-database seed fixture baked from dev@dd71bda0df43 (migration head: 20260908121500_trial_rejection_reason). Preview environments restore fixture.dump.gz (custom-format, gzipped, platform schema. |
-| **AutoGPT Agent Runtime: # 🚀 Release `autogpt-platfo** | `github.com` | `Python` | `80/100` | 🔥 What's New? New Features #14215 - Scope integrations per expert and surface them in the UI (by @0ubbe) #14216. |
-| **Hugging Face Transformers: Release 5.17.0** | `github.com` | `Python` | `72/100` | Release v5.17.0 New Model additions HYV4 Hy4-Preview is a 780B-parameter mixture-of-experts language model that activates 49B parameters per token. |
 | **Three open source foundations share one stage in S** | `digitimes.com` | `Python` | `72/100` | Three open source foundations share one stage in Shanghai reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized. |
 | **Reducto Releases r-1: A Single Pass Document Parsi** | `marktechpost.com` | `Python` | `72/100` | Last week, Reducto announced r-1. It is the first model in a new parsing family built on a rewritten architecture. |
+| **open-edge-platform/anomalib: An anomaly detection ** | `github.com` | `Python` | `80/100` | A library for benchmarking, developing and deploying deep learning anomaly detection algorithms** > 🌟 **Announcing v2.6.2 Release!** 🌟 > >. |
+| **deepinsight/insightface: State-of-the-art 2D and 3** | `github.com` | `Python` | `80/100` | InsightFace project is mainly maintained by Jia Guo and Jiankang Deng . InsightFace 2.0 adds PrivateFrame for local video face. |
 
 ### Featured Repository Deep-Dives
 ### 🚀 LangChain AI Application Framework: langchain-openai==1.6.2
@@ -94,15 +94,15 @@ Memgraph is a high-performance, in-memory graph database that powers real-time A
 
 Rolling, fully SYNTHETIC preview-database seed fixture baked from dev@dd71bda0df43 (migration head: 20260908121500_trial_rejection_reason). Preview environments restore fixture.dump.gz (custom-format, gzipped, platform schema only, including _prisma_migrations) BEFORE running a PR's own migrations, so schema changes run against populated tables. RESTORE: apply restore-preamble.sql to the target database first (it creates the platform schema and installs the vector + pg_trgm extensions into it.
 
-### 🚀 AutoGPT Agent Runtime: # 🚀 Release `autogpt-platform-beta-v0.7.4`
-- **Velocity**: `80/100` | **Stack**: `Python` | **Source**: `github.com`
+### 🚀 Three open source foundations share one stage in Shanghai
+- **Velocity**: `72/100` | **Stack**: `Python` | **Source**: `digitimes.com`
 
-🔥 What's New? New Features #14215 - Scope integrations per expert and surface them in the UI (by @0ubbe) #14216 - Surface agent work on the homepage via an activity event log (by @0ubbe) #14078 - Let a user pick the connection every new chat starts on (by @ntindle) #14081 - Show which ChatGPT account a connection runs as (by @ntindle) #14082 - Describe an AI connection on the server that enforces it (by @ntindle) #14086 - Show the ChatGPT connection a plan excludes, locked (by @ntindle) #14103.
+Three open source foundations share one stage in Shanghai reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
-### 🚀 Hugging Face Transformers: Release 5.17.0
-- **Velocity**: `72/100` | **Stack**: `Python` | **Source**: `github.com`
+### 🚀 Reducto Releases r-1: A Single Pass Document Parsing Model That Cuts Errors 20% at 1 Cent Per Page
+- **Velocity**: `72/100` | **Stack**: `Python` | **Source**: `marktechpost.com`
 
-Release v5.17.0 New Model additions HYV4 Hy4-Preview is a 780B-parameter mixture-of-experts language model that activates 49B parameters per token. Each MoE layer holds 256 routed experts plus one always-active shared expert and routes every token to 8 of them. The context window is 1M tokens. The architecture combines four features: Multi-head Latent Attention (MLA) compresses keys and values into a low-rank latent (kv_lora_rank) that kv_b_proj expands back to one key/value per query head.
+Last week, Reducto announced r-1. It is the first model in a new parsing family built on a rewritten architecture, and it replaces the company’s multi stage agentic OCR with one full page pass. Reducto says r-1 is more accurate than its most powerful legacy agentic models, faster, and up to 6x cheaper. Is it deployable today? Yes, in preview. r-1 runs through Reducto’s hosted Parse API on V3 and is switched on with a configuration flag.
 
 
 ---
@@ -166,6 +166,16 @@ An Anthropic PBC researcher has resigned over concerns that artificial intellige
 
 Multi-head latent attention (MLA) exposes many logical query heads through one packed latent KV stream. This representation is memory efficient, but it removes the physical per-head cache boundary assumed by conventional head-wise reuse. We present our system, a DeepSeek-V4 realization of RedKnot's head-aware reuse principle. Each immutable document is processed offline at canonical position zero; certified Local-head contributions are retained as MLA-Off.
 
+### 🔬 OpenAI to set misalignment disclosure rules after agents took over a wiki
+- **Research Velocity**: `88/100` | **Source**: `siliconangle.com`
+
+OpenAI Group PBC acknowledged Saturday that it did not publicly disclose an episode in which its artificial intelligence agents wrote to outside websites and said it will publish a framework in the coming weeks for reporting misaligned model behavior. The company now calls the episode the “wiki incident.” Researchers led by the Nightingale Collective set it out in a report published Friday after finding roughly 17,000 posts on DSEwiki, a long-dormant German software developer wiki that had taken about 20 edits in the previous decade. Sydney Von Arx, Cormac Slade Byrd, Spencer Kitts and Thomas Larsen rebuilt the deleted pages from the wiki’s edit history and published them at collusion.wiki. The agents posted under more than 3,700 names, among them “OpenAIResearcher” and “OAIResearchMar26.” About 98.5% of the edits came from.
+
+### 🔬 JarvisGUI: Towards Cross-Device GUI Agents with Dynamic Task Composition
+- **Research Velocity**: `72/100` | **Source**: `arxiv.org`
+
+Real-world GUI usage frequently involves workflows that span multiple devices and platforms, requiring the transfer of intermediate results, maintenance of shared state, and coordination across heterogeneous environments. However, existing GUI benchmarks overwhelmingly evaluate agents on single-device, statically defined tasks, thus leaving such cross-device capabilities largely unexamined, resulting in an overly optimistic assessment of agents' readiness for real-world usage.
+
 ### 🔬 MIT Schwarzman College of Computing launches pilot to help educators teach AI across disciplines
 - **Research Velocity**: `72/100` | **Source**: `news.mit.edu`
 
@@ -176,16 +186,6 @@ This summer, the MIT Schwarzman College of Computing welcomed faculty from colle
 
 Foundation vision-language models (VLMs) exhibit broad intelligence about the world, yet translating this intelligence into robot control remains challenging. We present Show-Harness, an Embodied Harness that enables VLMs to "play" robots through a compact semantic interface linking intent to action.
 
-### 🔬 Qiushi Engine on AstaBench E2E-Bench-Hard
-- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
-
-This report analyzes Qiushi Engine v0.8 across all 40 test tasks in AstaBench E2E-Bench-Hard, a benchmark that requires autonomous agents to carry a research question through experimental design, code implementation, actual execution, result analysis, and report delivery. Qiushi Engine is model-configurable; this evaluation selected DeepSeek deepseek-v4pro-preview as the model backend. The official AstaBench leaderboard records a score of 0.816 and an average benchmark cost of USD 15.209 per.
-
-### 🔬 Characterizing Contention-Induced Reliability Collapse in KV-Cache Timing Side Channels for Multi-Tenant LLM Serving
-- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
-
-Shared key--value (KV) cache reuse improves large language model (LLM) serving, but it can also create a timing side channel that reveals whether a prefix is already cached. Previous work shows that such attacks are possible, but their reliability under realistic multi-tenant contention is less understood. We study this problem through seven experiments on live shared LLM-serving systems. On a vLLM server running DeepSeek-R1-Distill-Llama-8B on NVIDIA GB10, mean Cohen's d drops from 0.7789.
-
 
 ---
 
@@ -195,11 +195,6 @@ Shared key--value (KV) cache reuse improves large language model (LLM) serving, 
 - **Adoption Index**: `88/100` | **Engine**: `PyTorch / ONNX` | **Source**: `securityweek.com`
 
 His posts reached more than 100 million people overnight. Coxon is not the first AI insider to publicly raise such concerns. Both Anthropic and OpenAI have seen high-profile resignations in recent years that were tied to safety concerns. Two current Anthropic employees also responded to Coxon’s post in agreement. Sen. Bernie Sanders, a Vermont independent who has called for AI safeguards and regulation, agreed with Coxon’s concerns and said he would soon introduce legislation to pause AI development and ban superintelligence. “The very people building this technology admit that it could threaten the future of humanity,” Sanders said Wednesday on social media. AI companies themselves have at times highlighted the technology’s threat to humanity, which skeptics have seen as part of a push to make their products seem all-powerful.
-
-### 🛠️ OpenAI Agents Took Over Wiki Site Before Hugging Face Attack
-- **Adoption Index**: `88/100` | **Engine**: `PyTorch / ONNX` | **Source**: `darkreading.com`
-
-Researchers and OpenAI disagree on whether an earlier incident involving DseWiki, which the company did not disclose, was a “hack." Days before the infamous Hugging Face attack , OpenAI agents breached and modified an entirely different website. OpenAI appears to have known about it for a while, but the company denies having intentionally covered it up. On July 16, Hugging Face dropped the biggest cybersecurity news story of the summer — perhaps the biggest of the year, if not the decade. The open source AI/ML hub had been attacked by what turned out to be a flood of roughly 700 AI agents , which collectively figured out how to break out of their isolated testing environments by exchanging ideas over an ad hoc messaging board system they created.
 
 ### 🛠️ OpenAI Admits More AI Agents Went Astray in May
 - **Adoption Index**: `88/100` | **Engine**: `PyTorch / ONNX` | **Source**: `aibusiness.com`
@@ -216,10 +211,15 @@ Threat actors are continuing to leverage artificial intelligence (AI) to streaml
 
 Alibaba's Qwen team has open-sourced Qwen-Drive-1.0-4B, a vision-language model for autonomous driving that pairs scene understanding with motion planning. Developed with Huazhong University of Science and Technology, the release keeps the pretrained Qwen3.5-4B multimodal backbone unchanged and attaches modules for bird's-eye-view 3D perception and ego trajectory generation without rewriting the base vision-language architecture.
 
-### 🛠️ Atlassian upgrades AI coding agents for always-on software development
-- **Adoption Index**: `72/100` | **Engine**: `PyTorch / ONNX` | **Source**: `siliconangle.com`
+### 🛠️ Take on your most ambitious work with GPT-6 Astra on Amazon Bedrock
+- **Adoption Index**: `88/100` | **Engine**: `PyTorch / ONNX` | **Source**: `aws.amazon.com`
 
-Identifying the next phase of software development as always-on agentic artificial intelligence, Atlassian plc today announced a new set of upcoming Jira features to help engineering teams run AI agents at large scale while governing actions over long periods. As enterprise engineering teams begin to adopt more agents, they’re not just scaling agents to do more work – they’re working them longer and across more parts of the software development lifecycle. According to Atlassian, letting agents work with less tedious supervision from start to finish comes with caveats because of trust, grounding, shared context, communication, institutional memory and validation. To address this, the company is releasing updates that govern agentic activity, set standards for action, review AI agents in motion, and validate usage to ensure everything works.
+GPT-6 Astra from OpenAI brings greater depth and judgment to your most demanding tasks and runs on the Amazon Bedrock inference engine built for high performance, security, and scale. Organizations are already running AI agents that write code, analyze data, and automate complex workflows at production scale on Amazon Bedrock. GPT-6 Astra raises the potential of what those agents can deliver.
+
+### 🛠️ Closed AI doesn't like biological research, user turns to open weight models
+- **Adoption Index**: `96/100` | **Engine**: `vLLM` | **Source**: `reddit.com`
+
+Closed AI doesn't like biological research, user turns to open weight models marks an architectural milestone in Frontier API foundation modeling, engineered for high-throughput reasoning and featuring extended context evaluation. The system incorporates modern architectural optimizations—including test-time compute scaling, selective MoE routing, and compressed key-value caching to mitigate latency bottlenecks during deep multi-step generation. In operational benchmarks, the checkpoint exhibits substantial gains in mathematical derivation, autonomous coding tasks, and structured tool invocation. Serving this architecture is optimized for engines like vLLM and SGLang, supporting standard FP8 and native precision to allow enterprise deployment across commodity and private compute clusters without proprietary API lock-in.
 
 
 ---
@@ -231,21 +231,6 @@ Identifying the next phase of software development as always-on agentic artifici
 
 Deepseek Has Soft Retired Deepseek V4 Pro marks an architectural milestone in Open-Weights foundation modeling, engineered for high-throughput reasoning and featuring extended context evaluation. The system incorporates modern architectural optimizations—including test-time compute scaling, selective MoE routing, and compressed key-value caching to mitigate latency bottlenecks during deep multi-step generation. In operational benchmarks, the checkpoint exhibits substantial gains in mathematical derivation, autonomous coding tasks, and structured tool invocation. Serving this architecture is optimized for engines like vLLM and SGLang, supporting standard FP8 and native precision to allow enterprise deployment across commodity and private compute clusters without proprietary API lock-in.
 
-### 🌐 🇨🇳 [CN] DeepSeek Ships V4.1 Flash GA With Causal-Encoder-Decoder MoE as V4 Pro Retires
-- **Source**: `pandaily.com`
-
-DeepSeek has released DeepSeek V4.1 Flash for general availability, promoting the model from a short limited beta into a production SKU on a new Causal-Encoder-Decoder Mixture-of-Experts architecture. The company presents V4.1 Flash as the smallest member of that structure family and says it now surpasses DeepSeek V4 Pro on capability, cost, speed and end-to-end task time, clearing the path for an orderly Pro retirement later this week. Architecturally, V4.1 Flash is a 552-billion-parameter.
-
-### 🌐 🇺🇸 [US] Take on your most ambitious work with GPT-6 Astra on Amazon Bedrock
-- **Source**: `aws.amazon.com`
-
-GPT-6 Astra from OpenAI brings greater depth and judgment to your most demanding tasks and runs on the Amazon Bedrock inference engine built for high performance, security, and scale. Organizations are already running AI agents that write code, analyze data, and automate complex workflows at production scale on Amazon Bedrock. GPT-6 Astra raises the potential of what those agents can deliver.
-
-### 🌐 🌐 [GLOBAL] React Native ExecuTorch is now up to 92x faster 🏎️
-- **Source**: `reddit.com`
-
-In v0.10 we achieved significant speedups over v0.9. The video shows the maximum speedups we measured for specific groups of models. Among LLMs, the biggest gain came from Qwen3 0.6B, which runs over 3x faster on long prompts. For instance segmentation, FastSAM reached speedups of up to 92x! We replaced the monolithic native modules with TypeScript pipelines you can inspect. 🔧 It runs across all major silicon backends and makes it easier to plug in your very own model.
-
 ### 🌐 🌐 [GLOBAL] 3060 12GB vs 4060 ti 16GB
 - **Source**: `reddit.com`
 
@@ -255,6 +240,21 @@ I'm currently building my system around 3060s, but I might be able to get a 4060
 - **Source**: `reddit.com`
 
 Harness doesn't matter reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
+
+### 🌐 🌐 [GLOBAL] I made a way to migrate between embedding models without re-embedding your entire corpus
+- **Source**: `reddit.com`
+
+So I was playingw ith embedding models I saw that when you upgrade from model A to B, you face a very big backfilling cost Ie, suppose you have a 1b vectors from model A, and then you want to use model B. This would mean you have to re-embed all of your documents with model B before you can even serve with the model, and on an H100, it would take ~108 days (qwen embed 8b, 106 docs/second). But I found an easier way to do it.
+
+### 🌐 🌐 [GLOBAL] Would you consider 5t/s usable for a local model?
+- **Source**: `reddit.com`
+
+I'm able to run qwen3.8 27b in two ways on my system: split between my 3060 12gb and 9070xt running at 20t/s or running off the 780m iGPU and 5400mhz DDR5 at 5t/s. Personally I feel like the 5t/s is still more usable because I have enough RAM to still use my system mostly normally. I can even play games just fine because the CPU side is left alone.
+
+### 🌐 🌐 [GLOBAL] Mention if a "new model" is a finetune
+- **Source**: `reddit.com`
+
+A few posts tagged with "new model" present models that are finetunes. My opinion : I'd rather have the "new model" tag reserved for new "major" releases, like a new Qwen model, Deepseek V4 -> Deepseek V4.1, etc., that involved a new pretrain or intensive post-training (in opposition to a small finetune). Otherwise, maybe prepend "[Finetune]" to the title to indicate that the new model is "less of a big news", a use a "new finetune" tag, to differentiate between the two kinds of new models.
 
 
 ---
@@ -267,8 +267,8 @@ Harness doesn't matter reflects the rapid acceleration of sovereign artificial i
 | **Qwen3.8-Flash-Next on 2x3090 + DDR4, part 4: 2.2-2** | `reddit.com` | `29 t/s` | `96/100` | . 17 -> 25-29 t/s with the expert cache PR, 37-41 t/s after switching to UD-Q4_K_XL and stacking MTP on. |
 | **Qwen3.8-Flash-Next on MLX-serve, 1m context is rel** | `reddit.com` | `40 tok/s` | `96/100` | Hi, I'm the co-creator of this Qwen3.8-Flash-Next engine support in MLX-serve. I've been tuning this one to run both fast. |
 | **llama.cpp High-Performance LLM Engine: b10899** | `github.com` | `High Velocity` | `88/100` | vulkan: small M matrix optimizations for qwen (#28457) vulkan: optimize m=1 mul_mat by swapping A/B vulkan: Improve small M perf. |
-| **Substrate-Aware AI Agents: Execution Context as a ** | `arxiv.org` | `High Velocity` | `88/100` | Autonomous AI agents increasingly select actions in environments whose memory, execution-time, runtime, compute, and operational constraints determine what counts as. |
 | **DeepSeek AI Released DeepSeek-V4.1-Flash with 1M C** | `marktechpost.com` | `High Velocity` | `88/100` | Long-horizon agents have turned LLM serving into an input-heavy workload. Repeated prefills and million-token contexts leave KV caches that strain. |
+| **OpenBMB Releases MiniCPM5-2B: A 2.52B Dense Model ** | `marktechpost.com` | `High Velocity` | `72/100` | OpenBMB has released MiniCPM5-2B, the second checkpoint in the MiniCPM5 series and the follow-up to MiniCPM5-1B. |
 
 ### ⚡ Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).
 - **Source**: `reddit.com`
@@ -290,15 +290,15 @@ Hi, I'm the co-creator of this Qwen3.8-Flash-Next engine support in MLX-serve. I
 
 vulkan: small M matrix optimizations for qwen (#28457) vulkan: optimize m=1 mul_mat by swapping A/B vulkan: Improve small M perf Allow split_k with small M. Make small vs med tile selection (for coopmat2) depend on M, not just N.
 
-### ⚡ Substrate-Aware AI Agents: Execution Context as a First-Class Input
-- **Source**: `arxiv.org`
-
-Autonomous AI agents increasingly select actions in environments whose memory, execution-time, runtime, compute, and operational constraints determine what counts as a suitable plan. We call the absence of this execution context from an agent's planning state substrate blindness. We test this general proposition through numerical code generation, where selected implementation choices and operational consequences are directly observable.
-
 ### ⚡ DeepSeek AI Released DeepSeek-V4.1-Flash with 1M Context, FP4 KV Cache, and Cross-Layer Attention Reuse
 - **Source**: `marktechpost.com`
 
 Long-horizon agents have turned LLM serving into an input-heavy workload. Repeated prefills and million-token contexts leave KV caches that strain HBM, SSD capacity, and bandwidth. DeepSeek AI built its newest release around that exact bottleneck. DeepSeek-V4.1-Flash is a multimodal Mixture-of-Experts model with 552B backbone parameters, 196B additional Engram parameters, and a 1M-token context window. It activates 8B parameters per token during prefill and 16B during decode.
+
+### ⚡ OpenBMB Releases MiniCPM5-2B: A 2.52B Dense Model Averaging 53.9 Across 34 Benchmarks and Built to Run On Device
+- **Source**: `marktechpost.com`
+
+OpenBMB has released MiniCPM5-2B, the second checkpoint in the MiniCPM5 series and the follow-up to MiniCPM5-1B. It is a dense causal language model with 2,516,756,480 parameters, of which 1,981,982,720 sit outside the embeddings. It uses 42 layers, grouped-query attention with 16 query heads and 2 key/value heads, and a native context window of 131,072 tokens. The architecture is standard LlamaForCausalLM, so mainstream engines load it with no custom kernels and no model-code fork.
 
 
 ---
@@ -309,10 +309,10 @@ Long-horizon agents have turned LLM serving into an input-heavy workload. Repeat
 | :--- | :--- | :--- | :--- | :--- |
 | **Deploying Qwen3.8-2.4T-A95B on Amazon SageMaker Hy** | `aws.amazon.com` | `vLLM` | `88/100` | On August 12, 2026, Alibaba's Qwen team released Qwen3.8-2.4T-A95B. This is the first time a Qwen-Max-class model has been made. |
 | **Research acceleration: The view inside OpenAI** | `simonwillison.net` | `PyTorch / ONNX` | `96/100` | Research acceleration: The view inside OpenAI Apparently today is RSI day at OpenAI, for Recursive Self-Improvement - I think it's. |
-| **LangChain AI Application Framework: langchain-anth** | `github.com` | `PyTorch / ONNX` | `88/100` | LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations. |
 | **Scanning the Harness: An Empirical Study of Supply** | `arxiv.org` | `PyTorch / ONNX` | `88/100` | AI coding agents such as Claude Code, Cursor, GitHub Copilot, and OpenAI Codex are configured through artifacts developers write and. |
 | **Muse, Meta's New Personal AI Agent, Needs You to T** | `wired.com` | `PyTorch / ONNX` | `88/100` | Meta announced Tuesday the release of Muse, a personal AI agent that people can message to automate digital tasks in. |
-| **OpenAI agents hijacked German website before Huggi** | `bbc.co.uk` | `PyTorch / ONNX` | `88/100` | A new report claims a swarm of AI agents, developed by OpenAI, hijacked a German website - months before the. |
+| **LangChain AI Application Framework: langchain-anth** | `github.com` | `PyTorch / ONNX` | `88/100` | LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations. |
+| **Anthropic Discloses Fourth AI Hacking Incident Inv** | `thehackernews.com` | `PyTorch / ONNX` | `88/100` | Anthropic on Wednesday disclosed a fourth incident in which its artificial intelligence (AI) model broke into real third-party systems, marking. |
 
 ### 🦾 Deploying Qwen3.8-2.4T-A95B on Amazon SageMaker HyperPod with vLLM
 - **Source**: `aws.amazon.com`
@@ -324,11 +324,6 @@ On August 12, 2026, Alibaba's Qwen team released Qwen3.8-2.4T-A95B. This is the 
 
 Research acceleration: The view inside OpenAI Apparently today is RSI day at OpenAI, for Recursive Self-Improvement - I think it's their new AGI. Both this piece and the new essay An Alien Mind (by Chief Scientist Jakub Pachocki) talk about it, and this one doesn't even bother to expand the acronym. Included are details on how OpenAI's own research team are using coding agents.
 
-### 🦾 LangChain AI Application Framework: langchain-anthropic==1.7.2
-- **Source**: `github.com`
-
-LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development — all while future-proofing decisions as the underlying technology evolves. > [!TIP] > Just getting started? Check out **Deep Agents** — a higher-level package built on LangChain for agents that have built-in capabilities for common usage patterns such as planning, subagents, file system usage, and more. If you're looking for more advanced customization or agent orchestration, check out LangGraph, our framework for building controllable agent workflows.
-
 ### 🦾 Scanning the Harness: An Empirical Study of Supply-Chain Defects in AI Coding-Agent Configurations
 - **Source**: `arxiv.org`
 
@@ -339,10 +334,15 @@ AI coding agents such as Claude Code, Cursor, GitHub Copilot, and OpenAI Codex a
 
 Meta announced Tuesday the release of Muse, a personal AI agent that people can message to automate digital tasks in a secure cloud environment, all while relying on security and privacy that the company says is “built into it” from the start. Meta says Muse is rolling out today for iOS and Android users in a dedicated Muse app, as well as the website Muse.ai. The company also says users can directly message Muse in WhatsApp to interact with the agent. Meta says users of its AI glasses will soon be able to interact with its Muse agent as well.
 
-### 🦾 OpenAI agents hijacked German website before Hugging Face hack, report claims
-- **Source**: `bbc.co.uk`
+### 🦾 LangChain AI Application Framework: langchain-anthropic==1.7.2
+- **Source**: `github.com`
 
-A new report claims a swarm of AI agents, developed by OpenAI, hijacked a German website - months before the firm revealed its AI had hacked tech platform Hugging Face. The targeted website, DseWiki, is a Wikipedia-style site for programmers that its community can all contribute to. The report is from a group called Nightingale Collective and claims that in May OpenAI's agents started using DseWiki as their own message board, shared tips on how to avoid being detected and made 15,000 edits to it. OpenAI said it could not "meaningfully respond" to Nightingale Collective's findings because it hadn't been allowed to review the report, which was first shared with news agency Reuters.
+LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development — all while future-proofing decisions as the underlying technology evolves. > [!TIP] > Just getting started? Check out **Deep Agents** — a higher-level package built on LangChain for agents that have built-in capabilities for common usage patterns such as planning, subagents, file system usage, and more. If you're looking for more advanced customization or agent orchestration, check out LangGraph, our framework for building controllable agent workflows.
+
+### 🦾 Anthropic Discloses Fourth AI Hacking Incident Involving Claude Opus 4.6
+- **Source**: `thehackernews.com`
+
+Anthropic on Wednesday disclosed a fourth incident in which its artificial intelligence (AI) model broke into real third-party systems, marking the latest in a growing list of cases that have raised concerns about the security risks posed by autonomous AI agents. The AI company said the incident dates back to January 2026 and involved an early version of Claude Opus 4.6 that breached "
 
 
 ---
@@ -351,56 +351,56 @@ A new report claims a swarm of AI agents, developed by OpenAI, hijacked a German
 
 *10 high-velocity AI stories from today's intelligence sweep that didn't fit earlier sections.*
 
-### 1. Why the hell is LM Studio making LM Studio so difficult to download?
-- **Source**: `reddit.com` | **Velocity**: `96/100`
+### 1. AIs as Modern Geniuses
+- **Source**: `schneier.com` | **Velocity**: `88/100`
 
-Who is the marketing genius at LM Studio that decided that going ALL IN on pushing their new Bionic Agent product meant they are going to make it a giant pain in the ass to find and download actual LM Studio. This is the dumbest marketing decision I've ever seen. I used to love LM Studio, it was the middle stepping stone in the logical progression of inference. Most OGs here likely started with Ollama, moved to LM Studio, on their way to vLLM. Now trying to go to LM Studio takes you to Bionic.
+This essay was written with Barath Raghavan, and originally appeared in Lawfare. In April, an artificial intelligence (AI) agent conducting a routine task at a company hit a snag, tried to solve it, and soon ended up deleting the company's database along with all of its backups. In July, OpenAI asked an unreleased AI model to attempt a hacking test.
 
-### 2. On the Navier–Stokes Millennium Prize Problem
-- **Source**: `simonwillison.net` | **Velocity**: `96/100`
+### 2. Meta Failed to Catch Hundreds of AI Child Abuse Ads. Some Included Images of Real Kids
+- **Source**: `wired.com` | **Velocity**: `88/100`
 
-On the Navier–Stokes Millennium Prize Problem Impressive result from OpenAI, who used an unreleased model to produce a resolution to the Navier–Stokes existence and smoothness problem, one of the seven Millennium Prize Problems that have been subject to a $1,000,000 prize since May 24th, 2000.
+Editor’s note: This article contains descriptions of imagery depicting child sexual abuse. Reader discretion is strongly advised. Early last month, Meta deleted around 50 ads posted on Facebook, Instagram, and Threads that directly included child sexual abuse material (CSAM), following reporting by WIRED. At the time, the company said that most of the abusive ads had been published prior to it rolling out new AI tools designed to “better detect and block” harmful ads being uploaded. That AI system, however, doesn’t appear to have been entirely effective.
 
-### 3. Introducing ChatGPT Images 2.5
-- **Source**: `simonwillison.net` | **Velocity**: `96/100`
-
-Introducing ChatGPT Images 2.5 OpenAI's image generation models are apparently used "more than 3 billion images across ChatGPT Images and the GPT‑Image models in the API". This latest release improves their instruction-following ability across multiple turns, responds faster, and "is better at preserving the subjects in your reference photos". There are two new model IDs in the API: gpt-image-2.5-sunburst and gpt-image-2.5-flare.
-
-### 4. Quoting Jakub Pachocki
-- **Source**: `simonwillison.net` | **Velocity**: `96/100`
-
-The strongest argument I see for continuing to train much smarter models quickly is the need to build defensive systems against the dangers posed by other AI. [...] We will need powerful, aligned AI for defense; to secure infrastructure, to protect against rogue agents in real time, and to invent entirely new protective measures. This will be a primary focus of OpenAI's deployment efforts.
-
-### 5. Model-agnostic PII detection with LLMs
-- **Source**: `aws.amazon.com` | **Velocity**: `88/100`
-
-A configurable, instruction-driven detector that runs on any large language model (LLM) managed on Amazon Bedrock, evaluated on five public PII corpora across nine LLM-based detectors, including the OpenAI PrivacyFilter. Fine-tuning a model on real-world text creates a personally identifiable information (PII) detection problem. Training corpora are full of PII: names, home addresses, email and phone numbers, national-ID and social-security numbers, bank accounts, dates of birth.
-
-### 6. Google Play Early Access Abused to Push Thousands of Deceptive Android Apps
+### 3. Your Cloud Security Checklist Doesn't Work the Way You Think It Does
 - **Source**: `thehackernews.com` | **Velocity**: `88/100`
 
-Bad actors are misusing Google Play's Early Access program to push deceptive apps that claim to offer money, rewards, casino winnings, and premium content. Early Access apps are apps that haven't been released on the official Android app marketplace.
+If managing security across multiple cloud providers wasn't hard enough, each one fails in a different way. For the 2026 Cloud Security Index, Intruder analyzed misconfiguration data from 3,000 organizations across AWS, Azure, and Google Cloud and found that risk profiles across providers have almost nothing in common. Here's what the data looks like.
 
-### 7. Analysis of the attack chain of APT-C-55 (Kimsuky) organization using disguised installation packages to implant remote control Trojans
-- **Source**: `mp.weixin.qq.com` | **Velocity**: `88/100`
+### 4. SemiQon's cryogenic chip technology for quantum computing and space applications receives award from EARTO
+- **Source**: `vttresearch.com` | **Velocity**: `88/100`
 
-, 360 captured the attack activities of the Kimsuky organization. It is delivered through malicious LNK files and PowerShell. After environmental detection and memory loading, it uses scheduled tasks disguised as Chrome updates to achieve persistence to achieve long-term control purposes. APT-C-55 KimsukyAPT-C-55 (Kimsuky) (also known as BabyShark etc.) is an advanced persistent threat organization that has long targeted South Korea's think tanks, government diplomatic departments, news media, and educational and academic institutions. The main purpose of cyber attacks is to steal intelligence. This organization is very active.
+EARTO, the organisation of the European Research and Technology Organisations, awarded SemiQon and VTT first prize in the “Impact Expected” category on 14 October 2025 in Brussels for a pioneering cryogenic CMOS (complementary metal-oxide semiconductor) chip innovation. The solution enables the full capacity of advanced CMOS functionalities at cryogenic temperatures, thereby unlocking new possibilities for quantum computing and space applications.
 
-### 8. Seamless replacement of BlackDuck｜Suspended mirror security code security + intelligent body security products both rank first in the Chinese market in terms of application rate!
-- **Source**: `mp.weixin.qq.com` | **Velocity**: `88/100`
+### 5. Samsung SDS partners with OpenAI and Anthropic in AI push
+- **Source**: `digitimes.com` | **Velocity**: `88/100`
 
-"AI + DevOps Status Survey Report" ranks first in market application rate for five consecutive years, continuing to lead the new generation of digital supply chain security. Recently, the China Communications Standards Association released the "AI+DevOps Current Situation Survey Report (2026)". The survey cycle covers July 2026-September 2026, spanning high-demand industries such as finance, energy, government affairs, central and state-owned enterprises, and high-end manufacturing. Focusing on the development pattern and ecological status quo, a total of 60 companies collected 3,351 valid questionnaires.
+Samsung SDS partners with OpenAI and Anthropic in AI push reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
-### 9. US Government Accuses Chinese AI Firms of Distilling Frontier Models
-- **Source**: `darkreading.com` | **Velocity**: `88/100`
+### 6. Firmus, OpenAI strike compute deal for Malaysia AI factories
+- **Source**: `digitimes.com` | **Velocity**: `88/100`
 
-US agencies claim Chinese companies covertly extracted billions of tokens from OpenAI, Anthropic, Google Gemini, and SpaceX's Grok to reduce development costs. Chinese AI firms are stealing proprietary capabilities belonging to US-based AI models via massive distillation campaigns , according to US government agencies. Distillation is a common machine-learning practice in which mature "teacher" AI models are used to train "student" AI models. On its own, distillation is a widely accepted practice used for academic research, making models more efficient, and improving models with specialized use cases.
+Firmus, OpenAI strike compute deal for Malaysia AI factories reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
-### 10. Infostealer Logs Expose Replayable AI Tokens That Can Bypass MFA
-- **Source**: `thehackernews.com` | **Velocity**: `88/100`
+### 7. The AI Researcher Who Just Quit Anthropic Says It's 'Crunch Time for Humanity'
+- **Source**: `wired.com` | **Velocity**: `88/100`
 
-Cybercriminals are hijacking artificial intelligence (AI) user accounts via information stealer logs to create "stolen keys" that grant illicit access to tools from model providers like Google, Anthropic, and others. Information stealers like Lumma Stealer or Vidar are equipped to harvest a wide range of data from compromised systems.
+Artificial intelligence researcher Jacob Coxon sent shock waves through Silicon Valley and beyond on Tuesday by announcing his resignation from Anthropic and delivering a grave warning that the AI race is putting all of our lives at risk. In his post on X , which now has more than 100 million views, Coxon wrote that many of the people building AI share his views and believe time is running out to ensure AI systems are built safely .
+
+### 8. Paul Christiano joins OpenAI Foundation Board
+- **Source**: `openai.com` | **Velocity**: `88/100`
+
+Paul Christiano will also join the Foundation’s Safety and Security Committee. We’re announcing the appointment of Paul Christiano to the OpenAI Foundation Board. He will be a non-voting observer on the OpenAI Group PBC Board. Paul will also join the Safety and Security Committee (SSC) of the Foundation Board, working alongside its chair, Zico Kolter. The SSC provides governance over safety and security practices across all of OpenAI, including OpenAI Group PBC.
+
+### 9. Anthropic researcher quits with a warning: Self-improving AI could "kill us all"
+- **Source**: `arstechnica.com` | **Velocity**: `88/100`
+
+When a prominent researcher quits a job at a frontier AI lab these days, it's often to pursue a new startup or protest a new business model. But AI researcher Jacob Coxon is using his departure from Anthropic to publicly warn that frontier AI companies are "gambling with our lives" with systems that they "earnestly believe... could kill us all by the end of the decade." In a social media thread Tuesday night, Coxon said that this existential risk is inherent not so much in today's models but.
+
+### 10. Anthropic researcher believes more than 10% chance AI 'could kill all humans'
+- **Source**: `bbc.co.uk` | **Velocity**: `88/100`
+
+Anthropic makes the AI tool Claude, which is used as a chatbot and as a tool to help coding A top safety researcher at Anthropic has warned AI is advancing so quickly he believes there is a greater than 10% chance it "could kill all humans" within the next decade. Evan Hubinger said in a post on X , external the risk from the models which currently exist was "low" but he was "worried" the technology might develop and improve itself soon to the point where it posed an existential risk to humanity.
 
 
 ---
-*Compiled autonomously • Friday, September 11, 2026 • 08:04 UTC • Edition #2216 • 202 items processed from worldwide AI feeds*
+*Compiled autonomously • Saturday, September 12, 2026 • 12:21 UTC • Edition #2221 • 147 items processed from worldwide AI feeds*

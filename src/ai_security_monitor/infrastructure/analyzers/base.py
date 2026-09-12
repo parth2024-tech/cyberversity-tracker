@@ -1,11 +1,14 @@
-# Abstract base analyzer and registry.
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from uuid import UUID
 
+from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Analysis, AnalysisModel, Entry
 from ai_security_monitor.domain.events import EntryAnalyzedEvent, event_bus
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -18,7 +21,7 @@ class AnalysisResult:
     threat_velocity: int  # 1-100
     severity_index: int  # 1-100
     blast_radius_score: int = 0  # 1-100
-    affected_ecosystem: list[str] = None
+    affected_ecosystem: list[str] | None = None
     is_pre_cve_warning: bool = False
     attack_archetype: str = ""
     weaponization_potential: str = "Theoretical"
@@ -86,7 +89,7 @@ class BaseAnalyzer(ABC):
                     analysis=analysis,
                 ))
             except Exception as e:
-                print(f"Analysis failed for entry {entry.id}: {e}")
+                logger.error(f"Analysis failed for entry {entry.id}: {e}")
                 results.append((entry.id, None))
         return results
 

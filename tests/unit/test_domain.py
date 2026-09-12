@@ -28,7 +28,7 @@ def test_content_hash_validation():
     assert len(str(ch_auto)) == 64
 
     # Invalid length
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="64 character hex string"):
         ContentHash("invalid_short_hash")
 
 
@@ -41,7 +41,7 @@ def test_threat_score():
     assert low_score.is_high_velocity is False
     assert low_score.is_critical is False
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="velocity must be 0-100"):
         ThreatScore(velocity=150, severity=50)
 
 

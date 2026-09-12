@@ -90,10 +90,10 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "pong",
                         "timestamp": msg.get("timestamp")
                     }))
-            except Exception:
-                pass
+            except Exception as _msg_err:
+                logger.debug(f"Ignoring malformed WebSocket message: {_msg_err}")
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception as e:
-        logger.warn(f"WebSocket connection error: {e}")
+        logger.warning(f"WebSocket connection error: {e}")
         manager.disconnect(websocket)

@@ -16,6 +16,8 @@ services:
       - SCHEDULER_ENABLED=true
       - SCHEDULER_FETCH_INTERVAL_MINUTES=15
       - ANALYZER_DEFAULT_MODEL=heuristic
+      - DB_URL=sqlite+aiosqlite:////app/data/monitor.db
+      - DB_RETENTION_DAYS=7
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs

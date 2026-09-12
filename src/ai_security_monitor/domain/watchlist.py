@@ -4,8 +4,7 @@ Watchlist Rule domain entity for custom framework & asset threat tracking.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from ai_security_monitor.domain.entities import Category, Entry
@@ -20,7 +19,7 @@ class WatchlistRule:
     categories: list[Category] = field(default_factory=list)
     min_threat_velocity: int = 0
     enabled: bool = True
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def matches(self, entry: Entry) -> bool:
         """Check if an intelligence entry matches this watchlist rule."""

@@ -66,7 +66,7 @@ async def view_latest_newspaper_html():
 
 
 @newspaper_router.get("/download")
-async def download_newspaper(format: str = Query(default="md", pattern="^(md|html|pdf)$")):
+async def download_newspaper(file_format: str = Query(default="md", pattern="^(md|html|pdf)$", alias="format")):
     """Download the latest 5-hour newspaper file as Markdown (.md), Web Newspaper (.html), or PDF (.pdf)."""
     edition = _newspaper_service.get_latest_edition()
     if not edition:
@@ -77,11 +77,11 @@ async def download_newspaper(format: str = Query(default="md", pattern="^(md|htm
         raise HTTPException(status_code=404, detail="No newspaper edition to download.")
 
     output_dir = Path("data/newspapers")
-    if format == "html":
+    if file_format == "html":
         file_path = output_dir / f"{edition['edition_id']}.html"
         media_type = "text/html"
         filename = f"{edition['edition_id']}.html"
-    elif format == "pdf":
+    elif file_format == "pdf":
         file_path = output_dir / f"{edition['edition_id']}.pdf"
         media_type = "application/pdf"
         filename = f"Global_AI_Gazette_Edition_{edition['edition_number']}.pdf"
@@ -99,7 +99,7 @@ async def download_newspaper(format: str = Query(default="md", pattern="^(md|htm
         filename = f"{edition['edition_id']}.md"
 
     if not file_path.exists():
-        fallback = output_dir / f"latest.{format}"
+        fallback = output_dir / f"latest.{file_format}"
         if fallback.exists():
             file_path = fallback
         else:

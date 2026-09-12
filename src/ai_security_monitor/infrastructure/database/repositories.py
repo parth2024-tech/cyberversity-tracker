@@ -4,7 +4,7 @@ Implements the domain repository interfaces.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_, select
@@ -169,7 +169,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         model.summary = entry.summary
         model.tags = entry.tags
         model.extra_metadata = entry.metadata
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
         return self._model_to_entity(model)
@@ -214,7 +214,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         from sqlalchemy import delete as sa_delete
         from sqlalchemy import not_
 
-        cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
 
         # Exclude entries marked important, saved, or pinned in the vault from being purged
         not_vaulted_cond = or_(
@@ -264,7 +264,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         meta["is_saved"] = new_state
         meta["is_pinned"] = new_state
         if new_state:
-            meta["saved_at"] = datetime.utcnow().isoformat()
+            meta["saved_at"] = datetime.now(UTC).isoformat()
             if reason:
                 meta["importance_reason"] = reason
             elif not meta.get("importance_reason"):
@@ -273,7 +273,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             meta.pop("saved_at", None)
 
         model.extra_metadata = meta
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
 
@@ -287,16 +287,16 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         meta = dict(model.extra_metadata or {})
         meta["user_notes"] = notes.strip()
-        meta["notes_updated_at"] = datetime.utcnow().isoformat()
+        meta["notes_updated_at"] = datetime.now(UTC).isoformat()
         if not meta.get("is_important"):
             meta["is_important"] = True
             meta["is_saved"] = True
-            meta["saved_at"] = datetime.utcnow().isoformat()
+            meta["saved_at"] = datetime.now(UTC).isoformat()
             if not meta.get("importance_reason"):
                 meta["importance_reason"] = "User Technical Analysis Attached"
 
         model.extra_metadata = meta
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
 
@@ -583,7 +583,7 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         model.mitre_technique = analysis.mitre_technique
         model.model = analysis.model.value
         model.confidence = analysis.confidence
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
         return self._model_to_entity(model)
@@ -699,7 +699,7 @@ class SQLAlchemySourceRepository(SourceRepository):
         model.last_status = source.last_status.value if source.last_status else None
         model.last_entries_new = source.last_entries_new
         model.config = source.config
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
         return self._model_to_entity(model)
@@ -757,7 +757,7 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
         return self._model_to_entity(model)
 
     async def get_recent(self, hours: int = 24, limit: int = 100) -> list[FetchLog]:
-        since = datetime.utcnow() - timedelta(hours=hours)
+        since = datetime.now(UTC) - timedelta(hours=hours)
         stmt = (
             select(FetchLogModel)
             .where(FetchLogModel.fetched_at >= since)
@@ -782,7 +782,7 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
     async def purge_old_logs(self, older_than_days: int = 7) -> int:
         """Delete fetch logs older than retention window."""
         from sqlalchemy import delete as sa_delete
-        cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
         del_res = await self._session.execute(
             sa_delete(FetchLogModel).where(FetchLogModel.fetched_at < cutoff)
         )
@@ -866,7 +866,7 @@ class SQLAlchemyDigestRepository(DigestRepository):
     async def purge_old_digests(self, older_than_days: int = 7) -> int:
         """Delete temporary generated digests older than retention window."""
         from sqlalchemy import delete as sa_delete
-        cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
         del_res = await self._session.execute(
             sa_delete(DigestModel).where(DigestModel.created_at < cutoff)
         )

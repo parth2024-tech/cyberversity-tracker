@@ -4,6 +4,7 @@ Value objects - immutable domain objects with value equality.
 
 import hashlib
 from dataclasses import dataclass
+from enum import Enum
 from typing import Self
 
 
@@ -52,9 +53,6 @@ class ThreatScore:
 
     def __str__(self) -> str:
         return f"V:{self.velocity} S:{self.severity} B:{self.blast_radius}"
-
-
-from enum import Enum
 
 
 class WeaponizationLevel(str, Enum):

@@ -3,6 +3,7 @@ Database connection and session management.
 Async SQLAlchemy with SQLite (aiosqlite) for zero-cost deployment.
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from sqlalchemy import event, text
@@ -191,15 +192,13 @@ class DatabaseManager:
         from ai_security_monitor.infrastructure.database.models import Base
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        if db_path:
-            _ensure_seed_database(db_path)
 
 
 # Global database manager instance
 db_manager = DatabaseManager()
 
 
-async def get_db_session() -> AsyncSession:
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency for getting a database session."""
     async with db_manager.session() as session:
         yield session

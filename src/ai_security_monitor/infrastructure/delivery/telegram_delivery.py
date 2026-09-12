@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import httpx
@@ -77,7 +78,9 @@ class TelegramDelivery(BaseDelivery):
                 )
 
             p_path = Path(pdf_path)
-            if not p_path.exists():
+            # Use asyncio.to_thread for blocking filesystem operations
+            pdf_exists = await asyncio.to_thread(p_path.exists)
+            if not pdf_exists:
                 return DeliveryResult(
                     success=False,
                     channel=self.channel_name,
@@ -92,22 +95,22 @@ class TelegramDelivery(BaseDelivery):
             )
 
             url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
+            pdf_bytes = await asyncio.to_thread(p_path.read_bytes)
             async with httpx.AsyncClient(timeout=45) as client:
-                with open(p_path, "rb") as f:
-                    files = {
-                        "document": (
-                            f"Global_AI_Gazette_Edition_{edition_number}.pdf",
-                            f.read(),
-                            "application/pdf",
-                        )
-                    }
-                    data = {
-                        "chat_id": chat_id,
-                        "caption": caption,
-                        "parse_mode": "HTML",
-                    }
-                    response = await client.post(url, data=data, files=files)
-                    response.raise_for_status()
+                files = {
+                    "document": (
+                        f"Global_AI_Gazette_Edition_{edition_number}.pdf",
+                        pdf_bytes,
+                        "application/pdf",
+                    )
+                }
+                data = {
+                    "chat_id": chat_id,
+                    "caption": caption,
+                    "parse_mode": "HTML",
+                }
+                response = await client.post(url, data=data, files=files)
+                response.raise_for_status()
 
             return DeliveryResult(
                 success=True,

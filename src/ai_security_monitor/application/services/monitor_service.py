@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import os
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.config.sources import load_sources_from_yaml
@@ -102,8 +102,9 @@ class MonitorService:
 
     async def fetch_source(self, source: Source) -> FetchLog:
         """Fetch intelligence from a single source and analyze newly ingested entries."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(UTC)
         new_entries_count = 0
+        entries_total = 0
         status = FetchStatus.SUCCESS
         error_msg = None
 
@@ -113,6 +114,7 @@ class MonitorService:
             fetcher_cls = fetcher_registry.get(source.type.value)
             fetcher = fetcher_cls(source)
             fetch_result = await fetcher.fetch()
+            entries_total = fetch_result.entries_total
 
             analyzer = analyzer_registry.create(settings.analyzer.default_model)
             blast_engine = analyzer_registry.create("blast_radius")
@@ -220,7 +222,7 @@ class MonitorService:
                                     }
                                 })
                             except Exception as ws_err:
-                                logger.warn(f"WebSocket broadcast error: {ws_err}")
+                                logger.warning(f"WebSocket broadcast error: {ws_err}")
 
                         # Auto-enqueue high-priority entries into Autonomous LLM Triage Queue
                         if settings.analyzer.autonomous_triage_enabled:
@@ -232,7 +234,7 @@ class MonitorService:
                                     )
                                     await get_triage_service().enqueue(added_entry.id)
                                 except Exception as triage_err:
-                                    logger.warn(f"Failed to auto-enqueue entry for LLM triage: {triage_err}")
+                                    logger.warning(f"Failed to auto-enqueue entry for LLM triage: {triage_err}")
 
                         # Autonomous Emergency Push Alert (Telegram & Event Broadcast)
                         if analysis.threat_velocity >= 80 or analysis.is_pre_cve_warning:
@@ -250,8 +252,8 @@ class MonitorService:
                                             "source_name": source.name
                                         }
                                     })
-                                except Exception:
-                                    pass
+                                except Exception as _bc_err:
+                                    logger.debug(f"WebSocket broadcast error (non-critical): {_bc_err}")
 
                             # Dispatch Telegram Emergency Alert if credentials present
                             try:
@@ -270,7 +272,7 @@ class MonitorService:
                         continue
 
                 # Update source telemetry
-                source.last_fetched_at = datetime.utcnow()
+                source.last_fetched_at = datetime.now(UTC)
                 source.last_status = fetch_result.status
                 source.last_entries_new = new_entries_count
                 await uow.sources.update(source)
@@ -281,17 +283,17 @@ class MonitorService:
             status = FetchStatus.ERROR
             error_msg = str(e)
 
-        duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
         log = FetchLog(
             source_id=source.id,
             source_name=source.name,
             status=status,
             entries_new=new_entries_count,
-            entries_total=0,
+            entries_total=entries_total,
             error_message=error_msg,
             duration_ms=duration_ms,
-            fetched_at=datetime.utcnow()
+            fetched_at=datetime.now(UTC)
         )
 
         async with self._uow_factory() as uow:
@@ -396,24 +398,32 @@ class MonitorService:
             _sweep_count,
         )
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         interval_minutes = settings.scheduler.fetch_interval_minutes
 
-        last_sweep_iso = _last_sweep_at.isoformat() + "Z" if _last_sweep_at else None
-        seconds_since = int((now - _last_sweep_at).total_seconds()) if _last_sweep_at else None
+        def _to_utc(dt: datetime | None) -> datetime | None:
+            if dt is None:
+                return None
+            return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
+
+        sweep_at = _to_utc(_last_sweep_at)
+        started_at = _to_utc(_server_started_at) or now
+
+        last_sweep_iso = sweep_at.isoformat() if sweep_at else None
+        seconds_since = int((now - sweep_at).total_seconds()) if sweep_at else None
         next_sweep_in = max(0, interval_minutes * 60 - seconds_since) if seconds_since is not None else None
-        server_uptime_seconds = int((now - _server_started_at).total_seconds())
+        server_uptime_seconds = int((now - started_at).total_seconds())
 
         async with self._uow_factory() as uow:
             sources = await uow.sources.list(enabled_only=True)
 
         source_freshness = []
         for src in sources:
-            last = src.last_fetched_at
+            last = _to_utc(src.last_fetched_at)
             age_seconds = int((now - last).total_seconds()) if last else None
             source_freshness.append({
                 "name": src.name,
-                "last_fetched_at": last.isoformat() + "Z" if last else None,
+                "last_fetched_at": last.isoformat() if last else None,
                 "age_seconds": age_seconds,
                 "status": src.last_status.value if src.last_status else "never",
                 "last_new": src.last_entries_new or 0,
@@ -456,9 +466,7 @@ class MonitorService:
             # Single group-by query for all categories (replaces 8 sequential table scans)
             cat_stmt = select(EntryModel.category, func.count(EntryModel.id)).group_by(EntryModel.category)
             cat_rows = (await uow.session.execute(cat_stmt)).all()
-            cats = {cat.value: 0 for cat in Category}
-            for c_val, c_cnt in cat_rows:
-                cats[c_val] = c_cnt
+            cats = {cat.value: 0 for cat in Category} | dict(cat_rows)
 
             recent_logs = await uow.fetch_logs.get_recent(hours=24, limit=15)
 

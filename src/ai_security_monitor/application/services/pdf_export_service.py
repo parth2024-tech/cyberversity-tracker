@@ -5,7 +5,7 @@ Generates executive-grade multi-page PDFs using ReportLab.
 from __future__ import annotations
 
 import io
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from reportlab.lib import colors
@@ -163,7 +163,7 @@ class PdfExportService:
         )
 
         story = []
-        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+        now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
         # Title Block
         story.append(Paragraph(title.upper(), doc_title_style))

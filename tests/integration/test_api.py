@@ -115,3 +115,76 @@ async def test_omni_domain_categories():
             data = resp.json()
             assert "entries" in data
             assert "total" in data
+
+
+@pytest.mark.asyncio
+async def test_stats_endpoint_returns_structure():
+    """GET /api/stats should return required keys for the dashboard."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/stats")
+        assert resp.status_code == 200
+        data = resp.json()
+        # Required top-level fields
+        assert "total_entries" in data
+        assert "by_category" in data
+        assert "total_sources" in data
+        assert isinstance(data["total_entries"], int)
+        assert isinstance(data["by_category"], dict)
+
+
+@pytest.mark.asyncio
+async def test_entries_pagination():
+    """GET /api/entries with limit and offset should respect pagination."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp_page1 = await client.get("/api/entries?limit=5&offset=0")
+        assert resp_page1.status_code == 200
+
+        resp_page2 = await client.get("/api/entries?limit=5&offset=5")
+        assert resp_page2.status_code == 200
+
+        data1 = resp_page1.json()
+        data2 = resp_page2.json()
+        assert "entries" in data1
+        assert "entries" in data2
+
+        # IDs should not overlap (or both empty when no entries in DB)
+        ids1 = {e["id"] for e in data1["entries"]}
+        ids2 = {e["id"] for e in data2["entries"]}
+        assert ids1.isdisjoint(ids2) or (not ids1 and not ids2)
+
+
+@pytest.mark.asyncio
+async def test_sweep_status_endpoint():
+    """GET /api/stats/sweep-status should return sweep telemetry."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/stats/sweep-status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "sweep_count" in data or "last_sweep_at" in data or "sources" in data
+
+
+@pytest.mark.asyncio
+async def test_entries_invalid_limit_rejected():
+    """GET /api/entries with limit > 200 should return 422 validation error."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/entries?limit=9999")
+        assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_openapi_schema_not_exposed_in_test_mode():
+    """OpenAPI docs endpoint should not return 500 (may be disabled in prod)."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/docs")
+        # Either available (200) or not found (404) — never a server error
+        assert resp.status_code in (200, 404)

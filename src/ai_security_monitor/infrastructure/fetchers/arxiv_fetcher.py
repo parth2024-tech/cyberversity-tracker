@@ -1,6 +1,5 @@
-# arXiv API fetcher implementation.
-
-from datetime import datetime
+import re
+from datetime import UTC, datetime
 
 import feedparser
 import httpx
@@ -50,7 +49,7 @@ class ArxivFetcher(BaseFetcher):
             content = self._clean_html(content)
 
             # Get published date
-            published_at = datetime.utcnow()
+            published_at = datetime.now(UTC)
             if hasattr(item, "published_parsed") and item.published_parsed:
                 published_at = datetime(*item.published_parsed[:6])
 
@@ -94,7 +93,6 @@ class ArxivFetcher(BaseFetcher):
     def _clean_html(self, text: str) -> str:
         if not text:
             return ""
-        import re
         text = re.sub(r"<script.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<style.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<[^>]+>", "", text)

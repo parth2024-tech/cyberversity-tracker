@@ -3,7 +3,7 @@ Digest API router.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import yaml
@@ -64,8 +64,8 @@ async def dispatch_telegram_digest(req: TelegramDigestRequest):
     })
 
     days = 1 if req.schedule == "daily" else 7
-    period_start = datetime.utcnow() - timedelta(days=days)
-    period_end = datetime.utcnow()
+    period_start = datetime.now(UTC) - timedelta(days=days)
+    period_end = datetime.now(UTC)
 
     async with SqlAlchemyUnitOfWork() as uow:
         recent_entries = await uow.entries.list()

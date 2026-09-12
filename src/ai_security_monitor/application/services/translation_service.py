@@ -11,7 +11,6 @@ import asyncio
 import html
 import re
 from datetime import UTC, datetime, timezone
-from typing import Optional
 
 import structlog
 

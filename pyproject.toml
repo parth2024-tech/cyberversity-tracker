@@ -47,6 +47,7 @@ dependencies = [
     "gtts>=2.5.0",
     "deep-translator>=1.11.4",
     "langdetect>=1.0.9",
+    "defusedxml>=0.7.1",
 ]
 
 [project.optional-dependencies]

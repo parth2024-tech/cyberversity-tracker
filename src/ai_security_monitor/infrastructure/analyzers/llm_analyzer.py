@@ -4,12 +4,15 @@ import json
 import os
 
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import AnalysisModel, Entry
 from ai_security_monitor.infrastructure.analyzers.base import (
     AnalysisResult,
     BaseAnalyzer,
     analyzer_registry,
 )
+
+logger = get_logger(__name__)
 
 
 class LLMAnalyzer(BaseAnalyzer):
@@ -232,7 +235,7 @@ JSON only, no extra text."""
             )
         except Exception as e:
             # Fallback to heuristic on LLM failure
-            print(f"LLM analysis failed ({self.provider}), falling back to heuristic: {e}")
+            logger.warning(f"LLM analysis failed ({self.provider}), falling back to heuristic: {e}")
             from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
                 HeuristicAnalyzer,
             )

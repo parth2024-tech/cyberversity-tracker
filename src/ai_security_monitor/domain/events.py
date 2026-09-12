@@ -2,10 +2,13 @@
 Domain events - for event-driven architecture.
 """
 
+import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
+
+_event_logger = logging.getLogger(__name__)
 
 from ai_security_monitor.domain.entities import Analysis, Entry, FetchStatus
 
@@ -27,7 +30,7 @@ class DomainEvent:
     """Base domain event."""
     id: UUID = field(default_factory=uuid4)
     type: EventType
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     aggregate_id: UUID  # ID of the aggregate this event belongs to
     payload: dict = field(default_factory=dict)
 
@@ -116,9 +119,13 @@ class EventBus:
         for handler in handlers:
             try:
                 await handler(event)
-            except Exception:
-                # Log but don't fail - events should be fire-and-forget
-                pass
+            except Exception as exc:
+                # Log but don't fail — events are fire-and-forget
+                _event_logger.warning(
+                    "EventBus handler raised an exception for %s: %s",
+                    event.type,
+                    exc,
+                )
 
 
 # Global event bus instance

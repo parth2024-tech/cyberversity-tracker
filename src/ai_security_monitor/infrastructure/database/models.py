@@ -3,8 +3,9 @@ SQLAlchemy ORM models.
 Maps to database tables for persistent storage.
 """
 
-from datetime import datetime
-from typing import Optional
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
@@ -38,12 +39,12 @@ class SourceModel(Base):
     last_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     last_entries_new: Mapped[int] = mapped_column(Integer, default=0)
     config: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships (lazy="select" prevents massive eager loads of thousands of entries when querying sources)
-    entries: Mapped[list["EntryModel"]] = relationship(back_populates="source", lazy="select")
-    fetch_logs: Mapped[list["FetchLogModel"]] = relationship(back_populates="source", lazy="select")
+    entries: Mapped[list[EntryModel]] = relationship(back_populates="source", lazy="select")
+    fetch_logs: Mapped[list[FetchLogModel]] = relationship(back_populates="source", lazy="select")
 
     __table_args__ = (
         Index("ix_sources_category_enabled", "category", "enabled"),
@@ -61,16 +62,16 @@ class EntryModel(Base):
     content_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     summary: Mapped[str] = mapped_column(Text, default="")
     published_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
-    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     extra_metadata: Mapped[dict] = mapped_column("metadata_json", JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships
-    source: Mapped["SourceModel"] = relationship(back_populates="entries", lazy="selectin")
-    analysis: Mapped[Optional["AnalysisModel"]] = relationship(back_populates="entry", uselist=False, lazy="selectin")
+    source: Mapped[SourceModel] = relationship(back_populates="entries", lazy="selectin")
+    analysis: Mapped[AnalysisModel | None] = relationship(back_populates="entry", uselist=False, lazy="selectin")
 
     __table_args__ = (
         Index("ix_entries_category_published", "category", "published_at"),
@@ -100,11 +101,11 @@ class AnalysisModel(Base):
     confidence: Mapped[float] = mapped_column(default=1.0)
     overall_confidence: Mapped[float] = mapped_column(default=0.7)
     evidence_version: Mapped[str] = mapped_column(String(20), default="v1")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships
-    entry: Mapped["EntryModel"] = relationship(back_populates="analysis", lazy="selectin")
+    entry: Mapped[EntryModel] = relationship(back_populates="analysis", lazy="selectin")
 
     __table_args__ = (
         Index("ix_analysis_threat_velocity", "threat_velocity"),
@@ -130,10 +131,10 @@ class FetchLogModel(Base):
     entries_total: Mapped[int] = mapped_column(Integer, default=0)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
-    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
 
     # Relationships
-    source: Mapped["SourceModel"] = relationship(back_populates="fetch_logs")
+    source: Mapped[SourceModel] = relationship(back_populates="fetch_logs")
 
     __table_args__ = (
         Index("ix_fetch_log_source_fetched", "source_id", "fetched_at"),
@@ -153,7 +154,7 @@ class DigestModel(Base):
     period_end: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     delivered: Mapped[bool] = mapped_column(Boolean, default=False)
     delivery_channels: Mapped[list[str]] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
 
     __table_args__ = (
         Index("ix_digests_schedule_created", "schedule", "created_at"),
@@ -170,7 +171,7 @@ class WatchlistRuleModel(Base):
     categories: Mapped[list[str]] = mapped_column(JSON, default=list)
     min_threat_velocity: Mapped[int] = mapped_column(Integer, default=0)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class AnalysisEvidenceModel(Base):
@@ -186,7 +187,7 @@ class AnalysisEvidenceModel(Base):
     evidence_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     method: Mapped[str] = mapped_column(String(20), nullable=False)  # heuristic, llm, hybrid
     model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class AnalysisOutcomeModel(Base):
@@ -197,5 +198,5 @@ class AnalysisOutcomeModel(Base):
     analysis_id: Mapped[str] = mapped_column(String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True)
     outcome_type: Mapped[str] = mapped_column(String(20), nullable=False)  # telegram_sent, user_dismissed, user_escalated, false_positive, confirmed
     outcome_value: Mapped[str | None] = mapped_column(Text, nullable=True)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 

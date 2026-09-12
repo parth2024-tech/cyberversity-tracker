@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -13,6 +14,29 @@ from ai_security_monitor.infrastructure.delivery.base import (
     DeliveryResult,
     delivery_registry,
 )
+
+
+def _smtp_send(smtp_server: str, smtp_port: int, username: str, password: str, msg: MIMEMultipart) -> None:
+    """Run SMTP send synchronously — called via asyncio.to_thread() to avoid blocking the event loop."""
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(username, password)
+        server.send_message(msg)
+
+
+def _smtp_send_optional_auth(
+    smtp_server: str,
+    smtp_port: int,
+    username: str | None,
+    password: str | None,
+    msg: MIMEMultipart,
+) -> None:
+    """Run SMTP send with optional auth — called via asyncio.to_thread()."""
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        if username and password:
+            server.login(username, password)
+        server.send_message(msg)
 
 
 class EmailDelivery(BaseDelivery):
@@ -36,15 +60,18 @@ class EmailDelivery(BaseDelivery):
             msg["To"] = self.config["to_email"]
             msg["Subject"] = f"{settings.app_name} - {digest.schedule.title()} Digest ({digest.total_entries} items)"
 
-            # Build HTML body
             html = self._build_html_body(digest, entries_with_analysis)
             msg.attach(MIMEText(html, "html"))
 
-            # Send
-            with smtplib.SMTP(self.config["smtp_server"], self.config["smtp_port"]) as server:
-                server.starttls()
-                server.login(self.config["username"], self.config["password"])
-                server.send_message(msg)
+            # Run SMTP in thread pool to avoid blocking the event loop
+            await asyncio.to_thread(
+                _smtp_send,
+                self.config["smtp_server"],
+                self.config["smtp_port"],
+                self.config["username"],
+                self.config["password"],
+                msg,
+            )
 
             await self._publish_delivery_event(digest.id, True)
             return DeliveryResult(success=True, channel=self.channel_name, message="Email sent")
@@ -63,7 +90,7 @@ class EmailDelivery(BaseDelivery):
 
             html = f"""
             <html><body>
-            <h2>🚨 High-Velocity Threat Alert</h2>
+            <h2>🚨 High-Velocity Alert</h2>
             <p><strong>Title:</strong> {entry.title}</p>
             <p><strong>URL:</strong> <a href="{entry.url}">{entry.url}</a></p>
             <p><strong>Velocity:</strong> {analysis.threat_velocity}/100</p>
@@ -75,10 +102,15 @@ class EmailDelivery(BaseDelivery):
             """
             msg.attach(MIMEText(html, "html"))
 
-            with smtplib.SMTP(self.config["smtp_server"], self.config["smtp_port"]) as server:
-                server.starttls()
-                server.login(self.config["username"], self.config["password"])
-                server.send_message(msg)
+            # Run SMTP in thread pool to avoid blocking the event loop
+            await asyncio.to_thread(
+                _smtp_send,
+                self.config["smtp_server"],
+                self.config["smtp_port"],
+                self.config["username"],
+                self.config["password"],
+                msg,
+            )
 
             return DeliveryResult(success=True, channel=self.channel_name, message="Alert email sent")
         except Exception as e:
@@ -104,7 +136,7 @@ class EmailDelivery(BaseDelivery):
                     error="Recipient or sender email is missing."
                 )
 
-            import html
+            import html as _html
             from email.mime.application import MIMEApplication
 
             msg = MIMEMultipart()
@@ -112,54 +144,52 @@ class EmailDelivery(BaseDelivery):
             msg["To"] = target_to
             msg["Subject"] = f"📰 The Global AI Gazette — Edition #{edition_number} (PDF Attached)"
 
-            html_body = f"""
-            <html>
-            <body style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #1e293b; line-height: 1.6;">
-              <div style="background-color: #0f172a; padding: 24px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h1 style="color: #38bdf8; margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;">The Global AI Gazette</h1>
-                <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px;">Edition #{edition_number} • Worldwide AI Intelligence Broadsheet</p>
-              </div>
-              <div style="background-color: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-radius: 0 0 8px 8px;">
-                <h2 style="color: #0f172a; font-size: 18px; margin-top: 0;">🔥 Lead Story: {html.escape(lead_story or 'Worldwide AI Intelligence Dispatch')}</h2>
-                <p>Your autonomous worldwide AI intelligence broadsheet has been compiled across global developer, research, and foundation model telemetry. <strong>{total_threats} stories</strong> were analyzed during this period.</p>
-                <div style="background-color: #f8fafc; border-left: 4px solid #0ea5e9; padding: 12px 16px; margin: 18px 0;">
-                  <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0369a1;">📎 Attached Document:</p>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569;">Please find the attached 10-page PDF broadsheet (<code>Global_AI_Gazette_Edition_{edition_number}.pdf</code>) formatted for high-density viewing and printing.</p>
-                </div>
-                <p style="font-size: 12px; color: #64748b; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 12px; text-align: center;">
-                  Published autonomously by Global AI Intelligence Monitor Engine
-                </p>
-              </div>
-            </body>
-            </html>
-            """
+            html_body = f"""<html><body style="font-family: Arial, sans-serif; max-width: 650px;">
+              <h1>The Global AI Gazette — Edition #{edition_number}</h1>
+              <h2>🔥 Lead: {_html.escape(lead_story or 'Worldwide AI Intelligence Dispatch')}</h2>
+              <p><strong>{total_threats} stories</strong> analyzed. See attached PDF.</p>
+            </body></html>"""
             msg.attach(MIMEText(html_body, "html"))
 
             p_path = Path(pdf_path)
-            if p_path.exists():
-                with open(p_path, "rb") as f:
-                    pdf_part = MIMEApplication(f.read(), _subtype="pdf")
-                    pdf_part.add_header(
-                        "Content-Disposition",
-                        "attachment",
-                        filename=f"Global_AI_Gazette_Edition_{edition_number}.pdf"
-                    )
-                    msg.attach(pdf_part)
+            # Use asyncio.to_thread for blocking filesystem operations
+            pdf_exists = await asyncio.to_thread(p_path.exists)
+            if pdf_exists:
+                pdf_bytes = await asyncio.to_thread(p_path.read_bytes)
+                pdf_part = MIMEApplication(pdf_bytes, _subtype="pdf")
+                pdf_part.add_header(
+                    "Content-Disposition",
+                    "attachment",
+                    filename=f"Global_AI_Gazette_Edition_{edition_number}.pdf"
+                )
+                msg.attach(pdf_part)
             else:
-                return DeliveryResult(success=False, channel=self.channel_name, error=f"PDF file not found at {pdf_path}")
+                return DeliveryResult(
+                    success=False,
+                    channel=self.channel_name,
+                    error=f"PDF file not found at {pdf_path}"
+                )
 
             server_host = self.config.get("smtp_server", settings.delivery.email_smtp_server)
             server_port = int(self.config.get("smtp_port", settings.delivery.email_smtp_port))
             username = self.config.get("username", settings.delivery.email_username)
             password = self.config.get("password", settings.delivery.email_password)
 
-            with smtplib.SMTP(server_host, server_port) as server:
-                server.starttls()
-                if username and password:
-                    server.login(username, password)
-                server.send_message(msg)
+            # Run SMTP in thread pool to avoid blocking the event loop
+            await asyncio.to_thread(
+                _smtp_send_optional_auth,
+                server_host,
+                server_port,
+                username,
+                password,
+                msg,
+            )
 
-            return DeliveryResult(success=True, channel=self.channel_name, message=f"Newspaper PDF Edition #{edition_number} emailed to {target_to}")
+            return DeliveryResult(
+                success=True,
+                channel=self.channel_name,
+                message=f"Newspaper PDF Edition #{edition_number} emailed to {target_to}"
+            )
         except Exception as e:
             return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
 

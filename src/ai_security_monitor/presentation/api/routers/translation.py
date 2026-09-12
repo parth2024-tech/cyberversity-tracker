@@ -7,7 +7,6 @@ and converts them into clear English security advisories.
 """
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException

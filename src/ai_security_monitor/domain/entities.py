@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -49,8 +49,8 @@ class AnalysisModel(str, Enum):
 class Entity:
     """Base entity with ID and timestamps."""
     id: UUID = field(default_factory=uuid4)
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(kw_only=True)
@@ -78,7 +78,7 @@ class Entry(Entity):
     content_hash: str  # SHA256 for deduplication
     summary: str = ""
     published_at: datetime
-    fetched_at: datetime = field(default_factory=datetime.utcnow)
+    fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     category: Category
     tags: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
@@ -121,7 +121,7 @@ class FetchLog(Entity):
     entries_total: int = 0
     error_message: str | None = None
     duration_ms: int = 0
-    fetched_at: datetime = field(default_factory=datetime.utcnow)
+    fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(kw_only=True)

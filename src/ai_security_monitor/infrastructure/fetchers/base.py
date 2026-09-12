@@ -6,9 +6,10 @@ Plugin architecture for extensible feed fetching.
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry, FetchStatus, Source
 from ai_security_monitor.domain.events import (
     EntryFetchedEvent,
@@ -20,6 +21,8 @@ from ai_security_monitor.domain.exceptions import (
     FetchRateLimitedError,
     FetchTimeoutError,
 )
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -66,7 +69,7 @@ class BaseFetcher(ABC):
 
     async def fetch(self) -> FetchResult:
         """Main fetch method with rate limiting, retries, and error handling."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(UTC)
 
         # Rate limiting
         await self._respect_rate_limit()
@@ -90,7 +93,7 @@ class BaseFetcher(ABC):
                         entries.append(entry)
                     except Exception as e:
                         # Log parse error but continue
-                        print(f"Failed to parse entry from {self.source.name}: {e}")
+                        logger.warning(f"Failed to parse entry from {self.source.name}: {e}")
                         continue
 
                 # Publish events for new entries
@@ -100,7 +103,7 @@ class BaseFetcher(ABC):
                         entry=entry,
                     ))
 
-                duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+                duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
                 return FetchResult(
                     entries=entries,
@@ -123,7 +126,7 @@ class BaseFetcher(ABC):
                 await asyncio.sleep(delay)
 
         # All retries exhausted
-        duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
         error_msg = str(last_error) if last_error else "Unknown error"
 
         await event_bus.publish(FetchFailedEvent(
@@ -146,12 +149,12 @@ class BaseFetcher(ABC):
     async def _respect_rate_limit(self) -> None:
         """Enforce rate limiting between fetches."""
         if self._last_fetch_time:
-            elapsed = (datetime.utcnow() - self._last_fetch_time).total_seconds()
+            elapsed = (datetime.now(UTC) - self._last_fetch_time).total_seconds()
             if elapsed < self._rate_limit_seconds:
                 wait_time = self._rate_limit_seconds - elapsed
                 await asyncio.sleep(wait_time)
 
-        self._last_fetch_time = datetime.utcnow()
+        self._last_fetch_time = datetime.now(UTC)
 
 
 class FetcherRegistry:

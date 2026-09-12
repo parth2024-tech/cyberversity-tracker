@@ -105,9 +105,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     def _broadcast_to_ws(msg: dict) -> None:
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             if loop.is_running():
                 asyncio.create_task(_ws_manager.broadcast(msg))
+        except RuntimeError:
+            pass
         except Exception:
             pass
 
@@ -191,7 +193,6 @@ def create_app() -> FastAPI:
     app.include_router(sources_router, prefix="/api", tags=["Sources"])
     app.include_router(analysis_router, prefix="/api", tags=["Analysis"])
     app.include_router(digest_router, prefix="/api", tags=["Digest"])
-    app.include_router(digest_router, prefix="/api/telegram", tags=["Telegram"])
     app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
     app.include_router(triage_router, prefix="/api", tags=["Autonomous Triage"])
     app.include_router(newspaper_router, prefix="/api", tags=["Newspaper"])

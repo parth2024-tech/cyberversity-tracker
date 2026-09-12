@@ -1012,9 +1012,9 @@
           <i data-lucide="mic" class="w-3.5 h-3.5 text-purple-400 animate-pulse"></i>
           <span class="hidden md:inline">AUDIO BRIEF</span>
         </button>
-        <button id="scan-btn" onclick="refreshFeedNow()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/20" title="Refresh Feed & Load New Updates">
+        <button id="scan-btn" onclick="triggerScan()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/20" title="Trigger On-Demand Live Sweep Across All AI Sources (/api/fetch)">
           <i id="scan-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-          <span>Refresh</span>
+          <span id="scan-btn-label">LIVE SWEEP</span>
           <span id="refresh-pending-badge" class="hidden px-1.5 py-0.2 bg-slate-950 text-cyan-300 rounded-full text-[10px] font-bold">0</span>
         </button>
       </div>
@@ -1204,12 +1204,6 @@
             </div>
             
             <div class="flex items-center gap-2 flex-shrink-0">
-              <!-- Manual Intelligence Refresh Action -->
-              <button id="feed-refresh-status-btn" onclick="loadFeed(true)" class="px-2.5 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition cursor-pointer bg-white/[0.03] border-white/[0.1] text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 hover:bg-cyan-500/10" title="Refresh feed to show new intelligence">
-                <i data-lucide="refresh-cw" id="refresh-btn-icon" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span id="refresh-btn-label">REFRESH FEED</span>
-              </button>
-
               <span class="text-[10px] font-mono text-slate-500 uppercase">SORT:</span>
               <select id="sort-select" onchange="loadFeed(true)" class="glass-input px-3 py-2 text-xs font-mono text-slate-300 cursor-pointer">
                 <option value="top" selected>★ Top News First</option>
@@ -1382,24 +1376,7 @@
     let focusedCardIndex = -1;
 
     async function refreshFeedNow() {
-      // Advance session baseline to previous refresh time, then update storage to now
-      previousSessionRefreshTime = parseInt(localStorage.getItem(REFRESH_TIMESTAMP_KEY) || Date.now().toString(), 10);
-      localStorage.setItem(REFRESH_TIMESTAMP_KEY, Date.now().toString());
-
-      const icon = document.getElementById('scan-icon');
-      if (icon) icon.classList.add('animate-spin');
-      playBeep('click');
-      try {
-        await Promise.allSettled([
-          loadFeed(true),
-          refreshStats(),
-          updateSweepFreshness(),
-        ]);
-      } finally {
-        setTimeout(() => {
-          if (icon) icon.classList.remove('animate-spin');
-        }, 500);
-      }
+      return triggerScan();
     }
 
     function setViewMode(mode) {
@@ -2351,12 +2328,9 @@
       const container = document.getElementById('feed-container');
       const loadingBar = document.getElementById('feed-loading-bar');
       const hasExistingCards = Boolean(container && container.querySelector('.feed-card'));
-
-      const refreshIcon = document.getElementById('refresh-btn-icon');
       let loadingBarTimer = null;
 
       if (reset) {
-        if (refreshIcon) refreshIcon.classList.add('animate-spin');
         if (hasExistingCards) {
           // Keep existing cards fully crisp and interactive without dimming
           if (loadingBar) {
@@ -2541,7 +2515,6 @@
         if (loadingBarTimer) clearTimeout(loadingBarTimer);
         if (container) container.classList.remove('feed-dimmed');
         if (loadingBar) loadingBar.classList.remove('opacity-100');
-        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
       }
     }
 
@@ -2933,19 +2906,24 @@
     async function triggerScan() {
       const btn = document.getElementById('scan-btn');
       const icon = document.getElementById('scan-icon');
+      const label = document.getElementById('scan-btn-label');
       const modalSweepBtn = document.getElementById('btn-sweep-modal');
       if (btn) btn.disabled = true;
       if (icon) icon.classList.add('animate-spin');
+      if (label) label.textContent = 'SWEEPING...';
       if (modalSweepBtn) {
         modalSweepBtn.disabled = true;
         modalSweepBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Sweeping...`;
       }
       playBeep('alert');
+      showToast("📡 Initiating live planetary AI radar sweep across all sources...", "info");
 
       try {
         const res = await fetch('/api/fetch', { method: 'POST' });
         const data = await res.json();
-        console.log("Sweep initiated:", data);
+        console.log("Sweep completed:", data);
+        const newCount = (data && data.results && typeof data.results.total_new === 'number') ? data.results.total_new : 0;
+        showToast(`✅ Live sweep completed: ${newCount} new updates ingested`, "success");
         await Promise.allSettled([
           refreshStats(),
           updateSweepFreshness(),
@@ -2954,10 +2932,12 @@
         ]);
       } catch (e) {
         console.error("Scan error: ", e);
+        showToast("⚠️ Sweep failed: " + e.message, "alert");
       } finally {
         setTimeout(() => {
           if (btn) btn.disabled = false;
           if (icon) icon.classList.remove('animate-spin');
+          if (label) label.textContent = 'LIVE SWEEP';
           if (modalSweepBtn) {
             modalSweepBtn.disabled = false;
             modalSweepBtn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sweep All Feeds Now</span>`;

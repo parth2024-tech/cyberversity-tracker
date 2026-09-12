@@ -1,7 +1,6 @@
-# Pydantic schemas for Entry API.
+from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -42,7 +41,7 @@ class EntryRead(EntryBase):
 
 class EntryWithAnalysis(EntryRead):
     """Entry with analysis included."""
-    analysis: Optional["AnalysisRead"] = None
+    analysis: AnalysisRead | None = None
 
     class Config:
         from_attributes = True

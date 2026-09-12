@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from ai_security_monitor.config.settings import settings
@@ -78,7 +78,7 @@ class AutonomousTriageService:
                     "data": self.get_status()
                 })
             except Exception as e:
-                logger.warn(f"WebSocket broadcast error: {e}")
+                logger.warning(f"WebSocket broadcast error: {e}")
 
         return True
 
@@ -151,8 +151,8 @@ class AutonomousTriageService:
                                 "type": "triage_queue_updated",
                                 "data": self.get_status()
                             })
-                        except Exception:
-                            pass
+                        except Exception as _bc_err:
+                            logger.debug(f"Triage broadcast callback error (non-critical): {_bc_err}")
 
                 # Delay between inference jobs to protect hardware
                 await asyncio.sleep(settings.analyzer.triage_interval_seconds)
@@ -168,7 +168,7 @@ class AutonomousTriageService:
         async with self._uow_factory() as uow:
             entry = await uow.entries.get(entry_id)
             if not entry:
-                logger.warn(f"Entry {entry_id} not found for triage.")
+                logger.warning(f"Entry {entry_id} not found for triage.")
                 return
 
             self._current_entry_title = entry.title
@@ -192,7 +192,7 @@ class AutonomousTriageService:
                 existing_analysis.attack_archetype = analysis_result.attack_archetype
                 existing_analysis.weaponization_potential = analysis_result.weaponization_potential
                 existing_analysis.model = AnalysisModel.OLLAMA
-                existing_analysis.updated_at = datetime.utcnow()
+                existing_analysis.updated_at = datetime.now(UTC)
                 await uow.analyses.update(existing_analysis)
                 analysis = existing_analysis
             else:
@@ -237,7 +237,7 @@ class AutonomousTriageService:
                         }
                     })
                 except Exception as ws_err:
-                    logger.warn(f"WebSocket broadcast error: {ws_err}")
+                    logger.warning(f"WebSocket broadcast error: {ws_err}")
 
             # Send Telegram Alert if critical or Pre-CVE
             if settings.delivery.telegram_enabled and (analysis.threat_velocity >= 70 or analysis.is_pre_cve_warning):
@@ -249,7 +249,7 @@ class AutonomousTriageService:
                     await telegram_delivery.send_alert(entry, analysis)
                     logger.info(f"Telegram alert dispatched for autonomous triage of {entry.title[:40]}")
                 except Exception as tg_err:
-                    logger.warn(f"Failed to dispatch Telegram alert for triage: {tg_err}")
+                    logger.warning(f"Failed to dispatch Telegram alert for triage: {tg_err}")
 
 
 # Global Singleton Instance
