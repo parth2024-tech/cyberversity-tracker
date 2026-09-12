@@ -5969,6 +5969,14 @@
           countLabel = ` | #${sweepCount}`;
         }
 
+        let uptimeLabel = '';
+        if (data.server_uptime_seconds !== null && data.server_uptime_seconds !== undefined) {
+          const upSecs = data.server_uptime_seconds;
+          if (upSecs < 3600) uptimeLabel = ` | Uptime: ${Math.floor(upSecs / 60)}m`;
+          else if (upSecs < 86400) uptimeLabel = ` | Uptime: ${Math.floor(upSecs / 3600)}h`;
+          else uptimeLabel = ` | Uptime: ${Math.floor(upSecs / 86400)}d`;
+        }
+
         // Clean, luxury telemetry display without crowding the header bar
         txt.textContent = `SWEEP: ${age} │ 24/7 ACTIVE │ 1-WK RETENTION`;
         txt.title = `Last Sweep: ${age} | Cycle: #${sweepCount || 1}${nextLabel}${uptimeLabel}`;
