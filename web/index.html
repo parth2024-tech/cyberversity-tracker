@@ -1938,6 +1938,7 @@
         // Deduplicate: skip if card already in DOM or allFeedItems
         if (!document.getElementById('threat-card-' + entryId) && !allFeedItems.some(e => e.id === entryId)) {
           allFeedItems.unshift(entry);
+          if (allFeedItems.length > 250) allFeedItems.length = 250;
           prependFeedItem(entry);
           // Flash feed-loading bar briefly to signal live update
           const lb = document.getElementById('feed-loading-bar');
@@ -2336,8 +2337,8 @@
     }
 
     // Load Live Intelligence Feed (Zero-Fluctuation, In-Place Smooth Transition)
-    async function loadFeed(reset = false) {
-      if (reset) {
+    async function loadFeed(reset = false, isBackgroundSync = false) {
+      if (reset && !isBackgroundSync) {
         offset = 0;
         allFeedItems = [];
         pendingNewEntries = [];
@@ -2491,26 +2492,39 @@
           return;
         }
 
-        allFeedItems = reset ? data.entries : [...allFeedItems, ...data.entries];
-
-        // Single atomic paint with DocumentFragment to eliminate reflow and visual jitter
-        const fragment = document.createDocumentFragment();
-        data.entries.forEach(entry => {
-          try {
-            fragment.appendChild(createCardElement(entry));
-          } catch (cardErr) {
-            console.warn("Card rendering error for:", entry.id, cardErr);
+        if (isBackgroundSync) {
+          let newItems = 0;
+          for (const entry of data.entries.reverse()) { // Reverse so oldest of the new gets prepended first
+            if (!allFeedItems.some(e => e.id === entry.id)) {
+              allFeedItems.unshift(entry);
+              if (allFeedItems.length > 250) allFeedItems.length = 250;
+              prependFeedItem(entry);
+              newItems++;
+            }
           }
-        });
+          if (newItems > 0 && typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        } else {
+          allFeedItems = reset ? data.entries : [...allFeedItems, ...data.entries];
 
-        if (container) {
-          if (reset) {
-            container.innerHTML = '';
-            focusedCardIndex = -1;
-          }
-          container.appendChild(fragment);
-          if (typeof lucide !== 'undefined' && lucide.createIcons) {
-            lucide.createIcons();
+          // Single atomic paint with DocumentFragment to eliminate reflow and visual jitter
+          const fragment = document.createDocumentFragment();
+          data.entries.forEach(entry => {
+            try {
+              fragment.appendChild(createCardElement(entry));
+            } catch (cardErr) {
+              console.warn("Card rendering error for:", entry.id, cardErr);
+            }
+          });
+
+          if (container) {
+            if (reset) {
+              container.innerHTML = '';
+              focusedCardIndex = -1;
+            }
+            container.appendChild(fragment);
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+              lucide.createIcons();
+            }
           }
         }
 
@@ -2952,8 +2966,7 @@
           await Promise.allSettled([
             refreshStats(),
             updateSweepFreshness(),
-            loadFeed(true),
-            loadSources(),
+            loadFeed(true)
           ]);
         }
       } catch (e) {
@@ -5815,7 +5828,7 @@
         try {
           if (ch === 'stats')   await refreshStats();
           else if (ch === 'sweep')   await updateSweepFreshness();
-          else if (ch === 'feed')    await loadFeed(true);
+          else if (ch === 'feed')    await loadFeed(true, true);
           else if (ch === 'sources' && typeof loadSources === 'function') await loadSources();
 
           s.lastFetchedAt = performance.now();
