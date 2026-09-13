@@ -4,15 +4,17 @@
 // live event dispatching, and luxury toast notifications
 // ══════════════════════════════════════════════════════════════════════════
 
-let _wsReconnectDelay = 3000; // starts at 3s, doubles up to 30s max
-let _wsReconnectTimer = null;
-let ws = null;
+var _wsReconnectDelay = 3000; // starts at 3s, doubles up to 30s max
+var _wsReconnectTimer = null;
+var ws = null;
+window.ws = ws;
 
 // Pending new stories tracking
 var pendingNewEntries = [];
 window.pendingNewEntries = pendingNewEntries;
 
-let rocketStreamActive = false;
+var rocketStreamActive = false;
+window.rocketStreamActive = rocketStreamActive;
 
 function initWebSocket() {
   // Prevent duplicate reconnect timers

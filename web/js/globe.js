@@ -3,18 +3,18 @@
 // Interactive 3D spatial radar mapping 36 sovereign intelligence & AI hubs
 // ══════════════════════════════════════════════════════════════════════════
 
-let globeScene, globeCamera, globeRenderer, globeSphere, globeRing, globePoints;
-let isGlobeVisible = true;
-let isDraggingGlobe = false;
-let prevMouseX = 0, prevMouseY = 0;
-let globeVelX = 0.002, globeVelY = 0;
-let dragStartX = 0, dragStartY = 0;
-let hoveredStation = null;
-let isNavigatingToStation = false;
-let targetRotX = 0, targetRotY = 0;
-let globeAnimFrameId = null;
-let resumeGlobeAnimation = null;
-let pauseGlobeAnimation = null;
+var globeScene, globeCamera, globeRenderer, globeSphere, globeRing, globePoints;
+var isGlobeVisible = true;
+var isDraggingGlobe = false;
+var prevMouseX = 0, prevMouseY = 0;
+var globeVelX = 0.002, globeVelY = 0;
+var dragStartX = 0, dragStartY = 0;
+var hoveredStation = null;
+var isNavigatingToStation = false;
+var targetRotX = 0, targetRotY = 0;
+var globeAnimFrameId = null;
+var resumeGlobeAnimation = null;
+var pauseGlobeAnimation = null;
 
 function initThreeGlobe() {
   try {

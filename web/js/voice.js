@@ -3,7 +3,7 @@
 // Client-side neural TTS streaming, Web Speech API fallback, and Audio HUD
 // ══════════════════════════════════════════════════════════════════════════
 
-const VoiceRadar = {
+var VoiceRadar = {
   speaking: false,
   paused: false,
   rate: 1.0,

@@ -3,7 +3,8 @@
 // Manages modal views, re-compilation, Markdown copy, and Email/Telegram PDF
 // ══════════════════════════════════════════════════════════════════════════
 
-let _latestNewspaperMarkdown = '';
+var _latestNewspaperMarkdown = '';
+window._latestNewspaperMarkdown = _latestNewspaperMarkdown;
 
 async function openNewspaperModal() {
   const modal = document.getElementById('newspaper-modal');

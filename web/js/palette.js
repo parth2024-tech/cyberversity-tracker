@@ -3,8 +3,8 @@
 // Fast navigation, fuzzy search, and tactical hotkeys
 // ══════════════════════════════════════════════════════════════════════════
 
-let paletteSelectedIndex = 0;
-let paletteItems = [];
+var paletteSelectedIndex = 0;
+var paletteItems = [];
 
 const DEFAULT_PALETTE_ACTIONS = [
   { id: 'action-translate-all', title: 'Translate All Foreign Intelligence to English', subtitle: 'Auto-detect & translate Chinese, Russian, Japanese & EU feeds', icon: 'languages', badge: 'TRANSLATE', type: 'action', run: () => typeof backfillAllTranslations === 'function' ? backfillAllTranslations() : null },
@@ -48,7 +48,7 @@ function handlePaletteBackdrop(e) {
   }
 }
 
-let paletteDebounceTimer = null;
+var paletteDebounceTimer = null;
 function handlePaletteSearch() {
   clearTimeout(paletteDebounceTimer);
   paletteDebounceTimer = setTimeout(async () => {
