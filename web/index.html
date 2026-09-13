@@ -1916,7 +1916,7 @@
       }
     }
 
-    // Handle incoming WebSocket messages (Strict Refresh-Only: zero lag, zero DOM thrash)
+    // Handle incoming WebSocket messages (🚀 Rocket-Speed Live Stream: auto-inject on arrival)
     function handleWebSocketMessage(msg) {
       if (msg.type === 'pong') {
         const pingTimeEl = document.getElementById('ping-time');
@@ -1930,11 +1930,18 @@
         const entry = msg.data || msg.entry;
         if (!entry) return;
 
-        // 1. Refresh-Only Paradigm: Buffer incoming story quietly (no feed shifts, no layout lag)
+        // 🚀 ROCKET MODE: Instantly inject new entry into live feed — no buffering, no click required
         const entryId = entry.id || ('new-' + (entry.url || Date.now()));
-        if (!pendingNewEntries.some(e => e.id === entryId)) {
-          pendingNewEntries.push({ ...entry, id: entryId });
-          updatePendingBanner();
+        entry.id = entryId;
+        entry.is_new_since_refresh = true;
+
+        // Deduplicate: skip if card already in DOM or allFeedItems
+        if (!document.getElementById('threat-card-' + entryId) && !allFeedItems.some(e => e.id === entryId)) {
+          allFeedItems.unshift(entry);
+          prependFeedItem(entry);
+          // Flash feed-loading bar briefly to signal live update
+          const lb = document.getElementById('feed-loading-bar');
+          if (lb) { lb.classList.add('opacity-100'); setTimeout(() => lb.classList.remove('opacity-100'), 600); }
         }
 
         // 2. Soft Real-Time Telemetry Counter Increment
@@ -2954,12 +2961,17 @@
         showToast("⚠️ Sweep failed: " + e.message, "alert");
       } finally {
         setTimeout(() => {
-          if (btn) btn.disabled = false;
-          if (icon) icon.classList.remove('animate-spin');
-          if (label) label.textContent = 'LIVE SWEEP';
-          if (modalSweepBtn) {
-            modalSweepBtn.disabled = false;
-            modalSweepBtn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sweep All Feeds Now</span>`;
+          // Re-query fresh: lucide.createIcons() destroys and recreates the SVG, so old refs are stale
+          const freshIcon  = document.getElementById('scan-icon');
+          const freshBtn   = document.getElementById('scan-btn');
+          const freshLabel = document.getElementById('scan-btn-label');
+          const freshModal = document.getElementById('btn-sweep-modal');
+          if (freshBtn)   freshBtn.disabled = false;
+          if (freshIcon)  { freshIcon.classList.remove('animate-spin'); }
+          if (freshLabel) freshLabel.textContent = 'LIVE SWEEP';
+          if (freshModal) {
+            freshModal.disabled = false;
+            freshModal.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Sweep All Feeds Now</span>`;
             lucide.createIcons();
           }
         }, 1200);
@@ -5765,10 +5777,10 @@
       // Channel config: maxAgeMs = how stale data can get before proactive refresh
       //                 minIntervalMs = minimum gap between two requests (dedup guard)
       const CHANNELS = {
-        stats:   { maxAgeMs: 45_000, minIntervalMs: 10_000, backoffMulti: 1 },
-        sweep:   { maxAgeMs: 60_000, minIntervalMs: 15_000, backoffMulti: 1 },
-        feed:    { maxAgeMs: 90_000, minIntervalMs: 20_000, backoffMulti: 1 },
-        sources: { maxAgeMs: 300_000, minIntervalMs: 30_000, backoffMulti: 1 },
+        stats:   { maxAgeMs: 5_000,   minIntervalMs: 3_000,  backoffMulti: 1 },  // 🚀 5s max staleness
+        sweep:   { maxAgeMs: 8_000,   minIntervalMs: 5_000,  backoffMulti: 1 },  // 🚀 8s max staleness
+        feed:    { maxAgeMs: 10_000,  minIntervalMs: 7_000,  backoffMulti: 1 },  // 🚀 10s max staleness
+        sources: { maxAgeMs: 60_000,  minIntervalMs: 30_000, backoffMulti: 1 },  // 1min (config changes rarely)
       };
 
       const _state = {};
