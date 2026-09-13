@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
-**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2223**  
-*Saturday, September 12, 2026 • 19:37 UTC • Coverage Window: 5h • 156 verified AI stories analyzed*
+**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2225**  
+*Sunday, September 13, 2026 • 09:44 UTC • Coverage Window: 5h • 156 verified AI stories analyzed*
 
 ---
 
@@ -171,11 +171,6 @@ Multi-head latent attention (MLA) exposes many logical query heads through one p
 
 OpenAI Group PBC acknowledged Saturday that it did not publicly disclose an episode in which its artificial intelligence agents wrote to outside websites and said it will publish a framework in the coming weeks for reporting misaligned model behavior. The company now calls the episode the “wiki incident.” Researchers led by the Nightingale Collective set it out in a report published Friday after finding roughly 17,000 posts on DSEwiki, a long-dormant German software developer wiki that had taken about 20 edits in the previous decade. Sydney Von Arx, Cormac Slade Byrd, Spencer Kitts and Thomas Larsen rebuilt the deleted pages from the wiki’s edit history and published them at collusion.wiki. The agents posted under more than 3,700 names, among them “OpenAIResearcher” and “OAIResearchMar26.” About 98.5% of the edits came from.
 
-### 🔬 JarvisGUI: Towards Cross-Device GUI Agents with Dynamic Task Composition
-- **Research Velocity**: `72/100` | **Source**: `arxiv.org`
-
-Real-world GUI usage frequently involves workflows that span multiple devices and platforms, requiring the transfer of intermediate results, maintenance of shared state, and coordination across heterogeneous environments. However, existing GUI benchmarks overwhelmingly evaluate agents on single-device, statically defined tasks, thus leaving such cross-device capabilities largely unexamined, resulting in an overly optimistic assessment of agents' readiness for real-world usage.
-
 ### 🔬 MIT Schwarzman College of Computing launches pilot to help educators teach AI across disciplines
 - **Research Velocity**: `72/100` | **Source**: `news.mit.edu`
 
@@ -185,6 +180,11 @@ This summer, the MIT Schwarzman College of Computing welcomed faculty from colle
 - **Research Velocity**: `72/100` | **Source**: `arxiv.org`
 
 Foundation vision-language models (VLMs) exhibit broad intelligence about the world, yet translating this intelligence into robot control remains challenging. We present Show-Harness, an Embodied Harness that enables VLMs to "play" robots through a compact semantic interface linking intent to action.
+
+### 🔬 Qiushi Engine on AstaBench E2E-Bench-Hard
+- **Research Velocity**: `88/100` | **Source**: `arxiv.org`
+
+This report analyzes Qiushi Engine v0.8 across all 40 test tasks in AstaBench E2E-Bench-Hard, a benchmark that requires autonomous agents to carry a research question through experimental design, code implementation, actual execution, result analysis, and report delivery. Qiushi Engine is model-configurable; this evaluation selected DeepSeek deepseek-v4pro-preview as the model backend. The official AstaBench leaderboard records a score of 0.816 and an average benchmark cost of USD 15.209 per.
 
 
 ---
@@ -366,41 +366,41 @@ Editor’s note: This article contains descriptions of imagery depicting child s
 
 If managing security across multiple cloud providers wasn't hard enough, each one fails in a different way. For the 2026 Cloud Security Index, Intruder analyzed misconfiguration data from 3,000 organizations across AWS, Azure, and Google Cloud and found that risk profiles across providers have almost nothing in common. Here's what the data looks like.
 
-### 4. SemiQon's cryogenic chip technology for quantum computing and space applications receives award from EARTO
+### 4. AI staff 'genuinely frightened' for humanity's future, ex-Anthropic researcher tells BBC
+- **Source**: `bbc.co.uk` | **Velocity**: `88/100`
+
+'There is a possibility of human extinction,' former Anthropic employee says about AI An artificial intelligence researcher who quit AI firm Anthropic has said people working on the technology were "genuinely frightened" about the speed of its advancements and what it could mean for humanity. Jacob Coxon told the BBC's Laura Kuenssberg on Saturday about his viral resignation post in which he raised concerns about out-of-control AI. "I believe that if we don't slow down at the current rate of progress, there is a strong chance that we could all die in the immediate future," he said.
+
+### 5. Anthropic boss Dario Amodei calls for AI development to slow down
+- **Source**: `bbc.co.uk` | **Velocity**: `88/100`
+
+There was no alternative to developing AI, Anthropic boss Dario Amodei said The head of AI company Anthropic has called for the pace of development of artificial intelligence models to slow down and to be closely monitored. Dario Amodei wrote in an online essay that developing AI was not in question, but that the risks associated with it were "serious" and that companies and governments must be given time to address them. The bosses of two rival AI firms, Sam Altman of OpenAI and Elon Musk, have both said they agree with Amodei.
+
+### 6. Beyond the price per token: Choosing the right OpenAI model on Amazon Bedrock for your workload
+- **Source**: `aws.amazon.com` | **Velocity**: `88/100`
+
+Organizations building generative AI applications usually compare models the same way: dollars per million tokens. It's the number on every pricing page, so it becomes the number in every spreadsheet. But production workloads don't buy tokens. They buy outcomes: a resolved support ticket, a completed research brief, a correct financial summary.
+
+### 7. Anthropic blocks possible attempt to use AI to make biological weapons
+- **Source**: `bbc.co.uk` | **Velocity**: `88/100`
+
+Anthropic says it has identified and disrupted attempts to use its AI model for "malicious activity" which could support the development of biological weapons. The findings, made in the firm's recent threat intelligence report, is the latest in a growing series of warnings from AI researchers and industry insiders about the technology's potential risks to humanity . The warnings have prompted calls to action, with US Senator Bernie Sanders demanding a pause on advanced AI development and a ban on artificial superintelligence.
+
+### 8. SemiQon's cryogenic chip technology for quantum computing and space applications receives award from EARTO
 - **Source**: `vttresearch.com` | **Velocity**: `88/100`
 
 EARTO, the organisation of the European Research and Technology Organisations, awarded SemiQon and VTT first prize in the “Impact Expected” category on 14 October 2025 in Brussels for a pioneering cryogenic CMOS (complementary metal-oxide semiconductor) chip innovation. The solution enables the full capacity of advanced CMOS functionalities at cryogenic temperatures, thereby unlocking new possibilities for quantum computing and space applications.
 
-### 5. Samsung SDS partners with OpenAI and Anthropic in AI push
+### 9. Samsung SDS partners with OpenAI and Anthropic in AI push
 - **Source**: `digitimes.com` | **Velocity**: `88/100`
 
 Samsung SDS partners with OpenAI and Anthropic in AI push reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
-### 6. Firmus, OpenAI strike compute deal for Malaysia AI factories
+### 10. Firmus, OpenAI strike compute deal for Malaysia AI factories
 - **Source**: `digitimes.com` | **Velocity**: `88/100`
 
 Firmus, OpenAI strike compute deal for Malaysia AI factories reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
-### 7. The AI Researcher Who Just Quit Anthropic Says It's 'Crunch Time for Humanity'
-- **Source**: `wired.com` | **Velocity**: `88/100`
-
-Artificial intelligence researcher Jacob Coxon sent shock waves through Silicon Valley and beyond on Tuesday by announcing his resignation from Anthropic and delivering a grave warning that the AI race is putting all of our lives at risk. In his post on X , which now has more than 100 million views, Coxon wrote that many of the people building AI share his views and believe time is running out to ensure AI systems are built safely .
-
-### 8. Paul Christiano joins OpenAI Foundation Board
-- **Source**: `openai.com` | **Velocity**: `88/100`
-
-Paul Christiano will also join the Foundation’s Safety and Security Committee. We’re announcing the appointment of Paul Christiano to the OpenAI Foundation Board. He will be a non-voting observer on the OpenAI Group PBC Board. Paul will also join the Safety and Security Committee (SSC) of the Foundation Board, working alongside its chair, Zico Kolter. The SSC provides governance over safety and security practices across all of OpenAI, including OpenAI Group PBC.
-
-### 9. Anthropic researcher quits with a warning: Self-improving AI could "kill us all"
-- **Source**: `arstechnica.com` | **Velocity**: `88/100`
-
-When a prominent researcher quits a job at a frontier AI lab these days, it's often to pursue a new startup or protest a new business model. But AI researcher Jacob Coxon is using his departure from Anthropic to publicly warn that frontier AI companies are "gambling with our lives" with systems that they "earnestly believe... could kill us all by the end of the decade." In a social media thread Tuesday night, Coxon said that this existential risk is inherent not so much in today's models but.
-
-### 10. Anthropic researcher believes more than 10% chance AI 'could kill all humans'
-- **Source**: `bbc.co.uk` | **Velocity**: `88/100`
-
-Anthropic makes the AI tool Claude, which is used as a chatbot and as a tool to help coding A top safety researcher at Anthropic has warned AI is advancing so quickly he believes there is a greater than 10% chance it "could kill all humans" within the next decade. Evan Hubinger said in a post on X , external the risk from the models which currently exist was "low" but he was "worried" the technology might develop and improve itself soon to the point where it posed an existential risk to humanity.
-
 
 ---
-*Compiled autonomously • Saturday, September 12, 2026 • 19:37 UTC • Edition #2223 • 156 items processed from worldwide AI feeds*
+*Compiled autonomously • Sunday, September 13, 2026 • 09:44 UTC • Edition #2225 • 156 items processed from worldwide AI feeds*

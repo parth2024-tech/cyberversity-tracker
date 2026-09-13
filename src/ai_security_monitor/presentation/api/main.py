@@ -11,12 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.health import router as health_router
 from ai_security_monitor.core.logging import get_logger, setup_logging
 from ai_security_monitor.core.metrics import metrics_middleware
 from ai_security_monitor.infrastructure.database.connection import db_manager
+from ai_security_monitor.presentation.api.limiter import limiter
 from ai_security_monitor.presentation.api.routers import (
     analysis_router,
     audio_router,
@@ -95,6 +98,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 logger.warning(f"Error priming critical feeds: {prime_err}")
 
         asyncio.create_task(_prime_critical_feeds())
+
+        # Cache warming on startup to prevent cold-start latency
+        try:
+            from ai_security_monitor.infrastructure.cache import response_cache
+            logger.info("Warming hot response caches on startup...")
+            await response_cache.get_or_set("stats_totals", 30.0, lambda: monitor_service.get_stats())
+            await response_cache.get_or_set("sweep_status", 15.0, lambda: monitor_service.get_sweep_status())
+            logger.info("Hot response caches successfully warmed (stats_totals, sweep_status)")
+        except Exception as warm_err:
+            logger.warning(f"Cache warming notice (non-fatal): {warm_err}")
     except Exception as seed_err:
         logger.warning(f"Failed to auto-seed sources: {seed_err}")
 
@@ -170,6 +183,10 @@ def create_app() -> FastAPI:
         docs_url="/docs" if not settings.is_production else None,
         redoc_url="/redoc" if not settings.is_production else None,
     )
+
+    # Attach rate limiter
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     # CORS
     app.add_middleware(

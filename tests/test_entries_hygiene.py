@@ -128,16 +128,16 @@ async def test_purge_old_entries_1_week_retention():
         assert purged >= 0
         await uow.commit()
 
-        # Verify no remaining un-vaulted entries are older than 7 days based on fetched_at
+        # Verify no remaining active un-vaulted entries are older than 7 days based on fetched_at
         cutoff = datetime.utcnow() - timedelta(days=7)
         all_stale = (await uow.session.execute(
             select(EntryModel).where(EntryModel.fetched_at < cutoff)
         )).scalars().all()
-        unvaulted_stale = [
+        unvaulted_active_stale = [
             e for e in all_stale
-            if not (e.extra_metadata and (e.extra_metadata.get("is_important") or e.extra_metadata.get("is_saved") or e.extra_metadata.get("is_pinned")))
+            if not e.is_purged and not (e.extra_metadata and (e.extra_metadata.get("is_important") or e.extra_metadata.get("is_saved") or e.extra_metadata.get("is_pinned")))
         ]
-        assert len(unvaulted_stale) == 0
+        assert len(unvaulted_active_stale) == 0
 
 
 @pytest.mark.asyncio

@@ -83,6 +83,8 @@ class Entry(Entity):
     tags: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
     analysis: Analysis | None = None
+    is_purged: bool = False
+    purged_at: datetime | None = None
 
     def __post_init__(self) -> None:
         if self.published_at and hasattr(self.published_at, "tzinfo") and self.published_at.tzinfo is not None:

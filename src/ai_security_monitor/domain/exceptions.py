@@ -4,9 +4,12 @@ Domain exceptions - business logic errors.
 
 
 
+from typing import Any
+
+
 class DomainError(Exception):
     """Base domain exception."""
-    def __init__(self, message: str, code: str = "DOMAIN_ERROR", details: dict | None = None):
+    def __init__(self, message: str, code: str = "DOMAIN_ERROR", details: dict[str, Any] | None = None):
         super().__init__(message)
         self.message = message
         self.code = code

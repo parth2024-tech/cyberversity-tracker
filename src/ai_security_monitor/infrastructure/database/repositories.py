@@ -82,13 +82,17 @@ class SQLAlchemyEntryRepository(EntryRepository):
             extra_metadata=entry.metadata,
             created_at=entry.created_at,
             updated_at=entry.updated_at,
+            is_purged=entry.is_purged,
+            purged_at=entry.purged_at,
         )
         self._session.add(model)
         await self._session.flush()
         return self._model_to_entity(model)
 
-    async def get(self, entry_id: UUID) -> Entry | None:
-        stmt = select(EntryModel).where(EntryModel.id == _uuid_to_str(entry_id))
+    async def get(self, entry_id: UUID, include_purged: bool = False) -> Entry | None:
+        stmt = select(EntryModel).options(selectinload(EntryModel.analysis)).where(EntryModel.id == _uuid_to_str(entry_id))
+        if not include_purged:
+            stmt = stmt.where(EntryModel.is_purged.is_(False))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
@@ -109,6 +113,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
         analysis_joined = False
         if filters:
             stmt, analysis_joined = self._apply_filters(stmt, filters)
+        else:
+            stmt = stmt.where(EntryModel.is_purged.is_(False))
 
         if filters and filters.sort_by in ("top", "velocity"):
             if not analysis_joined:
@@ -152,6 +158,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         if filters:
             stmt, _ = self._apply_filters(stmt, filters)
+        else:
+            stmt = stmt.where(EntryModel.is_purged.is_(False))
 
         result = await self._session.execute(stmt)
         return result.scalar() or 0
@@ -194,6 +202,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             select(EntryModel)
             .outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
             .where(AnalysisModelDB.entry_id.is_(None))
+            .where(EntryModel.is_purged.is_(False))
         )
 
         if since:
@@ -206,13 +215,13 @@ class SQLAlchemyEntryRepository(EntryRepository):
         return [self._model_to_entity(m) for m in models]
 
     async def purge_old_entries(self, older_than_days: int = 7) -> int:
-        """Delete entries (and their cascaded analyses) older than `older_than_days` days (1-week retention).
+        """Soft-delete entries older than retention window (mark is_purged=True).
         Entries marked as important or saved in the vault are permanently exempted and preserved.
 
-        Returns the number of rows purged.
+        Returns the number of rows soft-purged.
         """
-        from sqlalchemy import delete as sa_delete
         from sqlalchemy import not_
+        from sqlalchemy import update as sa_update
 
         cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
 
@@ -230,17 +239,45 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 EntryModel.fetched_at < cutoff,
                 and_(EntryModel.published_at.is_not(None), EntryModel.published_at < cutoff)
             ),
-            not_vaulted_cond
+            not_vaulted_cond,
+            EntryModel.is_purged.is_(False),
         )
 
-        subquery = select(EntryModel.id).where(expired_cond)
+        soft_del_result = await self._session.execute(
+            sa_update(EntryModel)
+            .where(expired_cond)
+            .values(is_purged=True, purged_at=datetime.now(UTC))
+            .execution_options(synchronize_session=False)
+        )
+        self._session.expire_all()
+        return soft_del_result.rowcount or 0
+
+    async def hard_delete_purged(self, grace_days: int = 30) -> int:
+        """Permanently remove entries that were soft-deleted beyond the grace window (default 30 days)."""
+        from sqlalchemy import delete as sa_delete
+
+        cutoff = datetime.now(UTC) - timedelta(days=grace_days)
+        cutoff_naive = cutoff.replace(tzinfo=None)
+        hard_cond = and_(
+            EntryModel.is_purged.is_(True),
+            EntryModel.purged_at.is_not(None),
+            or_(
+                EntryModel.purged_at < cutoff,
+                EntryModel.purged_at < cutoff_naive,
+            ),
+        )
+        subquery = select(EntryModel.id).where(hard_cond)
         await self._session.execute(
-            sa_delete(AnalysisModelDB).where(AnalysisModelDB.entry_id.in_(subquery))
+            sa_delete(AnalysisModelDB)
+            .where(AnalysisModelDB.entry_id.in_(subquery))
+            .execution_options(synchronize_session=False)
         )
-        # Delete non-vaulted entries older than retention window (1 week / 7 days)
         del_result = await self._session.execute(
-            sa_delete(EntryModel).where(expired_cond)
+            sa_delete(EntryModel)
+            .where(hard_cond)
+            .execution_options(synchronize_session=False)
         )
+        self._session.expire_all()
         return del_result.rowcount or 0
 
     async def toggle_importance(
@@ -310,6 +347,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             select(EntryModel)
             .options(selectinload(EntryModel.analysis))
             .where(EntryModel.category == category.value)
+            .where(EntryModel.is_purged.is_(False))
         )
 
         if since:
@@ -322,6 +360,9 @@ class SQLAlchemyEntryRepository(EntryRepository):
         return [self._model_to_entity(m) for m in models]
 
     def _apply_filters(self, stmt, filters: EntryFilters):
+        # Exclude soft-deleted entries by default
+        stmt = stmt.where(EntryModel.is_purged.is_(False))
+
         if filters.category:
             stmt = stmt.where(EntryModel.category == filters.category.value)
         elif filters.categories:
@@ -512,6 +553,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
             created_at=model.created_at,
             updated_at=model.updated_at,
             analysis=analysis,
+            is_purged=bool(getattr(model, "is_purged", False)),
+            purged_at=getattr(model, "purged_at", None),
         )
 
 

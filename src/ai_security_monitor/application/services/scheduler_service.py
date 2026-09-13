@@ -34,30 +34,32 @@ class SchedulerService:
         self._newspaper = newspaper_service or NewspaperService()
         self._task: asyncio.Task | None = None
         self._newspaper_task: asyncio.Task | None = None
+        self._backup_task: asyncio.Task | None = None
         self._running = False
         self._sweep_count = 0  # Total sweeps since service start
 
     async def start(self) -> None:
-        """Start periodic background radar sweeps and 5-hour newspaper compiler."""
+        """Start periodic background radar sweeps, 5-hour newspaper compiler, and automated database backups."""
         if self._running:
             return
 
         self._running = True
         self._task = asyncio.create_task(self._loop())
         self._newspaper_task = asyncio.create_task(self._newspaper_loop())
-        logger.info("Background radar scheduler & 5-hour newspaper compiler started")
+        self._backup_task = asyncio.create_task(self._backup_loop())
+        logger.info("Background radar scheduler, 5-hour newspaper compiler & auto-backup loop started")
 
     async def stop(self) -> None:
-        """Stop background sweeps and newspaper compiler."""
+        """Stop background sweeps, newspaper compiler, and backup tasks."""
         self._running = False
-        for task in (self._task, self._newspaper_task):
+        for task in (self._task, self._newspaper_task, self._backup_task):
             if task and not task.done():
                 task.cancel()
                 try:
                     await task
                 except asyncio.CancelledError:
                     pass
-        logger.info("Background radar scheduler and newspaper compiler stopped")
+        logger.info("Background radar scheduler, newspaper compiler and auto-backup stopped")
 
     async def _loop(self) -> None:
         """Periodic sweep loop with automatic data hygiene."""
@@ -209,4 +211,63 @@ class SchedulerService:
                 logger.error(f"Error in 5-hour newspaper compilation loop: {e}")
 
             await asyncio.sleep(five_hours_seconds)
+
+    async def _backup_loop(self) -> None:
+        """Automated SQLite database backup every 12 hours with 7-version retention."""
+        import shutil
+        from pathlib import Path
+
+        # Initial delay before first backup to let server start and database populate
+        await asyncio.sleep(120)
+        interval = getattr(settings.database, "backup_interval_hours", 12) * 3600
+        retention_limit = getattr(settings.database, "backup_retention_copies", 60)
+
+        while self._running:
+            try:
+                db_url = settings.database.url
+                db_path_str = (
+                    db_url.replace("sqlite+aiosqlite:///", "")
+                    .replace("sqlite:///", "")
+                    .split("?")[0]
+                )
+                db_file = Path(db_path_str)
+                if db_file.exists() and db_file.is_file():
+                    backup_dir = db_file.parent / "backups"
+                    backup_dir.mkdir(parents=True, exist_ok=True)
+
+                    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+                    dest_file = backup_dir / f"monitor_backup_{timestamp}.db"
+
+                    shutil.copy2(db_file, dest_file)
+                    size_kb = dest_file.stat().st_size / 1024.0
+                    logger.info(
+                        f"Automated SQLite backup created: {dest_file.name} "
+                        f"({size_kb:.1f} KB)"
+                    )
+
+                    # Retain rolling backups according to retention policy
+                    existing_backups = sorted(
+                        backup_dir.glob("monitor_backup_*.db"),
+                        key=lambda p: p.stat().st_mtime,
+                        reverse=True,
+                    )
+                    from ai_security_monitor.core.diagnostics import diagnostics
+                    diagnostics.record_backup_completed(
+                        filename=dest_file.name,
+                        size_kb=size_kb,
+                        retained_count=min(len(existing_backups), retention_limit),
+                    )
+                    for old_backup in existing_backups[retention_limit:]:
+                        try:
+                            old_backup.unlink()
+                            logger.debug(f"Pruned older database backup: {old_backup.name}")
+                        except Exception:
+                            pass
+            except asyncio.CancelledError:
+                break
+            except Exception as backup_err:
+                logger.warning(f"Automated database backup error: {backup_err}")
+
+            await asyncio.sleep(interval)
+
 

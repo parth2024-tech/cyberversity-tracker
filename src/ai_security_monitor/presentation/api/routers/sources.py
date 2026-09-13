@@ -5,13 +5,14 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
+from ai_security_monitor.presentation.api.limiter import limiter
 
 sources_router = APIRouter(prefix="/sources")
 
@@ -75,7 +76,8 @@ async def toggle_source(source_id: str, req: SourceToggleRequest):
 
 
 @sources_router.post("/fetch")
-async def trigger_fetch_sweep():
+@limiter.limit("5/minute")
+async def trigger_fetch_sweep(request: Request):
     """Trigger an immediate radar sweep across all sources."""
     from ai_security_monitor.application.services.monitor_service import MonitorService
     service = MonitorService()

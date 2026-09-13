@@ -25,6 +25,9 @@ class DatabaseSettings(BaseSettings):
         description="SQLAlchemy async database URL"
     )
     retention_days: int = Field(default=7, description="Data retention period in days (1 week)")
+    hard_delete_grace_days: int = Field(default=30, description="Grace period in days before permanent deletion of soft-purged entries")
+    backup_interval_hours: int = Field(default=12, description="Interval in hours between automated SQLite database backups")
+    backup_retention_copies: int = Field(default=60, description="Number of rolling backups to retain (60 copies @ 12h = 30 days of disaster recovery)")
     echo: bool = Field(default=False, description="Log SQL queries")
     pool_size: int = Field(default=5, description="Connection pool size")
     max_overflow: int = Field(default=10, description="Max pool overflow")
@@ -73,6 +76,9 @@ class FetchSettings(BaseSettings):
         description="HTTP User-Agent header"
     )
     rate_limit_default: int = Field(default=3600, description="Default rate limit (seconds)")
+    max_concurrency: int = Field(default=12, description="Maximum concurrent fetch workers (adaptive semaphore cap)")
+    consecutive_failure_threshold: int = Field(default=3, description="Consecutive fetch failures before triggering alert")
+    langdetect_confidence_threshold: float = Field(default=0.7, description="Minimum confidence for language detection")
 
     model_config = SettingsConfigDict(env_prefix="FETCH_")
 

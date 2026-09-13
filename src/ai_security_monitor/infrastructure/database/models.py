@@ -68,6 +68,8 @@ class EntryModel(Base):
     extra_metadata: Mapped[dict] = mapped_column("metadata_json", JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    is_purged: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0", index=True)
+    purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     source: Mapped[SourceModel] = relationship(back_populates="entries", lazy="selectin")

@@ -17,7 +17,7 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -27,6 +27,7 @@ from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
+from ai_security_monitor.presentation.api.limiter import limiter
 
 entries_router = APIRouter(prefix="/entries")
 
@@ -349,7 +350,9 @@ async def query_serialized_entries(
 
 @entries_router.get("")
 @entries_router.get("/")
+@limiter.limit("60/minute")
 async def list_entries(
+    request: Request,
     category: str | None = Query(None),
     search: str | None = Query(None),
     pre_cve: bool | None = Query(False),

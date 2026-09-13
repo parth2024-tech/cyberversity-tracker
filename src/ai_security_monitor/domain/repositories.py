@@ -59,7 +59,7 @@ class EntryRepository(ABC):
         ...
 
     @abstractmethod
-    async def get(self, entry_id: UUID) -> Entry | None:
+    async def get(self, entry_id: UUID, include_purged: bool = False) -> Entry | None:
         """Get entry by ID."""
         ...
 
@@ -124,6 +124,16 @@ class EntryRepository(ABC):
     @abstractmethod
     async def save_user_notes(self, entry_id: UUID, notes: str) -> Entry:
         """Attach user research and analysis notes to entry."""
+        ...
+
+    @abstractmethod
+    async def purge_old_entries(self, older_than_days: int = 7) -> int:
+        """Soft-delete entries older than retention window. Returns count."""
+        ...
+
+    @abstractmethod
+    async def hard_delete_purged(self, grace_days: int = 30) -> int:
+        """Permanently delete soft-deleted entries older than grace period."""
         ...
 
 

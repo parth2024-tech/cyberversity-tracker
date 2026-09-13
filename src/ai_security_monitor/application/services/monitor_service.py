@@ -30,6 +30,52 @@ from ai_security_monitor.infrastructure.fetchers.base import fetcher_registry
 
 logger = get_logger(__name__)
 
+_consecutive_failures: dict[str, int] = {}
+
+
+async def send_source_failure_alert(source_name: str, count: int, error_msg: str | None = None) -> bool:
+    """Send alert via Telegram when an intelligence source fails consecutive sweeps."""
+    try:
+        tg_token = (
+            getattr(settings.delivery, "telegram_bot_token", None)
+            or getattr(settings, "telegram_bot_token", None)
+            or os.getenv("TELEGRAM_BOT_TOKEN")
+        )
+        tg_chat = (
+            getattr(settings.delivery, "telegram_chat_id", None)
+            or getattr(settings, "telegram_chat_id", None)
+            or os.getenv("TELEGRAM_CHAT_ID")
+        )
+        if not tg_token or not tg_chat:
+            return False
+
+        err_snippet = f"\n<b>Error:</b> <code>{error_msg[:200]}</code>" if error_msg else ""
+        text = (
+            f"⚠️ <b>AETHERGUARD SOURCE HEALTH ALERT</b>\n\n"
+            f"Source: <b>{source_name}</b>\n"
+            f"Status: Failed <b>{count}</b> consecutive fetch sweeps{err_snippet}\n\n"
+            f"<i>Timestamp: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}</i>"
+        )
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"https://api.telegram.org/bot{tg_token}/sendMessage",
+                json={
+                    "chat_id": tg_chat,
+                    "text": text,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": True,
+                },
+            )
+        if resp.status_code == 200:
+            from ai_security_monitor.core.diagnostics import diagnostics
+            diagnostics.record_failure_alert(source_name, count)
+            return True
+        return False
+    except Exception as e:
+        logger.warning(f"Failed to dispatch Telegram consecutive failure alert: {e}")
+        return False
+
 
 class MonitorService:
     """Core application service managing the intelligence lifecycle."""
@@ -302,8 +348,8 @@ class MonitorService:
 
         return log
 
-    async def fetch_all(self, force: bool = False, max_concurrency: int = 4) -> dict:
-        """Fetch intelligence from all enabled sources concurrently with balanced throughput."""
+    async def fetch_all(self, force: bool = False, max_concurrency: int | None = None) -> dict:
+        """Fetch intelligence from all enabled sources with priority ordering and adaptive concurrency."""
         async with self._uow_factory() as uow:
             sources = await uow.sources.list(enabled_only=True)
 
@@ -312,7 +358,20 @@ class MonitorService:
             async with self._uow_factory() as uow:
                 sources = await uow.sources.list(enabled_only=True)
 
-        sem = asyncio.Semaphore(max_concurrency)
+        # Priority queue ordering: Frontier Models -> AI Research -> GitHub Trending -> AI Tools -> Global Tech
+        source_priority_order = {
+            Category.AI_MODELS: 1,
+            Category.AI_RESEARCH: 2,
+            Category.GITHUB_TRENDING: 3,
+            Category.CYBER_TOOLS: 4,
+            Category.AI_TECH: 5,
+        }
+        sources.sort(key=lambda s: (source_priority_order.get(s.category, 99), s.name))
+
+        # Adaptive concurrency: scales with source count, capped at configurable max_concurrency
+        target_concurrency = max_concurrency if max_concurrency is not None else settings.fetch.max_concurrency
+        concurrency = max(1, min(len(sources), target_concurrency)) if sources else 4
+        sem = asyncio.Semaphore(concurrency)
         total_new = 0
         success = 0
         error = 0
@@ -328,11 +387,24 @@ class MonitorService:
                         if log.status == FetchStatus.SUCCESS:
                             success += 1
                             total_new += log.entries_new
+                            _consecutive_failures[src.name] = 0
                         else:
                             error += 1
+                            failures = _consecutive_failures.get(src.name, 0) + 1
+                            _consecutive_failures[src.name] = failures
+                            threshold = settings.fetch.consecutive_failure_threshold
+                            if failures == threshold or (failures > threshold and failures % 5 == 0):
+                                logger.warning(f"Source {src.name} has failed {failures} consecutive sweeps. Alerting.")
+                                asyncio.create_task(send_source_failure_alert(src.name, failures, log.error_message))
                 except Exception as e:
                     async with lock:
                         error += 1
+                        failures = _consecutive_failures.get(src.name, 0) + 1
+                        _consecutive_failures[src.name] = failures
+                        threshold = settings.fetch.consecutive_failure_threshold
+                        if failures == threshold or (failures > threshold and failures % 5 == 0):
+                            logger.warning(f"Source {src.name} has failed {failures} consecutive sweeps. Alerting.")
+                            asyncio.create_task(send_source_failure_alert(src.name, failures, str(e)))
                     logger.warning(f"Concurrent sweep error for {src.name}: {e}")
                 finally:
                     # Balanced cooperative yield to keep SQLite and event loop fluid for user HTTP requests
@@ -363,6 +435,7 @@ class MonitorService:
         days = older_than_days if older_than_days is not None else settings.database.retention_days
         async with self._uow_factory() as uow:
             purged = await uow.entries.purge_old_entries(older_than_days=days)
+            hard_purged = await uow.entries.hard_delete_purged(grace_days=30)
             purged_logs = await uow.fetch_logs.purge_old_logs(older_than_days=days)
             purged_digests = await uow.digests.purge_old_digests(older_than_days=days)
             try:
@@ -385,6 +458,8 @@ class MonitorService:
         )
         return {
             "purged": purged,
+            "purged_entries": purged,
+            "hard_deleted_purged": hard_purged,
             "purged_logs": purged_logs,
             "purged_digests": purged_digests,
             "older_than_days": days,
@@ -432,6 +507,8 @@ class MonitorService:
         # Sort: stale sources (longest since last fetch) first
         source_freshness.sort(key=lambda x: x["age_seconds"] if x["age_seconds"] is not None else 999999999, reverse=True)
 
+        from ai_security_monitor.core.diagnostics import diagnostics
+
         return {
             "last_sweep_at": last_sweep_iso,
             "seconds_since_last_sweep": seconds_since,
@@ -441,6 +518,7 @@ class MonitorService:
             "sweep_count": _sweep_count,
             "server_uptime_seconds": server_uptime_seconds,
             "sources": source_freshness,
+            "self_healing": diagnostics.get_summary(),
         }
 
 

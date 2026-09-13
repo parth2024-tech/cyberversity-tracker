@@ -13,7 +13,7 @@ class ContentHash:
     """SHA256 content hash for deduplication."""
     value: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.value:
             raise ValueError("Content hash cannot be empty")
         if len(self.value) != 64:  # SHA256 hex = 64 chars

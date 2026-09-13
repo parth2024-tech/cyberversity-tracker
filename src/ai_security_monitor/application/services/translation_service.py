@@ -14,6 +14,8 @@ from datetime import UTC, datetime, timezone
 
 import structlog
 
+from ai_security_monitor.config.settings import settings
+
 logger = structlog.get_logger(__name__)
 
 # ISO Language Code to Friendly Display Name & Flag
@@ -72,13 +74,24 @@ class TranslationService:
 
         # Check with langdetect for European / Latin script languages
         try:
-            from langdetect import DetectorFactory, detect
+            from langdetect import DetectorFactory, detect_langs
             DetectorFactory.seed = 0
             # Strip URLs and numbers before detection
             clean_detect = re.sub(r"https?://\S+|CVE-\d+-\d+|\b\d+\b", "", clean).strip()
             if len(clean_detect) >= 20:
-                lang = detect(clean_detect)
-                return lang
+                langs = detect_langs(clean_detect)
+                if langs:
+                    top = langs[0]
+                    if top.lang == "en":
+                        return "en"
+                    threshold = getattr(settings.fetch, "langdetect_confidence_threshold", 0.7)
+                    if top.prob < threshold:
+                        logger.debug(
+                            f"Language detection confidence {top.prob:.2f} for '{top.lang}' "
+                            f"below threshold {threshold}. Flagging as uncertain."
+                        )
+                        return "uncertain"
+                    return top.lang
         except Exception:
             pass
 
@@ -101,6 +114,10 @@ class TranslationService:
             return trans, lang, lang != target and lang != "en"
 
         detected_lang = self.detect_language(clean_text)
+
+        # If uncertain, skip translation to prevent corrupting text
+        if detected_lang == "uncertain":
+            return clean_text, "uncertain", False
 
         # If already English or target language, return as-is
         if detected_lang == target or detected_lang.startswith("en"):
@@ -125,6 +142,19 @@ class TranslationService:
         """
         title_lang = self.detect_language(entry.title or "")
         summary_lang = self.detect_language(entry.summary or "") if entry.summary else "en"
+
+        # If confidence was below threshold, flag as uncertain and preserve original text
+        if title_lang == "uncertain" or summary_lang == "uncertain":
+            from ai_security_monitor.core.diagnostics import diagnostics
+            diagnostics.record_language_uncertain(entry.title or "")
+            entry.metadata = entry.metadata or {}
+            entry.metadata["language_uncertain"] = True
+            if "original_title" not in entry.metadata:
+                entry.metadata["original_title"] = entry.title
+            if "original_summary" not in entry.metadata:
+                entry.metadata["original_summary"] = entry.summary
+            logger.info(f"Preserving original text due to uncertain language confidence: {entry.title[:50]}...")
+            return False
 
         # Check if either field is non-English
         is_foreign = (title_lang != "en" and not title_lang.startswith("en")) or \

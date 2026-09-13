@@ -35,17 +35,24 @@ class ConnectionManager:
         payload = json.dumps(message)
         connections = list(self.active_connections)
 
-        # Fan-out concurrently — all clients receive the message in parallel
-        results = await asyncio.gather(
-            *[conn.send_text(payload) for conn in connections],
-            return_exceptions=True,
-        )
-
-        # Prune any connections that raised an exception
-        for conn, result in zip(connections, results, strict=False):
-            if isinstance(result, Exception):
-                logger.warning(f"WebSocket send failed, dropping client: {result}")
+        async def _send_with_timeout(conn: WebSocket) -> bool:
+            try:
+                # Enforce 2.0s send timeout to apply backpressure on slow/stalled consumers
+                await asyncio.wait_for(conn.send_text(payload), timeout=2.0)
+                return True
+            except (TimeoutError, Exception) as err:
+                logger.warning(f"WebSocket consumer stalled or failed ({err}), dropping connection.")
+                from ai_security_monitor.core.diagnostics import diagnostics
+                diagnostics.record_websocket_backpressure_drop()
                 self.active_connections.discard(conn)
+                try:
+                    await conn.close(code=1008)
+                except Exception:
+                    pass
+                return False
+
+        # Fan-out concurrently with timeout protection across all active connections
+        await asyncio.gather(*[_send_with_timeout(c) for c in connections], return_exceptions=True)
 
 
 manager = ConnectionManager()

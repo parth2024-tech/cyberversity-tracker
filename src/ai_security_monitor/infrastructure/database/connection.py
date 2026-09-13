@@ -193,6 +193,19 @@ class DatabaseManager:
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
+        # Ensure soft-delete columns exist on pre-existing databases
+        if self._url.startswith("sqlite"):
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(text("ALTER TABLE entries ADD COLUMN is_purged BOOLEAN DEFAULT 0"))
+            except Exception:
+                pass
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(text("ALTER TABLE entries ADD COLUMN purged_at DATETIME"))
+            except Exception:
+                pass
+
 
 # Global database manager instance
 db_manager = DatabaseManager()

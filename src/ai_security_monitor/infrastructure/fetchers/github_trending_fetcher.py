@@ -31,21 +31,32 @@ class GitHubTrendingFetcher(BaseFetcher):
 
     async def _fetch_raw(self) -> list[dict]:
         entries = []
+        scrape_failed = False
         try:
             entries = await self._fetch_raw_scraping()
-        except Exception:
+        except Exception as scrape_err:
+            logger.warning(f"GitHub Trending scraping exception: {scrape_err}")
             entries = []
+            scrape_failed = True
 
         # If scraping returned few/no AI entries or failed, fetch from official GitHub Search API
         if len(entries) < 5:
+            reason = "scraping exception" if scrape_failed else f"low yield ({len(entries)} repos found)"
+            logger.warning(
+                f"GitHub Trending scrape health alert: {reason}. "
+                "Activating GitHub Search API fallback to guarantee ecosystem coverage."
+            )
+            from ai_security_monitor.core.diagnostics import diagnostics
+            diagnostics.record_scrape_fallback(self.source.name, reason)
             try:
                 api_entries = await self._fetch_raw_api()
                 existing_urls = {e["url"].lower() for e in entries}
                 for ae in api_entries:
                     if ae["url"].lower() not in existing_urls:
                         entries.append(ae)
-            except Exception:
-                pass
+                logger.info(f"GitHub Search API fallback enriched feed with {len(api_entries)} repos")
+            except Exception as api_err:
+                logger.error(f"GitHub Search API fallback also failed: {api_err}")
 
         return entries
 
@@ -61,6 +72,15 @@ class GitHubTrendingFetcher(BaseFetcher):
 
         soup = BeautifulSoup(response.content, "html.parser")
         repos = soup.find_all("article", class_="Box-row")
+        if not repos:
+            logger.warning(
+                "GitHub Trending DOM health check failed: no 'article.Box-row' elements matched. "
+                "GitHub layout or CSS classes may have updated."
+            )
+        elif len(repos) < 5:
+            logger.info(
+                f"GitHub Trending DOM health check warning: only {len(repos)} 'article.Box-row' elements parsed."
+            )
         entries = []
 
         for repo in repos[:30]:
