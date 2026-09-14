@@ -15,6 +15,7 @@ from ai_security_monitor.domain.entities import Analysis, Entry, FetchStatus
 
 class EventType(str, Enum):
     """Types of domain events."""
+
     ENTRY_FETCHED = "entry_fetched"
     ENTRY_ANALYZED = "entry_analyzed"
     FETCH_COMPLETED = "fetch_completed"
@@ -28,6 +29,7 @@ class EventType(str, Enum):
 @dataclass(kw_only=True)
 class DomainEvent:
     """Base domain event."""
+
     id: UUID = field(default_factory=uuid4)
     type: EventType
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -38,6 +40,7 @@ class DomainEvent:
 @dataclass(kw_only=True)
 class EntryFetchedEvent(DomainEvent):
     """Event fired when a new entry is fetched."""
+
     type: EventType = EventType.ENTRY_FETCHED
     entry: Entry
 
@@ -45,6 +48,7 @@ class EntryFetchedEvent(DomainEvent):
 @dataclass(kw_only=True)
 class EntryAnalyzedEvent(DomainEvent):
     """Event fired when an entry is analyzed."""
+
     type: EventType = EventType.ENTRY_ANALYZED
     entry_id: UUID
     analysis: Analysis
@@ -53,6 +57,7 @@ class EntryAnalyzedEvent(DomainEvent):
 @dataclass(kw_only=True)
 class FetchCompletedEvent(DomainEvent):
     """Event fired when a fetch operation completes."""
+
     type: EventType = EventType.FETCH_COMPLETED
     source_id: UUID
     source_name: str
@@ -65,6 +70,7 @@ class FetchCompletedEvent(DomainEvent):
 @dataclass(kw_only=True)
 class FetchFailedEvent(DomainEvent):
     """Event fired when a fetch operation fails."""
+
     type: EventType = EventType.FETCH_FAILED
     source_id: UUID
     source_name: str
@@ -75,6 +81,7 @@ class FetchFailedEvent(DomainEvent):
 @dataclass(kw_only=True)
 class DigestGeneratedEvent(DomainEvent):
     """Event fired when a digest is generated."""
+
     type: EventType = EventType.DIGEST_GENERATED
     digest_id: UUID
     total_entries: int
@@ -84,6 +91,7 @@ class DigestGeneratedEvent(DomainEvent):
 @dataclass(kw_only=True)
 class DigestDeliveredEvent(DomainEvent):
     """Event fired when a digest is delivered."""
+
     type: EventType = EventType.DIGEST_DELIVERED
     digest_id: UUID
     channel: str

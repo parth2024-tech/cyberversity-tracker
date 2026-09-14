@@ -864,6 +864,101 @@
     </div>
   </div>
 
+  <!-- MODAL: Manual Intelligence Retention & Cleanup -->
+  <div id="purge-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-lg rounded-2xl p-6 relative border border-rose-500/30 shadow-2xl space-y-5">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+              Manual Intel Cleanup & Retention
+            </h2>
+            <p class="text-xs text-slate-400 font-mono">Prune older data on demand • Zero automatic deletions</p>
+          </div>
+        </div>
+        <button onclick="closePurgeModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Policy Guarantee Alert -->
+      <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3">
+        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+        <div class="text-xs space-y-1">
+          <p class="text-emerald-300 font-semibold font-mono uppercase tracking-wider">Automated Deletion Is Disabled</p>
+          <p class="text-slate-300 font-sans leading-relaxed">
+            Your intelligence database is configured for permanent retention. Data will <strong>NEVER</strong> be removed unless you explicitly click the cleanup button below.
+          </p>
+          <p class="text-amber-300/90 font-sans text-[11px]">
+            ★ Starred & Vault-saved entries are permanently protected and will never be removed under any circumstance.
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Database Telemetry Grid -->
+      <div class="grid grid-cols-2 gap-2.5 font-mono text-xs">
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Active Intelligence</div>
+          <div class="text-lg font-bold text-cyan-300 mt-1" id="purge-modal-active-count">—</div>
+          <div class="text-[10px] text-slate-500">In live feed & queries</div>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Vault Protected</div>
+          <div class="text-lg font-bold text-amber-400 mt-1" id="purge-modal-vault-count">—</div>
+          <div class="text-[10px] text-slate-500">Exempt from any purge</div>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Candidates for Pruning</div>
+          <div class="text-lg font-bold text-rose-400 mt-1" id="purge-modal-candidates-count">—</div>
+          <div class="text-[10px] text-slate-500" id="purge-modal-candidates-label">Older than selected window</div>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Previously Soft-Purged</div>
+          <div class="text-lg font-bold text-slate-300 mt-1" id="purge-modal-purged-count">0</div>
+          <div class="text-[10px] text-slate-500">Can be restored below</div>
+        </div>
+      </div>
+
+      <!-- Scope Selection -->
+      <div class="space-y-2">
+        <label class="block text-xs font-mono text-slate-300 font-medium">CLEANUP THRESHOLD (DELETE OLDER THAN):</label>
+        <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+          <button type="button" onclick="setPurgeDaysPreset(7)" class="purge-preset-btn py-1.5 px-2 rounded-lg border border-white/[0.1] bg-white/[0.03] hover:bg-rose-500/20 text-slate-300 hover:text-white transition active:scale-95 text-center" data-days="7">7 Days</button>
+          <button type="button" onclick="setPurgeDaysPreset(14)" class="purge-preset-btn py-1.5 px-2 rounded-lg border border-white/[0.1] bg-white/[0.03] hover:bg-rose-500/20 text-slate-300 hover:text-white transition active:scale-95 text-center" data-days="14">14 Days</button>
+          <button type="button" onclick="setPurgeDaysPreset(30)" class="purge-preset-btn active-purge-preset py-1.5 px-2 rounded-lg border border-rose-500/40 bg-rose-500/20 text-rose-300 transition active:scale-95 text-center" data-days="30">30 Days</button>
+          <button type="button" onclick="setPurgeDaysPreset(60)" class="purge-preset-btn py-1.5 px-2 rounded-lg border border-white/[0.1] bg-white/[0.03] hover:bg-rose-500/20 text-slate-300 hover:text-white transition active:scale-95 text-center" data-days="60">60 Days</button>
+          <button type="button" onclick="setPurgeDaysPreset(90)" class="purge-preset-btn py-1.5 px-2 rounded-lg border border-white/[0.1] bg-white/[0.03] hover:bg-rose-500/20 text-slate-300 hover:text-white transition active:scale-95 text-center" data-days="90">90 Days</button>
+          <button type="button" onclick="setPurgeDaysPreset(365)" class="purge-preset-btn py-1.5 px-2 rounded-lg border border-white/[0.1] bg-white/[0.03] hover:bg-rose-500/20 text-slate-300 hover:text-white transition active:scale-95 text-center" data-days="365">1 Year</button>
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <span class="text-[11px] font-mono text-slate-400">Custom Days:</span>
+          <input type="number" id="purge-custom-days" min="1" max="3650" value="30" oninput="handlePurgeDaysChange(this.value)" class="glass-input w-24 px-2 py-1 text-xs font-mono text-center">
+          <span class="text-[11px] font-mono text-slate-500">days</span>
+        </div>
+      </div>
+
+      <!-- Status and Action Feedback Container -->
+      <div id="purge-status-box" class="hidden p-3 rounded-xl text-xs font-mono"></div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-2">
+        <button id="btn-execute-purge" onclick="executeManualPurge()" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-rose-950/50 transition active:scale-[0.98]">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Execute Manual Cleanup</span>
+        </button>
+        
+        <button id="btn-restore-purged" onclick="executeRestorePurged()" class="w-full py-2 rounded-xl bg-white/[0.04] hover:bg-emerald-500/20 border border-white/[0.08] hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 font-mono text-xs flex items-center justify-center gap-2 transition active:scale-[0.98]">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>Restore All Soft-Purged Data (Un-delete)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 
 
   <!-- LEFT ICON SIDEBAR: Mission Control Nav Strip -->
@@ -933,6 +1028,12 @@
       <span class="sidebar-tooltip">Auto-LLM Triage</span>
     </button>
 
+    <!-- Manual Data Retention & Cleanup -->
+    <button class="sidebar-btn" id="sidebar-cleanup-btn" onclick="openPurgeModal()" title="">
+      <i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i>
+      <span class="sidebar-tooltip">Manual Cleanup</span>
+    </button>
+
     <!-- Command Palette -->
     <button class="sidebar-btn" onclick="openCommandPalette()" title="">
       <i data-lucide="command" class="w-4 h-4"></i>
@@ -984,9 +1085,9 @@
                 <span id="triage-status-text" class="text-indigo-400">QUEUE: 0</span>
               </span>
               <span class="text-slate-700">│</span>
-              <span id="retention-badge" class="flex items-center gap-1 text-slate-400" title="Data retention: 7 days / 1 week rolling persistent storage">
-                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                <span class="text-cyan-300">RETENTION: 1W</span>
+              <span id="retention-badge" class="flex items-center gap-1 text-slate-400 cursor-pointer hover:text-emerald-300 transition" onclick="openPurgeModal()" title="Data retention policy: MANUAL ONLY (Zero automatic deletions). Click to manage data retention & cleanup.">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-emerald-300 font-semibold tracking-wide">RETENTION: MANUAL</span>
               </span>
             </div>
           </div>
@@ -1011,6 +1112,10 @@
         <button onclick="VoiceRadar.startBriefing()" class="flex items-center gap-1.5 px-3 py-2 rounded-md bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/35 text-purple-300 hover:text-white font-mono text-xs font-semibold tracking-wide transition active:scale-95 shadow-sm" title="Play AI Voice Intelligence Briefing">
           <i data-lucide="mic" class="w-3.5 h-3.5 text-purple-400 animate-pulse"></i>
           <span class="hidden md:inline">AUDIO BRIEF</span>
+        </button>
+        <button id="manual-cleanup-btn" onclick="openPurgeModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-md bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 hover:text-white font-mono text-xs font-semibold tracking-wide transition active:scale-95 shadow-sm" title="Manual Intel Cleanup: Old data is NEVER removed automatically. Click to selectively prune older data.">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i>
+          <span class="hidden md:inline">CLEANUP</span>
         </button>
         <button id="scan-btn" onclick="triggerScan()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition active:scale-95 shadow-lg shadow-cyan-500/20" title="Trigger On-Demand Live Sweep Across All AI Sources (/api/fetch)">
           <i id="scan-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
@@ -2990,6 +3095,187 @@
         sendBtn.disabled = false;
         sendBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> Dispatch Digest to Telegram`;
         lucide.createIcons();
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Manual Intelligence Retention & Cleanup Management
+    // ══════════════════════════════════════════════════════════════════════════
+    let selectedPurgeDays = 30;
+
+    async function openPurgeModal() {
+      if (typeof playBeep === 'function') playBeep('click');
+      const modal = document.getElementById('purge-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        await refreshRetentionTelemetry();
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closePurgeModal() {
+      const modal = document.getElementById('purge-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function setPurgeDaysPreset(days) {
+      selectedPurgeDays = parseInt(days, 10);
+      const input = document.getElementById('purge-custom-days');
+      if (input) input.value = selectedPurgeDays;
+      document.querySelectorAll('.purge-preset-btn').forEach(btn => {
+        const bDays = parseInt(btn.getAttribute('data-days'), 10);
+        if (bDays === selectedPurgeDays) {
+          btn.classList.add('active-purge-preset', 'border-rose-500/40', 'bg-rose-500/20', 'text-rose-300');
+          btn.classList.remove('border-white/[0.1]', 'bg-white/[0.03]', 'text-slate-300');
+        } else {
+          btn.classList.remove('active-purge-preset', 'border-rose-500/40', 'bg-rose-500/20', 'text-rose-300');
+          btn.classList.add('border-white/[0.1]', 'bg-white/[0.03]', 'text-slate-300');
+        }
+      });
+      refreshRetentionTelemetry();
+    }
+
+    function handlePurgeDaysChange(val) {
+      const parsed = parseInt(val, 10);
+      if (parsed > 0) {
+        selectedPurgeDays = parsed;
+        document.querySelectorAll('.purge-preset-btn').forEach(btn => {
+          const bDays = parseInt(btn.getAttribute('data-days'), 10);
+          if (bDays === selectedPurgeDays) {
+            btn.classList.add('active-purge-preset', 'border-rose-500/40', 'bg-rose-500/20', 'text-rose-300');
+            btn.classList.remove('border-white/[0.1]', 'bg-white/[0.03]', 'text-slate-300');
+          } else {
+            btn.classList.remove('active-purge-preset', 'border-rose-500/40', 'bg-rose-500/20', 'text-rose-300');
+            btn.classList.add('border-white/[0.1]', 'bg-white/[0.03]', 'text-slate-300');
+          }
+        });
+        refreshRetentionTelemetry();
+      }
+    }
+
+    async function refreshRetentionTelemetry() {
+      try {
+        const res = await fetch(`/api/stats/retention?days=${selectedPurgeDays}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const activeEl = document.getElementById('purge-modal-active-count');
+        const vaultEl = document.getElementById('purge-modal-vault-count');
+        const candEl = document.getElementById('purge-modal-candidates-count');
+        const purgedEl = document.getElementById('purge-modal-purged-count');
+        const candLabel = document.getElementById('purge-modal-candidates-label');
+
+        if (activeEl) activeEl.innerText = (data.active_count || 0).toLocaleString();
+        if (vaultEl) vaultEl.innerText = (data.vaulted_count || 0).toLocaleString();
+        if (candEl) candEl.innerText = (data.candidates_count || 0).toLocaleString();
+        if (purgedEl) purgedEl.innerText = (data.purged_count || 0).toLocaleString();
+        if (candLabel) candLabel.innerText = `Older than ${data.older_than_days || selectedPurgeDays} days`;
+      } catch (err) {
+        console.warn("Failed to fetch retention telemetry:", err);
+      }
+    }
+
+    async function executeManualPurge() {
+      const confirmed = confirm(
+        `Are you sure you want to clean up entries older than ${selectedPurgeDays} days?\n\n` +
+        `• Only entries older than ${selectedPurgeDays} days will be removed.\n` +
+        `• Starred & Saved Vault entries are PERMANENTLY PROTECTED and will not be touched.\n` +
+        `• This action only occurs when you explicitly click this button.`
+      );
+      if (!confirmed) return;
+
+      const btn = document.getElementById('btn-execute-purge');
+      const statusBox = document.getElementById('purge-status-box');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Pruning Old Data...</span>`;
+      }
+      if (statusBox) {
+        statusBox.className = "p-3 rounded-xl text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center gap-2";
+        statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Processing manual cleanup for items older than ${selectedPurgeDays} days...`;
+        statusBox.classList.remove('hidden');
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      try {
+        const res = await fetch(`/api/stats/purge?days=${selectedPurgeDays}`, { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          if (typeof playBeep === 'function') playBeep('alert');
+          if (statusBox) {
+            statusBox.className = "p-3 rounded-xl text-xs font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-300";
+            statusBox.innerHTML = `✓ Manual cleanup successful: removed ${data.purged || 0} entries older than ${selectedPurgeDays} days.`;
+          }
+          await refreshRetentionTelemetry();
+          if (typeof loadStats === 'function') loadStats();
+          if (typeof loadFeed === 'function') loadFeed(true);
+        } else {
+          if (statusBox) {
+            statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
+            statusBox.innerHTML = `✗ Cleanup failed: ${data.detail || 'Unknown server error'}`;
+          }
+        }
+      } catch (err) {
+        if (statusBox) {
+          statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
+          statusBox.innerHTML = `✗ Request failed: ${err.message}`;
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i> <span>Execute Manual Cleanup</span>`;
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }
+
+    async function executeRestorePurged() {
+      const confirmed = confirm(
+        "Do you want to restore all previously soft-purged entries back into your active dashboard view?"
+      );
+      if (!confirmed) return;
+
+      const btn = document.getElementById('btn-restore-purged');
+      const statusBox = document.getElementById('purge-status-box');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Restoring Data...</span>`;
+      }
+      if (statusBox) {
+        statusBox.className = "p-3 rounded-xl text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center gap-2";
+        statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Restoring all soft-purged entries...`;
+        statusBox.classList.remove('hidden');
+      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/stats/restore-purged', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          if (typeof playBeep === 'function') playBeep('alert');
+          if (statusBox) {
+            statusBox.className = "p-3 rounded-xl text-xs font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-300";
+            statusBox.innerHTML = `✓ Successfully restored ${data.restored || 0} entries back to your active dashboard!`;
+          }
+          await refreshRetentionTelemetry();
+          if (typeof loadStats === 'function') loadStats();
+          if (typeof loadFeed === 'function') loadFeed(true);
+        } else {
+          if (statusBox) {
+            statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
+            statusBox.innerHTML = `✗ Restore failed: ${data.detail || 'Unknown server error'}`;
+          }
+        }
+      } catch (err) {
+        if (statusBox) {
+          statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
+          statusBox.innerHTML = `✗ Request failed: ${err.message}`;
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> <span>Restore All Soft-Purged Data (Un-delete)</span>`;
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
       }
     }
 

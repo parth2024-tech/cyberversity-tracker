@@ -10,6 +10,7 @@ from ai_security_monitor.domain.entities import Category, FetchStatus, SourceTyp
 
 class SourceBase(BaseModel):
     """Base source schema."""
+
     name: str = Field(..., description="Source name")
     category: Category = Field(..., description="Source category")
     type: SourceType = Field(..., description="Source type")
@@ -22,11 +23,13 @@ class SourceBase(BaseModel):
 
 class SourceCreate(SourceBase):
     """Schema for creating a source."""
+
     pass
 
 
 class SourceUpdate(BaseModel):
     """Schema for updating a source."""
+
     name: str | None = None
     category: Category | None = None
     type: SourceType | None = None
@@ -39,6 +42,7 @@ class SourceUpdate(BaseModel):
 
 class SourceRead(SourceBase):
     """Schema for reading a source."""
+
     id: UUID
     last_fetched_at: datetime | None = None
     last_status: FetchStatus | None = None
@@ -52,6 +56,7 @@ class SourceRead(SourceBase):
 
 class FetchLogRead(BaseModel):
     """Schema for fetch log."""
+
     id: UUID
     source_id: UUID
     source_name: str

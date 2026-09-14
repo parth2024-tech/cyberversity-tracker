@@ -1,6 +1,7 @@
 """
 Application scheduler service for periodic intelligence sweeps.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -47,7 +48,9 @@ class SchedulerService:
         self._task = asyncio.create_task(self._loop())
         self._newspaper_task = asyncio.create_task(self._newspaper_loop())
         self._backup_task = asyncio.create_task(self._backup_loop())
-        logger.info("Background radar scheduler, 5-hour newspaper compiler & auto-backup loop started")
+        logger.info(
+            "Background radar scheduler, 5-hour newspaper compiler & auto-backup loop started"
+        )
 
     async def stop(self) -> None:
         """Stop background sweeps, newspaper compiler, and backup tasks."""
@@ -59,7 +62,9 @@ class SchedulerService:
                     await task
                 except asyncio.CancelledError:
                     pass
-        logger.info("Background radar scheduler, newspaper compiler and auto-backup stopped")
+        logger.info(
+            "Background radar scheduler, newspaper compiler and auto-backup stopped"
+        )
 
     async def _loop(self) -> None:
         """Periodic sweep loop with automatic data hygiene."""
@@ -84,18 +89,27 @@ class SchedulerService:
                     f"{results.get('success', 0)}/{results.get('total_sources', 0)} sources."
                 )
 
-                # 1-Week Rolling Data Retention Purge:
-                # Automatically enforce 7-day retention on every sweep cycle (24/7 continuous hygiene)
-                try:
-                    retention = settings.database.retention_days
-                    purge_result = await self._monitor.purge_stale_entries(older_than_days=retention)
-                    if purge_result.get("purged", 0) > 0:
-                        logger.info(
-                            f"1-Week retention hygiene: auto-purged {purge_result['purged']} expired entries "
-                            f"(retaining all intelligence strictly for {retention} days)."
+                # Rolling Data Retention Purge:
+                # Disabled by default: data is preserved indefinitely until the user manually triggers a cleanup.
+                if getattr(settings.database, "auto_purge_enabled", False):
+                    try:
+                        retention = settings.database.retention_days
+                        purge_result = await self._monitor.purge_stale_entries(
+                            older_than_days=retention
                         )
-                except Exception as purge_err:
-                    logger.warning(f"Data hygiene retention purge failed: {purge_err}")
+                        if purge_result.get("purged", 0) > 0:
+                            logger.info(
+                                f"Automatic retention hygiene: purged {purge_result['purged']} expired entries "
+                                f"(retaining all intelligence strictly for {retention} days)."
+                            )
+                    except Exception as purge_err:
+                        logger.warning(
+                            f"Data hygiene retention purge failed: {purge_err}"
+                        )
+                else:
+                    logger.debug(
+                        "Automatic retention purge is disabled. Data is kept indefinitely until manually purged by user."
+                    )
 
             except Exception as e:
                 logger.error(f"Scheduler execution error: {e}")
@@ -110,7 +124,9 @@ class SchedulerService:
 
         while self._running:
             try:
-                logger.info("Executing scheduled 5-hour Newspaper Chronicle compilation...")
+                logger.info(
+                    "Executing scheduled 5-hour Newspaper Chronicle compilation..."
+                )
                 meta = await self._newspaper.generate_edition(window_hours=5)
                 logger.info(
                     f"Published Newspaper Edition #{meta['edition_number']} "
@@ -122,7 +138,9 @@ class SchedulerService:
                     pdf_path = meta.get("pdf_path")
                     edition_num = meta["edition_number"]
                     lead_story = meta.get("lead_story", "")
-                    stories_count = meta.get("total_stories", meta.get("total_threats", 0))
+                    stories_count = meta.get(
+                        "total_stories", meta.get("total_threats", 0)
+                    )
 
                     can_send, reason = delivery_tracker.should_dispatch(
                         channel="email",
@@ -135,14 +153,20 @@ class SchedulerService:
                             from ai_security_monitor.infrastructure.delivery.base import (
                                 delivery_registry,
                             )
-                            email_delivery = delivery_registry.create("email", {
-                                "smtp_server": settings.delivery.email_smtp_server,
-                                "smtp_port": settings.delivery.email_smtp_port,
-                                "username": settings.delivery.email_username or "",
-                                "password": settings.delivery.email_password or "",
-                                "from_email": settings.delivery.email_from or settings.delivery.email_username or "noreply@aetherguard.ai",
-                                "to_email": settings.delivery.email_to,
-                            })
+
+                            email_delivery = delivery_registry.create(
+                                "email",
+                                {
+                                    "smtp_server": settings.delivery.email_smtp_server,
+                                    "smtp_port": settings.delivery.email_smtp_port,
+                                    "username": settings.delivery.email_username or "",
+                                    "password": settings.delivery.email_password or "",
+                                    "from_email": settings.delivery.email_from
+                                    or settings.delivery.email_username
+                                    or "noreply@aetherguard.ai",
+                                    "to_email": settings.delivery.email_to,
+                                },
+                            )
                             email_res = await email_delivery.send_newspaper_pdf(
                                 pdf_path=pdf_path,
                                 edition_number=edition_num,
@@ -156,11 +180,17 @@ class SchedulerService:
                                     edition_number=edition_num,
                                     lead_story=lead_story,
                                 )
-                                logger.info(f"Auto-emailed Newspaper PDF Edition #{edition_num} to {settings.delivery.email_to}")
+                                logger.info(
+                                    f"Auto-emailed Newspaper PDF Edition #{edition_num} to {settings.delivery.email_to}"
+                                )
                             else:
-                                logger.warning(f"Auto-email PDF delivery notice: {email_res.error}")
+                                logger.warning(
+                                    f"Auto-email PDF delivery notice: {email_res.error}"
+                                )
                         except Exception as mail_err:
-                            logger.warning(f"Auto-email newspaper dispatch failed: {mail_err}")
+                            logger.warning(
+                                f"Auto-email newspaper dispatch failed: {mail_err}"
+                            )
                     else:
                         logger.info(f"Skipping scheduled Email dispatch: {reason}")
 
@@ -171,7 +201,9 @@ class SchedulerService:
                     pdf_path = meta.get("pdf_path")
                     edition_num = meta["edition_number"]
                     lead_story = meta.get("lead_story", "")
-                    stories_count = meta.get("total_stories", meta.get("total_threats", 0))
+                    stories_count = meta.get(
+                        "total_stories", meta.get("total_threats", 0)
+                    )
 
                     can_send, reason = delivery_tracker.should_dispatch(
                         channel="telegram",
@@ -184,10 +216,14 @@ class SchedulerService:
                             from ai_security_monitor.infrastructure.delivery.base import (
                                 delivery_registry,
                             )
-                            tg_delivery = delivery_registry.create("telegram", {
-                                "bot_token": tg_token,
-                                "chat_id": tg_chat,
-                            })
+
+                            tg_delivery = delivery_registry.create(
+                                "telegram",
+                                {
+                                    "bot_token": tg_token,
+                                    "chat_id": tg_chat,
+                                },
+                            )
                             tg_res = await tg_delivery.send_newspaper_document(
                                 pdf_path=pdf_path,
                                 edition_number=edition_num,
@@ -200,11 +236,17 @@ class SchedulerService:
                                     edition_number=edition_num,
                                     lead_story=lead_story,
                                 )
-                                logger.info(f"Auto-delivered Newspaper PDF Edition #{edition_num} to Telegram chat {tg_chat}")
+                                logger.info(
+                                    f"Auto-delivered Newspaper PDF Edition #{edition_num} to Telegram chat {tg_chat}"
+                                )
                             else:
-                                logger.warning(f"Telegram PDF delivery notice: {tg_res.error}")
+                                logger.warning(
+                                    f"Telegram PDF delivery notice: {tg_res.error}"
+                                )
                         except Exception as tg_err:
-                            logger.warning(f"Auto-telegram newspaper dispatch failed: {tg_err}")
+                            logger.warning(
+                                f"Auto-telegram newspaper dispatch failed: {tg_err}"
+                            )
                     else:
                         logger.info(f"Skipping scheduled Telegram dispatch: {reason}")
             except Exception as e:
@@ -252,6 +294,7 @@ class SchedulerService:
                         reverse=True,
                     )
                     from ai_security_monitor.core.diagnostics import diagnostics
+
                     diagnostics.record_backup_completed(
                         filename=dest_file.name,
                         size_kb=size_kb,
@@ -260,7 +303,9 @@ class SchedulerService:
                     for old_backup in existing_backups[retention_limit:]:
                         try:
                             old_backup.unlink()
-                            logger.debug(f"Pruned older database backup: {old_backup.name}")
+                            logger.debug(
+                                f"Pruned older database backup: {old_backup.name}"
+                            )
                         except Exception:
                             pass
             except asyncio.CancelledError:
@@ -269,5 +314,3 @@ class SchedulerService:
                 logger.warning(f"Automated database backup error: {backup_err}")
 
             await asyncio.sleep(interval)
-
-

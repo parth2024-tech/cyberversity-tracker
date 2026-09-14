@@ -1,6 +1,7 @@
 """
 Watchlist Rule domain entity for custom framework & asset threat tracking.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -13,6 +14,7 @@ from ai_security_monitor.domain.entities import Category, Entry
 @dataclass
 class WatchlistRule:
     """User-defined threat hunting rule for tracking custom frameworks and keywords."""
+
     id: UUID = field(default_factory=uuid4)
     name: str = ""
     keywords: list[str] = field(default_factory=list)

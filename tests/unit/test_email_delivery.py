@@ -1,4 +1,5 @@
 """Unit tests for EmailDelivery."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -61,7 +62,9 @@ def sample_analysis(sample_entry: Entry) -> Analysis:
 def test_email_delivery_missing_config_raises():
     """EmailDelivery should raise DeliveryConfigError when required fields are missing."""
     with pytest.raises(DeliveryConfigError):
-        EmailDelivery({"smtp_server": "smtp.example.com", "smtp_port": 587})  # missing many fields
+        EmailDelivery(
+            {"smtp_server": "smtp.example.com", "smtp_port": 587}
+        )  # missing many fields
 
 
 def test_email_delivery_valid_config_instantiates():
@@ -71,7 +74,9 @@ def test_email_delivery_valid_config_instantiates():
 
 
 @pytest.mark.asyncio
-async def test_send_alert_success(email_delivery: EmailDelivery, sample_entry: Entry, sample_analysis: Analysis):
+async def test_send_alert_success(
+    email_delivery: EmailDelivery, sample_entry: Entry, sample_analysis: Analysis
+):
     """send_alert should call SMTP server and return success."""
     mock_smtp = MagicMock()
     mock_smtp.__enter__ = MagicMock(return_value=mock_smtp)
@@ -80,7 +85,10 @@ async def test_send_alert_success(email_delivery: EmailDelivery, sample_entry: E
     mock_smtp.login = MagicMock()
     mock_smtp.send_message = MagicMock()
 
-    with patch("ai_security_monitor.infrastructure.delivery.email_delivery.smtplib.SMTP", return_value=mock_smtp):
+    with patch(
+        "ai_security_monitor.infrastructure.delivery.email_delivery.smtplib.SMTP",
+        return_value=mock_smtp,
+    ):
         result = await email_delivery.send_alert(sample_entry, sample_analysis)
 
     assert result.success is True
@@ -103,7 +111,9 @@ async def test_send_alert_smtp_error_returns_failure(
 
 
 @pytest.mark.asyncio
-async def test_send_newspaper_missing_pdf_returns_failure(email_delivery: EmailDelivery):
+async def test_send_newspaper_missing_pdf_returns_failure(
+    email_delivery: EmailDelivery,
+):
     """send_newspaper_pdf should return failure when PDF file doesn't exist."""
     result = await email_delivery.send_newspaper_pdf(
         pdf_path="/tmp/no_such_file_xyz.pdf",

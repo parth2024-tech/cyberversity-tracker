@@ -1,6 +1,7 @@
 """
 Sources API router.
 """
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -43,11 +44,14 @@ async def list_sources(all_sources: bool = True):
                         "url": s.url,
                         "enabled": s.enabled,
                         "rate_limit_seconds": s.rate_limit_seconds,
-                        "last_fetched_at": s.last_fetched_at.isoformat() if s.last_fetched_at else None,
+                        "last_fetched_at": s.last_fetched_at.isoformat()
+                        if s.last_fetched_at
+                        else None,
                         "last_status": s.last_status.value if s.last_status else None,
                         "last_entries_new": s.last_entries_new,
-                        "config": s.config
-                    } for s in sources
+                        "config": s.config,
+                    }
+                    for s in sources
                 ]
             }
 
@@ -72,7 +76,11 @@ async def toggle_source(source_id: str, req: SourceToggleRequest):
         await uow.sources.update(source)
         await uow.commit()
 
-        return {"status": "success", "source_id": str(source.id), "enabled": source.enabled}
+        return {
+            "status": "success",
+            "source_id": str(source.id),
+            "enabled": source.enabled,
+        }
 
 
 @sources_router.post("/fetch")
@@ -80,6 +88,7 @@ async def toggle_source(source_id: str, req: SourceToggleRequest):
 async def trigger_fetch_sweep(request: Request):
     """Trigger an immediate radar sweep across all sources."""
     from ai_security_monitor.application.services.monitor_service import MonitorService
+
     service = MonitorService()
     results = await service.fetch_all()
     return {"status": "success", "results": results}

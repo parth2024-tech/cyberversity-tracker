@@ -1,6 +1,7 @@
 """
 Typer CLI application for AI Security Monitor.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +25,9 @@ console = Console()
 def server(
     host: str = typer.Option("0.0.0.0", "--host", "-h", help="Bind host address"),
     port: int = typer.Option(8000, "--port", "-p", help="Bind port"),
-    reload: bool = typer.Option(False, "--reload", "-r", help="Auto-reload on code change"),
+    reload: bool = typer.Option(
+        False, "--reload", "-r", help="Auto-reload on code change"
+    ),
 ):
     """Launch the real-time web command center and API server."""
     import os
@@ -36,7 +39,11 @@ def server(
 
     # Support cloud runtime PORT environment variable (Render, Fly.io, etc.)
     api_cfg_port = getattr(settings.api, "port", 8000)
-    env_port = os.environ.get("PORT") or os.environ.get("API_PORT") or (str(api_cfg_port) if api_cfg_port != 8000 else None)
+    env_port = (
+        os.environ.get("PORT")
+        or os.environ.get("API_PORT")
+        or (str(api_cfg_port) if api_cfg_port != 8000 else None)
+    )
     if env_port and port == 8000:
         try:
             port = int(env_port)
@@ -47,11 +54,20 @@ def server(
     if port == 8000:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(("127.0.0.1", 8000)) == 0:
-                console.print("[yellow]⚠️ Port 8000 is in use by another service. Switching automatically to port 8080.[/yellow]")
+                console.print(
+                    "[yellow]⚠️ Port 8000 is in use by another service. Switching automatically to port 8080.[/yellow]"
+                )
                 port = 8080
 
-    console.print(f"[bold cyan]🚀 Launching AI Security Monitor Command Center on http://{host}:{port}[/bold cyan]")
-    uvicorn.run("ai_security_monitor.presentation.api.main:app", host=host, port=port, reload=reload)
+    console.print(
+        f"[bold cyan]🚀 Launching AI Security Monitor Command Center on http://{host}:{port}[/bold cyan]"
+    )
+    uvicorn.run(
+        "ai_security_monitor.presentation.api.main:app",
+        host=host,
+        port=port,
+        reload=reload,
+    )
 
 
 # Register alias for serve
@@ -60,13 +76,18 @@ app.command(name="serve")(server)
 
 @app.command()
 def fetch(
-    force: bool = typer.Option(False, "--force", "-f", help="Force sweep without rate limit cache"),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Force sweep without rate limit cache"
+    ),
 ):
     """Execute an immediate intelligence sweep across all active sources."""
+
     async def _run():
         await db_manager.init_db()
         service = MonitorService()
-        console.print("[bold yellow]📡 Sweeping intelligence feeds & academic zero-days...[/bold yellow]")
+        console.print(
+            "[bold yellow]📡 Sweeping intelligence feeds & academic zero-days...[/bold yellow]"
+        )
         res = await service.fetch_all(force=force)
 
         table = Table(title="Sweep Results")
@@ -86,6 +107,7 @@ def fetch(
 @app.command()
 def stats():
     """Display real-time database intelligence statistics and metrics."""
+
     async def _run():
         await db_manager.init_db()
         service = MonitorService()
@@ -93,10 +115,18 @@ def stats():
 
         console.print("\n[bold cyan]📊 AetherGuard Threat Telemetry[/bold cyan]")
         console.print("=" * 45)
-        console.print(f"Total Tracked Entries:     [bold white]{data['total_entries']}[/bold white]")
-        console.print(f"Active Sources:            [bold white]{data['total_sources']}[/bold white]")
-        console.print(f"⚡ High Velocity Threats:  [bold red]{data['high_velocity_entries']}[/bold red]")
-        console.print(f"⚠️ Pre-CVE Zero-Day Warns: [bold yellow]{data['pre_cve_warnings']}[/bold yellow]")
+        console.print(
+            f"Total Tracked Entries:     [bold white]{data['total_entries']}[/bold white]"
+        )
+        console.print(
+            f"Active Sources:            [bold white]{data['total_sources']}[/bold white]"
+        )
+        console.print(
+            f"⚡ High Velocity Threats:  [bold red]{data['high_velocity_entries']}[/bold red]"
+        )
+        console.print(
+            f"⚠️ Pre-CVE Zero-Day Warns: [bold yellow]{data['pre_cve_warnings']}[/bold yellow]"
+        )
 
         console.print("\n[bold]Entries by Category:[/bold]")
         for cat, count in data.get("by_category", {}).items():
@@ -109,6 +139,7 @@ def stats():
 @app.command()
 def sources():
     """List all registered and configured intelligence sources."""
+
     async def _run():
         await db_manager.init_db()
         service = MonitorService()
@@ -125,8 +156,16 @@ def sources():
         table.add_column("Rate Limit", style="magenta")
 
         for s in srcs:
-            status_icon = "[green]● ACTIVE[/green]" if s.enabled else "[red]○ DISABLED[/red]"
-            table.add_row(status_icon, s.name, s.type.value, s.category.value, f"{s.rate_limit_seconds}s")
+            status_icon = (
+                "[green]● ACTIVE[/green]" if s.enabled else "[red]○ DISABLED[/red]"
+            )
+            table.add_row(
+                status_icon,
+                s.name,
+                s.type.value,
+                s.category.value,
+                f"{s.rate_limit_seconds}s",
+            )
 
         console.print(table)
         await db_manager.close()

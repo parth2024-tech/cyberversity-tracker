@@ -28,6 +28,7 @@ logger = get_logger(__name__)
 @dataclass
 class FetchResult:
     """Result of a fetch operation."""
+
     entries: list[Entry]
     entries_new: int
     entries_total: int
@@ -48,7 +49,9 @@ class BaseFetcher(ABC):
         self.source = source
         self.timeout = timeout or settings.fetch.timeout
         self.max_retries = max_retries or settings.fetch.max_retries
-        self._rate_limit_seconds = source.rate_limit_seconds or settings.fetch.rate_limit_default
+        self._rate_limit_seconds = (
+            source.rate_limit_seconds or settings.fetch.rate_limit_default
+        )
         self._last_fetch_time: datetime | None = None
 
     @property
@@ -93,21 +96,29 @@ class BaseFetcher(ABC):
                         entries.append(entry)
                     except Exception as e:
                         # Log parse error but continue
-                        logger.warning(f"Failed to parse entry from {self.source.name}: {e}")
+                        logger.warning(
+                            f"Failed to parse entry from {self.source.name}: {e}"
+                        )
                         continue
 
                 # Publish events for new entries
                 for entry in entries:
-                    await event_bus.publish(EntryFetchedEvent(
-                        aggregate_id=entry.id,
-                        entry=entry,
-                    ))
+                    await event_bus.publish(
+                        EntryFetchedEvent(
+                            aggregate_id=entry.id,
+                            entry=entry,
+                        )
+                    )
 
-                duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
+                duration_ms = int(
+                    (datetime.now(UTC) - start_time).total_seconds() * 1000
+                )
 
                 return FetchResult(
                     entries=entries,
-                    entries_new=len(entries),  # Will be adjusted by deduplication in service
+                    entries_new=len(
+                        entries
+                    ),  # Will be adjusted by deduplication in service
                     entries_total=len(raw_entries),
                     status=FetchStatus.SUCCESS,
                     duration_ms=duration_ms,
@@ -122,20 +133,22 @@ class BaseFetcher(ABC):
 
             # Wait before retry
             if attempt < self.max_retries:
-                delay = settings.fetch.retry_delay * (2 ** attempt)  # Exponential backoff
+                delay = settings.fetch.retry_delay * (2**attempt)  # Exponential backoff
                 await asyncio.sleep(delay)
 
         # All retries exhausted
         duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
         error_msg = str(last_error) if last_error else "Unknown error"
 
-        await event_bus.publish(FetchFailedEvent(
-            aggregate_id=self.source.id,
-            source_id=self.source.id,
-            source_name=self.source.name,
-            error_message=error_msg,
-            duration_ms=duration_ms,
-        ))
+        await event_bus.publish(
+            FetchFailedEvent(
+                aggregate_id=self.source.id,
+                source_id=self.source.id,
+                source_name=self.source.name,
+                error_message=error_msg,
+                duration_ms=duration_ms,
+            )
+        )
 
         return FetchResult(
             entries=[],

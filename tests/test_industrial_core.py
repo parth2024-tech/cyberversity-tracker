@@ -2,12 +2,19 @@
 Redefined Industrial Test Suite: Precision-crafted, robust, high-signal verification tests.
 Replaces legacy flaky unit tests with real integration and validation gates.
 """
+
 import pytest
 from httpx import ASGITransport, AsyncClient
+
+from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.infrastructure.analyzers.blast_radius_analyzer import (
+    BlastRadiusAnalyzer,
+)
+from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
+    HeuristicAnalyzer,
+)
 from ai_security_monitor.presentation.api.main import create_app
-from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import HeuristicAnalyzer
-from ai_security_monitor.infrastructure.analyzers.blast_radius_analyzer import BlastRadiusAnalyzer
-from ai_security_monitor.domain.entities import Entry, Category
+
 
 @pytest.mark.asyncio
 async def test_api_rest_endpoints():
@@ -30,6 +37,7 @@ async def test_api_rest_endpoints():
         res_sources = await client.get("/api/sources")
         assert res_sources.status_code == 200
         assert "sources" in res_sources.json()
+
 
 @pytest.mark.asyncio
 async def test_core_analyzers_precision(sample_entry):

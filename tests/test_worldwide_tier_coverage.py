@@ -3,6 +3,7 @@ Test suite for Worldwide Intelligence Coverage (Tier 1 & Tier 2 countries).
 Verifies source configuration, domain filtering, API query endpoints,
 and sovereign newspaper editorial generation.
 """
+
 import uuid
 from datetime import UTC, datetime, timezone
 
@@ -32,9 +33,13 @@ def test_tier1_sources_configured():
     configured_countries = {s.country for s in config.sources if s.enabled}
 
     for code, name in tier1_countries.items():
-        assert code in configured_countries, f"Tier 1 country {name} ({code}) is missing enabled sources in config/sources.yaml"
+        assert code in configured_countries, (
+            f"Tier 1 country {name} ({code}) is missing enabled sources in config/sources.yaml"
+        )
         country_sources = [s for s in config.sources if s.country == code and s.enabled]
-        assert len(country_sources) >= 1, f"Expected at least 1 active source for {name} ({code})"
+        assert len(country_sources) >= 1, (
+            f"Expected at least 1 active source for {name} ({code})"
+        )
 
 
 def test_tier2_sources_configured():
@@ -57,9 +62,13 @@ def test_tier2_sources_configured():
     configured_countries = {s.country for s in config.sources}
 
     for code, name in tier2_countries.items():
-        assert code in configured_countries, f"Tier 2 country {name} ({code}) is missing sources in config/sources.yaml"
+        assert code in configured_countries, (
+            f"Tier 2 country {name} ({code}) is missing sources in config/sources.yaml"
+        )
         country_sources = [s for s in config.sources if s.country == code]
-        assert len(country_sources) >= 1, f"Expected at least 1 source for {name} ({code})"
+        assert len(country_sources) >= 1, (
+            f"Expected at least 1 source for {name} ({code})"
+        )
 
 
 def test_worldwide_sources_taxonomy_and_balance():
@@ -78,7 +87,9 @@ def test_worldwide_sources_taxonomy_and_balance():
     assert "vulnerabilities" in all_categories
 
     # Verify total source count expanded
-    assert len(config.sources) >= 100, f"Expected 100+ configured sources, got {len(config.sources)}"
+    assert len(config.sources) >= 100, (
+        f"Expected 100+ configured sources, got {len(config.sources)}"
+    )
 
 
 @pytest.mark.asyncio
@@ -108,7 +119,15 @@ async def test_api_entries_regional_theatre_clusters():
     app = create_app()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        for reg in ("south_asia", "middle_east", "nordic", "apac", "europe", "north_america", "china"):
+        for reg in (
+            "south_asia",
+            "middle_east",
+            "nordic",
+            "apac",
+            "europe",
+            "north_america",
+            "china",
+        ):
             resp = await client.get(f"/api/entries?region={reg}&limit=5")
             assert resp.status_code == 200
             data = resp.json()
@@ -131,7 +150,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             published_at=datetime.now(UTC),
             category=Category.CYBERSECURITY,
             tags=["India", "CERT-In", "RCE"],
-            metadata={"region": "south_asia", "country": "IN"}
+            metadata={"region": "south_asia", "country": "IN"},
         ),
         Entry(
             id=uuid.uuid4(),
@@ -143,7 +162,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             published_at=datetime.now(UTC),
             category=Category.AI_MODELS,
             tags=["Falcon", "TII", "UAE", "OpenWeights"],
-            metadata={"region": "middle_east", "country": "AE"}
+            metadata={"region": "middle_east", "country": "AE"},
         ),
         Entry(
             id=uuid.uuid4(),
@@ -155,7 +174,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             published_at=datetime.now(UTC),
             category=Category.AI_TECH,
             tags=["TSMC", "Hardware", "Taiwan", "Semiconductor"],
-            metadata={"region": "apac", "country": "TW"}
+            metadata={"region": "apac", "country": "TW"},
         ),
         Entry(
             id=uuid.uuid4(),
@@ -167,8 +186,8 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
             published_at=datetime.now(UTC),
             category=Category.CYBERSECURITY,
             tags=["Israel", "CheckPoint", "0day", "ThreatIntel"],
-            metadata={"region": "middle_east", "country": "IL"}
-        )
+            metadata={"region": "middle_east", "country": "IL"},
+        ),
     ]
 
     service = NewspaperService()
@@ -180,5 +199,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
     assert len(sov_radar) >= 1
 
     # Verify Markdown generation includes Section VII / Page 7 with sovereign items
-    md = service._render_markdown(sample_entries, categorized, 101, datetime.now(UTC), 24)
+    md = service._render_markdown(
+        sample_entries, categorized, 101, datetime.now(UTC), 24
+    )
     assert "[PAGE 7] SOVEREIGN AI" in md

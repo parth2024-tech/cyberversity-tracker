@@ -2,6 +2,7 @@
 Repository interfaces (Abstract Base Classes).
 Define contracts for data access - implementations in infrastructure layer.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -22,6 +23,7 @@ from ai_security_monitor.domain.entities import (
 @dataclass
 class PaginationParams:
     """Pagination parameters."""
+
     limit: int = 50
     offset: int = 0
 
@@ -33,6 +35,7 @@ class PaginationParams:
 @dataclass
 class EntryFilters:
     """Filters for entry queries."""
+
     category: Category | None = None
     categories: list[Category] | None = None
     source_id: UUID | None = None
@@ -134,6 +137,16 @@ class EntryRepository(ABC):
     @abstractmethod
     async def hard_delete_purged(self, grace_days: int = 30) -> int:
         """Permanently delete soft-deleted entries older than grace period."""
+        ...
+
+    @abstractmethod
+    async def restore_purged_entries(self) -> int:
+        """Restore all soft-purged entries back to active state. Returns count."""
+        ...
+
+    @abstractmethod
+    async def get_retention_counts(self, older_than_days: int = 7) -> dict[str, int]:
+        """Get counts of active, purged, and candidate entries."""
         ...
 
 

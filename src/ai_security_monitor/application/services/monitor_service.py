@@ -1,6 +1,7 @@
 """
 Application monitor service - orchestrates fetching, analyzing, and dispatching.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -33,7 +34,9 @@ logger = get_logger(__name__)
 _consecutive_failures: dict[str, int] = {}
 
 
-async def send_source_failure_alert(source_name: str, count: int, error_msg: str | None = None) -> bool:
+async def send_source_failure_alert(
+    source_name: str, count: int, error_msg: str | None = None
+) -> bool:
     """Send alert via Telegram when an intelligence source fails consecutive sweeps."""
     try:
         tg_token = (
@@ -49,7 +52,9 @@ async def send_source_failure_alert(source_name: str, count: int, error_msg: str
         if not tg_token or not tg_chat:
             return False
 
-        err_snippet = f"\n<b>Error:</b> <code>{error_msg[:200]}</code>" if error_msg else ""
+        err_snippet = (
+            f"\n<b>Error:</b> <code>{error_msg[:200]}</code>" if error_msg else ""
+        )
         text = (
             f"⚠️ <b>AETHERGUARD SOURCE HEALTH ALERT</b>\n\n"
             f"Source: <b>{source_name}</b>\n"
@@ -57,6 +62,7 @@ async def send_source_failure_alert(source_name: str, count: int, error_msg: str
             f"<i>Timestamp: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}</i>"
         )
         import httpx
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(
                 f"https://api.telegram.org/bot{tg_token}/sendMessage",
@@ -69,6 +75,7 @@ async def send_source_failure_alert(source_name: str, count: int, error_msg: str
             )
         if resp.status_code == 200:
             from ai_security_monitor.core.diagnostics import diagnostics
+
             diagnostics.record_failure_alert(source_name, count)
             return True
         return False
@@ -98,17 +105,21 @@ class MonitorService:
                 existing = await uow.sources.get_by_name(s_cfg.name)
                 if not existing:
                     cfg_dict = dict(s_cfg.config or {})
-                    cfg_dict['region'] = getattr(s_cfg, 'region', 'global')
-                    cfg_dict['country'] = getattr(s_cfg, 'country', 'GLOBAL')
+                    cfg_dict["region"] = getattr(s_cfg, "region", "global")
+                    cfg_dict["country"] = getattr(s_cfg, "country", "GLOBAL")
                     new_source = Source(
                         name=s_cfg.name,
-                        category=Category(s_cfg.category) if isinstance(s_cfg.category, str) else s_cfg.category,
-                        type=SourceType(s_cfg.type) if isinstance(s_cfg.type, str) else s_cfg.type,
+                        category=Category(s_cfg.category)
+                        if isinstance(s_cfg.category, str)
+                        else s_cfg.category,
+                        type=SourceType(s_cfg.type)
+                        if isinstance(s_cfg.type, str)
+                        else s_cfg.type,
                         url=s_cfg.url or "",
                         query=s_cfg.query,
                         rate_limit_seconds=s_cfg.rate_limit_seconds,
                         enabled=s_cfg.enabled,
-                        config=cfg_dict
+                        config=cfg_dict,
                     )
                     await uow.sources.add(new_source)
                     count += 1
@@ -118,12 +129,23 @@ class MonitorService:
                         existing.url = s_cfg.url
                         changed = True
                     if s_cfg.category and existing.category.value != s_cfg.category:
-                        existing.category = Category(s_cfg.category) if isinstance(s_cfg.category, str) else s_cfg.category
+                        existing.category = (
+                            Category(s_cfg.category)
+                            if isinstance(s_cfg.category, str)
+                            else s_cfg.category
+                        )
                         changed = True
                     if s_cfg.type and existing.type.value != s_cfg.type:
-                        existing.type = SourceType(s_cfg.type) if isinstance(s_cfg.type, str) else s_cfg.type
+                        existing.type = (
+                            SourceType(s_cfg.type)
+                            if isinstance(s_cfg.type, str)
+                            else s_cfg.type
+                        )
                         changed = True
-                    if s_cfg.rate_limit_seconds and existing.rate_limit_seconds != s_cfg.rate_limit_seconds:
+                    if (
+                        s_cfg.rate_limit_seconds
+                        and existing.rate_limit_seconds != s_cfg.rate_limit_seconds
+                    ):
                         existing.rate_limit_seconds = s_cfg.rate_limit_seconds
                         changed = True
                     if s_cfg.query and existing.query != s_cfg.query:
@@ -134,10 +156,10 @@ class MonitorService:
                         changed = True
                     # Fully synchronize config dictionary including frequency and filter_mode
                     new_cfg = dict(s_cfg.config or {})
-                    if getattr(s_cfg, 'since', None):
-                        new_cfg['frequency'] = s_cfg.since
-                    new_cfg['region'] = getattr(s_cfg, 'region', 'global')
-                    new_cfg['country'] = getattr(s_cfg, 'country', 'GLOBAL')
+                    if getattr(s_cfg, "since", None):
+                        new_cfg["frequency"] = s_cfg.since
+                    new_cfg["region"] = getattr(s_cfg, "region", "global")
+                    new_cfg["country"] = getattr(s_cfg, "country", "GLOBAL")
                     if existing.config != new_cfg:
                         existing.config = {**(existing.config or {}), **new_cfg}
                         changed = True
@@ -178,8 +200,20 @@ class MonitorService:
                         # Automatically detect non-English text and translate title/summary to English.
                         # Skip for inherently English feeds to prevent unnecessary overhead and provider throttling.
                         is_english_source = (
-                            source.type.value in ("arxiv", "hackernews", "github_trending")
-                            or source.config.get("country") in ("US", "GB", "CA", "AU", "IE", "IN", "SG", "GLOBAL", "EU")
+                            source.type.value
+                            in ("arxiv", "hackernews", "github_trending")
+                            or source.config.get("country")
+                            in (
+                                "US",
+                                "GB",
+                                "CA",
+                                "AU",
+                                "IE",
+                                "IN",
+                                "SG",
+                                "GLOBAL",
+                                "EU",
+                            )
                             or source.config.get("language") == "en"
                         )
                         if not is_english_source:
@@ -187,15 +221,20 @@ class MonitorService:
                                 from ai_security_monitor.application.services.translation_service import (
                                     translation_service,
                                 )
+
                                 await translation_service.translate_entry_async(entry)
                             except Exception as trans_e:
                                 logger.debug(f"Translation skipped: {trans_e}")
 
                         # Stamp sovereign region, country, and intelligence provenance from source config
                         entry.metadata = entry.metadata or {}
-                        entry.metadata['region'] = source.config.get('region', 'global')
-                        entry.metadata['country'] = source.config.get('country', 'GLOBAL')
-                        entry.metadata['provenance_type'] = source.config.get('provenance_type', 'threat_intel')
+                        entry.metadata["region"] = source.config.get("region", "global")
+                        entry.metadata["country"] = source.config.get(
+                            "country", "GLOBAL"
+                        )
+                        entry.metadata["provenance_type"] = source.config.get(
+                            "provenance_type", "threat_intel"
+                        )
 
                         added_entry = await uow.entries.add(entry)
                         new_entries_count += 1
@@ -206,8 +245,10 @@ class MonitorService:
 
                         analysis = Analysis(
                             entry_id=added_entry.id,
-                            attack_vector=analysis_res.attack_vector or "Standard vector",
-                            risk_assessment=analysis_res.risk_assessment or "Standard risk",
+                            attack_vector=analysis_res.attack_vector
+                            or "Standard vector",
+                            risk_assessment=analysis_res.risk_assessment
+                            or "Standard risk",
                             mitigation=analysis_res.mitigation or "Standard patch",
                             threat_velocity=analysis_res.threat_velocity,
                             severity_index=analysis_res.severity_index,
@@ -215,10 +256,11 @@ class MonitorService:
                             affected_ecosystem=blast_res.affected_ecosystem,
                             is_pre_cve_warning=blast_res.is_pre_cve_warning,
                             attack_archetype=blast_res.attack_archetype,
-                            weaponization_potential=analysis_res.weaponization_potential or blast_res.weaponization_potential,
+                            weaponization_potential=analysis_res.weaponization_potential
+                            or blast_res.weaponization_potential,
                             mitre_attack_id=analysis_res.mitre_attack_id,
                             mitre_technique=analysis_res.mitre_technique,
-                            model=AnalysisModel.HEURISTIC
+                            model=AnalysisModel.HEURISTIC,
                         )
 
                         await uow.analyses.add(analysis)
@@ -226,20 +268,63 @@ class MonitorService:
 
                         # Auto-curate landmark AI breakthroughs into the Permanent Important Vault
                         title_lower = (added_entry.title or "").lower()
-                        cat_val = added_entry.category.value if hasattr(added_entry.category, "value") else str(added_entry.category)
+                        cat_val = (
+                            added_entry.category.value
+                            if hasattr(added_entry.category, "value")
+                            else str(added_entry.category)
+                        )
                         is_landmark = (
                             analysis.threat_velocity >= 85
-                            or any(k in title_lower for k in ("deepseek", "r1", "frontier", "qwen", "llama", "breakthrough", "sota", "vllm", "sglang", "reasoning", "reasoner"))
-                            or (cat_val == "ai_models" and any(k in title_lower for k in ("release", "weights", "checkpoint", "model", "moe")))
-                            or (cat_val == "ai_research" and analysis.threat_velocity >= 75)
+                            or any(
+                                k in title_lower
+                                for k in (
+                                    "deepseek",
+                                    "r1",
+                                    "frontier",
+                                    "qwen",
+                                    "llama",
+                                    "breakthrough",
+                                    "sota",
+                                    "vllm",
+                                    "sglang",
+                                    "reasoning",
+                                    "reasoner",
+                                )
+                            )
+                            or (
+                                cat_val == "ai_models"
+                                and any(
+                                    k in title_lower
+                                    for k in (
+                                        "release",
+                                        "weights",
+                                        "checkpoint",
+                                        "model",
+                                        "moe",
+                                    )
+                                )
+                            )
+                            or (
+                                cat_val == "ai_research"
+                                and analysis.threat_velocity >= 75
+                            )
                         )
                         if is_landmark:
                             added_entry.metadata = dict(added_entry.metadata or {})
                             added_entry.metadata["is_important"] = True
                             added_entry.metadata["importance_reason"] = (
-                                "Frontier Reasoning Architecture" if any(k in title_lower for k in ("reasoning", "deepseek", "r1"))
-                                else "Major Foundation Model Weights Release" if cat_val == "ai_models"
-                                else "Critical AI Developer Infrastructure" if any(k in title_lower for k in ("vllm", "sglang", "runtime", "engine"))
+                                "Frontier Reasoning Architecture"
+                                if any(
+                                    k in title_lower
+                                    for k in ("reasoning", "deepseek", "r1")
+                                )
+                                else "Major Foundation Model Weights Release"
+                                if cat_val == "ai_models"
+                                else "Critical AI Developer Infrastructure"
+                                if any(
+                                    k in title_lower
+                                    for k in ("vllm", "sglang", "runtime", "engine")
+                                )
                                 else "High-Impact Seminal Breakthrough"
                             )
                             await uow.entries.update(added_entry)
@@ -247,79 +332,107 @@ class MonitorService:
                         # Real-time WebSocket Broadcast
                         if self._broadcast_callback:
                             try:
-                                self._broadcast_callback({
-                                    "type": "new_entry",
-                                    "data": {
-                                        "id": str(added_entry.id),
-                                        "title": added_entry.title,
-                                        "url": added_entry.url,
-                                        "summary": added_entry.summary,
-                                        "category": added_entry.category.value,
-                                        "source_name": source.name,
-                                        "region": source.config.get('region', 'global'),
-                                        "country": source.config.get('country', 'GLOBAL'),
-                                        "published_at": added_entry.published_at.isoformat(),
-                                        "tags": added_entry.tags,
-                                        "analysis": {
-                                            "threat_velocity": analysis.threat_velocity,
-                                            "severity_index": analysis.severity_index,
-                                            "blast_radius_score": analysis.blast_radius_score,
-                                            "affected_ecosystem": analysis.affected_ecosystem,
-                                            "is_pre_cve_warning": analysis.is_pre_cve_warning,
-                                            "attack_archetype": analysis.attack_archetype,
-                                            "weaponization_potential": analysis.weaponization_potential,
-                                            "mitre_attack_id": analysis.mitre_attack_id,
-                                            "mitre_technique": analysis.mitre_technique,
-                                            "attack_vector": analysis.attack_vector,
-                                            "risk_assessment": analysis.risk_assessment,
-                                            "mitigation": analysis.mitigation,
-                                        }
+                                self._broadcast_callback(
+                                    {
+                                        "type": "new_entry",
+                                        "data": {
+                                            "id": str(added_entry.id),
+                                            "title": added_entry.title,
+                                            "url": added_entry.url,
+                                            "summary": added_entry.summary,
+                                            "category": added_entry.category.value,
+                                            "source_name": source.name,
+                                            "region": source.config.get(
+                                                "region", "global"
+                                            ),
+                                            "country": source.config.get(
+                                                "country", "GLOBAL"
+                                            ),
+                                            "published_at": added_entry.published_at.isoformat(),
+                                            "tags": added_entry.tags,
+                                            "analysis": {
+                                                "threat_velocity": analysis.threat_velocity,
+                                                "severity_index": analysis.severity_index,
+                                                "blast_radius_score": analysis.blast_radius_score,
+                                                "affected_ecosystem": analysis.affected_ecosystem,
+                                                "is_pre_cve_warning": analysis.is_pre_cve_warning,
+                                                "attack_archetype": analysis.attack_archetype,
+                                                "weaponization_potential": analysis.weaponization_potential,
+                                                "mitre_attack_id": analysis.mitre_attack_id,
+                                                "mitre_technique": analysis.mitre_technique,
+                                                "attack_vector": analysis.attack_vector,
+                                                "risk_assessment": analysis.risk_assessment,
+                                                "mitigation": analysis.mitigation,
+                                            },
+                                        },
                                     }
-                                })
+                                )
                             except Exception as ws_err:
                                 logger.warning(f"WebSocket broadcast error: {ws_err}")
 
                         # Auto-enqueue high-priority entries into Autonomous LLM Triage Queue
                         if settings.analyzer.autonomous_triage_enabled:
-                            if (analysis.threat_velocity >= settings.analyzer.triage_velocity_threshold
-                                    or analysis.is_pre_cve_warning):
+                            if (
+                                analysis.threat_velocity
+                                >= settings.analyzer.triage_velocity_threshold
+                                or analysis.is_pre_cve_warning
+                            ):
                                 try:
                                     from ai_security_monitor.application.services.autonomous_triage_service import (
                                         get_triage_service,
                                     )
+
                                     await get_triage_service().enqueue(added_entry.id)
                                 except Exception as triage_err:
-                                    logger.warning(f"Failed to auto-enqueue entry for LLM triage: {triage_err}")
+                                    logger.warning(
+                                        f"Failed to auto-enqueue entry for LLM triage: {triage_err}"
+                                    )
 
                         # Autonomous Emergency Push Alert (Telegram & Event Broadcast)
-                        if analysis.threat_velocity >= 80 or analysis.is_pre_cve_warning:
+                        if (
+                            analysis.threat_velocity >= 80
+                            or analysis.is_pre_cve_warning
+                        ):
                             if self._broadcast_callback:
                                 try:
-                                    self._broadcast_callback({
-                                        "type": "emergency_threat_alert",
-                                        "data": {
-                                            "id": str(added_entry.id),
-                                            "title": added_entry.title,
-                                            "url": added_entry.url,
-                                            "velocity": analysis.threat_velocity,
-                                            "is_pre_cve": analysis.is_pre_cve_warning,
-                                            "archetype": analysis.attack_archetype,
-                                            "source_name": source.name
+                                    self._broadcast_callback(
+                                        {
+                                            "type": "emergency_threat_alert",
+                                            "data": {
+                                                "id": str(added_entry.id),
+                                                "title": added_entry.title,
+                                                "url": added_entry.url,
+                                                "velocity": analysis.threat_velocity,
+                                                "is_pre_cve": analysis.is_pre_cve_warning,
+                                                "archetype": analysis.attack_archetype,
+                                                "source_name": source.name,
+                                            },
                                         }
-                                    })
+                                    )
                                 except Exception as _bc_err:
-                                    logger.debug(f"WebSocket broadcast error (non-critical): {_bc_err}")
+                                    logger.debug(
+                                        f"WebSocket broadcast error (non-critical): {_bc_err}"
+                                    )
 
                             # Dispatch Telegram Emergency Alert if credentials present
                             try:
-                                tg_token = getattr(settings, 'telegram_bot_token', None) or os.getenv('TELEGRAM_BOT_TOKEN')
-                                tg_chat = getattr(settings, 'telegram_chat_id', None) or os.getenv('TELEGRAM_CHAT_ID')
+                                tg_token = getattr(
+                                    settings, "telegram_bot_token", None
+                                ) or os.getenv("TELEGRAM_BOT_TOKEN")
+                                tg_chat = getattr(
+                                    settings, "telegram_chat_id", None
+                                ) or os.getenv("TELEGRAM_CHAT_ID")
                                 if tg_token and tg_chat:
                                     from ai_security_monitor.infrastructure.delivery.telegram_delivery import (
                                         TelegramDelivery,
                                     )
-                                    tg_delivery = TelegramDelivery({'bot_token': tg_token, 'chat_id': tg_chat})
-                                    asyncio.create_task(tg_delivery.send_alert(added_entry, analysis))
+
+                                    tg_delivery = TelegramDelivery(
+                                        {"bot_token": tg_token, "chat_id": tg_chat}
+                                    )
+                                    asyncio.create_task(
+                                        tg_delivery.send_alert(added_entry, analysis)
+                                    )
                             except Exception as tg_err:
                                 logger.debug(f"Telegram auto-alert error: {tg_err}")
 
@@ -348,7 +461,7 @@ class MonitorService:
             entries_total=entries_total,
             error_message=error_msg,
             duration_ms=duration_ms,
-            fetched_at=datetime.now(UTC)
+            fetched_at=datetime.now(UTC),
         )
 
         async with self._uow_factory() as uow:
@@ -357,7 +470,9 @@ class MonitorService:
 
         return log
 
-    async def fetch_all(self, force: bool = False, max_concurrency: int | None = None) -> dict:
+    async def fetch_all(
+        self, force: bool = False, max_concurrency: int | None = None
+    ) -> dict:
         """Fetch intelligence from all enabled sources with priority ordering and adaptive concurrency."""
         async with self._uow_factory() as uow:
             sources = await uow.sources.list(enabled_only=True)
@@ -378,7 +493,11 @@ class MonitorService:
         sources.sort(key=lambda s: (source_priority_order.get(s.category, 99), s.name))
 
         # Adaptive concurrency: scales with source count, capped at configurable max_concurrency
-        target_concurrency = max_concurrency if max_concurrency is not None else settings.fetch.max_concurrency
+        target_concurrency = (
+            max_concurrency
+            if max_concurrency is not None
+            else settings.fetch.max_concurrency
+        )
         concurrency = max(1, min(len(sources), target_concurrency)) if sources else 4
         sem = asyncio.Semaphore(concurrency)
         total_new = 0
@@ -394,10 +513,10 @@ class MonitorService:
                     # With 14 regional arXiv fetchers, the last waits 39s+ before
                     # its HTTP request even starts.  Give arXiv sources 90s so
                     # all regional sources complete instead of timing out silently.
-                    source_timeout = (
-                        90.0 if src.type.value == "arxiv" else 25.0
+                    source_timeout = 90.0 if src.type.value == "arxiv" else 25.0
+                    log = await asyncio.wait_for(
+                        self.fetch_source(src), timeout=source_timeout
                     )
-                    log = await asyncio.wait_for(self.fetch_source(src), timeout=source_timeout)
                     async with lock:
                         if log.status == FetchStatus.SUCCESS:
                             success += 1
@@ -408,18 +527,32 @@ class MonitorService:
                             failures = _consecutive_failures.get(src.name, 0) + 1
                             _consecutive_failures[src.name] = failures
                             threshold = settings.fetch.consecutive_failure_threshold
-                            if failures == threshold or (failures > threshold and failures % 5 == 0):
-                                logger.warning(f"Source {src.name} has failed {failures} consecutive sweeps. Alerting.")
-                                asyncio.create_task(send_source_failure_alert(src.name, failures, log.error_message))
+                            if failures == threshold or (
+                                failures > threshold and failures % 5 == 0
+                            ):
+                                logger.warning(
+                                    f"Source {src.name} has failed {failures} consecutive sweeps. Alerting."
+                                )
+                                asyncio.create_task(
+                                    send_source_failure_alert(
+                                        src.name, failures, log.error_message
+                                    )
+                                )
                 except Exception as e:
                     async with lock:
                         error += 1
                         failures = _consecutive_failures.get(src.name, 0) + 1
                         _consecutive_failures[src.name] = failures
                         threshold = settings.fetch.consecutive_failure_threshold
-                        if failures == threshold or (failures > threshold and failures % 5 == 0):
-                            logger.warning(f"Source {src.name} has failed {failures} consecutive sweeps. Alerting.")
-                            asyncio.create_task(send_source_failure_alert(src.name, failures, str(e)))
+                        if failures == threshold or (
+                            failures > threshold and failures % 5 == 0
+                        ):
+                            logger.warning(
+                                f"Source {src.name} has failed {failures} consecutive sweeps. Alerting."
+                            )
+                            asyncio.create_task(
+                                send_source_failure_alert(src.name, failures, str(e))
+                            )
                     logger.warning(f"Concurrent sweep error for {src.name}: {e}")
                 finally:
                     # Balanced cooperative yield to keep SQLite and event loop fluid for user HTTP requests
@@ -430,6 +563,7 @@ class MonitorService:
 
         # Invalidate response caches so freshly ingested entries and updated stats are immediately visible on website
         from ai_security_monitor.infrastructure.cache import response_cache
+
         response_cache.invalidate_prefix("entries_")
         response_cache.invalidate_prefix("sources_list_all_")
         response_cache.invalidate("sources_map")
@@ -441,7 +575,7 @@ class MonitorService:
             "total_sources": len(sources),
             "success": success,
             "error": error,
-            "total_new": total_new
+            "total_new": total_new,
         }
 
     async def purge_stale_entries(self, older_than_days: int | None = None) -> dict:
@@ -449,7 +583,11 @@ class MonitorService:
 
         Returns a summary dict with the count of purged items.
         """
-        days = older_than_days if older_than_days is not None else settings.database.retention_days
+        days = (
+            older_than_days
+            if older_than_days is not None
+            else settings.database.retention_days
+        )
         async with self._uow_factory() as uow:
             purged = await uow.entries.purge_old_entries(older_than_days=days)
             hard_purged = await uow.entries.hard_delete_purged(grace_days=30)
@@ -457,6 +595,7 @@ class MonitorService:
             purged_digests = await uow.digests.purge_old_digests(older_than_days=days)
             try:
                 from sqlalchemy import text
+
                 await uow.session.execute(text("PRAGMA optimize"))
             except Exception:
                 pass
@@ -464,6 +603,7 @@ class MonitorService:
 
         # Invalidate caches after data hygiene purge
         from ai_security_monitor.infrastructure.cache import response_cache
+
         response_cache.invalidate_prefix("entries_")
         response_cache.invalidate("total_unfiltered_count")
         response_cache.invalidate("stats_totals")
@@ -481,6 +621,37 @@ class MonitorService:
             "purged_digests": purged_digests,
             "older_than_days": days,
         }
+
+    async def restore_purged_entries(self) -> dict:
+        """Restore all soft-purged entries back to active visibility and invalidate caches."""
+        async with self._uow_factory() as uow:
+            restored = await uow.entries.restore_purged_entries()
+            await uow.commit()
+
+        from ai_security_monitor.infrastructure.cache import response_cache
+
+        response_cache.invalidate_prefix("entries_")
+        response_cache.invalidate("total_unfiltered_count")
+        response_cache.invalidate("stats_totals")
+        response_cache.invalidate("sweep_status")
+
+        logger.info(
+            f"Manual restoration complete: restored {restored} previously soft-purged entries."
+        )
+        return {"restored": restored, "success": True}
+
+    async def get_retention_status(self, older_than_days: int = 7) -> dict:
+        """Retrieve retention policy and entry counts for manual cleanup planning."""
+        async with self._uow_factory() as uow:
+            counts = await uow.entries.get_retention_counts(
+                older_than_days=older_than_days
+            )
+
+        counts["auto_purge_enabled"] = getattr(
+            settings.database, "auto_purge_enabled", False
+        )
+        counts["default_retention_days"] = settings.database.retention_days
+        return counts
 
     async def get_sweep_status(self) -> dict:
         """Return live sweep freshness data: last sweep time, next sweep ETA, per-source freshness."""
@@ -503,7 +674,11 @@ class MonitorService:
 
         last_sweep_iso = sweep_at.isoformat() if sweep_at else None
         seconds_since = int((now - sweep_at).total_seconds()) if sweep_at else None
-        next_sweep_in = max(0, interval_minutes * 60 - seconds_since) if seconds_since is not None else None
+        next_sweep_in = (
+            max(0, interval_minutes * 60 - seconds_since)
+            if seconds_since is not None
+            else None
+        )
         server_uptime_seconds = int((now - started_at).total_seconds())
 
         async with self._uow_factory() as uow:
@@ -513,16 +688,23 @@ class MonitorService:
         for src in sources:
             last = _to_utc(src.last_fetched_at)
             age_seconds = int((now - last).total_seconds()) if last else None
-            source_freshness.append({
-                "name": src.name,
-                "last_fetched_at": last.isoformat() if last else None,
-                "age_seconds": age_seconds,
-                "status": src.last_status.value if src.last_status else "never",
-                "last_new": src.last_entries_new or 0,
-            })
+            source_freshness.append(
+                {
+                    "name": src.name,
+                    "last_fetched_at": last.isoformat() if last else None,
+                    "age_seconds": age_seconds,
+                    "status": src.last_status.value if src.last_status else "never",
+                    "last_new": src.last_entries_new or 0,
+                }
+            )
 
         # Sort: stale sources (longest since last fetch) first
-        source_freshness.sort(key=lambda x: x["age_seconds"] if x["age_seconds"] is not None else 999999999, reverse=True)
+        source_freshness.sort(
+            key=lambda x: (
+                x["age_seconds"] if x["age_seconds"] is not None else 999999999
+            ),
+            reverse=True,
+        )
 
         from ai_security_monitor.core.diagnostics import diagnostics
 
@@ -538,7 +720,6 @@ class MonitorService:
             "self_healing": diagnostics.get_summary(),
         }
 
-
     async def get_stats(self) -> dict:
         """Get aggregate system metrics and stats using high-performance scalar and group-by queries."""
         from sqlalchemy import func, select, text
@@ -552,14 +733,38 @@ class MonitorService:
 
         async with self._uow_factory() as uow:
             # Fast scalar count queries (single table index scans, no entity conversions)
-            total_entries = (await uow.session.execute(select(func.count(EntryModel.id)))).scalar() or 0
-            total_sources = (await uow.session.execute(select(func.count(SourceModel.id)).where(SourceModel.enabled.is_(True)))).scalar() or 0
-            high_velocity = (await uow.session.execute(select(func.count(AnalysisModel.id)).where(AnalysisModel.threat_velocity >= 70))).scalar() or 0
-            pre_cve_warnings = (await uow.session.execute(select(func.count(AnalysisModel.id)).where(AnalysisModel.is_pre_cve_warning.is_(True)))).scalar() or 0
-            watchlist_rules = (await uow.session.execute(select(func.count(WatchlistRuleModel.id)))).scalar() or 0
+            total_entries = (
+                await uow.session.execute(select(func.count(EntryModel.id)))
+            ).scalar() or 0
+            total_sources = (
+                await uow.session.execute(
+                    select(func.count(SourceModel.id)).where(
+                        SourceModel.enabled.is_(True)
+                    )
+                )
+            ).scalar() or 0
+            high_velocity = (
+                await uow.session.execute(
+                    select(func.count(AnalysisModel.id)).where(
+                        AnalysisModel.threat_velocity >= 70
+                    )
+                )
+            ).scalar() or 0
+            pre_cve_warnings = (
+                await uow.session.execute(
+                    select(func.count(AnalysisModel.id)).where(
+                        AnalysisModel.is_pre_cve_warning.is_(True)
+                    )
+                )
+            ).scalar() or 0
+            watchlist_rules = (
+                await uow.session.execute(select(func.count(WatchlistRuleModel.id)))
+            ).scalar() or 0
 
             # Single group-by query for all categories (replaces 8 sequential table scans)
-            cat_stmt = select(EntryModel.category, func.count(EntryModel.id)).group_by(EntryModel.category)
+            cat_stmt = select(EntryModel.category, func.count(EntryModel.id)).group_by(
+                EntryModel.category
+            )
             cat_rows = (await uow.session.execute(cat_stmt)).all()
             cats = {cat.value: 0 for cat in Category} | dict(cat_rows)
 
@@ -569,6 +774,7 @@ class MonitorService:
             framework_exposure = []
             try:
                 import json
+
                 stmt = text(
                     "SELECT affected_ecosystem, blast_radius_score "
                     "FROM entry_analysis WHERE affected_ecosystem IS NOT NULL AND affected_ecosystem != '[]' "
@@ -578,7 +784,11 @@ class MonitorService:
                 f_stats: dict[str, dict[str, float]] = {}
                 for eco_json, blast in raw_rows:
                     try:
-                        ecos = json.loads(eco_json) if isinstance(eco_json, str) else eco_json
+                        ecos = (
+                            json.loads(eco_json)
+                            if isinstance(eco_json, str)
+                            else eco_json
+                        )
                         if isinstance(ecos, list):
                             for e in ecos:
                                 e_clean = str(e).strip()
@@ -587,20 +797,32 @@ class MonitorService:
                                 if e_clean not in f_stats:
                                     f_stats[e_clean] = {"count": 0, "total_blast": 0}
                                 f_stats[e_clean]["count"] += 1
-                                f_stats[e_clean]["total_blast"] += (blast or 0)
+                                f_stats[e_clean]["total_blast"] += blast or 0
                     except Exception:
                         pass
 
-                for name, data in sorted(f_stats.items(), key=lambda x: x[1]["count"], reverse=True)[:5]:
+                for name, data in sorted(
+                    f_stats.items(), key=lambda x: x[1]["count"], reverse=True
+                )[:5]:
                     cnt = int(data["count"])
                     avg_b = round(data["total_blast"] / cnt, 1) if cnt > 0 else 0.0
-                    risk_label = "HIGH RISK" if avg_b >= 75 else ("ELEVATED" if avg_b >= 60 else ("MODERATE" if avg_b >= 35 else "MONITORED"))
-                    framework_exposure.append({
-                        "name": name,
-                        "count": cnt,
-                        "avg_blast": avg_b,
-                        "risk_level": risk_label
-                    })
+                    risk_label = (
+                        "HIGH RISK"
+                        if avg_b >= 75
+                        else (
+                            "ELEVATED"
+                            if avg_b >= 60
+                            else ("MODERATE" if avg_b >= 35 else "MONITORED")
+                        )
+                    )
+                    framework_exposure.append(
+                        {
+                            "name": name,
+                            "count": cnt,
+                            "avg_blast": avg_b,
+                            "risk_level": risk_label,
+                        }
+                    )
             except Exception:
                 pass
 
@@ -617,7 +839,8 @@ class MonitorService:
                         "source_name": log_item.source_name,
                         "status": log_item.status.value,
                         "entries_new": log_item.entries_new,
-                        "fetched_at": log_item.fetched_at.strftime("%Y-%m-%d %H:%M:%S")
-                    } for log_item in recent_logs
-                ]
+                        "fetched_at": log_item.fetched_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                    for log_item in recent_logs
+                ],
             }

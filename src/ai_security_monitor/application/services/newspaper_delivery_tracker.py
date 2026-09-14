@@ -2,6 +2,7 @@
 Persistent delivery state tracking and deduplication for newspaper dispatches.
 Prevents duplicate dispatches, enforces cooldown intervals, and maintains an audit log of sent editions.
 """
+
 from __future__ import annotations
 
 import json
@@ -28,13 +29,17 @@ class NewspaperDeliveryTracker:
             try:
                 return json.loads(self._state_file.read_text(encoding="utf-8"))
             except Exception as e:
-                logger.warning(f"Failed to read delivery state from {self._state_file}: {e}")
+                logger.warning(
+                    f"Failed to read delivery state from {self._state_file}: {e}"
+                )
         return {}
 
     def _save(self) -> None:
         try:
             self._state_file.parent.mkdir(parents=True, exist_ok=True)
-            self._state_file.write_text(json.dumps(self._state, indent=2), encoding="utf-8")
+            self._state_file.write_text(
+                json.dumps(self._state, indent=2), encoding="utf-8"
+            )
         except Exception as e:
             logger.error(f"Failed to persist delivery state to {self._state_file}: {e}")
 
@@ -121,18 +126,22 @@ class NewspaperDeliveryTracker:
             sent_list.append(edition_number)
 
         history = ch_state.setdefault("history", [])
-        history.append({
-            "edition_number": edition_number,
-            "dispatched_at": now.isoformat(),
-            "lead_story": lead_story,
-            "details": details or {},
-        })
+        history.append(
+            {
+                "edition_number": edition_number,
+                "dispatched_at": now.isoformat(),
+                "lead_story": lead_story,
+                "details": details or {},
+            }
+        )
         # Keep recent 50 history entries
         if len(history) > 50:
             ch_state["history"] = history[-50:]
 
         self._save()
-        logger.info(f"Recorded successful dispatch of Edition #{edition_number} to {channel}")
+        logger.info(
+            f"Recorded successful dispatch of Edition #{edition_number} to {channel}"
+        )
 
     def get_channel_state(self, channel: str) -> dict[str, Any]:
         """Retrieve delivery state for a specific channel."""

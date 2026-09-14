@@ -24,7 +24,9 @@ class CISAFetcher(BaseFetcher):
         url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
         headers = {"User-Agent": settings.fetch.user_agent}
 
-        async with httpx.AsyncClient(timeout=self.timeout, headers=headers, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout, headers=headers, follow_redirects=True
+        ) as client:
             response = await client.get(url)
             response.raise_for_status()
 
@@ -43,22 +45,28 @@ class CISAFetcher(BaseFetcher):
             if due_date:
                 content += f"\nDue Date: {due_date}"
 
-            entries.append({
-                "title": f"CISA KEV: {cve_id} - {vuln_name}",
-                "url": f"https://nvd.nist.gov/vuln/detail/{cve_id}",
-                "content": content,
-                "published_at": datetime.fromisoformat(vuln.get("dateAdded", "").replace("Z", "+00:00")).replace(tzinfo=None) if vuln.get("dateAdded") else datetime.now(UTC),
-                "tags": ["cisa", "kev", "exploited", "critical"],
-                "metadata": {
-                    "cve_id": cve_id,
-                    "vendor": vuln.get("vendorProject", ""),
-                    "product": vuln.get("product", ""),
-                    "vulnerability_name": vuln_name,
-                    "required_action": required_action,
-                    "due_date": due_date,
-                    "notes": vuln.get("notes", ""),
+            entries.append(
+                {
+                    "title": f"CISA KEV: {cve_id} - {vuln_name}",
+                    "url": f"https://nvd.nist.gov/vuln/detail/{cve_id}",
+                    "content": content,
+                    "published_at": datetime.fromisoformat(
+                        vuln.get("dateAdded", "").replace("Z", "+00:00")
+                    ).replace(tzinfo=None)
+                    if vuln.get("dateAdded")
+                    else datetime.now(UTC),
+                    "tags": ["cisa", "kev", "exploited", "critical"],
+                    "metadata": {
+                        "cve_id": cve_id,
+                        "vendor": vuln.get("vendorProject", ""),
+                        "product": vuln.get("product", ""),
+                        "vulnerability_name": vuln_name,
+                        "required_action": required_action,
+                        "due_date": due_date,
+                        "notes": vuln.get("notes", ""),
+                    },
                 }
-            })
+            )
 
         return entries
 

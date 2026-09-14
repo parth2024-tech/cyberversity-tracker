@@ -26,29 +26,112 @@ from ai_security_monitor.infrastructure.fetchers.base import (
 
 logger = get_logger(__name__)
 
-_AI_KEYWORDS = frozenset({
-    "ai", "llm", "agent", "agents", "machine-learning", "deep-learning",
-    "neural", "model", "models", "gpt", "transformer", "transformers",
-    "diffusion", "rag", "vision", "deepseek", "qwen", "claude", "llama",
-    "mistral", "vllm", "ollama", "sglang", "embedding", "embeddings",
-    "inference", "fine-tuning", "lora", "rlhf", "langchain", "llamaindex",
-    "gemini", "pytorch", "huggingface", "whisper", "vision-language",
-    "multimodal", "openai", "anthropic", "reasoning", "benchmark",
-})
+_AI_KEYWORDS = frozenset(
+    {
+        "ai",
+        "llm",
+        "agent",
+        "agents",
+        "machine-learning",
+        "deep-learning",
+        "neural",
+        "model",
+        "models",
+        "gpt",
+        "transformer",
+        "transformers",
+        "diffusion",
+        "rag",
+        "vision",
+        "deepseek",
+        "qwen",
+        "claude",
+        "llama",
+        "mistral",
+        "vllm",
+        "ollama",
+        "sglang",
+        "embedding",
+        "embeddings",
+        "inference",
+        "fine-tuning",
+        "lora",
+        "rlhf",
+        "langchain",
+        "llamaindex",
+        "gemini",
+        "pytorch",
+        "huggingface",
+        "whisper",
+        "vision-language",
+        "multimodal",
+        "openai",
+        "anthropic",
+        "reasoning",
+        "benchmark",
+    }
+)
 
-_INFRA_KEYWORDS = frozenset({
-    "inference", "serving", "runtime", "engine", "framework", "deploy",
-    "quantization", "optimization", "accelerator", "cuda", "triton",
-    "vllm", "sglang", "ollama", "llamacpp", "onnx", "trt", "tensorrt",
-    "mlops", "vector", "embedding", "rag", "retrieval", "monitoring",
-    "training", "fine-tuning", "lora", "qlora", "peft", "accelerate",
-})
+_INFRA_KEYWORDS = frozenset(
+    {
+        "inference",
+        "serving",
+        "runtime",
+        "engine",
+        "framework",
+        "deploy",
+        "quantization",
+        "optimization",
+        "accelerator",
+        "cuda",
+        "triton",
+        "vllm",
+        "sglang",
+        "ollama",
+        "llamacpp",
+        "onnx",
+        "trt",
+        "tensorrt",
+        "mlops",
+        "vector",
+        "embedding",
+        "rag",
+        "retrieval",
+        "monitoring",
+        "training",
+        "fine-tuning",
+        "lora",
+        "qlora",
+        "peft",
+        "accelerate",
+    }
+)
 
-_SECURITY_KEYWORDS = frozenset({
-    "security", "pentest", "exploit", "vulnerability", "scanner", "fuzzer",
-    "red-team", "blue-team", "cve", "ctf", "malware", "forensics", "siem",
-    "ids", "ips", "waf", "recon", "osint", "threat", "detection", "edr",
-})
+_SECURITY_KEYWORDS = frozenset(
+    {
+        "security",
+        "pentest",
+        "exploit",
+        "vulnerability",
+        "scanner",
+        "fuzzer",
+        "red-team",
+        "blue-team",
+        "cve",
+        "ctf",
+        "malware",
+        "forensics",
+        "siem",
+        "ids",
+        "ips",
+        "waf",
+        "recon",
+        "osint",
+        "threat",
+        "detection",
+        "edr",
+    }
+)
 
 
 class GitHubTrendingFetcher(BaseFetcher):
@@ -58,7 +141,9 @@ class GitHubTrendingFetcher(BaseFetcher):
     def fetcher_type(self) -> str:
         return "github_trending"
 
-    def __init__(self, source: Source, timeout: int | None = None, max_retries: int | None = None):
+    def __init__(
+        self, source: Source, timeout: int | None = None, max_retries: int | None = None
+    ):
         super().__init__(source, timeout, max_retries)
         self.frequency: str = source.config.get("frequency", "daily")
         # filter_mode: "ai" | "infra" | "security" | "any"
@@ -71,12 +156,18 @@ class GitHubTrendingFetcher(BaseFetcher):
         try:
             entries = await self._fetch_raw_scraping()
         except Exception as scrape_err:
-            logger.warning(f"GitHub Trending scraping exception for {self.source.name!r}: {scrape_err}")
+            logger.warning(
+                f"GitHub Trending scraping exception for {self.source.name!r}: {scrape_err}"
+            )
             scrape_failed = True
 
         # Trigger API fallback if scraping returned too few results
         if len(entries) < 5:
-            reason = "scraping exception" if scrape_failed else f"low yield ({len(entries)} repos found)"
+            reason = (
+                "scraping exception"
+                if scrape_failed
+                else f"low yield ({len(entries)} repos found)"
+            )
             logger.warning(
                 f"GitHub Trending scrape health alert for {self.source.name!r}: {reason}. "
                 "Activating GitHub Search API fallback."
@@ -94,7 +185,9 @@ class GitHubTrendingFetcher(BaseFetcher):
                     f"with {added} additional repos"
                 )
             except Exception as api_err:
-                logger.error(f"GitHub Search API fallback failed for {self.source.name!r}: {api_err}")
+                logger.error(
+                    f"GitHub Search API fallback failed for {self.source.name!r}: {api_err}"
+                )
 
         return entries
 
@@ -108,7 +201,9 @@ class GitHubTrendingFetcher(BaseFetcher):
         if self.filter_mode == "security":
             return any(w in combined for w in _SECURITY_KEYWORDS)
         elif self.filter_mode == "infra":
-            return any(w in combined for w in _INFRA_KEYWORDS) or any(w in combined for w in _AI_KEYWORDS)
+            return any(w in combined for w in _INFRA_KEYWORDS) or any(
+                w in combined for w in _AI_KEYWORDS
+            )
         else:  # "ai" (default)
             return any(w in combined for w in _AI_KEYWORDS)
 
@@ -182,20 +277,22 @@ class GitHubTrendingFetcher(BaseFetcher):
                 if language:
                     tags.append(language.lower())
 
-                entries.append({
-                    "title": clean_title,
-                    "url": repo_url,
-                    "content": content,
-                    "published_at": datetime.now(UTC),
-                    "tags": tags,
-                    "metadata": {
-                        "repo_name": repo_name,
-                        "language": language,
-                        "stars_period": stars_text,
-                        "frequency": self.frequency,
-                        "filter_mode": self.filter_mode,
-                    },
-                })
+                entries.append(
+                    {
+                        "title": clean_title,
+                        "url": repo_url,
+                        "content": content,
+                        "published_at": datetime.now(UTC),
+                        "tags": tags,
+                        "metadata": {
+                            "repo_name": repo_name,
+                            "language": language,
+                            "stars_period": stars_text,
+                            "frequency": self.frequency,
+                            "filter_mode": self.filter_mode,
+                        },
+                    }
+                )
             except Exception as e:
                 logger.warning(f"Failed to parse GitHub trending repo: {e}")
                 continue
@@ -219,7 +316,9 @@ class GitHubTrendingFetcher(BaseFetcher):
 
         # Build topic filter per mode
         if self.filter_mode == "security":
-            topic_filter = "topic:security OR topic:pentest OR topic:red-team OR topic:osint"
+            topic_filter = (
+                "topic:security OR topic:pentest OR topic:red-team OR topic:osint"
+            )
             stars_floor = "stars:>50"
         elif self.filter_mode == "infra":
             topic_filter = (
@@ -304,21 +403,23 @@ class GitHubTrendingFetcher(BaseFetcher):
                     except Exception:
                         pass
 
-                entries.append({
-                    "title": clean_title,
-                    "url": repo_url,
-                    "content": content,
-                    "published_at": published_at,
-                    "tags": list(dict.fromkeys(tags)),
-                    "metadata": {
-                        "repo_name": repo_name,
-                        "language": language,
-                        "stars": stars,
-                        "forks": forks,
-                        "frequency": self.frequency,
-                        "filter_mode": self.filter_mode,
-                    },
-                })
+                entries.append(
+                    {
+                        "title": clean_title,
+                        "url": repo_url,
+                        "content": content,
+                        "published_at": published_at,
+                        "tags": list(dict.fromkeys(tags)),
+                        "metadata": {
+                            "repo_name": repo_name,
+                            "language": language,
+                            "stars": stars,
+                            "forks": forks,
+                            "frequency": self.frequency,
+                            "filter_mode": self.filter_mode,
+                        },
+                    }
+                )
             except Exception:
                 continue
 

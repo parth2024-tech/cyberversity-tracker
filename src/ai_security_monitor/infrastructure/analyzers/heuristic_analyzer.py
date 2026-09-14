@@ -80,9 +80,19 @@ class HeuristicAnalyzer(BaseAnalyzer):
         "Shanghai AI Lab (InternLM)": [r"\binternlm\b", r"书生·浦语", r"\bopenmmlab\b"],
         "Moonshot Kimi": [r"\bmoonshot\b", r"\bkimi\b"],
         "Huawei MindSpore / Ascend": [r"\bmindspore\b", r"\bascend\b", r"昇腾"],
-        "PyTorch": [r"\bpytorch\b", r"\btorch\b", r"\btorchvision\b", r"\btorchaudio\b"],
+        "PyTorch": [
+            r"\bpytorch\b",
+            r"\btorch\b",
+            r"\btorchvision\b",
+            r"\btorchaudio\b",
+        ],
         "TensorFlow": [r"\btensorflow\b", r"\bkeras\b", r"\btflite\b"],
-        "HuggingFace": [r"\bhuggingface\b", r"\btransformers\b", r"\btokenizers\b", r"\bpeft\b"],
+        "HuggingFace": [
+            r"\bhuggingface\b",
+            r"\btransformers\b",
+            r"\btokenizers\b",
+            r"\bpeft\b",
+        ],
         "LangChain": [r"\blangchain\b", r"\blanggraph\b"],
         "LlamaIndex": [r"\bllamaindex\b"],
         "Ollama": [r"\bollama\b"],
@@ -93,15 +103,67 @@ class HeuristicAnalyzer(BaseAnalyzer):
     }
 
     ATTACK_ARCHETYPE_PATTERNS = {
-        AttackArchetype.JAILBREAK: [r"\bjailbreak\b", r"\bbypass.*guard\b", r"\bunaligned\b", r"越狱", r"绕过安全对齐"],
-        AttackArchetype.RAG_POISONING: [r"\brag.*poison\b", r"\bpoison.*retrieval\b", r"\bcorrupt.*knowledge\b", r"检索污染", r"知识库投毒"],
-        AttackArchetype.MODEL_INVERSION: [r"\bmodel.inversion\b", r"\binvert.*model\b", r"\bextract.*weights\b", r"模型逆向", r"权重提取"],
-        AttackArchetype.PROMPT_INJECTION: [r"\bprompt.injection\b", r"\binject.*prompt\b", r"\bsystem.prompt\b", r"提示注入", r"提示词注入"],
-        AttackArchetype.DATA_POISONING: [r"\bdata.poison\b", r"\bpoison.*training\b", r"\bbackdoor.*model\b", r"数据投毒", r"模型后门"],
-        AttackArchetype.MODEL_EXTRACTION: [r"\bmodel.extraction\b", r"\bsteal.*model\b", r"\bextract.*architecture\b", r"模型窃取"],
-        AttackArchetype.SUPPLY_CHAIN: [r"\bsupply.chain\b", r"\bdependency.confusion\b", r"\btyposquat\b", r"供应链攻击", r"依赖混淆"],
-        AttackArchetype.RCE: [r"\brce\b", r"\bremote.code.execution\b", r"\barbitrary.code\b", r"远程代码执行", r"任意代码执行"],
-        AttackArchetype.PRIVILEGE_ESCALATION: [r"\bprivilege.escalation\b", r"\bescalate.*privilege\b", r"提权", r"权限提升"],
+        AttackArchetype.JAILBREAK: [
+            r"\bjailbreak\b",
+            r"\bbypass.*guard\b",
+            r"\bunaligned\b",
+            r"越狱",
+            r"绕过安全对齐",
+        ],
+        AttackArchetype.RAG_POISONING: [
+            r"\brag.*poison\b",
+            r"\bpoison.*retrieval\b",
+            r"\bcorrupt.*knowledge\b",
+            r"检索污染",
+            r"知识库投毒",
+        ],
+        AttackArchetype.MODEL_INVERSION: [
+            r"\bmodel.inversion\b",
+            r"\binvert.*model\b",
+            r"\bextract.*weights\b",
+            r"模型逆向",
+            r"权重提取",
+        ],
+        AttackArchetype.PROMPT_INJECTION: [
+            r"\bprompt.injection\b",
+            r"\binject.*prompt\b",
+            r"\bsystem.prompt\b",
+            r"提示注入",
+            r"提示词注入",
+        ],
+        AttackArchetype.DATA_POISONING: [
+            r"\bdata.poison\b",
+            r"\bpoison.*training\b",
+            r"\bbackdoor.*model\b",
+            r"数据投毒",
+            r"模型后门",
+        ],
+        AttackArchetype.MODEL_EXTRACTION: [
+            r"\bmodel.extraction\b",
+            r"\bsteal.*model\b",
+            r"\bextract.*architecture\b",
+            r"模型窃取",
+        ],
+        AttackArchetype.SUPPLY_CHAIN: [
+            r"\bsupply.chain\b",
+            r"\bdependency.confusion\b",
+            r"\btyposquat\b",
+            r"供应链攻击",
+            r"依赖混淆",
+        ],
+        AttackArchetype.RCE: [
+            r"\brce\b",
+            r"\bremote.code.execution\b",
+            r"\barbitrary.code\b",
+            r"远程代码执行",
+            r"任意代码执行",
+        ],
+        AttackArchetype.PRIVILEGE_ESCALATION: [
+            r"\bprivilege.escalation\b",
+            r"\bescalate.*privilege\b",
+            r"提权",
+            r"权限提升",
+        ],
     }
 
     def _calculate_threat_velocity(self, text: str) -> int:
@@ -158,7 +220,9 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
         return min(100, max(1, score))
 
-    def _calculate_blast_radius(self, text: str, category: Category) -> tuple[int, list[str]]:
+    def _calculate_blast_radius(
+        self, text: str, category: Category
+    ) -> tuple[int, list[str]]:
         """Calculate blast radius score and affected ecosystem."""
         score = 10
         ecosystems = []
@@ -184,7 +248,9 @@ class HeuristicAnalyzer(BaseAnalyzer):
             ecosystems.append("Research Infrastructure")
 
         # Widely used indicators
-        if re.search(r"\b(widely.used|popular|millions|billions|enterprise)\b", text_lower):
+        if re.search(
+            r"\b(widely.used|popular|millions|billions|enterprise)\b", text_lower
+        ):
             score += 15
 
         return min(100, max(1, score)), list(set(ecosystems))
@@ -206,9 +272,17 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
         # Academic paper indicators
         academic_indicators = [
-            r"\barxiv\b", r"\bpreprint\b", r"\bproceeding\b", r"\bconference\b",
-            r"\bwe.propose\b", r"\bwe.present\b", r"\bnovel\b", r"\bnew.attack\b",
-            r"\battack.vector\b", r"\bthreat.model\b", r"\bvulnerability\b",
+            r"\barxiv\b",
+            r"\bpreprint\b",
+            r"\bproceeding\b",
+            r"\bconference\b",
+            r"\bwe.propose\b",
+            r"\bwe.present\b",
+            r"\bnovel\b",
+            r"\bnew.attack\b",
+            r"\battack.vector\b",
+            r"\bthreat.model\b",
+            r"\bvulnerability\b",
         ]
 
         for pattern in academic_indicators:
@@ -218,34 +292,82 @@ class HeuristicAnalyzer(BaseAnalyzer):
         return False
 
     MITRE_ATTACK_MAPPINGS = {
-        AttackArchetype.JAILBREAK.value: ("AML.T0054", "LLM Jailbreak / Safety Filter Bypass"),
-        AttackArchetype.PROMPT_INJECTION.value: ("AML.T0051", "LLM Direct Prompt Injection"),
-        AttackArchetype.RAG_POISONING.value: ("AML.T0043", "RAG Knowledge Base & Context Poisoning"),
-        AttackArchetype.DATA_POISONING.value: ("AML.T0018", "Adversarial Data Poisoning"),
-        AttackArchetype.MODEL_INVERSION.value: ("AML.T0024", "Model Inversion & Weight Reconstruction"),
-        AttackArchetype.MODEL_EXTRACTION.value: ("AML.T0044", "Model Theft & Parameter Extraction"),
-        AttackArchetype.SUPPLY_CHAIN.value: ("T1195", "Supply Chain Compromise (PyPI/HuggingFace)"),
+        AttackArchetype.JAILBREAK.value: (
+            "AML.T0054",
+            "LLM Jailbreak / Safety Filter Bypass",
+        ),
+        AttackArchetype.PROMPT_INJECTION.value: (
+            "AML.T0051",
+            "LLM Direct Prompt Injection",
+        ),
+        AttackArchetype.RAG_POISONING.value: (
+            "AML.T0043",
+            "RAG Knowledge Base & Context Poisoning",
+        ),
+        AttackArchetype.DATA_POISONING.value: (
+            "AML.T0018",
+            "Adversarial Data Poisoning",
+        ),
+        AttackArchetype.MODEL_INVERSION.value: (
+            "AML.T0024",
+            "Model Inversion & Weight Reconstruction",
+        ),
+        AttackArchetype.MODEL_EXTRACTION.value: (
+            "AML.T0044",
+            "Model Theft & Parameter Extraction",
+        ),
+        AttackArchetype.SUPPLY_CHAIN.value: (
+            "T1195",
+            "Supply Chain Compromise (PyPI/HuggingFace)",
+        ),
         AttackArchetype.RCE.value: ("T1190", "Exploit Public-Facing Application (RCE)"),
-        AttackArchetype.PRIVILEGE_ESCALATION.value: ("T1068", "Exploitation for Privilege Escalation"),
+        AttackArchetype.PRIVILEGE_ESCALATION.value: (
+            "T1068",
+            "Exploitation for Privilege Escalation",
+        ),
     }
 
-    def _map_mitre_attack(self, text: str, archetype: str, category: Category) -> tuple[str, str]:
+    def _map_mitre_attack(
+        self, text: str, archetype: str, category: Category
+    ) -> tuple[str, str]:
         """Map detected indicators to MITRE ATT&CK / ATLAS techniques."""
         if archetype in self.MITRE_ATTACK_MAPPINGS:
             return self.MITRE_ATTACK_MAPPINGS[archetype]
 
         text_lower = text.lower()
-        if "phish" in text_lower or "credential" in text_lower or "harvest" in text_lower:
+        if (
+            "phish" in text_lower
+            or "credential" in text_lower
+            or "harvest" in text_lower
+        ):
             return ("T1566", "Phishing / Credential Harvesting")
-        if "brute" in text_lower or "spray" in text_lower or "sniff" in text_lower or "wpa" in text_lower:
+        if (
+            "brute" in text_lower
+            or "spray" in text_lower
+            or "sniff" in text_lower
+            or "wpa" in text_lower
+        ):
             return ("T1110", "Brute Force / Password Sniffing")
-        if "command injection" in text_lower or "powershell" in text_lower or "script" in text_lower:
+        if (
+            "command injection" in text_lower
+            or "powershell" in text_lower
+            or "script" in text_lower
+        ):
             return ("T1059", "Command and Scripting Interpreter")
         if "traversal" in text_lower or "lfi" in text_lower or "rfi" in text_lower:
             return ("T1083", "File and Directory Discovery / Path Traversal")
-        if "ssrf" in text_lower or "deserial" in text_lower or "sqli" in text_lower or "sql injection" in text_lower:
+        if (
+            "ssrf" in text_lower
+            or "deserial" in text_lower
+            or "sqli" in text_lower
+            or "sql injection" in text_lower
+        ):
             return ("T1190", "Exploit Public-Facing Application")
-        if "dos" in text_lower or "denial of service" in text_lower or "exhaust" in text_lower:
+        if (
+            "dos" in text_lower
+            or "denial of service" in text_lower
+            or "exhaust" in text_lower
+        ):
             return ("T1499", "Endpoint Denial of Service")
         if category in (Category.AI_TECH, Category.AI_MODELS):
             return ("AML.T0015", "Evade ML Model / AI Manipulation")
@@ -260,12 +382,20 @@ class HeuristicAnalyzer(BaseAnalyzer):
         """Detect weaponization potential."""
         text_lower = text.lower()
 
-        if re.search(r"\b(active|in.the.wild|exploited|ransomware|zero.day.active|actively.exploited)\b", text_lower):
+        if re.search(
+            r"\b(active|in.the.wild|exploited|ransomware|zero.day.active|actively.exploited)\b",
+            text_lower,
+        ):
             return WeaponizationLevel.ACTIVE_WEAPONIZATION.value
-        elif (re.search(r"\b(poc|proof.of.concept|exploit.code|weaponized|metasploit|exploit.db|packetstorm|github.com/.*/exploit)\b", text_lower)
-              or "exploit-db" in text_lower
-              or "metasploit" in text_lower
-              or category == Category.EXPLOITS_TRICKS):
+        elif (
+            re.search(
+                r"\b(poc|proof.of.concept|exploit.code|weaponized|metasploit|exploit.db|packetstorm|github.com/.*/exploit)\b",
+                text_lower,
+            )
+            or "exploit-db" in text_lower
+            or "metasploit" in text_lower
+            or category == Category.EXPLOITS_TRICKS
+        ):
             return WeaponizationLevel.POC_VERIFIED.value
         return WeaponizationLevel.THEORETICAL.value
 
@@ -289,9 +419,19 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
         return base
 
-    def _generate_risk_assessment(self, text: str, velocity: int, severity: int, category: Category) -> str:
+    def _generate_risk_assessment(
+        self, text: str, velocity: int, severity: int, category: Category
+    ) -> str:
         """Generate risk assessment."""
-        risk_level = "Critical" if velocity >= 80 else "High" if velocity >= 60 else "Medium" if velocity >= 40 else "Low"
+        risk_level = (
+            "Critical"
+            if velocity >= 80
+            else "High"
+            if velocity >= 60
+            else "Medium"
+            if velocity >= 40
+            else "Low"
+        )
         return f"{risk_level} risk: Threat affecting {category.value.replace('_', ' ')}; potential service disruption or unauthorized access."
 
     def _generate_mitigation(self, text: str, archetype: str) -> str:
@@ -304,9 +444,13 @@ class HeuristicAnalyzer(BaseAnalyzer):
         ]
 
         if "injection" in text.lower():
-            mitigations.insert(0, "Implement parameterized queries and input sanitization")
+            mitigations.insert(
+                0, "Implement parameterized queries and input sanitization"
+            )
         elif "jailbreak" in text.lower() or "prompt injection" in text.lower():
-            mitigations.insert(0, "Deploy prompt injection defenses and output filtering")
+            mitigations.insert(
+                0, "Deploy prompt injection defenses and output filtering"
+            )
         elif "supply chain" in text.lower():
             mitigations.insert(0, "Verify dependency integrity and use SBOM")
 
@@ -326,10 +470,20 @@ class HeuristicAnalyzer(BaseAnalyzer):
         if re.search(r"\bcve-\d{4}-\d{4,}\b", text_lower):
             return False
         threat_patterns = [
-            r"\brce\b", r"\bremote code execution\b", r"\bzero[- ]day\b", r"\b0[- ]day\b",
-            r"\bexploit\w*\b", r"\bransomware\b", r"\bjailbreak\b", r"\bprompt injection\b",
-            r"\badversarial attack\b", r"\bbackdoor\b", r"\btrojan\b",
-            r"\bprivilege escalation\b", r"\bdata poisoning\b", r"\bmodel inversion\b"
+            r"\brce\b",
+            r"\bremote code execution\b",
+            r"\bzero[- ]day\b",
+            r"\b0[- ]day\b",
+            r"\bexploit\w*\b",
+            r"\bransomware\b",
+            r"\bjailbreak\b",
+            r"\bprompt injection\b",
+            r"\badversarial attack\b",
+            r"\bbackdoor\b",
+            r"\btrojan\b",
+            r"\bprivilege escalation\b",
+            r"\bdata poisoning\b",
+            r"\bmodel inversion\b",
         ]
         if any(re.search(p, text_lower) for p in threat_patterns):
             return False
@@ -340,17 +494,70 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
     def _generate_ai_architecture(self, text: str, category: Category) -> str:
         text_lower = text.lower()
-        if any(k in text_lower for k in ("reasoning", "r1", "o1", "cot", "chain of thought", "mcts", "math", "aime")):
+        if any(
+            k in text_lower
+            for k in (
+                "reasoning",
+                "r1",
+                "o1",
+                "cot",
+                "chain of thought",
+                "mcts",
+                "math",
+                "aime",
+            )
+        ):
             return "Architecture: Reasoning LLM & Multi-Step Chain-of-Thought"
-        if any(k in text_lower for k in ("agent", "workflow", "swarm", "autonomous", "tool use", "function call")):
+        if any(
+            k in text_lower
+            for k in (
+                "agent",
+                "workflow",
+                "swarm",
+                "autonomous",
+                "tool use",
+                "function call",
+            )
+        ):
             return "Framework: Autonomous Multi-Agent Execution & Tool Calling"
-        if any(k in text_lower for k in ("vision", "multimodal", "vlm", "diffusion", "audio", "video", "image", "tts", "speech")):
+        if any(
+            k in text_lower
+            for k in (
+                "vision",
+                "multimodal",
+                "vlm",
+                "diffusion",
+                "audio",
+                "video",
+                "image",
+                "tts",
+                "speech",
+            )
+        ):
             return "Domain: Multimodal Generative AI (Vision / Audio / Video)"
-        if any(k in text_lower for k in ("vllm", "ollama", "inference", "quant", "gguf", "serving", "engine", "cuda", "triton")):
+        if any(
+            k in text_lower
+            for k in (
+                "vllm",
+                "ollama",
+                "inference",
+                "quant",
+                "gguf",
+                "serving",
+                "engine",
+                "cuda",
+                "triton",
+            )
+        ):
             return "Infrastructure: High-Throughput Inference & GPU Acceleration"
-        if any(k in text_lower for k in ("rag", "vector", "embedding", "retriev", "chunk")):
+        if any(
+            k in text_lower for k in ("rag", "vector", "embedding", "retriev", "chunk")
+        ):
             return "Stack: Enterprise Retrieval-Augmented Generation (RAG)"
-        if any(k in text_lower for k in ("fine-tun", "lora", "qlora", "sft", "rlhf", "dpo", "grpo")):
+        if any(
+            k in text_lower
+            for k in ("fine-tun", "lora", "qlora", "sft", "rlhf", "dpo", "grpo")
+        ):
             return "Methodology: Post-Training Alignment & Efficient Fine-Tuning"
         if category == Category.GITHUB_TRENDING:
             return "Tool: Trending Open-Source Developer Repository"
@@ -362,11 +569,28 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
     def _generate_ai_highlight(self, text: str, category: Category) -> str:
         text_lower = text.lower()
-        if any(k in text_lower for k in ("benchmark", "state-of-the-art", "sota", "outperform", "record")):
-            return "Breakthrough: Outperforms baselines on complex reasoning benchmarks."
-        if any(k in text_lower for k in ("open weights", "open-source", "weights", "hugging face", "checkpoint")):
+        if any(
+            k in text_lower
+            for k in ("benchmark", "state-of-the-art", "sota", "outperform", "record")
+        ):
+            return (
+                "Breakthrough: Outperforms baselines on complex reasoning benchmarks."
+            )
+        if any(
+            k in text_lower
+            for k in (
+                "open weights",
+                "open-source",
+                "weights",
+                "hugging face",
+                "checkpoint",
+            )
+        ):
             return "Capability: Open weights checkpoint available for fine-tuning and inference."
-        if any(k in text_lower for k in ("efficiency", "throughput", "low latency", "quant", "memory")):
+        if any(
+            k in text_lower
+            for k in ("efficiency", "throughput", "low latency", "quant", "memory")
+        ):
             return "Efficiency: Latency reduction and compute optimizations."
         if category == Category.GITHUB_TRENDING:
             return "Ecosystem: High adoption velocity across developer communities."
@@ -374,7 +598,9 @@ class HeuristicAnalyzer(BaseAnalyzer):
             return "Research: Theoretical framework with empirical validation."
         return ""
 
-    def _generate_ai_quickstart(self, text: str, category: Category, metadata: dict) -> str:
+    def _generate_ai_quickstart(
+        self, text: str, category: Category, metadata: dict
+    ) -> str:
         lang = metadata.get("language") if metadata else None
         repo = metadata.get("repo_name") if metadata else None
         if repo:
@@ -387,19 +613,36 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
     async def analyze(self, entry: Entry) -> AnalysisResult:
         """Analyze entry using heuristics with dual-mode support for AI innovation vs cyber threats."""
-        full_text = f"{entry.title} {entry.summary} {entry.metadata.get('description', '')}"
+        full_text = (
+            f"{entry.title} {entry.summary} {entry.metadata.get('description', '')}"
+        )
 
         if self._is_pure_ai_innovation(entry, full_text):
             # AI Innovation Mode
             arch = self._generate_ai_architecture(full_text, entry.category)
             highlight = self._generate_ai_highlight(full_text, entry.category)
-            quickstart = self._generate_ai_quickstart(full_text, entry.category, entry.metadata)
+            quickstart = self._generate_ai_quickstart(
+                full_text, entry.category, entry.metadata
+            )
             _, ecosystems = self._calculate_blast_radius(full_text, entry.category)
 
             # Compute adoption velocity (70 - 98)
             velocity = 72
             text_lower = full_text.lower()
-            if any(k in text_lower for k in ("deepseek", "openai", "anthropic", "qwen", "meta", "mistral", "google", "vllm", "ollama")):
+            if any(
+                k in text_lower
+                for k in (
+                    "deepseek",
+                    "openai",
+                    "anthropic",
+                    "qwen",
+                    "meta",
+                    "mistral",
+                    "google",
+                    "vllm",
+                    "ollama",
+                )
+            ):
                 velocity += 16
             if entry.category in (Category.GITHUB_TRENDING, Category.AI_MODELS):
                 velocity += 8
@@ -407,22 +650,39 @@ class HeuristicAnalyzer(BaseAnalyzer):
 
             # Impact rating (65 - 95)
             impact = 68
-            if any(k in text_lower for k in ("benchmark", "sota", "reasoning", "r1", "breakthrough", "state-of-the-art")):
+            if any(
+                k in text_lower
+                for k in (
+                    "benchmark",
+                    "sota",
+                    "reasoning",
+                    "r1",
+                    "breakthrough",
+                    "state-of-the-art",
+                )
+            ):
                 impact += 20
             impact = min(96, max(50, impact))
 
             archetype = (
-                "AI Model Release" if entry.category == Category.AI_MODELS
-                else "Trending Repository" if entry.category == Category.GITHUB_TRENDING
-                else "Academic Research Paper" if entry.category == Category.AI_RESEARCH
-                else "Developer AI Tool" if entry.category == Category.CYBER_TOOLS
+                "AI Model Release"
+                if entry.category == Category.AI_MODELS
+                else "Trending Repository"
+                if entry.category == Category.GITHUB_TRENDING
+                else "Academic Research Paper"
+                if entry.category == Category.AI_RESEARCH
+                else "Developer AI Tool"
+                if entry.category == Category.CYBER_TOOLS
                 else "AI Technology Launch"
             )
 
             weaponization = (
-                "Open Weights Available" if entry.category == Category.AI_MODELS
-                else "Production Ready" if entry.category in (Category.GITHUB_TRENDING, Category.CYBER_TOOLS)
-                else "Research Preprint" if entry.category == Category.AI_RESEARCH
+                "Open Weights Available"
+                if entry.category == Category.AI_MODELS
+                else "Production Ready"
+                if entry.category in (Category.GITHUB_TRENDING, Category.CYBER_TOOLS)
+                else "Research Preprint"
+                if entry.category == Category.AI_RESEARCH
                 else "Production Ready"
             )
 
@@ -447,16 +707,22 @@ class HeuristicAnalyzer(BaseAnalyzer):
         # Cyber Threat / Security Mode
         velocity = self._calculate_threat_velocity(full_text)
         severity = self._calculate_severity(full_text, velocity)
-        blast_radius, ecosystems = self._calculate_blast_radius(full_text, entry.category)
+        blast_radius, ecosystems = self._calculate_blast_radius(
+            full_text, entry.category
+        )
         archetype = self._detect_attack_archetype(full_text)
         is_pre_cve = self._detect_pre_cve(full_text, entry.category)
         weaponization = self._detect_weaponization(full_text, entry.category)
-        mitre_id, mitre_technique = self._map_mitre_attack(full_text, archetype, entry.category)
+        mitre_id, mitre_technique = self._map_mitre_attack(
+            full_text, archetype, entry.category
+        )
 
         return AnalysisResult(
             entry_id=entry.id,
             attack_vector=self._generate_attack_vector(full_text, archetype),
-            risk_assessment=self._generate_risk_assessment(full_text, velocity, severity, entry.category),
+            risk_assessment=self._generate_risk_assessment(
+                full_text, velocity, severity, entry.category
+            ),
             mitigation=self._generate_mitigation(full_text, archetype),
             threat_velocity=velocity,
             severity_index=severity,

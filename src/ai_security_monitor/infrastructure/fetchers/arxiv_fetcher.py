@@ -10,6 +10,7 @@ Architecture notes:
 - Per-source timeout is set to 30s internally; the monitor_service timeout
   for arxiv sources is extended to 90s to handle queuing.
 """
+
 import asyncio
 import re
 import time
@@ -128,8 +129,7 @@ class ArxivFetcher(BaseFetcher):
         rss_url = f"https://rss.arxiv.org/rss/{cat}"
         headers = {
             "User-Agent": (
-                "AetherGuard-AI-Monitor/2.0 "
-                "(mailto:research@aetherguard.ai)"
+                "AetherGuard-AI-Monitor/2.0 (mailto:research@aetherguard.ai)"
             )
         }
 
@@ -181,18 +181,21 @@ class ArxivFetcher(BaseFetcher):
                 flags=re.I,
             ).strip()
 
-            entries.append({
-                "title": clean_title or raw_title,
-                "url": getattr(item, "link", ""),
-                "content": content,
-                "published_at": published_at,
-                "tags": [tag.term for tag in getattr(item, "tags", [])] + ["arxiv", "research"],
-                "metadata": {
-                    "authors": authors,
-                    "arxiv_id": getattr(item, "id", "").split("/")[-1],
-                    "categories": [tag.term for tag in getattr(item, "tags", [])],
-                },
-            })
+            entries.append(
+                {
+                    "title": clean_title or raw_title,
+                    "url": getattr(item, "link", ""),
+                    "content": content,
+                    "published_at": published_at,
+                    "tags": [tag.term for tag in getattr(item, "tags", [])]
+                    + ["arxiv", "research"],
+                    "metadata": {
+                        "authors": authors,
+                        "arxiv_id": getattr(item, "id", "").split("/")[-1],
+                        "categories": [tag.term for tag in getattr(item, "tags", [])],
+                    },
+                }
+            )
         return entries
 
     def _parse_entry(self, raw: dict) -> Entry:
@@ -220,7 +223,12 @@ class ArxivFetcher(BaseFetcher):
         text = re.sub(r"<script.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<style.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<[^>]+>", "", text)
-        text = text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+        text = (
+            text.replace("&nbsp;", " ")
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+        )
         text = re.sub(r"\s+", " ", text).strip()
         return text
 

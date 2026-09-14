@@ -21,7 +21,11 @@ class LLMAnalyzer(BaseAnalyzer):
     def __init__(self, config: dict | None = None):
         super().__init__(config)
         cfg = config or {}
-        self.provider = cfg.get("provider") or ("groq" if (settings.analyzer.groq_api_key and cfg.get("provider") == "groq") else "ollama")
+        self.provider = cfg.get("provider") or (
+            "groq"
+            if (settings.analyzer.groq_api_key and cfg.get("provider") == "groq")
+            else "ollama"
+        )
         self.max_tokens = cfg.get("max_tokens", 250)
         self.temperature = cfg.get("temperature", settings.analyzer.temperature)
 
@@ -43,6 +47,7 @@ class LLMAnalyzer(BaseAnalyzer):
         """Initialize Groq client."""
         try:
             from groq import Groq
+
             api_key = settings.analyzer.groq_api_key or os.getenv("GROQ_API_KEY")
             if not api_key:
                 raise ValueError("Groq API key not configured")
@@ -50,7 +55,9 @@ class LLMAnalyzer(BaseAnalyzer):
             self.groq_model = settings.analyzer.groq_model
             self._use_gateway = False
         except ImportError:
-            raise ValueError("Groq package not installed. Install with: pip install groq")
+            raise ValueError(
+                "Groq package not installed. Install with: pip install groq"
+            )
 
     def _init_gateway(self):
         """Initialize local gateway (Hermes omniroute) client."""
@@ -83,7 +90,7 @@ class LLMAnalyzer(BaseAnalyzer):
 Title: {entry.title}
 Summary: {entry.summary}
 Category: {entry.category.value}
-Tags: {', '.join(entry.tags)}
+Tags: {", ".join(entry.tags)}
 URL: {entry.url}
 
 Provide JSON output with these fields:
@@ -119,13 +126,17 @@ JSON only, no extra text."""
 
         async with httpx.AsyncClient(timeout=15) as client:
             try:
-                response = await client.post(f"{self.ollama_host}/api/generate", json=payload)
+                response = await client.post(
+                    f"{self.ollama_host}/api/generate", json=payload
+                )
                 response.raise_for_status()
             except Exception as first_err:
                 # If primary model fails or times out, fallback to ultra-fast qwen2:0.5b
                 try:
                     payload["model"] = "qwen2:0.5b"
-                    response = await client.post(f"{self.ollama_host}/api/generate", json=payload)
+                    response = await client.post(
+                        f"{self.ollama_host}/api/generate", json=payload
+                    )
                     response.raise_for_status()
                 except Exception:
                     raise first_err
@@ -135,7 +146,7 @@ JSON only, no extra text."""
             try:
                 return json.loads(raw_content)
             except json.JSONDecodeError:
-                json_match = re.search(r'\{.*\}', raw_content, re.DOTALL)
+                json_match = re.search(r"\{.*\}", raw_content, re.DOTALL)
                 if json_match:
                     return json.loads(json_match.group())
                 raise
@@ -154,6 +165,7 @@ JSON only, no extra text."""
     async def _call_gateway(self, prompt: str) -> dict:
         """Call local gateway (Hermes omniroute) API."""
         import httpx
+
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
                 f"{self.gateway_host}/chat/completions",
@@ -174,7 +186,8 @@ JSON only, no extra text."""
             except json.JSONDecodeError:
                 # Try to find JSON in the response
                 import re
-                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+
+                json_match = re.search(r"\{.*\}", content, re.DOTALL)
                 if json_match:
                     return json.loads(json_match.group())
                 raise
@@ -223,22 +236,31 @@ JSON only, no extra text."""
                 attack_vector=vector_str,
                 risk_assessment=risk_str,
                 mitigation=mit_str,
-                threat_velocity=max(1, min(100, int(result.get("threat_velocity", 50)))),
+                threat_velocity=max(
+                    1, min(100, int(result.get("threat_velocity", 50)))
+                ),
                 severity_index=max(1, min(100, int(result.get("severity_index", 50)))),
-                blast_radius_score=max(0, min(100, int(result.get("blast_radius_score", 0)))),
+                blast_radius_score=max(
+                    0, min(100, int(result.get("blast_radius_score", 0)))
+                ),
                 affected_ecosystem=raw_eco if isinstance(raw_eco, list) else [],
                 is_pre_cve_warning=bool(result.get("is_pre_cve_warning", False)),
                 attack_archetype=str(result.get("attack_archetype", "Unknown")),
-                weaponization_potential=str(result.get("weaponization_potential", "Theoretical")),
+                weaponization_potential=str(
+                    result.get("weaponization_potential", "Theoretical")
+                ),
                 model=self.model,
                 confidence=0.95,
             )
         except Exception as e:
             # Fallback to heuristic on LLM failure
-            logger.warning(f"LLM analysis failed ({self.provider}), falling back to heuristic: {e}")
+            logger.warning(
+                f"LLM analysis failed ({self.provider}), falling back to heuristic: {e}"
+            )
             from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
                 HeuristicAnalyzer,
             )
+
             fallback = HeuristicAnalyzer()
             return await fallback.analyze(entry)
 

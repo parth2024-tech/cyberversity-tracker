@@ -8,6 +8,7 @@ Maintains live runtime metrics for self-healing and operational safety mechanism
 - Language detection confidence threshold mitigations
 - Rolling automated SQLite backups
 """
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -17,6 +18,7 @@ from datetime import UTC, datetime
 @dataclass
 class BackupRecord:
     """Telemetry record of the most recent database backup."""
+
     filename: str | None = None
     size_kb: float = 0.0
     timestamp: str | None = None
@@ -34,7 +36,9 @@ class DiagnosticsTracker:
         self.recent_fallbacks: list[dict] = []
         self.last_backup: BackupRecord = BackupRecord()
 
-    def record_scrape_fallback(self, source_name: str, reason: str = "low_yield_or_dom_degraded") -> None:
+    def record_scrape_fallback(
+        self, source_name: str, reason: str = "low_yield_or_dom_degraded"
+    ) -> None:
         """Record an automated fallback from HTML scraping to API search."""
         self.github_scrape_fallbacks_total += 1
         record = {
@@ -58,7 +62,9 @@ class DiagnosticsTracker:
         """Record an intelligence item where language confidence was uncertain."""
         self.language_uncertain_preservations_total += 1
 
-    def record_backup_completed(self, filename: str, size_kb: float, retained_count: int) -> None:
+    def record_backup_completed(
+        self, filename: str, size_kb: float, retained_count: int
+    ) -> None:
         """Record a successful SQLite point-in-time backup."""
         self.last_backup = BackupRecord(
             filename=filename,

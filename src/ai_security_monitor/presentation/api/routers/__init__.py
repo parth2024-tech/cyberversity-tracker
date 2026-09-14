@@ -1,6 +1,7 @@
 """
 API routers export.
 """
+
 from ai_security_monitor.presentation.api.routers.analysis import analysis_router
 from ai_security_monitor.presentation.api.routers.audio import audio_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router

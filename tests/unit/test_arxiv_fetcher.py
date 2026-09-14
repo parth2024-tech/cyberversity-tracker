@@ -1,4 +1,5 @@
 """Unit tests for ArxivFetcher."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -60,7 +61,10 @@ async def test_arxiv_fetcher_parses_papers(arxiv_source: Source):
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.fetchers.arxiv_fetcher.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.arxiv_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         fetcher = ArxivFetcher(arxiv_source)
         raw = await fetcher._fetch_raw()
 
@@ -80,7 +84,11 @@ async def test_arxiv_fetcher_parse_entry_entity(arxiv_source: Source):
         "content": "Abstract: We study multimodal large language models.",
         "published_at": datetime.now(UTC),
         "tags": ["cs.AI", "arxiv"],
-        "metadata": {"authors": ["Alice"], "arxiv_id": "2401.99999", "categories": ["cs.AI"]},
+        "metadata": {
+            "authors": ["Alice"],
+            "arxiv_id": "2401.99999",
+            "categories": ["cs.AI"],
+        },
     }
     entry = fetcher._parse_entry(raw)
 

@@ -29,13 +29,25 @@ class HackerNewsFetcher(BaseFetcher):
         base_url = "https://hn.algolia.com/api/v1/search_by_date"
         keywords = self.source.config.get("tags") if self.source.config else None
         if not keywords:
-            keywords = ["AI", "LLM", "Claude", "OpenAI", "DeepSeek", "Mistral", "Llama", "agents", "machine learning"]
+            keywords = [
+                "AI",
+                "LLM",
+                "Claude",
+                "OpenAI",
+                "DeepSeek",
+                "Mistral",
+                "Llama",
+                "agents",
+                "machine learning",
+            ]
 
         headers = {"User-Agent": settings.fetch.user_agent}
         seen_ids: set[str] = set()
         entries: list[dict] = []
 
-        async with httpx.AsyncClient(timeout=self.timeout, headers=headers, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout, headers=headers, follow_redirects=True
+        ) as client:
             for kw in keywords[:6]:
                 try:
                     params = {
@@ -54,7 +66,10 @@ class HackerNewsFetcher(BaseFetcher):
                         seen_ids.add(oid)
 
                         title = hit.get("title", "Untitled")
-                        url_str = hit.get("url") or f"https://news.ycombinator.com/item?id={oid}"
+                        url_str = (
+                            hit.get("url")
+                            or f"https://news.ycombinator.com/item?id={oid}"
+                        )
                         points = hit.get("points", 0)
                         author = hit.get("author", "")
                         num_comments = hit.get("num_comments", 0)
@@ -67,25 +82,31 @@ class HackerNewsFetcher(BaseFetcher):
                         pub_at = datetime.now(UTC)
                         if created_at:
                             try:
-                                pub_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                                pub_at = datetime.fromisoformat(
+                                    created_at.replace("Z", "+00:00")
+                                )
                             except Exception:
                                 pass
 
-                        entries.append({
-                            "title": title,
-                            "url": url_str,
-                            "content": content,
-                            "published_at": pub_at,
-                            "tags": ["hackernews", "ai", kw.lower()],
-                            "metadata": {
-                                "hn_id": oid,
-                                "points": points,
-                                "author": author,
-                                "num_comments": num_comments,
+                        entries.append(
+                            {
+                                "title": title,
+                                "url": url_str,
+                                "content": content,
+                                "published_at": pub_at,
+                                "tags": ["hackernews", "ai", kw.lower()],
+                                "metadata": {
+                                    "hn_id": oid,
+                                    "points": points,
+                                    "author": author,
+                                    "num_comments": num_comments,
+                                },
                             }
-                        })
+                        )
                 except Exception as kw_err:
-                    logger.debug(f"Hacker News query failed for keyword '{kw}': {kw_err}")
+                    logger.debug(
+                        f"Hacker News query failed for keyword '{kw}': {kw_err}"
+                    )
                     continue
 
         return entries

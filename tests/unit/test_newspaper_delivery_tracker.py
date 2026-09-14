@@ -1,6 +1,7 @@
 """
 Unit tests for NewspaperDeliveryTracker deduplication and cooldown logic.
 """
+
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -100,7 +101,9 @@ def test_force_override_bypasses_all_gates(temp_tracker: NewspaperDeliveryTracke
 def test_persistence_across_instances(tmp_path: Path):
     state_file = tmp_path / "delivery_state.json"
     tracker1 = NewspaperDeliveryTracker(state_file=state_file)
-    tracker1.record_dispatch(channel="telegram", edition_number=2205, lead_story="Story X")
+    tracker1.record_dispatch(
+        channel="telegram", edition_number=2205, lead_story="Story X"
+    )
 
     # Second instance reading from same file
     tracker2 = NewspaperDeliveryTracker(state_file=state_file)

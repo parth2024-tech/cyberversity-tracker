@@ -59,6 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         from ai_security_monitor.application.services.monitor_service import (
             MonitorService,
         )
+
         monitor_service = MonitorService()
         await monitor_service.init_sources()
         logger.info("Sources configuration synchronized with database")
@@ -68,29 +69,47 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             try:
                 stats = await monitor_service.get_stats()
                 by_cat = stats.get("by_category", {})
-                ai_pillars = ("ai_research", "ai_models", "github_trending", "cyber_tools", "ai_tech")
+                ai_pillars = (
+                    "ai_research",
+                    "ai_models",
+                    "github_trending",
+                    "cyber_tools",
+                    "ai_tech",
+                )
                 missing_pillars = [c for c in ai_pillars if by_cat.get(c, 0) == 0]
                 if missing_pillars:
-                    logger.info(f"Priming missing AI ecosystem categories on boot: {missing_pillars}...")
+                    logger.info(
+                        f"Priming missing AI ecosystem categories on boot: {missing_pillars}..."
+                    )
                     from ai_security_monitor.infrastructure.database.unit_of_work import (
                         SqlAlchemyUnitOfWork,
                     )
+
                     async with SqlAlchemyUnitOfWork() as uow:
                         all_srcs = await uow.sources.list(enabled_only=True)
-                    targets = [s for s in all_srcs if s.category.value in missing_pillars]
+                    targets = [
+                        s for s in all_srcs if s.category.value in missing_pillars
+                    ]
                     sem = asyncio.Semaphore(3)
 
                     async def _fetch_target(s):
                         async with sem:
                             try:
-                                await asyncio.wait_for(monitor_service.fetch_source(s), timeout=25.0)
+                                await asyncio.wait_for(
+                                    monitor_service.fetch_source(s), timeout=25.0
+                                )
                             except Exception as src_err:
-                                logger.warning(f"Error priming source {s.name}: {src_err}")
+                                logger.warning(
+                                    f"Error priming source {s.name}: {src_err}"
+                                )
                             finally:
                                 await asyncio.sleep(0.05)
 
-                    await asyncio.gather(*[_fetch_target(s) for s in targets], return_exceptions=True)
+                    await asyncio.gather(
+                        *[_fetch_target(s) for s in targets], return_exceptions=True
+                    )
                     from ai_security_monitor.infrastructure.cache import response_cache
+
                     response_cache.invalidate("stats_totals")
                     response_cache.invalidate_prefix("entries_")
                     logger.info("Critical AI feeds successfully primed on boot")
@@ -102,10 +121,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Cache warming on startup to prevent cold-start latency
         try:
             from ai_security_monitor.infrastructure.cache import response_cache
+
             logger.info("Warming hot response caches on startup...")
-            await response_cache.get_or_set("stats_totals", 30.0, lambda: monitor_service.get_stats())
-            await response_cache.get_or_set("sweep_status", 15.0, lambda: monitor_service.get_sweep_status())
-            logger.info("Hot response caches successfully warmed (stats_totals, sweep_status)")
+            await response_cache.get_or_set(
+                "stats_totals", 30.0, lambda: monitor_service.get_stats()
+            )
+            await response_cache.get_or_set(
+                "sweep_status", 15.0, lambda: monitor_service.get_sweep_status()
+            )
+            logger.info(
+                "Hot response caches successfully warmed (stats_totals, sweep_status)"
+            )
         except Exception as warm_err:
             logger.warning(f"Cache warming notice (non-fatal): {warm_err}")
     except Exception as seed_err:
@@ -136,7 +162,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         scheduler = SchedulerService(monitor_service=monitor_service)
         await scheduler.start()
         app.state.scheduler = scheduler
-        logger.info("Background scheduler started with WebSocket live telemetry broadcast")
+        logger.info(
+            "Background scheduler started with WebSocket live telemetry broadcast"
+        )
 
     # Start Autonomous LLM Triage Worker (if enabled)
     if settings.analyzer.autonomous_triage_enabled:
@@ -219,19 +247,26 @@ def create_app() -> FastAPI:
 
     # Quick sweep route alias
     from ai_security_monitor.presentation.api.routers.sources import trigger_fetch_sweep
+
     app.post("/api/fetch", tags=["Sources"])(trigger_fetch_sweep)
 
     # Serve static web UI & dedicated gazette page
     import os
-    web_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "web"))
+
+    web_dir = os.path.normpath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "web")
+    )
     if os.path.exists(web_dir):
+
         @app.get("/gazette", include_in_schema=False)
         @app.get("/gazette/", include_in_schema=False)
         async def serve_gazette():
             gazette_path = os.path.join(web_dir, "gazette.html")
             if os.path.exists(gazette_path):
                 return FileResponse(gazette_path, media_type="text/html")
-            return FileResponse(os.path.join(web_dir, "index.html"), media_type="text/html")
+            return FileResponse(
+                os.path.join(web_dir, "index.html"), media_type="text/html"
+            )
 
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 

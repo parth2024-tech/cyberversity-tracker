@@ -1,6 +1,7 @@
 """
 Newspaper API router for 5-hour autonomous intelligence broadsheets.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -66,7 +67,9 @@ async def view_latest_newspaper_html():
 
 
 @newspaper_router.get("/download")
-async def download_newspaper(file_format: str = Query(default="md", pattern="^(md|html|pdf)$", alias="format")):
+async def download_newspaper(
+    file_format: str = Query(default="md", pattern="^(md|html|pdf)$", alias="format"),
+):
     """Download the latest 5-hour newspaper file as Markdown (.md), Web Newspaper (.html), or PDF (.pdf)."""
     edition = _newspaper_service.get_latest_edition()
     if not edition:
@@ -120,7 +123,9 @@ async def list_newspaper_editions(limit: int = 15):
 
 
 @newspaper_router.post("/generate")
-async def trigger_newspaper_generation(req: GenerateEditionRequest = GenerateEditionRequest()):
+async def trigger_newspaper_generation(
+    req: GenerateEditionRequest = GenerateEditionRequest(),
+):
     """Manually compile and publish a fresh 5-hour newspaper edition."""
     meta = await _newspaper_service.generate_edition(window_hours=req.window_hours)
     count = meta.get("total_stories", meta.get("total_threats", 0))
@@ -149,7 +154,9 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
         pdf_path = _newspaper_service.get_latest_pdf_path()
 
     if not pdf_path or not pdf_path.exists():
-        raise HTTPException(status_code=500, detail="Failed to locate or generate newspaper PDF.")
+        raise HTTPException(
+            status_code=500, detail="Failed to locate or generate newspaper PDF."
+        )
 
     # Check delivery deduplication and cooldown
     can_send, reason = delivery_tracker.should_dispatch(
@@ -172,7 +179,10 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
         "smtp_port": req.smtp_port or settings.delivery.email_smtp_port,
         "username": req.username or settings.delivery.email_username or "",
         "password": req.password or settings.delivery.email_password or "",
-        "from_email": req.from_email or settings.delivery.email_from or settings.delivery.email_username or "noreply@aetherguard.ai",
+        "from_email": req.from_email
+        or settings.delivery.email_from
+        or settings.delivery.email_username
+        or "noreply@aetherguard.ai",
         "to_email": req.to_email,
     }
 
@@ -186,10 +196,7 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
             total_threats=edition.get("total_stories", edition.get("total_threats", 0)),
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Email delivery error: {e}"
-        )
+        raise HTTPException(status_code=400, detail=f"Email delivery error: {e}")
 
     if result.success:
         delivery_tracker.record_dispatch(
@@ -201,12 +208,12 @@ async def email_newspaper_pdf(req: EmailNewspaperRequest):
         return {
             "status": "success",
             "message": f"The Global AI Gazette Edition #{edition['edition_number']} (PDF) was sent successfully to {req.to_email}!",
-            "details": result.message
+            "details": result.message,
         }
     else:
         raise HTTPException(
             status_code=400 if "missing" in (result.error or "") else 500,
-            detail=f"Failed to email newspaper PDF: {result.error}"
+            detail=f"Failed to email newspaper PDF: {result.error}",
         )
 
 
@@ -217,7 +224,9 @@ class TelegramNewspaperRequest(BaseModel):
 
 
 @newspaper_router.post("/telegram")
-async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspaperRequest()):
+async def telegram_newspaper_pdf(
+    req: TelegramNewspaperRequest = TelegramNewspaperRequest(),
+):
     """Send the latest 5-hour newspaper PDF document to Telegram."""
     edition = _newspaper_service.get_latest_edition()
     if not edition:
@@ -233,7 +242,9 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
         pdf_path = _newspaper_service.get_latest_pdf_path()
 
     if not pdf_path or not pdf_path.exists():
-        raise HTTPException(status_code=500, detail="Failed to locate or generate newspaper PDF.")
+        raise HTTPException(
+            status_code=500, detail="Failed to locate or generate newspaper PDF."
+        )
 
     # Check delivery deduplication and cooldown
     can_send, reason = delivery_tracker.should_dispatch(
@@ -254,10 +265,13 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
     chat_id = req.chat_id or settings.delivery.telegram_chat_id
 
     try:
-        tg_delivery = delivery_registry.create("telegram", {
-            "bot_token": bot_token,
-            "chat_id": chat_id,
-        })
+        tg_delivery = delivery_registry.create(
+            "telegram",
+            {
+                "bot_token": bot_token,
+                "chat_id": chat_id,
+            },
+        )
         result = await tg_delivery.send_newspaper_document(
             pdf_path=pdf_path,
             edition_number=edition["edition_number"],
@@ -265,10 +279,7 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
             total_threats=edition.get("total_stories", edition.get("total_threats", 0)),
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Telegram delivery error: {e}"
-        )
+        raise HTTPException(status_code=400, detail=f"Telegram delivery error: {e}")
 
     if result.success:
         delivery_tracker.record_dispatch(
@@ -280,10 +291,10 @@ async def telegram_newspaper_pdf(req: TelegramNewspaperRequest = TelegramNewspap
         return {
             "status": "success",
             "message": f"The Global AI Gazette Edition #{edition['edition_number']} (PDF) sent to Telegram chat {chat_id}!",
-            "details": result.message
+            "details": result.message,
         }
     else:
         raise HTTPException(
             status_code=400 if "missing" in (result.error or "") else 500,
-            detail=f"Failed to dispatch to Telegram: {result.error}"
+            detail=f"Failed to dispatch to Telegram: {result.error}",
         )

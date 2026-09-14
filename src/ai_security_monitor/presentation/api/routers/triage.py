@@ -2,6 +2,7 @@
 Autonomous LLM Triage API Router.
 Controls the high-priority queue and backfilling operations.
 """
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -28,18 +29,23 @@ async def enqueue_entry_for_triage(entry_id: UUID):
     service = get_triage_service()
     success = await service.enqueue(entry_id)
     if not success:
-        return {"status": "already_queued", "message": "Entry is already in the LLM triage queue."}
+        return {
+            "status": "already_queued",
+            "message": "Entry is already in the LLM triage queue.",
+        }
     return {
         "status": "enqueued",
         "entry_id": str(entry_id),
         "queue_size": service.queue_size,
-        "message": "Entry enqueued for deep LLM triage via Ollama."
+        "message": "Entry enqueued for deep LLM triage via Ollama.",
     }
 
 
 @triage_router.post("/backfill")
 async def backfill_high_priority_triage(
-    limit: int = Query(default=10, ge=1, le=50, description="Max high-velocity entries to enqueue")
+    limit: int = Query(
+        default=10, ge=1, le=50, description="Max high-velocity entries to enqueue"
+    ),
 ):
     """Backfill and enqueue top high-velocity un-triaged entries for LLM processing."""
     service = get_triage_service()
@@ -48,5 +54,5 @@ async def backfill_high_priority_triage(
         "status": "success",
         "enqueued_count": enqueued_count,
         "queue_size": service.queue_size,
-        "message": f"Enqueued {enqueued_count} high-priority threats for autonomous LLM triage."
+        "message": f"Enqueued {enqueued_count} high-priority threats for autonomous LLM triage.",
     }

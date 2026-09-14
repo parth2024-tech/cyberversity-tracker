@@ -4,6 +4,7 @@ Extracts real, multi-paragraph, authoritative technical briefings from original 
 (GitHub READMEs, arXiv abstracts, Hugging Face model cards, engineering blogs)
 and provides deep, non-canned technical synthesis.
 """
+
 from __future__ import annotations
 
 import html
@@ -20,19 +21,80 @@ logger = get_logger(__name__)
 
 # Key AI Ecosystem Relevance Terms
 AI_ECOSYSTEM_TERMS = {
-    "ai", "llm", "deepseek", "qwen", "openai", "claude", "anthropic", "gpt", "gemini",
-    "mistral", "llama", "transformer", "diffusion", "agent", "agents", "rag", "fine-tuning",
-    "dataset", "pytorch", "tensorflow", "vllm", "ollama", "sglang", "langchain", "llamaindex",
-    "huggingface", "arxiv", "inference", "benchmark", "github", "repo", "tool", "framework",
-    "library", "neural", "vision", "multimodal", "reasoning", "cot", "autonomous", "gpu",
-    "cuda", "open-source", "weights", "architecture", "algorithm", "developer", "quantization",
-    "gguf", "fp8", "fp4", "awq", "moe", "mixture-of-experts", "hardware", "semiconductor",
-    "chip", "silicon", "blackwell", "h100", "b200", "tpu", "robotics", "embodied"
+    "ai",
+    "llm",
+    "deepseek",
+    "qwen",
+    "openai",
+    "claude",
+    "anthropic",
+    "gpt",
+    "gemini",
+    "mistral",
+    "llama",
+    "transformer",
+    "diffusion",
+    "agent",
+    "agents",
+    "rag",
+    "fine-tuning",
+    "dataset",
+    "pytorch",
+    "tensorflow",
+    "vllm",
+    "ollama",
+    "sglang",
+    "langchain",
+    "llamaindex",
+    "huggingface",
+    "arxiv",
+    "inference",
+    "benchmark",
+    "github",
+    "repo",
+    "tool",
+    "framework",
+    "library",
+    "neural",
+    "vision",
+    "multimodal",
+    "reasoning",
+    "cot",
+    "autonomous",
+    "gpu",
+    "cuda",
+    "open-source",
+    "weights",
+    "architecture",
+    "algorithm",
+    "developer",
+    "quantization",
+    "gguf",
+    "fp8",
+    "fp4",
+    "awq",
+    "moe",
+    "mixture-of-experts",
+    "hardware",
+    "semiconductor",
+    "chip",
+    "silicon",
+    "blackwell",
+    "h100",
+    "b200",
+    "tpu",
+    "robotics",
+    "embodied",
 }
 
 # Domains that block scrapers or require authentication
 BLOCKED_SCRAPE_DOMAINS = {
-    "twitter.com", "x.com", "t.co", "facebook.com", "linkedin.com", "instagram.com"
+    "twitter.com",
+    "x.com",
+    "t.co",
+    "facebook.com",
+    "linkedin.com",
+    "instagram.com",
 }
 
 
@@ -59,7 +121,9 @@ class ArticleExtractor:
         return bool(words & AI_ECOSYSTEM_TERMS)
 
     # Alias for backwards compatibility
-    def is_security_relevant(self, title: str, summary: str = "", url: str = "") -> bool:
+    def is_security_relevant(
+        self, title: str, summary: str = "", url: str = ""
+    ) -> bool:
         return self.is_ai_relevant(title, summary, url)
 
     async def extract_article_content(self, entry: Entry, min_words: int = 70) -> str:
@@ -76,7 +140,9 @@ class ArticleExtractor:
         existing_words = existing_cleaned.split()
 
         # If summary is already substantive, authoritative, and not generic, return it
-        if len(existing_words) >= min_words and not self._is_generic_canned(existing_cleaned):
+        if len(existing_words) >= min_words and not self._is_generic_canned(
+            existing_cleaned
+        ):
             return existing_cleaned
 
         if not url or not url.startswith("http"):
@@ -117,7 +183,9 @@ class ArticleExtractor:
                 target_parsed = urlparse(target_url)
                 target_domain = target_parsed.netloc.lower().replace("www.", "")
                 if not any(b in target_domain for b in BLOCKED_SCRAPE_DOMAINS):
-                    extracted = await self._extract_generic_web(target_url, target_domain)
+                    extracted = await self._extract_generic_web(
+                        target_url, target_domain
+                    )
                     if extracted and len(extracted.split()) >= 50:
                         self._cache[url] = extracted
                         return extracted
@@ -154,7 +222,9 @@ class ArticleExtractor:
             f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/README.md",
         ]
 
-        async with httpx.AsyncClient(timeout=self.timeout, headers=self._headers, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout, headers=self._headers, follow_redirects=True
+        ) as client:
             for raw_url in raw_urls:
                 try:
                     res = await client.get(raw_url)
@@ -163,7 +233,9 @@ class ArticleExtractor:
                         if parsed and len(parsed.split()) >= 40:
                             return parsed
                 except Exception as _fetch_err:
-                    logger.debug(f"GitHub README fetch failed for {raw_url}: {_fetch_err}")
+                    logger.debug(
+                        f"GitHub README fetch failed for {raw_url}: {_fetch_err}"
+                    )
                     continue
         return None
 
@@ -189,7 +261,10 @@ class ArticleExtractor:
             # Skip short lines, badge lines, license mentions, and setup commands
             if len(p.split()) < 8:
                 continue
-            if re.search(r"(?i)\b(license|badges|build status|table of contents|quickstart|pip install|contributing|stars|sponsors)\b", p):
+            if re.search(
+                r"(?i)\b(license|badges|build status|table of contents|quickstart|pip install|contributing|stars|sponsors)\b",
+                p,
+            ):
                 continue
             cleaned = re.sub(r"\s+", " ", p).strip()
             # Strip bullet prefixes
@@ -205,17 +280,22 @@ class ArticleExtractor:
 
     async def _extract_arxiv_paper(self, url: str) -> str | None:
         """Extract full arXiv abstract and metadata via arXiv export API."""
-        arxiv_id_match = re.search(r"arxiv\.org/(?:abs|pdf)/(\d{4}\.\d{4,5}(?:v\d+)?)", url)
+        arxiv_id_match = re.search(
+            r"arxiv\.org/(?:abs|pdf)/(\d{4}\.\d{4,5}(?:v\d+)?)", url
+        )
         if not arxiv_id_match:
             return None
         arxiv_id = arxiv_id_match.group(1)
         api_url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, headers=self._headers, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=self.timeout, headers=self._headers, follow_redirects=True
+            ) as client:
                 res = await client.get(api_url)
                 if res.status_code == 200 and res.text:
                     from defusedxml.ElementTree import fromstring as safe_xml_fromstring
+
                     root = safe_xml_fromstring(res.content)
                     raw_abs = None
                     for elem in root.iter():
@@ -225,7 +305,11 @@ class ArticleExtractor:
                     if raw_abs:
                         # Clean LaTeX math
                         raw_abs = re.sub(r"\$(.*?)\$", r"\1", raw_abs)
-                        raw_abs = re.sub(r"\\(?:mathcal|mathbb|mathbf|text|mathrm)\{([^}]+)\}", r"\1", raw_abs)
+                        raw_abs = re.sub(
+                            r"\\(?:mathcal|mathbb|mathbf|text|mathrm)\{([^}]+)\}",
+                            r"\1",
+                            raw_abs,
+                        )
                         raw_abs = re.sub(r"\s+", " ", raw_abs).strip()
                         return raw_abs
         except Exception as e:
@@ -241,7 +325,9 @@ class ArticleExtractor:
         raw_url = f"https://huggingface.co/{org}/{model}/raw/main/README.md"
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, headers=self._headers, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=self.timeout, headers=self._headers, follow_redirects=True
+            ) as client:
                 res = await client.get(raw_url)
                 if res.status_code == 200 and res.text:
                     # Strip YAML frontmatter
@@ -254,9 +340,13 @@ class ArticleExtractor:
     async def _extract_generic_web(self, url: str, domain: str) -> str | None:
         """Scrape and parse substantive article body from general web editorial pages."""
         try:
-            async with httpx.AsyncClient(timeout=self.timeout, headers=self._headers, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=self.timeout, headers=self._headers, follow_redirects=True
+            ) as client:
                 res = await client.get(url)
-                if res.status_code == 200 and "text/html" in res.headers.get("content-type", ""):
+                if res.status_code == 200 and "text/html" in res.headers.get(
+                    "content-type", ""
+                ):
                     return self._parse_html_body(res.content, domain)
         except Exception as err:
             logger.debug(f"Direct scrape failed for {url} ({err})")
@@ -267,7 +357,20 @@ class ArticleExtractor:
         soup = BeautifulSoup(raw_html, "html.parser")
 
         # Decompose unwanted elements
-        for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form", "svg", "noscript", "iframe"]):
+        for tag in soup(
+            [
+                "script",
+                "style",
+                "nav",
+                "footer",
+                "header",
+                "aside",
+                "form",
+                "svg",
+                "noscript",
+                "iframe",
+            ]
+        ):
             tag.decompose()
 
         # Target primary content containers
@@ -276,7 +379,12 @@ class ArticleExtractor:
             or soup.find("div", class_=re.compile(r"abstract", re.I))
             or soup.find("article")
             or soup.find("main")
-            or soup.find(class_=re.compile(r"(post-content|article-content|entry-content|story-body|article__body|markdown-body|prose)", re.I))
+            or soup.find(
+                class_=re.compile(
+                    r"(post-content|article-content|entry-content|story-body|article__body|markdown-body|prose)",
+                    re.I,
+                )
+            )
             or soup.find("div", id=re.compile(r"(content|article|post|readme)", re.I))
         )
 
@@ -291,7 +399,10 @@ class ArticleExtractor:
             text = p.get_text(separator=" ", strip=True)
             if len(text.split()) < 10:
                 continue
-            if re.search(r"(?i)\b(cookie|privacy policy|terms of service|newsletter|subscribe|copyright|advertisement|sign in|all rights reserved)\b", text):
+            if re.search(
+                r"(?i)\b(cookie|privacy policy|terms of service|newsletter|subscribe|copyright|advertisement|sign in|all rights reserved)\b",
+                text,
+            ):
                 continue
             clean_paragraphs.append(text)
 
@@ -339,7 +450,16 @@ class ArticleExtractor:
         urls = re.findall(r"https?://[^\s\"\'<>]+", summary)
         for u in urls:
             d = urlparse(u).netloc.lower()
-            if not any(agg in d for agg in ("reddit.com", "redd.it", "ycombinator.com", "twitter.com", "x.com")):
+            if not any(
+                agg in d
+                for agg in (
+                    "reddit.com",
+                    "redd.it",
+                    "ycombinator.com",
+                    "twitter.com",
+                    "x.com",
+                )
+            ):
                 return u
         return None
 
@@ -359,7 +479,9 @@ class ArticleExtractor:
         combined_text = f"{title} {entry.summary or ''}"
 
         # 1. Parameter Scale Detection
-        param_match = re.search(r"\b(\d+B|\d+x\d+B|\d+\.\d+B|\d+T|\d+\.\d+T|MoE)\b", combined_text, re.I)
+        param_match = re.search(
+            r"\b(\d+B|\d+x\d+B|\d+\.\d+B|\d+T|\d+\.\d+T|MoE)\b", combined_text, re.I
+        )
         params = param_match.group(1).upper() if param_match else None
 
         # 2. Context Window Detection
@@ -367,21 +489,61 @@ class ArticleExtractor:
         ctx = ctx_match.group(1).upper() if ctx_match else None
 
         # 3. Quantization Detection
-        quant_match = re.search(r"\b(GGUF|AWQ|EXL2|FP8|FP4|INT4|INT8)\b", combined_text, re.I)
+        quant_match = re.search(
+            r"\b(GGUF|AWQ|EXL2|FP8|FP4|INT4|INT8)\b", combined_text, re.I
+        )
         quant = quant_match.group(1).upper() if quant_match else None
 
         # 4. Engine & Stack Detection
-        engine_match = re.search(r"\b(vLLM|SGLang|llama\.cpp|Ollama|TensorRT|PyTorch|Triton|CUDA)\b", combined_text, re.I)
+        engine_match = re.search(
+            r"\b(vLLM|SGLang|llama\.cpp|Ollama|TensorRT|PyTorch|Triton|CUDA)\b",
+            combined_text,
+            re.I,
+        )
         engine = engine_match.group(1) if engine_match else None
 
         # ── Domain Classification & Synthesis ──
 
         # A. Foundation Models & Reasoning Breakdowns (DeepSeek, Qwen, Llama, Mistral, Claude, OpenAI)
-        if any(k in title_lower for k in ("deepseek", "qwen", "llama", "mistral", "claude", "gpt", "gemini", "weights", "model", "r1", "reasoning")):
-            model_family = "Open-Weights" if any(k in title_lower for k in ("deepseek", "qwen", "llama", "mistral", "gguf", "weights")) else "Frontier API"
-            p_desc = f"with a {params} parameter footprint" if params else "engineered for high-throughput reasoning"
-            c_desc = f"supporting up to {ctx} context windows" if ctx else "featuring extended context evaluation"
-            q_desc = f"available across {quant} quantizations" if quant else "supporting standard FP8 and native precision"
+        if any(
+            k in title_lower
+            for k in (
+                "deepseek",
+                "qwen",
+                "llama",
+                "mistral",
+                "claude",
+                "gpt",
+                "gemini",
+                "weights",
+                "model",
+                "r1",
+                "reasoning",
+            )
+        ):
+            model_family = (
+                "Open-Weights"
+                if any(
+                    k in title_lower
+                    for k in ("deepseek", "qwen", "llama", "mistral", "gguf", "weights")
+                )
+                else "Frontier API"
+            )
+            p_desc = (
+                f"with a {params} parameter footprint"
+                if params
+                else "engineered for high-throughput reasoning"
+            )
+            c_desc = (
+                f"supporting up to {ctx} context windows"
+                if ctx
+                else "featuring extended context evaluation"
+            )
+            q_desc = (
+                f"available across {quant} quantizations"
+                if quant
+                else "supporting standard FP8 and native precision"
+            )
 
             return (
                 f"{title} marks an architectural milestone in {model_family} foundation modeling, {p_desc} and {c_desc}. "
@@ -393,7 +555,14 @@ class ArticleExtractor:
             )
 
         # B. Trending GitHub Repositories & Open-Source Codebases
-        if "github.com" in url or "repo" in title_lower or any(k in title_lower for k in ("github", "framework", "library", "sdk", "toolkit")):
+        if (
+            "github.com" in url
+            or "repo" in title_lower
+            or any(
+                k in title_lower
+                for k in ("github", "framework", "library", "sdk", "toolkit")
+            )
+        ):
             tech_stack = engine or "Python and CUDA"
             return (
                 f"{title} has surged to the forefront of open-source artificial intelligence tooling, providing developers with an optimized {tech_stack} codebase. "
@@ -405,7 +574,21 @@ class ArticleExtractor:
             )
 
         # C. AI Research Papers & arXiv Discoveries
-        if "arxiv" in url or "paper" in title_lower or any(k in title_lower for k in ("arxiv", "preprint", "scaling law", "formalizing", "benchmark", "empirical")):
+        if (
+            "arxiv" in url
+            or "paper" in title_lower
+            or any(
+                k in title_lower
+                for k in (
+                    "arxiv",
+                    "preprint",
+                    "scaling law",
+                    "formalizing",
+                    "benchmark",
+                    "empirical",
+                )
+            )
+        ):
             return (
                 f"This seminal research investigation ({title}) introduces novel theoretical formulations and empirical validation for next-generation AI architectures. "
                 f"The authors systematically evaluate algorithmic performance across rigorous benchmarks, dissecting how compute allocation, "
@@ -416,7 +599,22 @@ class ArticleExtractor:
             )
 
         # D. Developer Tools, Inference Runtimes & Infrastructure
-        if any(k in title_lower for k in ("vllm", "ollama", "sglang", "llama.cpp", "runtime", "engine", "inference", "quant", "tensorrt", "cache", "server")):
+        if any(
+            k in title_lower
+            for k in (
+                "vllm",
+                "ollama",
+                "sglang",
+                "llama.cpp",
+                "runtime",
+                "engine",
+                "inference",
+                "quant",
+                "tensorrt",
+                "cache",
+                "server",
+            )
+        ):
             runtime_name = engine or "modern inference runtimes"
             return (
                 f"{title} delivers critical infrastructure breakthroughs designed to maximize token throughput and minimize time-to-first-token (TTFT) across {runtime_name}. "
@@ -427,7 +625,24 @@ class ArticleExtractor:
             )
 
         # E. AI Hardware, Silicon & Compute Clusters
-        if any(k in title_lower for k in ("nvidia", "gpu", "cuda", "tpu", "blackwell", "b200", "h100", "h200", "chip", "silicon", "semiconductor", "tsmc", "accelerator")):
+        if any(
+            k in title_lower
+            for k in (
+                "nvidia",
+                "gpu",
+                "cuda",
+                "tpu",
+                "blackwell",
+                "b200",
+                "h100",
+                "h200",
+                "chip",
+                "silicon",
+                "semiconductor",
+                "tsmc",
+                "accelerator",
+            )
+        ):
             return (
                 f"{title} highlights significant advancements in the underlying physical substrate of artificial intelligence computing. "
                 f"As foundation models push computational limits, hardware architectures are advancing through high-bandwidth memory (HBM3e), "
@@ -437,7 +652,20 @@ class ArticleExtractor:
             )
 
         # F. Autonomous Agents, Swarms & Robotics
-        if any(k in title_lower for k in ("agent", "agentic", "swarm", "robot", "robotics", "computer-use", "browser-use", "mcp", "action model")):
+        if any(
+            k in title_lower
+            for k in (
+                "agent",
+                "agentic",
+                "swarm",
+                "robot",
+                "robotics",
+                "computer-use",
+                "browser-use",
+                "mcp",
+                "action model",
+            )
+        ):
             return (
                 f"{title} represents an advanced leap in autonomous agent orchestration and embodied AI systems. "
                 f"Departing from passive query-response interfaces, the architecture integrates recursive planning, dynamic tool calling, "

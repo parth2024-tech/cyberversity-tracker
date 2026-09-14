@@ -29,7 +29,9 @@ class GitHubAdvisoriesFetcher(BaseFetcher):
         }
         headers = {"User-Agent": settings.fetch.user_agent}
 
-        async with httpx.AsyncClient(timeout=self.timeout, headers=headers, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout, headers=headers, follow_redirects=True
+        ) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
 
@@ -44,19 +46,27 @@ class GitHubAdvisoriesFetcher(BaseFetcher):
             ghsa_id = item.get("ghsa_id", "")
             severity = item.get("severity", "unknown").upper()
 
-            entries.append({
-                "title": f"GHSA: {ghsa_id} - {summary[:200]}",
-                "url": item.get("html_url", f"https://github.com/advisories/{ghsa_id}"),
-                "content": content,
-                "published_at": datetime.fromisoformat(item.get("published_at", "").replace("Z", "+00:00")).replace(tzinfo=None) if item.get("published_at") else datetime.now(UTC),
-                "tags": ["github", "advisory", severity.lower()],
-                "metadata": {
-                    "ghsa_id": ghsa_id,
-                    "cve_ids": item.get("cve_ids", []),
-                    "severity": severity,
-                    "vulnerabilities": item.get("vulnerabilities", []),
+            entries.append(
+                {
+                    "title": f"GHSA: {ghsa_id} - {summary[:200]}",
+                    "url": item.get(
+                        "html_url", f"https://github.com/advisories/{ghsa_id}"
+                    ),
+                    "content": content,
+                    "published_at": datetime.fromisoformat(
+                        item.get("published_at", "").replace("Z", "+00:00")
+                    ).replace(tzinfo=None)
+                    if item.get("published_at")
+                    else datetime.now(UTC),
+                    "tags": ["github", "advisory", severity.lower()],
+                    "metadata": {
+                        "ghsa_id": ghsa_id,
+                        "cve_ids": item.get("cve_ids", []),
+                        "severity": severity,
+                        "vulnerabilities": item.get("vulnerabilities", []),
+                    },
                 }
-            })
+            )
 
         return entries
 

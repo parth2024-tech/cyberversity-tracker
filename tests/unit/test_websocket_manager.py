@@ -2,6 +2,7 @@
 Unit tests for ConnectionManager — concurrent broadcast, dead-connection pruning,
 connect/disconnect lifecycle.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -15,6 +16,7 @@ from ai_security_monitor.presentation.api.websocket.manager import ConnectionMan
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _mock_ws(fail: bool = False) -> MagicMock:
     """Return a mock WebSocket. If fail=True, send_text raises RuntimeError."""
@@ -30,6 +32,7 @@ def _mock_ws(fail: bool = False) -> MagicMock:
 # ---------------------------------------------------------------------------
 # connect / disconnect
 # ---------------------------------------------------------------------------
+
 
 class TestConnectDisconnect:
     @pytest.mark.asyncio
@@ -57,6 +60,7 @@ class TestConnectDisconnect:
 # broadcast — no connections
 # ---------------------------------------------------------------------------
 
+
 class TestBroadcastEmpty:
     @pytest.mark.asyncio
     async def test_broadcast_with_no_connections_is_noop(self):
@@ -68,6 +72,7 @@ class TestBroadcastEmpty:
 # ---------------------------------------------------------------------------
 # broadcast — concurrent fan-out
 # ---------------------------------------------------------------------------
+
 
 class TestBroadcastConcurrent:
     @pytest.mark.asyncio

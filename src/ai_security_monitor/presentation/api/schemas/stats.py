@@ -7,12 +7,14 @@ from pydantic import BaseModel
 
 class CategoryStats(BaseModel):
     """Category statistics."""
+
     category: str
     count: int
 
 
 class FetchLogStats(BaseModel):
     """Fetch log statistics."""
+
     source_name: str
     status: str
     entries_new: int
@@ -22,6 +24,7 @@ class FetchLogStats(BaseModel):
 
 class StatsResponse(BaseModel):
     """Full statistics response."""
+
     total_entries: int
     total_sources: int
     by_category: dict[str, int]

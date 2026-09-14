@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 class Category(str, Enum):
     """Entry categories."""
+
     AI_TECH = "ai_tech"
     AI_RESEARCH = "ai_research"
     CYBERSECURITY = "cybersecurity"
@@ -20,6 +21,7 @@ class Category(str, Enum):
 
 class SourceType(str, Enum):
     """Source types."""
+
     RSS = "rss"
     ARXIV = "arxiv"
     NVD_API = "nvd_api"
@@ -31,6 +33,7 @@ class SourceType(str, Enum):
 
 class FetchStatus(str, Enum):
     """Fetch operation status."""
+
     SUCCESS = "success"
     ERROR = "error"
     SKIPPED = "skipped"
@@ -38,6 +41,7 @@ class FetchStatus(str, Enum):
 
 class AnalysisModel(str, Enum):
     """Analysis model used."""
+
     HEURISTIC = "heuristic"
     OLLAMA = "ollama"
     GROQ = "groq"
@@ -48,6 +52,7 @@ class AnalysisModel(str, Enum):
 @dataclass(kw_only=True)
 class Entity:
     """Base entity with ID and timestamps."""
+
     id: UUID = field(default_factory=uuid4)
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -56,6 +61,7 @@ class Entity:
 @dataclass(kw_only=True)
 class Source(Entity):
     """Intelligence source configuration."""
+
     name: str
     category: Category
     type: SourceType
@@ -72,6 +78,7 @@ class Source(Entity):
 @dataclass(kw_only=True)
 class Entry(Entity):
     """Intelligence entry - a piece of content from a source."""
+
     source_id: UUID
     title: str
     url: str
@@ -87,15 +94,24 @@ class Entry(Entity):
     purged_at: datetime | None = None
 
     def __post_init__(self) -> None:
-        if self.published_at and hasattr(self.published_at, "tzinfo") and self.published_at.tzinfo is not None:
+        if (
+            self.published_at
+            and hasattr(self.published_at, "tzinfo")
+            and self.published_at.tzinfo is not None
+        ):
             self.published_at = self.published_at.replace(tzinfo=None)
-        if self.fetched_at and hasattr(self.fetched_at, "tzinfo") and self.fetched_at.tzinfo is not None:
+        if (
+            self.fetched_at
+            and hasattr(self.fetched_at, "tzinfo")
+            and self.fetched_at.tzinfo is not None
+        ):
             self.fetched_at = self.fetched_at.replace(tzinfo=None)
 
 
 @dataclass(kw_only=True)
 class Analysis(Entity):
     """AI analysis of an entry."""
+
     entry_id: UUID
     attack_vector: str
     risk_assessment: str
@@ -106,7 +122,9 @@ class Analysis(Entity):
     affected_ecosystem: list[str] = field(default_factory=list)
     is_pre_cve_warning: bool = False
     attack_archetype: str = ""
-    weaponization_potential: str = "Theoretical"  # Theoretical, PoC Verified, Active Weaponization
+    weaponization_potential: str = (
+        "Theoretical"  # Theoretical, PoC Verified, Active Weaponization
+    )
     mitre_attack_id: str | None = None  # e.g., "T1190", "AML.T0054"
     mitre_technique: str | None = None  # e.g., "Exploit Public-Facing Application"
     model: AnalysisModel = AnalysisModel.HEURISTIC
@@ -116,6 +134,7 @@ class Analysis(Entity):
 @dataclass(kw_only=True)
 class FetchLog(Entity):
     """Log of a fetch operation."""
+
     source_id: UUID
     source_name: str
     status: FetchStatus
@@ -129,6 +148,7 @@ class FetchLog(Entity):
 @dataclass(kw_only=True)
 class Digest(Entity):
     """Generated digest for delivery."""
+
     schedule: str  # daily, weekly
     entries_by_category: dict[str, list[Entry]] = field(default_factory=dict)
     total_entries: int = 0

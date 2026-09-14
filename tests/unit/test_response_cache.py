@@ -3,6 +3,7 @@ Unit tests for the in-process TTL response cache (response_cache.py).
 Covers: get_or_set hit/miss, TTL expiry, invalidation, purge_expired, and
 the periodic eviction counter.
 """
+
 from __future__ import annotations
 
 import time
@@ -26,6 +27,7 @@ def reset_cache():
 # ---------------------------------------------------------------------------
 # get_or_set — basic
 # ---------------------------------------------------------------------------
+
 
 class TestGetOrSet:
     @pytest.mark.asyncio
@@ -68,6 +70,7 @@ class TestGetOrSet:
 # invalidate / invalidate_prefix / clear
 # ---------------------------------------------------------------------------
 
+
 class TestInvalidation:
     @pytest.mark.asyncio
     async def test_invalidate_removes_key(self):
@@ -82,7 +85,9 @@ class TestInvalidation:
         response_cache._CACHE["other:key"] = (response_cache._now() + 60, "x")
 
         response_cache.invalidate_prefix("feed:")
-        assert all(k not in response_cache._CACHE for k in ("feed:0", "feed:1", "feed:2"))
+        assert all(
+            k not in response_cache._CACHE for k in ("feed:0", "feed:1", "feed:2")
+        )
         assert "other:key" in response_cache._CACHE
 
     def test_clear_empties_cache(self):
@@ -95,6 +100,7 @@ class TestInvalidation:
 # ---------------------------------------------------------------------------
 # purge_expired
 # ---------------------------------------------------------------------------
+
 
 class TestPurgeExpired:
     def test_purge_removes_stale_keys(self):
@@ -120,6 +126,7 @@ class TestPurgeExpired:
 # ---------------------------------------------------------------------------
 # Periodic auto-eviction counter
 # ---------------------------------------------------------------------------
+
 
 class TestPeriodicEviction:
     @pytest.mark.asyncio
@@ -148,6 +155,7 @@ class TestPeriodicEviction:
 # ---------------------------------------------------------------------------
 # stats
 # ---------------------------------------------------------------------------
+
 
 class TestStats:
     def test_stats_returns_remaining_ttl(self):

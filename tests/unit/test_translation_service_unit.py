@@ -2,6 +2,7 @@
 Unit tests for TranslationService — language detection, caching, async wrappers.
 All external HTTP calls (deep_translator, langdetect) are mocked out.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -18,6 +19,7 @@ from ai_security_monitor.application.services.translation_service import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_entry(title: str = "Hello world", summary: str = "Some summary"):
     """Create a minimal mock domain entry."""
     entry = MagicMock()
@@ -30,6 +32,7 @@ def _make_entry(title: str = "Hello world", summary: str = "Some summary"):
 # ---------------------------------------------------------------------------
 # detect_language
 # ---------------------------------------------------------------------------
+
 
 class TestDetectLanguage:
     def test_detects_japanese_hiragana(self):
@@ -65,6 +68,7 @@ class TestDetectLanguage:
 # translate_text — cache & short-circuit
 # ---------------------------------------------------------------------------
 
+
 class TestTranslateText:
     def test_empty_text_returns_unchanged(self):
         svc = TranslationService()
@@ -90,7 +94,9 @@ class TestTranslateText:
 
     def test_successful_translation_stored_in_cache(self):
         svc = TranslationService()
-        with patch.object(svc, "_execute_translation", return_value="Artificial intelligence"):
+        with patch.object(
+            svc, "_execute_translation", return_value="Artificial intelligence"
+        ):
             text, lang, ok = svc.translate_text("人工智能", target="en")
 
         assert ok is True
@@ -101,8 +107,10 @@ class TestTranslateText:
     def test_failed_translation_returns_original(self):
         svc = TranslationService()
         original = "Unbekannter Fehler"
-        with patch.object(svc, "detect_language", return_value="de"), \
-             patch.object(svc, "_execute_translation", return_value=None):
+        with (
+            patch.object(svc, "detect_language", return_value="de"),
+            patch.object(svc, "_execute_translation", return_value=None),
+        ):
             text, lang, ok = svc.translate_text(original)
 
         assert text == original
@@ -112,6 +120,7 @@ class TestTranslateText:
 # ---------------------------------------------------------------------------
 # Cache size eviction
 # ---------------------------------------------------------------------------
+
 
 class TestCacheEviction:
     def test_cache_drops_oldest_entries_at_max_size(self):
@@ -129,10 +138,13 @@ class TestCacheEviction:
 # translate_entry
 # ---------------------------------------------------------------------------
 
+
 class TestTranslateEntry:
     def test_english_entry_not_translated(self):
         svc = TranslationService()
-        entry = _make_entry("Breakthrough in LLM reasoning", "OpenAI releases o3 model.")
+        entry = _make_entry(
+            "Breakthrough in LLM reasoning", "OpenAI releases o3 model."
+        )
         # Explicitly patch detect_language so the test is not dependent on
         # external langdetect library behaviour with short text snippets.
         with patch.object(svc, "detect_language", return_value="en"):
@@ -164,6 +176,7 @@ class TestTranslateEntry:
 # Async wrappers
 # ---------------------------------------------------------------------------
 
+
 class TestAsyncWrappers:
     @pytest.mark.asyncio
     async def test_translate_text_async_returns_same_as_sync(self):
@@ -184,6 +197,7 @@ class TestAsyncWrappers:
 # ---------------------------------------------------------------------------
 # LANGUAGE_NAMES mapping
 # ---------------------------------------------------------------------------
+
 
 class TestLanguageNames:
     def test_known_languages_have_flags(self):

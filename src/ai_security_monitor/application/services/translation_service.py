@@ -5,6 +5,7 @@ Automatically detects foreign language feeds (Chinese, Russian, Japanese,
 German, French, Korean, Spanish, etc.) and translates intelligence titles,
 advisories, and abstracts into English with multi-engine fallback and LRU caching.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -46,7 +47,9 @@ class TranslationService:
     """Zero-cost autonomous neural translation engine with multi-provider fallbacks."""
 
     def __init__(self, max_cache_size: int = 2000):
-        self._cache: dict[str, tuple[str, str]] = {}  # text -> (translated, detected_lang)
+        self._cache: dict[
+            str, tuple[str, str]
+        ] = {}  # text -> (translated, detected_lang)
         self._max_cache_size = max_cache_size
 
     def detect_language(self, text: str) -> str:
@@ -70,11 +73,52 @@ class TranslationService:
 
         # Common English vocabulary & tech jargon heuristics
         common_en = {
-            "the", "of", "and", "in", "to", "for", "with", "is", "on", "at", "from",
-            "by", "as", "this", "that", "an", "be", "are", "ai", "model", "models",
-            "learning", "system", "server", "release", "data", "code", "paper", "using",
-            "new", "vram", "ram", "gpu", "llm", "meets", "goes", "show", "hn", "agent",
-            "open", "weights", "source", "inference", "training", "benchmarks", "reasoning"
+            "the",
+            "of",
+            "and",
+            "in",
+            "to",
+            "for",
+            "with",
+            "is",
+            "on",
+            "at",
+            "from",
+            "by",
+            "as",
+            "this",
+            "that",
+            "an",
+            "be",
+            "are",
+            "ai",
+            "model",
+            "models",
+            "learning",
+            "system",
+            "server",
+            "release",
+            "data",
+            "code",
+            "paper",
+            "using",
+            "new",
+            "vram",
+            "ram",
+            "gpu",
+            "llm",
+            "meets",
+            "goes",
+            "show",
+            "hn",
+            "agent",
+            "open",
+            "weights",
+            "source",
+            "inference",
+            "training",
+            "benchmarks",
+            "reasoning",
         }
         words = set(re.findall(r"\b[a-zA-Z]{2,}\b", clean.lower()))
         has_accented = bool(re.search(r"[áéíóúüñäößàèìòùâêîôûç]", clean, re.I))
@@ -92,8 +136,11 @@ class TranslationService:
         # Check with langdetect for European / Latin script languages
         try:
             from langdetect import DetectorFactory, detect_langs
+
             DetectorFactory.seed = 0
-            clean_detect = re.sub(r"https?://\S+|CVE-\d+-\d+|\b\d+\b", "", clean).strip()
+            clean_detect = re.sub(
+                r"https?://\S+|CVE-\d+-\d+|\b\d+\b", "", clean
+            ).strip()
             if len(clean_detect) >= 30:
                 langs = detect_langs(clean_detect)
                 if langs:
@@ -101,9 +148,20 @@ class TranslationService:
                     if top.lang == "en":
                         return "en"
                     # If pure ASCII without accented letters, avoid false positives from short fragments
-                    if all(ord(c) < 128 for c in clean) and top.lang in ("de", "nl", "ca", "af", "so", "da", "no", "sv"):
+                    if all(ord(c) < 128 for c in clean) and top.lang in (
+                        "de",
+                        "nl",
+                        "ca",
+                        "af",
+                        "so",
+                        "da",
+                        "no",
+                        "sv",
+                    ):
                         return "en"
-                    threshold = getattr(settings.fetch, "langdetect_confidence_threshold", 0.7)
+                    threshold = getattr(
+                        settings.fetch, "langdetect_confidence_threshold", 0.7
+                    )
                     if top.prob < threshold:
                         return "uncertain"
                     return top.lang
@@ -156,11 +214,14 @@ class TranslationService:
         Returns True if the entry was translated from a non-English language.
         """
         title_lang = self.detect_language(entry.title or "")
-        summary_lang = self.detect_language(entry.summary or "") if entry.summary else "en"
+        summary_lang = (
+            self.detect_language(entry.summary or "") if entry.summary else "en"
+        )
 
         # If confidence was below threshold, flag as uncertain and preserve original text
         if title_lang == "uncertain" or summary_lang == "uncertain":
             from ai_security_monitor.core.diagnostics import diagnostics
+
             diagnostics.record_language_uncertain(entry.title or "")
             entry.metadata = entry.metadata or {}
             entry.metadata["language_uncertain"] = True
@@ -168,12 +229,15 @@ class TranslationService:
                 entry.metadata["original_title"] = entry.title
             if "original_summary" not in entry.metadata:
                 entry.metadata["original_summary"] = entry.summary
-            logger.info(f"Preserving original text due to uncertain language confidence: {entry.title[:50]}...")
+            logger.info(
+                f"Preserving original text due to uncertain language confidence: {entry.title[:50]}..."
+            )
             return False
 
         # Check if either field is non-English
-        is_foreign = (title_lang != "en" and not title_lang.startswith("en")) or \
-                     (summary_lang != "en" and not summary_lang.startswith("en"))
+        is_foreign = (title_lang != "en" and not title_lang.startswith("en")) or (
+            summary_lang != "en" and not summary_lang.startswith("en")
+        )
 
         if not is_foreign:
             return False
@@ -214,11 +278,14 @@ class TranslationService:
         )
         return True
 
-    def _execute_translation(self, text: str, source_lang: str, target: str) -> str | None:
+    def _execute_translation(
+        self, text: str, source_lang: str, target: str
+    ) -> str | None:
         """Execute translation via deep_translator with fallback providers."""
         # 1. Primary: GoogleTranslator
         try:
             from deep_translator import GoogleTranslator
+
             src = "auto" if source_lang == "en" else source_lang
             if src in ("zh-cn", "zh_cn"):
                 src = "zh-CN"
@@ -235,11 +302,23 @@ class TranslationService:
         # 2. Fallback: MyMemoryTranslator (chunks text into <500 char pieces)
         try:
             from deep_translator import MyMemoryTranslator
+
             mymemory_map = {
-                "zh": "zh-CN", "zh-cn": "zh-CN", "zh-tw": "zh-TW",
-                "de": "de-DE", "fr": "fr-FR", "es": "es-ES", "it": "it-IT",
-                "ja": "ja-JP", "ko": "ko-KR", "ru": "ru-RU", "ar": "ar-SA",
-                "pt": "pt-PT", "nl": "nl-NL", "pl": "pl-PL", "tr": "tr-TR",
+                "zh": "zh-CN",
+                "zh-cn": "zh-CN",
+                "zh-tw": "zh-TW",
+                "de": "de-DE",
+                "fr": "fr-FR",
+                "es": "es-ES",
+                "it": "it-IT",
+                "ja": "ja-JP",
+                "ko": "ko-KR",
+                "ru": "ru-RU",
+                "ar": "ar-SA",
+                "pt": "pt-PT",
+                "nl": "nl-NL",
+                "pl": "pl-PL",
+                "tr": "tr-TR",
             }
             src_locale = mymemory_map.get(source_lang.lower(), source_lang)
             target_locale = "en-US" if target == "en" else target
@@ -247,7 +326,9 @@ class TranslationService:
 
             # Chunk long texts to respect 500-char limit
             if len(text) > 480:
-                chunks = [text[i:i+450] for i in range(0, min(len(text), 1500), 450)]
+                chunks = [
+                    text[i : i + 450] for i in range(0, min(len(text), 1500), 450)
+                ]
                 translated_parts = []
                 for c in chunks:
                     res = mm.translate(c)
@@ -265,6 +346,7 @@ class TranslationService:
         # 3. Fallback: LingueeTranslator
         try:
             from deep_translator import LingueeTranslator
+
             lt = LingueeTranslator(source=source_lang, target=target)
             result = lt.translate(text)
             if result:
@@ -278,7 +360,7 @@ class TranslationService:
         """Store translation in memory cache with size bound."""
         if len(self._cache) >= self._max_cache_size:
             # Drop oldest 20%
-            keys = list(self._cache.keys())[:int(self._max_cache_size * 0.2)]
+            keys = list(self._cache.keys())[: int(self._max_cache_size * 0.2)]
             for k in keys:
                 self._cache.pop(k, None)
         self._cache[key] = (value, lang)
@@ -288,7 +370,9 @@ class TranslationService:
     # monitor sweeps, newspaper generation) to avoid blocking the event loop.
     # ------------------------------------------------------------------
 
-    async def translate_text_async(self, text: str, target: str = "en") -> tuple[str, str, bool]:
+    async def translate_text_async(
+        self, text: str, target: str = "en"
+    ) -> tuple[str, str, bool]:
         """Non-blocking version of translate_text() — runs sync providers in a thread."""
         return await asyncio.to_thread(self.translate_text, text, target)
 

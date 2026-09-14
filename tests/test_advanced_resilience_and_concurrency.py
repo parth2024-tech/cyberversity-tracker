@@ -29,9 +29,22 @@ async def test_monitor_service_resilience_and_edge_states(test_db_engine, test_u
     monitor = MonitorService(uow_factory=lambda: test_uow)
 
     # 1. Test init_sources with mocked load_sources_from_yaml
-    with patch("ai_security_monitor.application.services.monitor_service.load_sources_from_yaml") as mock_load:
+    with patch(
+        "ai_security_monitor.application.services.monitor_service.load_sources_from_yaml"
+    ) as mock_load:
         mock_load.return_value = [
-            MagicMock(name="Test RSS Unique", enabled=True, type="rss", url="http://example.com/rss", category="ai_tech", country="global", region="global", query=None, rate_limit_seconds=3600, config={})
+            MagicMock(
+                name="Test RSS Unique",
+                enabled=True,
+                type="rss",
+                url="http://example.com/rss",
+                category="ai_tech",
+                country="global",
+                region="global",
+                query=None,
+                rate_limit_seconds=3600,
+                config={},
+            )
         ]
         test_uow.sources.get_by_name = AsyncMock(return_value=None)
         test_uow.sources.add = AsyncMock()
@@ -46,13 +59,16 @@ async def test_monitor_service_resilience_and_edge_states(test_db_engine, test_u
         type=SourceType.RSS,
         url="http://mock-invalid-feed.local/feed.xml",
         category=Category.AI_TECH,
-        enabled=True
+        enabled=True,
     )
     async with test_uow as uow:
         await uow.sources.add(source)
         await uow.commit()
 
-    with patch("ai_security_monitor.infrastructure.fetchers.rss_fetcher.RSSFetcher.fetch", side_effect=Exception("Simulated network timeout")):
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.RSSFetcher.fetch",
+        side_effect=Exception("Simulated network timeout"),
+    ):
         log = await monitor.fetch_source(source)
         assert log is not None
         assert log.status == FetchStatus.ERROR
@@ -69,10 +85,11 @@ async def test_scheduler_service_interrupted_and_long_running(test_db_engine):
     scheduler = SchedulerService()
 
     # Mock loop targets to avoid actual external network calls during scheduler test
-    with patch.object(scheduler, "_loop", new_callable=AsyncMock), \
-         patch.object(scheduler, "_newspaper_loop", new_callable=AsyncMock), \
-         patch.object(scheduler, "_backup_loop", new_callable=AsyncMock):
-
+    with (
+        patch.object(scheduler, "_loop", new_callable=AsyncMock),
+        patch.object(scheduler, "_newspaper_loop", new_callable=AsyncMock),
+        patch.object(scheduler, "_backup_loop", new_callable=AsyncMock),
+    ):
         await scheduler.start()
         assert scheduler._running is True
         assert scheduler._task is not None
@@ -93,7 +110,7 @@ async def test_llm_analyzer_fallback_and_timeouts():
         type=SourceType.RSS,
         url="http://example.com/rss",
         category=Category.AI_TECH,
-        enabled=True
+        enabled=True,
     )
     entry = Entry(
         title="Test Frontier AI Model Release",
@@ -102,14 +119,15 @@ async def test_llm_analyzer_fallback_and_timeouts():
         content_hash="llm_fallback_test_01",
         category=Category.AI_MODELS,
         source_id=source.id,
-        published_at=datetime.now(UTC)
+        published_at=datetime.now(UTC),
     )
 
     # Mock Ollama / Groq / Gateway calls to raise TimeoutError or ConnectionError
-    with patch.object(analyzer, "_call_ollama", side_effect=TimeoutError()), \
-         patch.object(analyzer, "_call_groq", side_effect=ConnectionError()), \
-         patch.object(analyzer, "_call_gateway", side_effect=Exception("Gateway error")):
-
+    with (
+        patch.object(analyzer, "_call_ollama", side_effect=TimeoutError()),
+        patch.object(analyzer, "_call_groq", side_effect=ConnectionError()),
+        patch.object(analyzer, "_call_gateway", side_effect=Exception("Gateway error")),
+    ):
         result = await analyzer.analyze(entry)
         assert result is not None
         assert result.severity_index >= 0
@@ -129,7 +147,7 @@ async def test_database_sqlite_concurrency_and_wal_robustness(test_db_engine):
             type="rss",
             url="http://example.com/source",
             category="ai_tech",
-            enabled=True
+            enabled=True,
         )
         session.add(src)
         await session.commit()
@@ -145,7 +163,7 @@ async def test_database_sqlite_concurrency_and_wal_robustness(test_db_engine):
                 content_hash=f"hash_isolated_{worker_id}_{datetime.now(UTC).timestamp()}",
                 category="ai_tech",
                 source_id=source_id,
-                published_at=datetime.now(UTC)
+                published_at=datetime.now(UTC),
             )
             session.add(entry)
             await session.commit()
@@ -156,6 +174,9 @@ async def test_database_sqlite_concurrency_and_wal_robustness(test_db_engine):
     # Verify all entries were successfully written without database locks
     async with manager.session() as session:
         from sqlalchemy import func, select
-        result = await session.execute(select(func.count(EntryModel.id)).where(EntryModel.source_id == source_id))
+
+        result = await session.execute(
+            select(func.count(EntryModel.id)).where(EntryModel.source_id == source_id)
+        )
         count = result.scalar()
         assert count == 20

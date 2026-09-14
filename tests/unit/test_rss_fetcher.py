@@ -1,4 +1,5 @@
 """Unit tests for RSSFetcher."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -59,7 +60,10 @@ async def test_rss_fetcher_parses_entries(rss_source: Source):
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         fetcher = RSSFetcher(rss_source)
         raw = await fetcher._fetch_raw()
 
@@ -97,7 +101,9 @@ async def test_rss_fetcher_fallback_mirror_on_primary_failure(rss_source: Source
     rss_source.config = {"mirrors": ["https://mirror.example.com/feed.rss"]}
 
     error_response = MagicMock()
-    error_response.raise_for_status = MagicMock(side_effect=Exception("Connection refused"))
+    error_response.raise_for_status = MagicMock(
+        side_effect=Exception("Connection refused")
+    )
 
     success_response = MagicMock()
     success_response.status_code = 200
@@ -110,7 +116,10 @@ async def test_rss_fetcher_fallback_mirror_on_primary_failure(rss_source: Source
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         fetcher = RSSFetcher(rss_source)
         raw = await fetcher._fetch_raw()
 

@@ -1,6 +1,7 @@
 """
 Newspaper service subpackage: live fetching and document rendering.
 """
+
 from ai_security_monitor.application.services.newspaper.fetcher import (
     NewspaperLiveFetcher,
 )

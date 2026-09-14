@@ -2,6 +2,7 @@
 Test suite for China AI & Cybersecurity Intelligence Sources,
 Heuristic bilingual analysis, and regional filtering.
 """
+
 import uuid
 from datetime import UTC, datetime, timezone
 
@@ -19,7 +20,9 @@ from ai_security_monitor.presentation.api.main import create_app
 def test_china_sources_configuration_loaded():
     """Verify that China AI and Cybersecurity sources are properly configured in YAML."""
     config = load_sources()
-    china_sources = [s for s in config.sources if s.region == "china" or s.country in ("CN", "HK")]
+    china_sources = [
+        s for s in config.sources if s.region == "china" or s.country in ("CN", "HK")
+    ]
 
     # We configured 19 verified China sources
     assert len(china_sources) >= 15
@@ -48,7 +51,7 @@ async def test_chinese_bilingual_threat_heuristics():
         published_at=datetime.now(UTC),
         category=Category.VULNERABILITIES,
         tags=["DeepSeek", "Qwen", "0day", "RCE"],
-        metadata={"region": "china", "country": "CN"}
+        metadata={"region": "china", "country": "CN"},
     )
 
     analysis = await analyzer.analyze(entry)
@@ -64,7 +67,9 @@ async def test_chinese_bilingual_threat_heuristics():
 async def test_api_entries_china_theatre_filter():
     """Verify that querying /api/entries with region=china returns Chinese intelligence."""
     app = create_app()
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         resp = await client.get("/api/entries?region=china&limit=20")
         assert resp.status_code == 200
         data = resp.json()

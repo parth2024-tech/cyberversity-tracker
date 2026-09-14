@@ -1,4 +1,5 @@
 """Unit tests for GitHubTrendingFetcher."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -74,19 +75,28 @@ async def test_github_trending_api_fallback(trending_source: Source):
     # Make scraping fail so it falls back to API
     mock_scrape_response = MagicMock()
     mock_scrape_response.status_code = 503
-    mock_scrape_response.raise_for_status = MagicMock(side_effect=Exception("Scraping failed"))
+    mock_scrape_response.raise_for_status = MagicMock(
+        side_effect=Exception("Scraping failed")
+    )
 
     mock_client = AsyncMock()
-    mock_client.get = AsyncMock(side_effect=[mock_scrape_response, mock_search_response])
+    mock_client.get = AsyncMock(
+        side_effect=[mock_scrape_response, mock_search_response]
+    )
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.fetchers.github_trending_fetcher.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.github_trending_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         fetcher = GitHubTrendingFetcher(trending_source)
         raw = await fetcher._fetch_raw_api()
 
     # Should return AI repos from the API response (cooking-app may be included in raw but filtered later)
-    ai_repos = [r for r in raw if "deepseek" in r["url"].lower() or "vllm" in r["url"].lower()]
+    ai_repos = [
+        r for r in raw if "deepseek" in r["url"].lower() or "vllm" in r["url"].lower()
+    ]
     assert len(ai_repos) >= 2
 
 
@@ -100,7 +110,11 @@ async def test_github_trending_parse_entry(trending_source: Source):
         "content": "DeepSeek V3, a strong Mixture-of-Experts language model\nLanguage: Python\nStars: 50,000",
         "published_at": datetime.now(UTC),
         "tags": ["github", "trending", "ai", "python"],
-        "metadata": {"repo_name": "deepseek-ai/DeepSeek-V3", "language": "Python", "stars": 50000},
+        "metadata": {
+            "repo_name": "deepseek-ai/DeepSeek-V3",
+            "language": "Python",
+            "stars": 50000,
+        },
     }
     entry = fetcher._parse_entry(raw)
 
@@ -112,12 +126,30 @@ async def test_github_trending_parse_entry(trending_source: Source):
 def test_github_trending_ai_filter_passes_ai_repos(trending_source: Source):
     """AI keyword filter should pass repos with AI-related names/descriptions."""
     combined = "vllm-project/vllm High-throughput and memory-efficient LLM inference engine".lower()
-    ai_keywords = ("ai", "llm", "agent", "neural", "model", "transformer", "inference", "embedding")
+    ai_keywords = (
+        "ai",
+        "llm",
+        "agent",
+        "neural",
+        "model",
+        "transformer",
+        "inference",
+        "embedding",
+    )
     assert any(w in combined for w in ai_keywords)
 
 
 def test_github_trending_ai_filter_rejects_non_ai_repos(trending_source: Source):
     """AI keyword filter should reject repos with no AI-related content."""
     combined = "some-user/cooking-app A recipe management application".lower()
-    ai_keywords = ("ai", "llm", "agent", "neural", "model", "transformer", "inference", "embedding")
+    ai_keywords = (
+        "ai",
+        "llm",
+        "agent",
+        "neural",
+        "model",
+        "transformer",
+        "inference",
+        "embedding",
+    )
     assert not any(w in combined for w in ai_keywords)

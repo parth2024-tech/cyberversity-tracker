@@ -1,6 +1,7 @@
 """
 Unit and integration tests for the 5-Hour Autonomous Newspaper Document Service.
 """
+
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -120,9 +121,13 @@ async def test_newspaper_api_endpoints():
         assert res_gen.json()["status"] == "success"
 
         # 8. POST email newspaper with invalid config triggers proper error response
-        res_mail = await client.post("/api/newspaper/email", json={"to_email": "test@example.com"})
+        res_mail = await client.post(
+            "/api/newspaper/email", json={"to_email": "test@example.com"}
+        )
         assert res_mail.status_code in (200, 400, 500)
 
         # 9. POST telegram newspaper triggers proper response
-        res_tg = await client.post("/api/newspaper/telegram", json={"chat_id": "1650972026"})
+        res_tg = await client.post(
+            "/api/newspaper/telegram", json={"chat_id": "1650972026"}
+        )
         assert res_tg.status_code in (200, 400, 500)

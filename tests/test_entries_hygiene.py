@@ -1,6 +1,7 @@
 """
 Unit and integration tests for entries data hygiene, title/summary sanitization, and API formatting.
 """
+
 from datetime import datetime
 
 import pytest
@@ -16,15 +17,27 @@ from ai_security_monitor.presentation.api.routers.entries import (
 
 def test_clean_entry_title_poc_prefixes():
     # PoC / Security Tool prefixes
-    assert _clean_entry_title("Security Tool / PoC: siyuan-note/siyuan") == "siyuan-note/siyuan"
-    assert _clean_entry_title("Security Tool: activepieces/activepieces") == "activepieces/activepieces"
+    assert (
+        _clean_entry_title("Security Tool / PoC: siyuan-note/siyuan")
+        == "siyuan-note/siyuan"
+    )
+    assert (
+        _clean_entry_title("Security Tool: activepieces/activepieces")
+        == "activepieces/activepieces"
+    )
     assert _clean_entry_title("PoC: slackhq/nebula") == "slackhq/nebula"
     assert _clean_entry_title("POC: CVE-2026-1234") == "CVE-2026-1234"
 
 
 def test_clean_entry_title_html_entities_and_whitespace():
-    assert _clean_entry_title("&#32; DeepSeek-V3 &amp; Qwen-2.5 &#32;") == "DeepSeek-V3 & Qwen-2.5"
-    assert _clean_entry_title("&quot;Ollama&quot; Multi-GPU &#39;Speedup&#39;") == '"Ollama" Multi-GPU \'Speedup\''
+    assert (
+        _clean_entry_title("&#32; DeepSeek-V3 &amp; Qwen-2.5 &#32;")
+        == "DeepSeek-V3 & Qwen-2.5"
+    )
+    assert (
+        _clean_entry_title("&quot;Ollama&quot; Multi-GPU &#39;Speedup&#39;")
+        == "\"Ollama\" Multi-GPU 'Speedup'"
+    )
     assert _clean_entry_title(None) == "Intelligence Dispatch"
     assert _clean_entry_title("   ") == "Intelligence Dispatch"
 
@@ -62,7 +75,10 @@ def test_clean_entry_summary_deduplication_and_sentence_boundary():
 
     cleaned = _clean_entry_summary(dummy_entry.summary, dummy_entry)
     # Checks deduplication
-    assert cleaned.count("An open-source reasoning model with native 200k context window") == 1
+    assert (
+        cleaned.count("An open-source reasoning model with native 200k context window")
+        == 1
+    )
     assert cleaned.endswith((".", "!", "?"))
 
 
@@ -82,7 +98,10 @@ def test_clean_entry_summary_truncated_word_cleanup():
 
     cleaned = _clean_entry_summary(dummy_entry.summary, dummy_entry)
     # The trailing abrupt cutoff fragment 'And then abruptly cut' should be trimmed to the last full sentence
-    assert cleaned == "Safety evaluation is critical for assessing whether aligned Large Language Models remain robust against jailbreak attacks."
+    assert (
+        cleaned
+        == "Safety evaluation is critical for assessing whether aligned Large Language Models remain robust against jailbreak attacks."
+    )
     assert cleaned.endswith(".")
 
 
@@ -105,39 +124,48 @@ async def test_api_entries_serialization_hygiene():
 
 def test_database_retention_days_setting():
     from ai_security_monitor.config.settings import settings
+
     assert settings.database.retention_days == 7
+    assert settings.database.auto_purge_enabled is False
 
 
 @pytest.mark.asyncio
-async def test_purge_old_entries_1_week_retention():
+async def test_purge_old_entries_1_week_retention(test_uow):
     from datetime import timedelta
 
     from sqlalchemy import select
 
-    from ai_security_monitor.infrastructure.database.connection import db_manager
     from ai_security_monitor.infrastructure.database.models import EntryModel
-    from ai_security_monitor.infrastructure.database.unit_of_work import (
-        SqlAlchemyUnitOfWork,
+
+    purged = await test_uow.entries.purge_old_entries(older_than_days=7)
+    assert isinstance(purged, int)
+    assert purged >= 0
+    await test_uow.commit()
+
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    all_stale = (
+        (
+            await test_uow.session.execute(
+                select(EntryModel).where(EntryModel.fetched_at < cutoff)
+            )
+        )
+        .scalars()
+        .all()
     )
-
-    await db_manager.init_db()
-    async with SqlAlchemyUnitOfWork() as uow:
-        # Check that purge runs cleanly with 7 days retention
-        purged = await uow.entries.purge_old_entries(older_than_days=7)
-        assert isinstance(purged, int)
-        assert purged >= 0
-        await uow.commit()
-
-        # Verify no remaining active un-vaulted entries are older than 7 days based on fetched_at
-        cutoff = datetime.utcnow() - timedelta(days=7)
-        all_stale = (await uow.session.execute(
-            select(EntryModel).where(EntryModel.fetched_at < cutoff)
-        )).scalars().all()
-        unvaulted_active_stale = [
-            e for e in all_stale
-            if not e.is_purged and not (e.extra_metadata and (e.extra_metadata.get("is_important") or e.extra_metadata.get("is_saved") or e.extra_metadata.get("is_pinned")))
-        ]
-        assert len(unvaulted_active_stale) == 0
+    unvaulted_active_stale = [
+        e
+        for e in all_stale
+        if not e.is_purged
+        and not (
+            e.extra_metadata
+            and (
+                e.extra_metadata.get("is_important")
+                or e.extra_metadata.get("is_saved")
+                or e.extra_metadata.get("is_pinned")
+            )
+        )
+    ]
+    assert len(unvaulted_active_stale) == 0
 
 
 @pytest.mark.asyncio
@@ -149,19 +177,31 @@ async def test_github_trending_fetcher_api_fallback():
         GitHubTrendingFetcher,
     )
 
-    src = Source(name="Test Trending Fallback", category=Category.GITHUB_TRENDING, type=SourceType.GITHUB_TRENDING)
+    src = Source(
+        name="Test Trending Fallback",
+        category=Category.GITHUB_TRENDING,
+        type=SourceType.GITHUB_TRENDING,
+    )
     fetcher = GitHubTrendingFetcher(src)
 
     # Force scraping failure to verify fallback triggers
-    with patch.object(fetcher, "_fetch_raw_scraping", side_effect=Exception("Datacenter 429")):
-        with patch.object(fetcher, "_fetch_raw_api", return_value=[{
-            "title": "vllm-project/vllm: High-throughput LLM serving...",
-            "url": "https://github.com/vllm-project/vllm",
-            "content": "A high-throughput and memory-efficient LLM inference engine",
-            "published_at": datetime.utcnow(),
-            "tags": ["github", "trending", "open-source", "ai"],
-            "metadata": {"repo_name": "vllm-project/vllm", "stars": 30000},
-        }]):
+    with patch.object(
+        fetcher, "_fetch_raw_scraping", side_effect=Exception("Datacenter 429")
+    ):
+        with patch.object(
+            fetcher,
+            "_fetch_raw_api",
+            return_value=[
+                {
+                    "title": "vllm-project/vllm: High-throughput LLM serving...",
+                    "url": "https://github.com/vllm-project/vllm",
+                    "content": "A high-throughput and memory-efficient LLM inference engine",
+                    "published_at": datetime.utcnow(),
+                    "tags": ["github", "trending", "open-source", "ai"],
+                    "metadata": {"repo_name": "vllm-project/vllm", "stars": 30000},
+                }
+            ],
+        ):
             res = await fetcher.fetch()
             assert res.status.value == "success"
             assert len(res.entries) == 1

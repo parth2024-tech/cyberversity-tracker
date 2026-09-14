@@ -32,24 +32,47 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
     AI_ECOSYSTEM_MAP = {
         # Core ML Frameworks
         "PyTorch": [
-            "pytorch", "torch", "torchvision", "torchaudio", "torchtext",
-            "libtorch", "torchserve", "torchelastic", "torchx", "captum"
+            "pytorch",
+            "torch",
+            "torchvision",
+            "torchaudio",
+            "torchtext",
+            "libtorch",
+            "torchserve",
+            "torchelastic",
+            "torchx",
+            "captum",
         ],
         "TensorFlow": [
-            "tensorflow", "tf", "keras", "tflite", "tensorboard",
-            "tensorflowjs", "tfx", "tf_agents", "tf_probability"
+            "tensorflow",
+            "tf",
+            "keras",
+            "tflite",
+            "tensorboard",
+            "tensorflowjs",
+            "tfx",
+            "tf_agents",
+            "tf_probability",
         ],
         "JAX": ["jax", "flax", "optax", "chex", "gymnax"],
         "ONNX": ["onnx", "onnxruntime", "onnxsim"],
-
         # Model Hubs & Ecosystems
         "HuggingFace": [
-            "huggingface", "hf_", "transformers", "tokenizers", "datasets",
-            "accelerate", "peft", "trl", "optimum", "text-generation-inference",
-            "inference-endpoints", "hub", "safetensors"
+            "huggingface",
+            "hf_",
+            "transformers",
+            "tokenizers",
+            "datasets",
+            "accelerate",
+            "peft",
+            "trl",
+            "optimum",
+            "text-generation-inference",
+            "inference-endpoints",
+            "hub",
+            "safetensors",
         ],
         "ModelScope": ["modelscope", "model_scope"],
-
         # LLM Frameworks & Tools
         "LangChain": ["langchain", "langgraph", "langsmith", "langserve"],
         "LlamaIndex": ["llamaindex", "llama_index"],
@@ -57,14 +80,12 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
         "AutoGen": ["autogen", "microsoft.autogen"],
         "CrewAI": ["crewai"],
         "Haystack": ["haystack", "deepset"],
-
         # Local LLM Runtime
         "Ollama": ["ollama"],
         "vLLM": ["vllm", "vllm-engine"],
         "llama.cpp": ["llama.cpp", "llamacpp", "gguf", "ggml"],
         "LM Studio": ["lm studio", "lmstudio"],
         "Text Generation Inference": ["tgi", "text-generation-inference"],
-
         # RAG & Vector DBs
         "Chroma": ["chromadb", "chroma"],
         "Pinecone": ["pinecone"],
@@ -73,7 +94,6 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
         "Milvus": ["milvus", "zilliz"],
         "Redis": ["redis", "redisvl"],
         "Elasticsearch": ["elasticsearch", "opensearch"],
-
         # ML Platforms
         "MLflow": ["mlflow"],
         "Weights & Biases": ["wandb", "weights & biases", "weights and biases"],
@@ -82,43 +102,63 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
         "Ray": ["ray", "ray.io", "ray[train]", "ray[tune]", "ray[serve]"],
         "Flyte": ["flyte"],
         "Prefect": ["prefect"],
-
         # Training & Optimization
         "DeepSpeed": ["deepspeed"],
         "FSDP": ["fsdp", "fully sharded data parallel"],
         "LoRA/QLoRA": ["lora", "qlora", "peft"],
         "FlashAttention": ["flashattention", "flash attention"],
         "BitsAndBytes": ["bitsandbytes", "bnb"],
-
         # Hardware/Accelerators
         "CUDA": ["cuda", "cudnn", "nccl"],
         "ROCm": ["rocm", "hip"],
         "TPU": ["tpu", "google tpu", "cloud tpu"],
         "Neuron": ["neuron", "aws neuron", "inferentia", "trainium"],
-
         # Data & Feature Engineering
         "Polars": ["polars"],
         "DuckDB": ["duckdb"],
         "Dagster": ["dagster"],
         "Airflow": ["airflow"],
         "dbt": ["dbt"],
-
         # Security-Specific
-        "Adversarial Robustness": ["adversarial", "robustness", "certified defense", "randomized smoothing"],
+        "Adversarial Robustness": [
+            "adversarial",
+            "robustness",
+            "certified defense",
+            "randomized smoothing",
+        ],
         "Model Watermarking": ["watermark", "model watermark", "fingerprinting"],
         "Differential Privacy": ["differential privacy", "dp-sgd", "opacus"],
-        "Federated Learning": ["federated learning", "fl", "flower", "pytorch federated"],
+        "Federated Learning": [
+            "federated learning",
+            "fl",
+            "flower",
+            "pytorch federated",
+        ],
     }
 
     # CVE-to-AI mapping for known vulnerability patterns
     CVE_AI_PATTERNS = {
         "pickle": {
-            "ecosystems": ["PyTorch", "TensorFlow", "HuggingFace", "scikit-learn", "XGBoost", "LightGBM"],
+            "ecosystems": [
+                "PyTorch",
+                "TensorFlow",
+                "HuggingFace",
+                "scikit-learn",
+                "XGBoost",
+                "LightGBM",
+            ],
             "description": "Pickle deserialization vulnerability in model artifacts",
             "archetype": AttackArchetype.SUPPLY_CHAIN,
         },
         "yaml": {
-            "ecosystems": ["Kubernetes", "Airflow", "MLflow", "Kubeflow", "LangChain", "Hydra"],
+            "ecosystems": [
+                "Kubernetes",
+                "Airflow",
+                "MLflow",
+                "Kubeflow",
+                "LangChain",
+                "Hydra",
+            ],
             "description": "YAML deserialization leading to RCE",
             "archetype": AttackArchetype.RCE,
         },
@@ -128,17 +168,39 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
             "archetype": AttackArchetype.STANDARD_VULN,
         },
         "ssrf": {
-            "ecosystems": ["RAG Systems", "LangChain", "LlamaIndex", "HuggingFace", "Ollama"],
+            "ecosystems": [
+                "RAG Systems",
+                "LangChain",
+                "LlamaIndex",
+                "HuggingFace",
+                "Ollama",
+            ],
             "description": "SSRF via malicious model URLs or webhooks",
             "archetype": AttackArchetype.STANDARD_VULN,
         },
         "prompt_injection": {
-            "ecosystems": ["LangChain", "LlamaIndex", "Semantic Kernel", "AutoGen", "CrewAI", "OpenAI", "Anthropic"],
+            "ecosystems": [
+                "LangChain",
+                "LlamaIndex",
+                "Semantic Kernel",
+                "AutoGen",
+                "CrewAI",
+                "OpenAI",
+                "Anthropic",
+            ],
             "description": "Prompt injection in LLM applications",
             "archetype": AttackArchetype.PROMPT_INJECTION,
         },
         "rag_poisoning": {
-            "ecosystems": ["RAG Systems", "Chroma", "Pinecone", "Weaviate", "Qdrant", "LangChain", "LlamaIndex"],
+            "ecosystems": [
+                "RAG Systems",
+                "Chroma",
+                "Pinecone",
+                "Weaviate",
+                "Qdrant",
+                "LangChain",
+                "LlamaIndex",
+            ],
             "description": "RAG poisoning via malicious document injection",
             "archetype": AttackArchetype.RAG_POISONING,
         },
@@ -148,12 +210,25 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
             "archetype": AttackArchetype.MODEL_INVERSION,
         },
         "data_poisoning": {
-            "ecosystems": ["Training Pipelines", "MLflow", "ClearML", "Weights & Biases", "HuggingFace Datasets"],
+            "ecosystems": [
+                "Training Pipelines",
+                "MLflow",
+                "ClearML",
+                "Weights & Biases",
+                "HuggingFace Datasets",
+            ],
             "description": "Training data poisoning",
             "archetype": AttackArchetype.DATA_POISONING,
         },
         "supply_chain": {
-            "ecosystems": ["PyPI", "npm", "Docker Hub", "HuggingFace Hub", "ModelScope", "GitHub Actions"],
+            "ecosystems": [
+                "PyPI",
+                "npm",
+                "Docker Hub",
+                "HuggingFace Hub",
+                "ModelScope",
+                "GitHub Actions",
+            ],
             "description": "Supply chain compromise in ML dependencies",
             "archetype": AttackArchetype.SUPPLY_CHAIN,
         },
@@ -188,7 +263,9 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
 
         return list(ecosystems), archetype, description
 
-    def _calculate_blast_radius(self, ecosystems: list[str], category: Category, text: str) -> int:
+    def _calculate_blast_radius(
+        self, ecosystems: list[str], category: Category, text: str
+    ) -> int:
         """Calculate blast radius score based on ecosystem impact."""
         if not ecosystems:
             return 10
@@ -198,8 +275,16 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
 
         # Critical ecosystems get higher scores
         critical_ecosystems = {
-            "PyTorch", "TensorFlow", "HuggingFace", "LangChain", "Ollama", "vLLM",
-            "HuggingFace Hub", "PyPI", "Docker Hub", "GitHub Actions"
+            "PyTorch",
+            "TensorFlow",
+            "HuggingFace",
+            "LangChain",
+            "Ollama",
+            "vLLM",
+            "HuggingFace Hub",
+            "PyPI",
+            "Docker Hub",
+            "GitHub Actions",
         }
 
         critical_count = sum(1 for e in ecosystems if e in critical_ecosystems)
@@ -212,12 +297,17 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
             score += 15
 
         # Widely deployed indicators
-        if re.search(r"\b(widely|popular|millions|billions|enterprise|production|critical)\b", text.lower()):
+        if re.search(
+            r"\b(widely|popular|millions|billions|enterprise|production|critical)\b",
+            text.lower(),
+        ):
             score += 15
 
         return min(100, max(1, score))
 
-    def _detect_pre_cve_research(self, text: str, category: Category, ecosystems: list[str]) -> bool:
+    def _detect_pre_cve_research(
+        self, text: str, category: Category, ecosystems: list[str]
+    ) -> bool:
         """Detect pre-CVE academic research with AI implications."""
         if category != Category.AI_RESEARCH:
             return False
@@ -255,26 +345,36 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
 
     async def analyze(self, entry: Entry) -> AnalysisResult:
         """Analyze entry for blast radius."""
-        full_text = f"{entry.title} {entry.summary} {entry.metadata.get('description', '')}"
+        full_text = (
+            f"{entry.title} {entry.summary} {entry.metadata.get('description', '')}"
+        )
 
         # Detect AI ecosystems
         ai_ecosystems = self._detect_ai_ecosystems(full_text)
 
         # Correlate with CVE patterns
-        cve_ecosystems, archetype, cve_description = self._correlate_cve_with_ai(full_text)
+        cve_ecosystems, archetype, cve_description = self._correlate_cve_with_ai(
+            full_text
+        )
 
         # Combine ecosystems
         all_ecosystems = list(set(ai_ecosystems + cve_ecosystems))
 
         # Calculate blast radius
-        blast_radius = self._calculate_blast_radius(all_ecosystems, entry.category, full_text)
+        blast_radius = self._calculate_blast_radius(
+            all_ecosystems, entry.category, full_text
+        )
 
         # Pre-CVE detection
-        is_pre_cve = self._detect_pre_cve_research(full_text, entry.category, all_ecosystems)
+        is_pre_cve = self._detect_pre_cve_research(
+            full_text, entry.category, all_ecosystems
+        )
 
         # Weaponization (conservative for blast radius engine)
         weaponization = WeaponizationLevel.THEORETICAL.value
-        if re.search(r"\b(poc|proof.of.concept|exploit|weaponized|active)\b", full_text.lower()):
+        if re.search(
+            r"\b(poc|proof.of.concept|exploit|weaponized|active)\b", full_text.lower()
+        ):
             weaponization = WeaponizationLevel.POC_VERIFIED.value
 
         # Threat velocity based on blast radius and category
@@ -286,12 +386,17 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
         severity = min(100, blast_radius + 5)
 
         # Generate descriptions
-        attack_vector = cve_description or f"Blast radius analysis: {', '.join(all_ecosystems[:3])} potentially affected"
+        attack_vector = (
+            cve_description
+            or f"Blast radius analysis: {', '.join(all_ecosystems[:3])} potentially affected"
+        )
         if not cve_description:
             attack_vector = f"Cross-correlation analysis: Security disclosure impacts {', '.join(all_ecosystems[:3]) or 'General AI Stack'}"
 
-        risk_assessment = f"Blast radius impact: {len(all_ecosystems)} AI ecosystems potentially affected. " \
-                         f"Immediate assessment required for: {', '.join(all_ecosystems[:5])}"
+        risk_assessment = (
+            f"Blast radius impact: {len(all_ecosystems)} AI ecosystems potentially affected. "
+            f"Immediate assessment required for: {', '.join(all_ecosystems[:5])}"
+        )
 
         mitigation = (
             "1. Inventory affected AI/ML dependencies in your environment\n"

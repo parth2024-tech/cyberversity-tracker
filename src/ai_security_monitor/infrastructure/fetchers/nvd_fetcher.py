@@ -23,7 +23,9 @@ class NVDFetcher(BaseFetcher):
     async def _fetch_raw(self) -> list[dict]:
         """Fetch recent CVEs from NVD API."""
         # Last 24 hours by default
-        pub_start = (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.000")
+        pub_start = (datetime.now(UTC) - timedelta(days=1)).strftime(
+            "%Y-%m-%dT%H:%M:%S.000"
+        )
         url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
         params = {
             "pubStartDate": pub_start,
@@ -45,7 +47,9 @@ class NVDFetcher(BaseFetcher):
             cve = vuln.get("cve", {})
             cve_id = cve.get("id", "")
             descriptions = cve.get("descriptions", [])
-            description = next((d["value"] for d in descriptions if d["lang"] == "en"), "")
+            description = next(
+                (d["value"] for d in descriptions if d["lang"] == "en"), ""
+            )
 
             # Get CVSS score
             cvss_score = 0.0
@@ -58,19 +62,25 @@ class NVDFetcher(BaseFetcher):
                         cvss_score = cvss["baseScore"]
                         severity = cvss.get("baseSeverity", "UNKNOWN")
 
-            entries.append({
-                "title": f"{cve_id}: {description[:200]}",
-                "url": f"https://nvd.nist.gov/vuln/detail/{cve_id}",
-                "content": description,
-                "published_at": datetime.fromisoformat(cve.get("published", "").replace("Z", "+00:00")).replace(tzinfo=None) if cve.get("published") else datetime.now(UTC),
-                "tags": ["cve", "nvd", severity.lower()],
-                "metadata": {
-                    "cve_id": cve_id,
-                    "cvss_score": cvss_score,
-                    "severity": severity,
-                    "references": [ref["url"] for ref in cve.get("references", [])],
+            entries.append(
+                {
+                    "title": f"{cve_id}: {description[:200]}",
+                    "url": f"https://nvd.nist.gov/vuln/detail/{cve_id}",
+                    "content": description,
+                    "published_at": datetime.fromisoformat(
+                        cve.get("published", "").replace("Z", "+00:00")
+                    ).replace(tzinfo=None)
+                    if cve.get("published")
+                    else datetime.now(UTC),
+                    "tags": ["cve", "nvd", severity.lower()],
+                    "metadata": {
+                        "cve_id": cve_id,
+                        "cvss_score": cvss_score,
+                        "severity": severity,
+                        "references": [ref["url"] for ref in cve.get("references", [])],
+                    },
                 }
-            })
+            )
 
         return entries
 

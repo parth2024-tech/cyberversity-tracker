@@ -20,14 +20,29 @@ def _get_default_db_url() -> str:
 
 class DatabaseSettings(BaseSettings):
     """Database configuration."""
+
     url: str = Field(
-        default_factory=_get_default_db_url,
-        description="SQLAlchemy async database URL"
+        default_factory=_get_default_db_url, description="SQLAlchemy async database URL"
     )
-    retention_days: int = Field(default=7, description="Data retention period in days (1 week)")
-    hard_delete_grace_days: int = Field(default=30, description="Grace period in days before permanent deletion of soft-purged entries")
-    backup_interval_hours: int = Field(default=12, description="Interval in hours between automated SQLite database backups")
-    backup_retention_copies: int = Field(default=60, description="Number of rolling backups to retain (60 copies @ 12h = 30 days of disaster recovery)")
+    retention_days: int = Field(
+        default=7, description="Data retention period in days (1 week)"
+    )
+    auto_purge_enabled: bool = Field(
+        default=False,
+        description="Whether automatic background retention purge is enabled (False = manual cleanup only)",
+    )
+    hard_delete_grace_days: int = Field(
+        default=30,
+        description="Grace period in days before permanent deletion of soft-purged entries",
+    )
+    backup_interval_hours: int = Field(
+        default=12,
+        description="Interval in hours between automated SQLite database backups",
+    )
+    backup_retention_copies: int = Field(
+        default=60,
+        description="Number of rolling backups to retain (60 copies @ 12h = 30 days of disaster recovery)",
+    )
     echo: bool = Field(default=False, description="Log SQL queries")
     pool_size: int = Field(default=5, description="Connection pool size")
     max_overflow: int = Field(default=10, description="Max pool overflow")
@@ -37,6 +52,7 @@ class DatabaseSettings(BaseSettings):
 
 class LoggingSettings(BaseSettings):
     """Logging configuration."""
+
     level: str = Field(default="INFO", description="Log level")
     format: str = Field(default="json", description="Log format: json or console")
     file: Path | None = Field(default=None, description="Log file path")
@@ -46,6 +62,7 @@ class LoggingSettings(BaseSettings):
 
 class APISettings(BaseSettings):
     """FastAPI server configuration."""
+
     host: str = Field(default="0.0.0.0", description="Server host")
     port: int = Field(default=8000, description="Server port")
     reload: bool = Field(default=False, description="Auto-reload on changes")
@@ -57,58 +74,98 @@ class APISettings(BaseSettings):
 
 class SchedulerSettings(BaseSettings):
     """Background scheduler configuration."""
+
     enabled: bool = Field(default=True, description="Enable background scheduler")
     timezone: str = Field(default="UTC", description="Scheduler timezone")
-    fetch_interval_minutes: int = Field(default=10, description="Periodic radar sweep interval in minutes")
-    fetch_cron: str = Field(default="0 6 * * *", description="Fetch job cron (6 AM daily)")
-    digest_cron: str = Field(default="0 8 * * *", description="Digest job cron (8 AM daily)")
+    fetch_interval_minutes: int = Field(
+        default=10, description="Periodic radar sweep interval in minutes"
+    )
+    fetch_cron: str = Field(
+        default="0 6 * * *", description="Fetch job cron (6 AM daily)"
+    )
+    digest_cron: str = Field(
+        default="0 8 * * *", description="Digest job cron (8 AM daily)"
+    )
 
     model_config = SettingsConfigDict(env_prefix="SCHEDULER_")
 
 
 class FetchSettings(BaseSettings):
     """Feed fetching configuration."""
+
     timeout: int = Field(default=30, description="Request timeout in seconds")
     max_retries: int = Field(default=3, description="Max retry attempts")
-    retry_delay: float = Field(default=2.0, description="Initial retry delay in seconds")
+    retry_delay: float = Field(
+        default=2.0, description="Initial retry delay in seconds"
+    )
     user_agent: str = Field(
         default="AI-Security-Monitor/2.0 (+https://github.com/your-repo)",
-        description="HTTP User-Agent header"
+        description="HTTP User-Agent header",
     )
-    rate_limit_default: int = Field(default=3600, description="Default rate limit (seconds)")
-    max_concurrency: int = Field(default=12, description="Maximum concurrent fetch workers (adaptive semaphore cap)")
-    consecutive_failure_threshold: int = Field(default=3, description="Consecutive fetch failures before triggering alert")
-    langdetect_confidence_threshold: float = Field(default=0.7, description="Minimum confidence for language detection")
+    rate_limit_default: int = Field(
+        default=3600, description="Default rate limit (seconds)"
+    )
+    max_concurrency: int = Field(
+        default=12,
+        description="Maximum concurrent fetch workers (adaptive semaphore cap)",
+    )
+    consecutive_failure_threshold: int = Field(
+        default=3, description="Consecutive fetch failures before triggering alert"
+    )
+    langdetect_confidence_threshold: float = Field(
+        default=0.7, description="Minimum confidence for language detection"
+    )
 
     model_config = SettingsConfigDict(env_prefix="FETCH_")
 
 
 class AnalyzerSettings(BaseSettings):
     """AI analysis configuration."""
+
     enabled: bool = Field(default=True, description="Enable AI analysis")
-    default_model: str = Field(default="heuristic", description="Default analyzer: heuristic, ollama, groq, auto/offline")
-    ollama_host: str = Field(default="http://localhost:11434", description="Ollama API host")
+    default_model: str = Field(
+        default="heuristic",
+        description="Default analyzer: heuristic, ollama, groq, auto/offline",
+    )
+    ollama_host: str = Field(
+        default="http://localhost:11434", description="Ollama API host"
+    )
     ollama_model: str = Field(default="llama3.1:8b", description="Ollama model name")
     groq_api_key: str | None = Field(default=None, description="Groq API key")
-    groq_model: str = Field(default="llama-3.1-70b-versatile", description="Groq model name")
+    groq_model: str = Field(
+        default="llama-3.1-70b-versatile", description="Groq model name"
+    )
     max_tokens: int = Field(default=400, description="Max tokens for LLM response")
     temperature: float = Field(default=0.1, description="LLM temperature")
 
     # Local LLM routing via Hermes gateway
-    use_local_llm: bool = Field(default=True, description="Route LLM calls through local gateway (auto/offline)")
-    local_model: str = Field(default="auto/offline", description="Local model via gateway")
+    use_local_llm: bool = Field(
+        default=True, description="Route LLM calls through local gateway (auto/offline)"
+    )
+    local_model: str = Field(
+        default="auto/offline", description="Local model via gateway"
+    )
 
     # Autonomous High-Priority Triage Queue
-    autonomous_triage_enabled: bool = Field(default=True, description="Enable autonomous high-priority LLM triage")
-    triage_velocity_threshold: int = Field(default=70, description="Minimum threat velocity to auto-enqueue for LLM triage")
-    triage_concurrency: int = Field(default=1, description="Max concurrent LLM triage jobs")
-    triage_interval_seconds: float = Field(default=2.0, description="Pause between queued triage tasks")
+    autonomous_triage_enabled: bool = Field(
+        default=True, description="Enable autonomous high-priority LLM triage"
+    )
+    triage_velocity_threshold: int = Field(
+        default=70, description="Minimum threat velocity to auto-enqueue for LLM triage"
+    )
+    triage_concurrency: int = Field(
+        default=1, description="Max concurrent LLM triage jobs"
+    )
+    triage_interval_seconds: float = Field(
+        default=2.0, description="Pause between queued triage tasks"
+    )
 
     model_config = SettingsConfigDict(env_prefix="ANALYZER_")
 
 
 class DeliverySettings(BaseSettings):
     """Delivery channels configuration."""
+
     # Console (always available)
     console_enabled: bool = Field(default=True, description="Enable console output")
 
@@ -117,7 +174,9 @@ class DeliverySettings(BaseSettings):
     email_smtp_server: str = Field(default="smtp.gmail.com", description="SMTP server")
     email_smtp_port: int = Field(default=587, description="SMTP port")
     email_username: str | None = Field(default=None, description="SMTP username")
-    email_password: str | None = Field(default=None, description="SMTP password (app password)")
+    email_password: str | None = Field(
+        default=None, description="SMTP password (app password)"
+    )
     email_from: str | None = Field(default=None, description="From email address")
     email_to: str | None = Field(default=None, description="To email address")
 
@@ -127,8 +186,12 @@ class DeliverySettings(BaseSettings):
     slack_channel: str | None = Field(default=None, description="Slack channel")
 
     # Telegram
-    telegram_enabled: bool = Field(default=False, description="Enable Telegram delivery")
-    telegram_bot_token: str | None = Field(default=None, description="Telegram bot token")
+    telegram_enabled: bool = Field(
+        default=False, description="Enable Telegram delivery"
+    )
+    telegram_bot_token: str | None = Field(
+        default=None, description="Telegram bot token"
+    )
     telegram_chat_id: str | None = Field(default=None, description="Telegram chat ID")
 
     model_config = SettingsConfigDict(env_prefix="DELIVERY_")
@@ -136,10 +199,14 @@ class DeliverySettings(BaseSettings):
 
 class Settings(BaseSettings):
     """Main application settings."""
+
     # App metadata
     app_name: str = Field(default="AI Security Monitor", description="Application name")
     app_version: str = Field(default="2.0.0", description="Application version")
-    environment: str = Field(default="development", description="Environment: development, staging, production")
+    environment: str = Field(
+        default="development",
+        description="Environment: development, staging, production",
+    )
     debug: bool = Field(default=False, description="Debug mode")
 
     # Sub-settings

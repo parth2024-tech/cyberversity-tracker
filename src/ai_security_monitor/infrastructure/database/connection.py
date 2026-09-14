@@ -25,7 +25,11 @@ def _ensure_seed_database(db_path: str) -> None:
     import sqlite3
 
     # Multi-path search for seed candidate database
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+    base_dir = os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
+    )
     candidates = [
         os.path.join(base_dir, "data", "seed_monitor.db"),
         os.path.join(os.getcwd(), "data", "seed_monitor.db"),
@@ -55,7 +59,9 @@ def _ensure_seed_database(db_path: str) -> None:
                 needs_seeding = True
             else:
                 # Re-seed if existing database contains legacy non-AI categories
-                cursor.execute("SELECT count(*) FROM entries WHERE category IN ('vulnerabilities', 'cybersecurity', 'exploits_tricks')")
+                cursor.execute(
+                    "SELECT count(*) FROM entries WHERE category IN ('vulnerabilities', 'cybersecurity', 'exploits_tricks')"
+                )
                 legacy_row = cursor.fetchone()
                 if legacy_row and legacy_row[0] > 0:
                     needs_seeding = True
@@ -107,7 +113,12 @@ class DatabaseManager:
         if self._url.startswith("sqlite"):
             import os
             import shutil
-            db_path = self._url.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "").split("?")[0]
+
+            db_path = (
+                self._url.replace("sqlite+aiosqlite:///", "")
+                .replace("sqlite:///", "")
+                .split("?")[0]
+            )
             dir_name = os.path.dirname(db_path)
             if dir_name:
                 os.makedirs(dir_name, exist_ok=True)
@@ -131,6 +142,7 @@ class DatabaseManager:
 
         # Enable WAL mode for SQLite
         if self._url.startswith("sqlite"):
+
             @event.listens_for(engine.sync_engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
                 cursor = dbapi_connection.cursor()
@@ -138,9 +150,9 @@ class DatabaseManager:
                 cursor.execute("PRAGMA busy_timeout=30000")
                 cursor.execute("PRAGMA synchronous=NORMAL")
                 # Performance tuning
-                cursor.execute("PRAGMA cache_size=-16000")      # 16MB page cache
-                cursor.execute("PRAGMA temp_store=MEMORY")      # temp tables in RAM
-                cursor.execute("PRAGMA mmap_size=268435456")    # 256MB memory-mapped I/O
+                cursor.execute("PRAGMA cache_size=-16000")  # 16MB page cache
+                cursor.execute("PRAGMA temp_store=MEMORY")  # temp tables in RAM
+                cursor.execute("PRAGMA mmap_size=268435456")  # 256MB memory-mapped I/O
                 try:
                     cursor.execute("PRAGMA optimize")
                 except Exception:
@@ -187,9 +199,14 @@ class DatabaseManager:
         """Initialize database - create tables if they don't exist."""
         db_path = None
         if self._url.startswith("sqlite"):
-            db_path = self._url.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "").split("?")[0]
+            db_path = (
+                self._url.replace("sqlite+aiosqlite:///", "")
+                .replace("sqlite:///", "")
+                .split("?")[0]
+            )
             _ensure_seed_database(db_path)
         from ai_security_monitor.infrastructure.database.models import Base
+
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
@@ -197,12 +214,18 @@ class DatabaseManager:
         if self._url.startswith("sqlite"):
             try:
                 async with self.engine.begin() as conn:
-                    await conn.execute(text("ALTER TABLE entries ADD COLUMN is_purged BOOLEAN DEFAULT 0"))
+                    await conn.execute(
+                        text(
+                            "ALTER TABLE entries ADD COLUMN is_purged BOOLEAN DEFAULT 0"
+                        )
+                    )
             except Exception:
                 pass
             try:
                 async with self.engine.begin() as conn:
-                    await conn.execute(text("ALTER TABLE entries ADD COLUMN purged_at DATETIME"))
+                    await conn.execute(
+                        text("ALTER TABLE entries ADD COLUMN purged_at DATETIME")
+                    )
             except Exception:
                 pass
 

@@ -1,6 +1,7 @@
 """
 Unit tests for Custom Watchlist Rules and Threat Hunting.
 """
+
 from datetime import datetime
 from uuid import uuid4
 
@@ -14,7 +15,7 @@ def test_watchlist_rule_keyword_matching():
     rule = WatchlistRule(
         name="DeepSeek / vLLM Watchlist",
         keywords=["deepseek", "vllm", "lcel"],
-        enabled=True
+        enabled=True,
     )
 
     entry1 = Entry(
@@ -24,7 +25,7 @@ def test_watchlist_rule_keyword_matching():
         content_hash="hash1",
         category=Category.AI_RESEARCH,
         summary="Researchers demonstrated prompt leaking on DeepSeek MoE architecture.",
-        published_at=datetime.utcnow()
+        published_at=datetime.utcnow(),
     )
 
     entry2 = Entry(
@@ -34,7 +35,7 @@ def test_watchlist_rule_keyword_matching():
         content_hash="hash2",
         category=Category.CYBERSECURITY,
         summary="Buffer overflow in older Linux kernel module.",
-        published_at=datetime.utcnow()
+        published_at=datetime.utcnow(),
     )
 
     assert rule.matches(entry1) is True
@@ -47,7 +48,7 @@ def test_watchlist_rule_category_and_velocity_constraints():
         keywords=["pytorch"],
         categories=[Category.VULNERABILITIES],
         min_threat_velocity=70,
-        enabled=True
+        enabled=True,
     )
 
     # Low velocity or wrong category -> False
@@ -58,7 +59,7 @@ def test_watchlist_rule_category_and_velocity_constraints():
         content_hash="hash3",
         category=Category.AI_TECH,
         summary="New features in PyTorch 2.5.",
-        published_at=datetime.utcnow()
+        published_at=datetime.utcnow(),
     )
     assert rule.matches(entry_wrong_cat) is False
 
@@ -77,18 +78,14 @@ def test_watchlist_rule_category_and_velocity_constraints():
             mitigation="Patch",
             threat_velocity=85,
             severity_index=90,
-            model=AnalysisModel.HEURISTIC
-        )
+            model=AnalysisModel.HEURISTIC,
+        ),
     )
     assert rule.matches(entry_high_threat) is True
 
 
 def test_watchlist_rule_disabled():
-    rule = WatchlistRule(
-        name="Disabled Rule",
-        keywords=["langchain"],
-        enabled=False
-    )
+    rule = WatchlistRule(name="Disabled Rule", keywords=["langchain"], enabled=False)
     entry = Entry(
         source_id=uuid4(),
         title="LangChain prompt injection advisory",
@@ -96,7 +93,7 @@ def test_watchlist_rule_disabled():
         content_hash="hash5",
         category=Category.VULNERABILITIES,
         summary="Critical vulnerability in LangChain LCEL parser.",
-        published_at=datetime.utcnow()
+        published_at=datetime.utcnow(),
     )
     assert rule.matches(entry) is False
 
@@ -108,7 +105,7 @@ async def test_watchlist_repository_crud(test_uow):
             name="My Custom Cloud Watchlist",
             keywords=["langchain", "ollama", "anthropic"],
             min_threat_velocity=50,
-            enabled=True
+            enabled=True,
         )
         saved = await uow.watchlist.add(rule)
         assert saved.id is not None

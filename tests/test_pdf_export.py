@@ -1,6 +1,7 @@
 """
 Test suite for PDF Export Service and Entries PDF Export Endpoints.
 """
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -26,7 +27,7 @@ def test_pdf_export_service_dossier():
                 "mitigation": "Upgrade LangChain to >= 0.3.15 and enable embedding verification",
                 "affected_ecosystem": ["LangChain", "ChromaDB", "OpenAI"],
                 "is_pre_cve_warning": True,
-            }
+            },
         },
         {
             "id": "test-id-2",
@@ -44,14 +45,14 @@ def test_pdf_export_service_dossier():
                 "mitigation": "Enable differential privacy in training loop",
                 "affected_ecosystem": ["Ollama", "PyTorch"],
                 "is_pre_cve_warning": False,
-            }
-        }
+            },
+        },
     ]
 
     pdf_bytes = PdfExportService.generate_dossier_pdf(
         entries=sample_entries,
         title="Test Threat Dossier",
-        subtitle="Unit Test Dossier"
+        subtitle="Unit Test Dossier",
     )
 
     assert isinstance(pdf_bytes, bytes)
@@ -62,7 +63,9 @@ def test_pdf_export_service_dossier():
 @pytest.mark.asyncio
 async def test_api_entries_export_pdf_get():
     app = create_app()
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         resp = await client.get("/api/entries/export/pdf?limit=5")
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "application/pdf"
@@ -74,11 +77,13 @@ async def test_api_entries_export_pdf_get():
 @pytest.mark.asyncio
 async def test_api_entries_export_pdf_post():
     app = create_app()
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         payload = {
             "ids": ["dummy-id-1", "dummy-id-2"],
             "title": "Custom Investigation Pinboard Dossier",
-            "subtitle": "Test Scoped Export"
+            "subtitle": "Test Scoped Export",
         }
         resp = await client.post("/api/entries/export/pdf", json=payload)
         assert resp.status_code == 200

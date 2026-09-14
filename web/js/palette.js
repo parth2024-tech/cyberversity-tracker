@@ -21,7 +21,8 @@ const DEFAULT_PALETTE_ACTIONS = [
   { id: 'action-export-md', title: 'Export Threat Intelligence Markdown Brief', subtitle: 'Download formatted report for Notion/Obsidian/GitHub', icon: 'file-text', badge: 'REPORT', type: 'action', run: () => typeof exportMarkdownReport === 'function' ? exportMarkdownReport() : null },
   { id: 'action-export-stix', title: 'Export Threat Intel STIX 2.1 Bundle', subtitle: 'Download JSON indicators for SIEM / MISP ingestion', icon: 'shield', badge: 'STIX 2.1', type: 'action', run: () => typeof exportStixJson === 'function' ? exportStixJson() : null },
   { id: 'action-watchlist', title: 'Manage Threat Hunting Watchlists', subtitle: 'Configure keyword rules and alerts', icon: 'target', badge: 'RULES', type: 'action', run: () => typeof openWatchlistModal === 'function' ? openWatchlistModal() : null },
-  { id: 'action-audio', title: 'Toggle Cybernetic Audio Soundscape', subtitle: 'Switch audio synthesis alerts ON/OFF', icon: 'volume-2', badge: 'AUDIO', type: 'action', run: () => typeof toggleAudio === 'function' ? toggleAudio() : null }
+  { id: 'action-audio', title: 'Toggle Cybernetic Audio Soundscape', subtitle: 'Switch audio synthesis alerts ON/OFF', icon: 'volume-2', badge: 'AUDIO', type: 'action', run: () => typeof toggleAudio === 'function' ? toggleAudio() : null },
+  { id: 'action-manual-cleanup', title: 'Manual Intel Cleanup & Retention Control', subtitle: 'Prune older data on demand (Auto-cleanup is disabled)', icon: 'trash-2', badge: 'CLEANUP', type: 'action', run: () => typeof openPurgeModal === 'function' ? openPurgeModal() : null }
 ];
 
 function openCommandPalette() {
@@ -189,6 +190,7 @@ document.addEventListener('keydown', (e) => {
     if (typeof closeSourcesModal === 'function') closeSourcesModal();
     if (typeof closeTelegramModal === 'function') closeTelegramModal();
     if (typeof closeKeyboardModal === 'function') closeKeyboardModal();
+    if (typeof closePurgeModal === 'function') closePurgeModal();
     closeCommandPalette();
     const cards = document.querySelectorAll('#feed-container .feed-card');
     cards.forEach(c => c.classList.remove('card-focused'));

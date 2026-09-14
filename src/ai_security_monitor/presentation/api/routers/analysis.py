@@ -1,6 +1,7 @@
 """
 Analysis API router.
 """
+
 from __future__ import annotations
 
 from uuid import uuid4
@@ -29,7 +30,11 @@ class QuickAnalyzeRequest(BaseModel):
 @analysis_router.post("/triage")
 async def quick_analyze(req: QuickAnalyzeRequest):
     """Perform on-demand AI triage and architecture correlation on raw text using heuristic or real Ollama LLM."""
-    analyzer_name = "ollama" if req.model in ["ollama", "llm", "groq", "openrouter", "local"] else "heuristic"
+    analyzer_name = (
+        "ollama"
+        if req.model in ["ollama", "llm", "groq", "openrouter", "local"]
+        else "heuristic"
+    )
     try:
         triage_analyzer = analyzer_registry.create(analyzer_name)
     except Exception:
@@ -61,7 +66,7 @@ async def quick_analyze(req: QuickAnalyzeRequest):
         summary=summary_text,
         published_at=None,
         category=cat,
-        tags=req.tags
+        tags=req.tags,
     )
 
     triage_res = await triage_analyzer.analyze(dummy_entry)
@@ -75,12 +80,13 @@ async def quick_analyze(req: QuickAnalyzeRequest):
         "affected_ecosystem": blast_res.affected_ecosystem or [],
         "attack_vector": triage_res.attack_vector or "Unspecified attack vector",
         "risk_assessment": triage_res.risk_assessment or "Pending assessment",
-        "mitigation": triage_res.mitigation or "Follow industry best practices and apply latest patches.",
+        "mitigation": triage_res.mitigation
+        or "Follow industry best practices and apply latest patches.",
         "attack_archetype": triage_res.attack_archetype,
         "weaponization_potential": triage_res.weaponization_potential,
         "model": triage_res.model or analyzer_name,
         "triage": triage_res,
-        "blast_radius": blast_res
+        "blast_radius": blast_res,
     }
 
 
@@ -89,4 +95,7 @@ async def run_batch_analysis(background_tasks: BackgroundTasks):
     """Trigger background batch analysis on any unanalyzed entries."""
     service = MonitorService()
     background_tasks.add_task(service.fetch_all)
-    return {"status": "initiated", "message": "Batch analysis pipeline queued in background."}
+    return {
+        "status": "initiated",
+        "message": "Batch analysis pipeline queued in background.",
+    }

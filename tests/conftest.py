@@ -1,6 +1,7 @@
 """
 Pytest configuration and global fixtures.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -33,7 +34,9 @@ async def test_db_engine():
 @pytest_asyncio.fixture
 async def test_uow(test_db_engine):
     """Provide isolated UnitOfWork for unit tests."""
-    session_factory = async_sessionmaker(test_db_engine, class_=AsyncSession, expire_on_commit=False)
+    session_factory = async_sessionmaker(
+        test_db_engine, class_=AsyncSession, expire_on_commit=False
+    )
     session = session_factory()
     uow = UnitOfWork(session=session)
     yield uow
@@ -50,7 +53,7 @@ def sample_source() -> Source:
         url="http://export.arxiv.org/api/query",
         query="cat:cs.CR",
         rate_limit_seconds=10,
-        enabled=True
+        enabled=True,
     )
 
 
@@ -65,5 +68,5 @@ def sample_entry(sample_source: Source) -> Entry:
         summary="Novel adversarial prompt injection and jailbreak vector exploiting multimodal alignment.",
         published_at=datetime.utcnow(),
         category=Category.AI_RESEARCH,
-        tags=["jailbreak", "llm", "adversarial"]
+        tags=["jailbreak", "llm", "adversarial"],
     )

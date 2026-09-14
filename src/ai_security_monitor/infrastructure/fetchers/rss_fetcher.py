@@ -76,7 +76,9 @@ class RSSFetcher(BaseFetcher):
         # cookie-gate, etc.) there is no point trying to parse it as XML.
         # Raise immediately so the caller records a proper error rather than
         # silently reporting 0 entries + status: success.
-        ct_header = response.headers.get("content-type", "").lower().split(";")[0].strip()
+        ct_header = (
+            response.headers.get("content-type", "").lower().split(";")[0].strip()
+        )
         first_bytes = raw_bytes[:100].lower().replace(b" ", b"")
         is_html_response = ct_header in ("text/html",) and (
             first_bytes.startswith((b"<!doctype", b"<html"))
@@ -206,8 +208,12 @@ class RSSFetcher(BaseFetcher):
                 if content:
                     first_line = content.split("\n")[0].strip()
                     first_line = re.sub(r"^#+\s*", "", first_line)
-                    first_line = re.sub(r"\[.*?\]|\(.*?\)|<.*?>", "", first_line).strip()
-                    if len(first_line) > 10 and not first_line.startswith(("http", "```")):
+                    first_line = re.sub(
+                        r"\[.*?\]|\(.*?\)|<.*?>", "", first_line
+                    ).strip()
+                    if len(first_line) > 10 and not first_line.startswith(
+                        ("http", "```")
+                    ):
                         snippet = f": {first_line[:90]}"
 
                 if snippet:
@@ -215,22 +221,24 @@ class RSSFetcher(BaseFetcher):
                 elif not clean_title.lower().startswith(prefix.lower()):
                     clean_title = f"{prefix} Release {clean_title}"
 
-            entries.append({
-                "title": clean_title,
-                "url": getattr(item, "link", ""),
-                "content": content,
-                "published_at": published_at,
-                "tags": [tag.term for tag in getattr(item, "tags", [])],
-                "metadata": {
-                    "feed_title": feed.feed.get("title", ""),
-                    "feed_link": feed.feed.get("link", ""),
-                    "region": (self.source.config or {}).get("region", "global"),
-                    "country": (self.source.config or {}).get("country", "GLOBAL"),
-                    "provenance_type": (self.source.config or {}).get(
-                        "provenance_type", "rss_feed"
-                    ),
-                },
-            })
+            entries.append(
+                {
+                    "title": clean_title,
+                    "url": getattr(item, "link", ""),
+                    "content": content,
+                    "published_at": published_at,
+                    "tags": [tag.term for tag in getattr(item, "tags", [])],
+                    "metadata": {
+                        "feed_title": feed.feed.get("title", ""),
+                        "feed_link": feed.feed.get("link", ""),
+                        "region": (self.source.config or {}).get("region", "global"),
+                        "country": (self.source.config or {}).get("country", "GLOBAL"),
+                        "provenance_type": (self.source.config or {}).get(
+                            "provenance_type", "rss_feed"
+                        ),
+                    },
+                }
+            )
 
         return entries
 
@@ -275,7 +283,10 @@ class RSSFetcher(BaseFetcher):
 
         # 2. Strip inline event handlers and dangerous protocols
         text = re.sub(
-            r"\bon\w+\s*=\s*([\"\'][^\"\']*[\"\']|[^\s>]+)", "", text, flags=re.IGNORECASE
+            r"\bon\w+\s*=\s*([\"\'][^\"\']*[\"\']|[^\s>]+)",
+            "",
+            text,
+            flags=re.IGNORECASE,
         )
         text = re.sub(
             r"(javascript|vbscript|data):[^\s\"'<>]+", "", text, flags=re.IGNORECASE

@@ -1,6 +1,7 @@
 """
 Rate limiter configuration for API endpoints protection.
 """
+
 from __future__ import annotations
 
 from slowapi import Limiter

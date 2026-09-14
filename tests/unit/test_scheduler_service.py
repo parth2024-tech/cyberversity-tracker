@@ -1,4 +1,5 @@
 """Unit tests for SchedulerService."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,7 +13,14 @@ from ai_security_monitor.application.services.scheduler_service import Scheduler
 @pytest.fixture
 def mock_monitor_service() -> MagicMock:
     svc = MagicMock()
-    svc.fetch_all = AsyncMock(return_value={"sources_fetched": 3, "total_new": 10, "success": 2, "total_sources": 3})
+    svc.fetch_all = AsyncMock(
+        return_value={
+            "sources_fetched": 3,
+            "total_new": 10,
+            "success": 2,
+            "total_sources": 3,
+        }
+    )
     svc.purge_stale_entries = AsyncMock(return_value={"purged": 0})
     return svc
 
@@ -20,12 +28,16 @@ def mock_monitor_service() -> MagicMock:
 @pytest.fixture
 def mock_newspaper_service() -> MagicMock:
     svc = MagicMock()
-    svc.generate_edition = AsyncMock(return_value={"edition_number": 1001, "total_stories": 50})
+    svc.generate_edition = AsyncMock(
+        return_value={"edition_number": 1001, "total_stories": 50}
+    )
     return svc
 
 
 @pytest.fixture
-def scheduler(mock_monitor_service: MagicMock, mock_newspaper_service: MagicMock) -> SchedulerService:
+def scheduler(
+    mock_monitor_service: MagicMock, mock_newspaper_service: MagicMock
+) -> SchedulerService:
     return SchedulerService(
         monitor_service=mock_monitor_service,
         newspaper_service=mock_newspaper_service,

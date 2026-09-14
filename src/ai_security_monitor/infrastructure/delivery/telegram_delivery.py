@@ -27,18 +27,24 @@ class TelegramDelivery(BaseDelivery):
         if missing:
             raise DeliveryConfigError(self.channel_name, missing)
 
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
+    async def send_digest(
+        self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]
+    ) -> DeliveryResult:
         """Send digest to Telegram."""
         try:
             message = self._build_message(digest, entries_with_analysis)
             await self._send_message(message)
 
             await self._publish_delivery_event(digest.id, True)
-            return DeliveryResult(success=True, channel=self.channel_name, message="Telegram message sent")
+            return DeliveryResult(
+                success=True, channel=self.channel_name, message="Telegram message sent"
+            )
 
         except Exception as e:
             await self._publish_delivery_event(digest.id, False, str(e))
-            return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
+            return DeliveryResult(
+                success=False, channel=self.channel_name, error=str(e)
+            )
 
     async def send_alert(self, entry: Entry, analysis: Analysis) -> DeliveryResult:
         """Send alert to Telegram."""
@@ -46,7 +52,7 @@ class TelegramDelivery(BaseDelivery):
             message = (
                 f"🚨 <b>High-Velocity Threat Alert</b>\n\n"
                 f"<b>Title:</b> {entry.title}\n"
-                f"<b>URL:</b> <a href=\"{entry.url}\">Link</a>\n"
+                f'<b>URL:</b> <a href="{entry.url}">Link</a>\n'
                 f"<b>Velocity:</b> {analysis.threat_velocity}/100\n"
                 f"<b>Severity:</b> {analysis.severity_index}/100\n"
                 f"<b>Archetype:</b> {analysis.attack_archetype} ({analysis.weaponization_potential})\n"
@@ -54,9 +60,13 @@ class TelegramDelivery(BaseDelivery):
                 f"<b>Mitigation:</b> {analysis.mitigation}"
             )
             await self._send_message(message)
-            return DeliveryResult(success=True, channel=self.channel_name, message="Telegram alert sent")
+            return DeliveryResult(
+                success=True, channel=self.channel_name, message="Telegram alert sent"
+            )
         except Exception as e:
-            return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
+            return DeliveryResult(
+                success=False, channel=self.channel_name, error=str(e)
+            )
 
     async def send_newspaper_document(
         self,
@@ -74,7 +84,7 @@ class TelegramDelivery(BaseDelivery):
                 return DeliveryResult(
                     success=False,
                     channel=self.channel_name,
-                    error="Telegram bot_token or chat_id is missing."
+                    error="Telegram bot_token or chat_id is missing.",
                 )
 
             p_path = Path(pdf_path)
@@ -84,7 +94,7 @@ class TelegramDelivery(BaseDelivery):
                 return DeliveryResult(
                     success=False,
                     channel=self.channel_name,
-                    error=f"PDF file not found at {pdf_path}"
+                    error=f"PDF file not found at {pdf_path}",
                 )
 
             caption = (
@@ -115,10 +125,12 @@ class TelegramDelivery(BaseDelivery):
             return DeliveryResult(
                 success=True,
                 channel=self.channel_name,
-                message=f"Newspaper PDF Edition #{edition_number} delivered to Telegram chat {chat_id}"
+                message=f"Newspaper PDF Edition #{edition_number} delivered to Telegram chat {chat_id}",
             )
         except Exception as e:
-            return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
+            return DeliveryResult(
+                success=False, channel=self.channel_name, error=str(e)
+            )
 
     async def _send_message(self, text: str) -> None:
         """Send message via Telegram Bot API."""
@@ -134,7 +146,9 @@ class TelegramDelivery(BaseDelivery):
             response = await client.post(url, json=payload)
             response.raise_for_status()
 
-    def _build_message(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> str:
+    def _build_message(
+        self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]
+    ) -> str:
         """Build digest message (Telegram has 4096 char limit)."""
         header = (
             f"📋 <b>{digest.schedule.title()} Digest</b>\n"
@@ -147,21 +161,27 @@ class TelegramDelivery(BaseDelivery):
         for category, entries in digest.entries_by_category.items():
             if not entries:
                 continue
-            cat_entries = [(e, a) for e, a in entries_with_analysis if e.category.value == category]
+            cat_entries = [
+                (e, a) for e, a in entries_with_analysis if e.category.value == category
+            ]
             if not cat_entries:
                 continue
 
-            cat_header = f"📂 <b>{category.replace('_', ' ').title()}</b> ({len(cat_entries)})\n"
+            cat_header = (
+                f"📂 <b>{category.replace('_', ' ').title()}</b> ({len(cat_entries)})\n"
+            )
             cat_parts = [cat_header]
 
             for entry, analysis in cat_entries[:3]:  # Limit per category
-                item = f"• <a href=\"{entry.url}\">{self._escape_html(entry.title)}</a>"
+                item = f'• <a href="{entry.url}">{self._escape_html(entry.title)}</a>'
                 if analysis:
                     item += f"\n  ⚡ {analysis.threat_velocity}/100 | ⚠️ {analysis.severity_index}/100"
                     if analysis.is_pre_cve_warning:
                         item += " 🚨 <b>PRE-CVE</b>"
                     item += f"\n  🎯 {analysis.attack_archetype} ({analysis.weaponization_potential})"
-                    item += f"\n  💥 {', '.join(analysis.affected_ecosystem[:3]) or 'N/A'}"
+                    item += (
+                        f"\n  💥 {', '.join(analysis.affected_ecosystem[:3]) or 'N/A'}"
+                    )
                 cat_parts.append(item)
 
             if len(cat_entries) > 3:
@@ -179,6 +199,7 @@ class TelegramDelivery(BaseDelivery):
 
     def _escape_html(self, text: str) -> str:
         import html
+
         return html.escape(str(text or ""), quote=False)
 
 

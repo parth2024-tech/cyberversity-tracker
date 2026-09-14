@@ -14,6 +14,7 @@ logger = get_logger(__name__)
 @dataclass
 class AnalysisResult:
     """Result of analysis operation."""
+
     entry_id: UUID
     attack_vector: str
     risk_assessment: str
@@ -58,7 +59,9 @@ class BaseAnalyzer(ABC):
         """Analyze a single entry."""
         ...
 
-    async def analyze_batch(self, entries: list[Entry]) -> list[tuple[UUID, AnalysisResult]]:
+    async def analyze_batch(
+        self, entries: list[Entry]
+    ) -> list[tuple[UUID, AnalysisResult]]:
         """Analyze multiple entries."""
         results = []
         for entry in entries:
@@ -83,11 +86,13 @@ class BaseAnalyzer(ABC):
                     model=result.model,
                     confidence=result.confidence,
                 )
-                await event_bus.publish(EntryAnalyzedEvent(
-                    aggregate_id=entry.id,
-                    entry_id=entry.id,
-                    analysis=analysis,
-                ))
+                await event_bus.publish(
+                    EntryAnalyzedEvent(
+                        aggregate_id=entry.id,
+                        entry_id=entry.id,
+                        analysis=analysis,
+                    )
+                )
             except Exception as e:
                 logger.error(f"Analysis failed for entry {entry.id}: {e}")
                 results.append((entry.id, None))

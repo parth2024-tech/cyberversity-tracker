@@ -15,6 +15,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class Base(DeclarativeBase):
     """Base class for all models."""
+
     pass
 
 
@@ -25,10 +26,13 @@ def generate_uuid() -> str:
 
 class SourceModel(Base):
     """Source configuration model."""
+
     __tablename__ = "sources"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     url: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -39,41 +43,64 @@ class SourceModel(Base):
     last_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     last_entries_new: Mapped[int] = mapped_column(Integer, default=0)
     config: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
     # Relationships (lazy="select" prevents massive eager loads of thousands of entries when querying sources)
-    entries: Mapped[list[EntryModel]] = relationship(back_populates="source", lazy="select")
-    fetch_logs: Mapped[list[FetchLogModel]] = relationship(back_populates="source", lazy="select")
-
-    __table_args__ = (
-        Index("ix_sources_category_enabled", "category", "enabled"),
+    entries: Mapped[list[EntryModel]] = relationship(
+        back_populates="source", lazy="select"
     )
+    fetch_logs: Mapped[list[FetchLogModel]] = relationship(
+        back_populates="source", lazy="select"
+    )
+
+    __table_args__ = (Index("ix_sources_category_enabled", "category", "enabled"),)
 
 
 class EntryModel(Base):
     """Intelligence entry model."""
+
     __tablename__ = "entries"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    source_id: Mapped[str] = mapped_column(String(36), ForeignKey("sources.id"), nullable=False, index=True)
+    source_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("sources.id"), nullable=False, index=True
+    )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
-    content_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    content_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, nullable=False, index=True
+    )
     summary: Mapped[str] = mapped_column(Text, default="")
     published_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
-    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     extra_metadata: Mapped[dict] = mapped_column("metadata_json", JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
-    is_purged: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0", index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+    is_purged: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", index=True
+    )
     purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
-    source: Mapped[SourceModel] = relationship(back_populates="entries", lazy="selectin")
-    analysis: Mapped[AnalysisModel | None] = relationship(back_populates="entry", uselist=False, lazy="selectin")
+    source: Mapped[SourceModel] = relationship(
+        back_populates="entries", lazy="selectin"
+    )
+    analysis: Mapped[AnalysisModel | None] = relationship(
+        back_populates="entry", uselist=False, lazy="selectin"
+    )
 
     __table_args__ = (
         Index("ix_entries_category_published", "category", "published_at"),
@@ -83,10 +110,13 @@ class EntryModel(Base):
 
 class AnalysisModel(Base):
     """AI analysis model."""
+
     __tablename__ = "entry_analysis"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    entry_id: Mapped[str] = mapped_column(String(36), ForeignKey("entries.id"), unique=True, nullable=False, index=True)
+    entry_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("entries.id"), unique=True, nullable=False, index=True
+    )
     attack_vector: Mapped[str] = mapped_column(Text, nullable=False)
     risk_assessment: Mapped[str] = mapped_column(Text, nullable=False)
     mitigation: Mapped[str] = mapped_column(Text, nullable=False)
@@ -96,15 +126,25 @@ class AnalysisModel(Base):
     affected_ecosystem: Mapped[list[str]] = mapped_column(JSON, default=list)
     is_pre_cve_warning: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     attack_archetype: Mapped[str] = mapped_column(String(100), default="")
-    weaponization_potential: Mapped[str] = mapped_column(String(50), default="Theoretical")
-    mitre_attack_id: Mapped[str | None] = mapped_column(String(50), nullable=True, default=None, index=True)
-    mitre_technique: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    weaponization_potential: Mapped[str] = mapped_column(
+        String(50), default="Theoretical"
+    )
+    mitre_attack_id: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, default=None, index=True
+    )
+    mitre_technique: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, default=None
+    )
     model: Mapped[str] = mapped_column(String(50), default="heuristic")
     confidence: Mapped[float] = mapped_column(default=1.0)
     overall_confidence: Mapped[float] = mapped_column(default=0.7)
     evidence_version: Mapped[str] = mapped_column(String(20), default="v1")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
     # Relationships
     entry: Mapped[EntryModel] = relationship(back_populates="analysis", lazy="selectin")
@@ -123,17 +163,22 @@ class AnalysisModel(Base):
 
 class FetchLogModel(Base):
     """Fetch operation log model."""
+
     __tablename__ = "fetch_log"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    source_id: Mapped[str] = mapped_column(String(36), ForeignKey("sources.id"), nullable=False, index=True)
+    source_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("sources.id"), nullable=False, index=True
+    )
     source_name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     entries_new: Mapped[int] = mapped_column(Integer, default=0)
     entries_total: Mapped[int] = mapped_column(Integer, default=0)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
-    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
 
     # Relationships
     source: Mapped[SourceModel] = relationship(back_populates="fetch_logs")
@@ -146,25 +191,29 @@ class FetchLogModel(Base):
 
 class DigestModel(Base):
     """Generated digest model."""
+
     __tablename__ = "digests"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
-    schedule: Mapped[str] = mapped_column(String(20), nullable=False, index=True)  # daily, weekly
+    schedule: Mapped[str] = mapped_column(
+        String(20), nullable=False, index=True
+    )  # daily, weekly
     entries_by_category: Mapped[dict] = mapped_column(JSON, default=dict)
     total_entries: Mapped[int] = mapped_column(Integer, default=0)
     period_start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     delivered: Mapped[bool] = mapped_column(Boolean, default=False)
     delivery_channels: Mapped[list[str]] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
-
-    __table_args__ = (
-        Index("ix_digests_schedule_created", "schedule", "created_at"),
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
     )
+
+    __table_args__ = (Index("ix_digests_schedule_created", "schedule", "created_at"),)
 
 
 class WatchlistRuleModel(Base):
     """User-defined framework watchlist and threat alert rule model."""
+
     __tablename__ = "watchlist_rules"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
@@ -173,32 +222,49 @@ class WatchlistRuleModel(Base):
     categories: Mapped[list[str]] = mapped_column(JSON, default=list)
     min_threat_velocity: Mapped[int] = mapped_column(Integer, default=0)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
 
 class AnalysisEvidenceModel(Base):
     """Epistemic evidence tracking for analysis claims."""
+
     __tablename__ = "analysis_evidence"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    analysis_id: Mapped[str] = mapped_column(String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True)
-    claim_type: Mapped[str] = mapped_column(String(20), nullable=False)  # fact, inference, hypothesis, assumption, unknown
+    analysis_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True
+    )
+    claim_type: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )  # fact, inference, hypothesis, assumption, unknown
     claim_target: Mapped[str] = mapped_column(Text, nullable=False)
     claim_value: Mapped[str] = mapped_column(Text, nullable=False)
     confidence: Mapped[float] = mapped_column(default=0.0)
     evidence_json: Mapped[str | None] = mapped_column(Text, nullable=True)
-    method: Mapped[str] = mapped_column(String(20), nullable=False)  # heuristic, llm, hybrid
+    method: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )  # heuristic, llm, hybrid
     model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
 
 class AnalysisOutcomeModel(Base):
     """Ground truth outcomes for calibration."""
+
     __tablename__ = "analysis_outcome"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    analysis_id: Mapped[str] = mapped_column(String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True)
-    outcome_type: Mapped[str] = mapped_column(String(20), nullable=False)  # telegram_sent, user_dismissed, user_escalated, false_positive, confirmed
+    analysis_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True
+    )
+    outcome_type: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )  # telegram_sent, user_dismissed, user_escalated, false_positive, confirmed
     outcome_value: Mapped[str | None] = mapped_column(Text, nullable=True)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
-
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )

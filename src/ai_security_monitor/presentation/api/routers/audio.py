@@ -4,6 +4,7 @@ Provides platform-independent, broadcast-grade neural audio streaming
 using Microsoft Edge Neural TTS with Google TTS fallback and disk caching.
 Eliminates all OS-level speech-dispatcher dependencies.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -55,21 +56,65 @@ _cleanup_audio_cache()
 DEFAULT_VOICE = "en-US-GuyNeural"
 
 CURATED_VOICES = [
-    {"id": "en-US-GuyNeural", "name": "Guy (US Anchor)", "gender": "Male", "locale": "en-US"},
-    {"id": "en-US-ChristopherNeural", "name": "Christopher (US Executive)", "gender": "Male", "locale": "en-US"},
-    {"id": "en-US-AriaNeural", "name": "Aria (US Intel Briefer)", "gender": "Female", "locale": "en-US"},
-    {"id": "en-US-JennyNeural", "name": "Jenny (US Natural)", "gender": "Female", "locale": "en-US"},
-    {"id": "en-GB-SoniaNeural", "name": "Sonia (UK News)", "gender": "Female", "locale": "en-GB"},
-    {"id": "en-GB-RyanNeural", "name": "Ryan (UK Broadcast)", "gender": "Male", "locale": "en-GB"},
-    {"id": "en-IN-PrabhatNeural", "name": "Prabhat (IN Clear)", "gender": "Male", "locale": "en-IN"},
-    {"id": "en-AU-WilliamMultilingualNeural", "name": "William (AU Tactical)", "gender": "Male", "locale": "en-AU"},
+    {
+        "id": "en-US-GuyNeural",
+        "name": "Guy (US Anchor)",
+        "gender": "Male",
+        "locale": "en-US",
+    },
+    {
+        "id": "en-US-ChristopherNeural",
+        "name": "Christopher (US Executive)",
+        "gender": "Male",
+        "locale": "en-US",
+    },
+    {
+        "id": "en-US-AriaNeural",
+        "name": "Aria (US Intel Briefer)",
+        "gender": "Female",
+        "locale": "en-US",
+    },
+    {
+        "id": "en-US-JennyNeural",
+        "name": "Jenny (US Natural)",
+        "gender": "Female",
+        "locale": "en-US",
+    },
+    {
+        "id": "en-GB-SoniaNeural",
+        "name": "Sonia (UK News)",
+        "gender": "Female",
+        "locale": "en-GB",
+    },
+    {
+        "id": "en-GB-RyanNeural",
+        "name": "Ryan (UK Broadcast)",
+        "gender": "Male",
+        "locale": "en-GB",
+    },
+    {
+        "id": "en-IN-PrabhatNeural",
+        "name": "Prabhat (IN Clear)",
+        "gender": "Male",
+        "locale": "en-IN",
+    },
+    {
+        "id": "en-AU-WilliamMultilingualNeural",
+        "name": "William (AU Tactical)",
+        "gender": "Male",
+        "locale": "en-AU",
+    },
 ]
 
 
 class TTSRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=5000, description="Text to synthesize")
+    text: str = Field(
+        ..., min_length=1, max_length=5000, description="Text to synthesize"
+    )
     voice: str = Field(default=DEFAULT_VOICE, description="Voice ID")
-    rate: str = Field(default="+0%", description="Speech rate adjustment, e.g. +0%, +25%")
+    rate: str = Field(
+        default="+0%", description="Speech rate adjustment, e.g. +0%, +25%"
+    )
 
 
 def _get_cache_path(text: str, voice: str, rate: str) -> Path:
@@ -79,7 +124,9 @@ def _get_cache_path(text: str, voice: str, rate: str) -> Path:
     return CACHE_DIR / f"{file_hash}.mp3"
 
 
-async def _synthesize_edge_tts(text: str, voice: str, rate: str, output_path: Path) -> bool:
+async def _synthesize_edge_tts(
+    text: str, voice: str, rate: str, output_path: Path
+) -> bool:
     """Synthesize speech using edge-tts."""
     try:
         import edge_tts
@@ -108,7 +155,9 @@ async def _synthesize_gtts(text: str, output_path: Path) -> bool:
         return False
 
 
-async def _generate_audio_file(text: str, voice: str = DEFAULT_VOICE, rate: str = "+0%") -> Path:
+async def _generate_audio_file(
+    text: str, voice: str = DEFAULT_VOICE, rate: str = "+0%"
+) -> Path:
     """Check cache or synthesize audio file."""
     output_path = _get_cache_path(text, voice, rate)
     if output_path.exists() and output_path.stat().st_size > 0:

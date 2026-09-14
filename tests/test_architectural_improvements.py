@@ -9,6 +9,7 @@ Tests for 14 Architectural & Reliability Improvements:
 - Consecutive failure tracking & alerts
 - Automated SQLite backups
 """
+
 import asyncio
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -33,61 +34,59 @@ from ai_security_monitor.infrastructure.database.unit_of_work import (
 
 
 @pytest.mark.asyncio
-async def test_soft_delete_and_hard_delete_lifecycle():
+async def test_soft_delete_and_hard_delete_lifecycle(test_uow):
     """Verify soft-delete marks is_purged=True and hides from list queries, while hard_delete purges after grace window."""
-    await db_manager.init_db()
+    uow = test_uow
+    # Create an old entry
+    old_time = datetime.now(UTC) - timedelta(days=15)
+    entry = Entry(
+        source_id=uuid4(),
+        title="Old AI Model Architecture Test",
+        url=f"https://example.com/test-soft-delete-{uuid4()}",
+        content_hash=f"hash-{uuid4().hex[:60]}",
+        summary="Testing soft delete lifecycle",
+        category=Category.AI_MODELS,
+        published_at=old_time,
+        fetched_at=old_time,
+    )
+    saved = await uow.entries.add(entry)
+    await uow.commit()
 
-    async with SqlAlchemyUnitOfWork() as uow:
-        # Create an old entry
-        old_time = datetime.now(UTC) - timedelta(days=15)
-        entry = Entry(
-            source_id=uuid4(),
-            title="Old AI Model Architecture Test",
-            url=f"https://example.com/test-soft-delete-{uuid4()}",
-            content_hash=f"hash-{uuid4().hex[:60]}",
-            summary="Testing soft delete lifecycle",
-            category=Category.AI_MODELS,
-            published_at=old_time,
-            fetched_at=old_time,
-        )
-        saved = await uow.entries.add(entry)
-        await uow.commit()
+    # 1. Verify entry is visible before purge
+    listed = await uow.entries.list()
+    assert any(e.id == saved.id for e in listed)
 
-        # 1. Verify entry is visible before purge
-        listed = await uow.entries.list()
-        assert any(e.id == saved.id for e in listed)
+    # 2. Run soft purge (older than 7 days)
+    purged_count = await uow.entries.purge_old_entries(older_than_days=7)
+    assert purged_count >= 1
+    await uow.commit()
 
-        # 2. Run soft purge (older than 7 days)
-        purged_count = await uow.entries.purge_old_entries(older_than_days=7)
-        assert purged_count >= 1
-        await uow.commit()
+    # 3. Verify entry is now excluded from list queries (soft-deleted)
+    listed_after = await uow.entries.list()
+    assert not any(e.id == saved.id for e in listed_after)
 
-        # 3. Verify entry is now excluded from list queries (soft-deleted)
-        listed_after = await uow.entries.list()
-        assert not any(e.id == saved.id for e in listed_after)
+    # 4. But entry still exists in DB with is_purged=True
+    raw_model = await uow.session.get(EntryModel, str(saved.id))
+    assert raw_model is not None
+    assert raw_model.is_purged is True
+    assert raw_model.purged_at is not None
 
-        # 4. But entry still exists in DB with is_purged=True
-        raw_model = await uow.session.get(EntryModel, str(saved.id))
-        assert raw_model is not None
-        assert raw_model.is_purged is True
-        assert raw_model.purged_at is not None
+    # 5. Hard delete with 30-day grace window should NOT delete it yet (purged today)
+    early_del = await uow.entries.hard_delete_purged(grace_days=30)
+    assert early_del == 0
+    await uow.commit()
+    raw_still = await uow.session.get(EntryModel, str(saved.id))
+    assert raw_still is not None
 
-        # 5. Hard delete with 30-day grace window should NOT delete it yet (purged today)
-        early_del = await uow.entries.hard_delete_purged(grace_days=30)
-        assert early_del == 0
-        await uow.commit()
-        raw_still = await uow.session.get(EntryModel, str(saved.id))
-        assert raw_still is not None
+    # 6. If we simulate purged_at was 40 days ago, hard_delete removes it permanently
+    raw_still.purged_at = datetime.now(UTC) - timedelta(days=40)
+    await uow.session.flush()
+    hard_count = await uow.entries.hard_delete_purged(grace_days=30)
+    assert hard_count >= 1
+    await uow.commit()
 
-        # 6. If we simulate purged_at was 40 days ago, hard_delete removes it permanently
-        raw_still.purged_at = datetime.now(UTC) - timedelta(days=40)
-        await uow.session.flush()
-        hard_count = await uow.entries.hard_delete_purged(grace_days=30)
-        assert hard_count >= 1
-        await uow.commit()
-
-        raw_final = await uow.session.get(EntryModel, str(saved.id))
-        assert raw_final is None
+    raw_final = await uow.session.get(EntryModel, str(saved.id))
+    assert raw_final is None
 
 
 def test_translation_confidence_threshold():
@@ -118,11 +117,33 @@ def test_translation_confidence_threshold():
 async def test_adaptive_concurrency_and_priority_queue():
     """Verify sources are sorted by AI ecosystem priority and concurrency scales adaptively."""
     # Mock sources of different categories
-    s1 = Source(name="Other Tech", category=Category.AI_TECH, type=SourceType.RSS, id=uuid4())
-    s2 = Source(name="DeepSeek Models", category=Category.AI_MODELS, type=SourceType.RSS, id=uuid4())
-    s3 = Source(name="Arxiv Papers", category=Category.AI_RESEARCH, type=SourceType.ARXIV, id=uuid4())
-    s4 = Source(name="GitHub Trending", category=Category.GITHUB_TRENDING, type=SourceType.GITHUB_TRENDING, id=uuid4())
-    s5 = Source(name="Inference Tools", category=Category.CYBER_TOOLS, type=SourceType.RSS, id=uuid4())
+    s1 = Source(
+        name="Other Tech", category=Category.AI_TECH, type=SourceType.RSS, id=uuid4()
+    )
+    s2 = Source(
+        name="DeepSeek Models",
+        category=Category.AI_MODELS,
+        type=SourceType.RSS,
+        id=uuid4(),
+    )
+    s3 = Source(
+        name="Arxiv Papers",
+        category=Category.AI_RESEARCH,
+        type=SourceType.ARXIV,
+        id=uuid4(),
+    )
+    s4 = Source(
+        name="GitHub Trending",
+        category=Category.GITHUB_TRENDING,
+        type=SourceType.GITHUB_TRENDING,
+        id=uuid4(),
+    )
+    s5 = Source(
+        name="Inference Tools",
+        category=Category.CYBER_TOOLS,
+        type=SourceType.RSS,
+        id=uuid4(),
+    )
 
     sources = [s1, s2, s3, s4, s5]
 
@@ -155,8 +176,10 @@ async def test_websocket_backpressure_timeout():
 
     # Slow client that stalls longer than timeout
     slow_client = AsyncMock()
+
     async def _stalled_send(_msg):
         await asyncio.sleep(5.0)
+
     slow_client.send_text = _stalled_send
     slow_client.close = AsyncMock()
 
@@ -189,8 +212,10 @@ async def test_consecutive_failure_tracking_and_alert():
         mock_resp.status_code = 200
         mock_post.return_value = mock_resp
 
-        with patch.object(settings.delivery, "telegram_bot_token", "fake-token"), \
-             patch.object(settings.delivery, "telegram_chat_id", "fake-chat"):
+        with (
+            patch.object(settings.delivery, "telegram_bot_token", "fake-token"),
+            patch.object(settings.delivery, "telegram_chat_id", "fake-chat"),
+        ):
             ok = await send_source_failure_alert("test_source", 3, "Connection refused")
             assert ok is True
             mock_post.assert_called_once()

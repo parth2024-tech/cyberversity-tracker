@@ -5,6 +5,7 @@ Provides real-time neural translation endpoints for arbitrary text and intellige
 Automatically detects source languages (Chinese, Russian, Japanese, German, etc.)
 and converts them into clear English security advisories.
 """
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -25,8 +26,15 @@ translation_router = APIRouter(prefix="/translate", tags=["Translation"])
 
 
 class TranslateTextRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=10000, description="Text to translate into English")
-    target: str = Field(default="en", description="Target language code (defaults to 'en')")
+    text: str = Field(
+        ...,
+        min_length=1,
+        max_length=10000,
+        description="Text to translate into English",
+    )
+    target: str = Field(
+        default="en", description="Target language code (defaults to 'en')"
+    )
 
 
 class TranslateTextResponse(BaseModel):
@@ -46,7 +54,9 @@ class BackfillTranslationRequest(BaseModel):
 @translation_router.post("/", response_model=TranslateTextResponse)
 async def translate_text_endpoint(req: TranslateTextRequest):
     """Translate arbitrary text into English with automatic language detection."""
-    trans, lang, is_trans = await translation_service.translate_text_async(req.text, target=req.target)
+    trans, lang, is_trans = await translation_service.translate_text_async(
+        req.text, target=req.target
+    )
     name, flag = LANGUAGE_NAMES.get(lang, (lang.upper(), "🌐"))
 
     return TranslateTextResponse(
@@ -85,8 +95,12 @@ async def translate_entry_endpoint(entry_id: str):
             "original_title": entry.metadata.get("original_title", entry.title),
             "original_summary": entry.metadata.get("original_summary", entry.summary),
             "detected_language": entry.metadata.get("detected_language", "en"),
-            "detected_language_name": entry.metadata.get("detected_language_name", "English"),
-            "detected_language_flag": entry.metadata.get("detected_language_flag", "🌐"),
+            "detected_language_name": entry.metadata.get(
+                "detected_language_name", "English"
+            ),
+            "detected_language_flag": entry.metadata.get(
+                "detected_language_flag", "🌐"
+            ),
             "is_translated": entry.metadata.get("is_translated", False),
         }
 
@@ -99,7 +113,9 @@ async def backfill_translations(req: BackfillTranslationRequest):
     """Backfill translations for existing foreign language entries in the database."""
     translated_count = 0
     async with SqlAlchemyUnitOfWork() as uow:
-        entries = await uow.entries.list(pagination=PaginationParams(limit=req.limit, offset=0))
+        entries = await uow.entries.list(
+            pagination=PaginationParams(limit=req.limit, offset=0)
+        )
         for entry in entries:
             # Check if entry is not already translated and contains non-English text
             if not entry.metadata.get("is_translated"):
@@ -115,5 +131,5 @@ async def backfill_translations(req: BackfillTranslationRequest):
         "status": "success",
         "processed": len(entries),
         "translated": translated_count,
-        "message": f"Successfully translated {translated_count} foreign intelligence entries to English."
+        "message": f"Successfully translated {translated_count} foreign intelligence entries to English.",
     }

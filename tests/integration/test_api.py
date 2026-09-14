@@ -1,6 +1,7 @@
 """
 Integration tests for FastAPI REST API.
 """
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -27,7 +28,7 @@ async def test_quick_analyze_endpoint():
             "title": "Critical RCE vulnerability in LangChain and PyTorch worker nodes",
             "summary": "Attacker can supply malicious pickle payload to execute arbitrary code.",
             "category": "vulnerabilities",
-            "tags": ["pytorch", "langchain", "rce"]
+            "tags": ["pytorch", "langchain", "rce"],
         }
         resp = await client.post("/api/analysis/quick", json=payload)
         assert resp.status_code == 200

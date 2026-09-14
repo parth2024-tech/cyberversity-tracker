@@ -1,6 +1,7 @@
 """
 Tests for Permanent Important Vault and Deep Technical Analysis Dossier.
 """
+
 from datetime import datetime, timedelta
 from uuid import uuid4
 
@@ -37,12 +38,17 @@ def test_deep_analysis_service_model_weights():
     assert "DeepSeek-R1" in dossier["title"]
     assert dossier["category"] == "ai_models"
     assert "32B" in dossier["compute_profile"]["parameter_scale"]
-    assert "128K" in dossier["executive_summary"] or "32B" in dossier["executive_summary"]
+    assert (
+        "128K" in dossier["executive_summary"] or "32B" in dossier["executive_summary"]
+    )
     assert "KV-Cache" in dossier["architectural_deep_dive"]
     assert len(dossier["benchmarks"]) >= 3
     assert any("AIME" in b["benchmark"] for b in dossier["benchmarks"])
     assert len(dossier["actionable_checklist"]) >= 3
-    assert "vLLM" in dossier["actionable_checklist"][1] or "FP8" in dossier["actionable_checklist"][1]
+    assert (
+        "vLLM" in dossier["actionable_checklist"][1]
+        or "FP8" in dossier["actionable_checklist"][1]
+    )
     assert dossier["is_important"] is True
     assert "Reasoning" in dossier["importance_reason"]
 
@@ -85,59 +91,55 @@ def test_deep_analysis_service_arxiv_paper():
 
 
 @pytest.mark.asyncio
-async def test_repository_permanent_vault_exemption_from_purge():
-    async with SqlAlchemyUnitOfWork() as uow:
-        # 1. Create a normal old entry (older than 7 days)
-        old_time = datetime.utcnow() - timedelta(days=12)
-        normal_old = Entry(
-            id=uuid4(),
-            source_id=uuid4(),
-            published_at=old_time,
-            title="Regular Temporary News Dispatch",
-            url="https://example.com/temp-news",
-            content_hash=f"hash-temp-{uuid4().hex[:8]}",
-            summary="A regular dispatch that should be cleaned up by rolling retention.",
-            category=Category.AI_TECH,
-            metadata={"is_important": False},
-        )
-        normal_old.fetched_at = old_time
-        await uow.entries.add(normal_old)
+async def test_repository_permanent_vault_exemption_from_purge(test_uow):
+    uow = test_uow
+    # 1. Create a normal old entry (older than 7 days)
+    old_time = datetime.utcnow() - timedelta(days=12)
+    normal_old = Entry(
+        id=uuid4(),
+        source_id=uuid4(),
+        published_at=old_time,
+        title="Regular Temporary News Dispatch",
+        url="https://example.com/temp-news",
+        content_hash=f"hash-temp-{uuid4().hex[:8]}",
+        summary="A regular dispatch that should be cleaned up by rolling retention.",
+        category=Category.AI_TECH,
+        metadata={"is_important": False},
+    )
+    normal_old.fetched_at = old_time
+    await uow.entries.add(normal_old)
 
-        # 2. Create a vaulted old entry (older than 7 days, but is_important=True)
-        vaulted_old = Entry(
-            id=uuid4(),
-            source_id=uuid4(),
-            published_at=old_time,
-            title="Seminal Foundation Breakthrough (Vault Kept)",
-            url="https://example.com/landmark-breakthrough",
-            content_hash=f"hash-vault-{uuid4().hex[:8]}",
-            summary="Landmark open-weights milestone that must survive all rolling purges permanently.",
-            category=Category.AI_MODELS,
-            metadata={"is_important": True, "importance_reason": "Frontier Landmark Milestone"},
-        )
-        vaulted_old.fetched_at = old_time
-        await uow.entries.add(vaulted_old)
-        await uow.commit()
+    # 2. Create a vaulted old entry (older than 7 days, but is_important=True)
+    vaulted_old = Entry(
+        id=uuid4(),
+        source_id=uuid4(),
+        published_at=old_time,
+        title="Seminal Foundation Breakthrough (Vault Kept)",
+        url="https://example.com/landmark-breakthrough",
+        content_hash=f"hash-vault-{uuid4().hex[:8]}",
+        summary="Landmark open-weights milestone that must survive all rolling purges permanently.",
+        category=Category.AI_MODELS,
+        metadata={
+            "is_important": True,
+            "importance_reason": "Frontier Landmark Milestone",
+        },
+    )
+    vaulted_old.fetched_at = old_time
+    await uow.entries.add(vaulted_old)
+    await uow.commit()
 
-    try:
-        # Run purge older than 7 days
-        async with SqlAlchemyUnitOfWork() as uow:
-            purged = await uow.entries.purge_old_entries(older_than_days=7)
-            await uow.commit()
-            assert purged >= 1
+    # Run purge older than 7 days
+    purged = await uow.entries.purge_old_entries(older_than_days=7)
+    await uow.commit()
+    assert purged >= 1
 
-        # Verify normal entry was purged, but vaulted entry remains intact
-        async with SqlAlchemyUnitOfWork() as uow:
-            check_normal = await uow.entries.get(normal_old.id)
-            check_vaulted = await uow.entries.get(vaulted_old.id)
+    # Verify normal entry was purged, but vaulted entry remains intact
+    check_normal = await uow.entries.get(normal_old.id)
+    check_vaulted = await uow.entries.get(vaulted_old.id)
 
-            assert check_normal is None, "Normal 12-day old entry should have been purged!"
-            assert check_vaulted is not None, "Vaulted entry MUST survive rolling purge permanently!"
-            assert check_vaulted.metadata.get("is_important") is True
-    finally:
-        async with SqlAlchemyUnitOfWork() as uow:
-            await uow.entries.delete(vaulted_old.id)
-            await uow.commit()
+    assert check_normal is None, "Normal 12-day old entry should have been purged!"
+    assert check_vaulted is not None, "Vaulted entry MUST survive rolling purge permanently!"
+    assert check_vaulted.metadata.get("is_important") is True
 
 
 @pytest.mark.asyncio
@@ -159,7 +161,9 @@ async def test_vault_toggle_and_user_notes_persistence():
 
     # 1. Toggle importance on
     async with SqlAlchemyUnitOfWork() as uow:
-        updated = await uow.entries.toggle_importance(entry_id, reason="User Selected Key Tool")
+        updated = await uow.entries.toggle_importance(
+            entry_id, reason="User Selected Key Tool"
+        )
         await uow.commit()
         assert updated.metadata["is_important"] is True
         assert updated.metadata["importance_reason"] == "User Selected Key Tool"
@@ -169,7 +173,7 @@ async def test_vault_toggle_and_user_notes_persistence():
     async with SqlAlchemyUnitOfWork() as uow:
         noted = await uow.entries.save_user_notes(
             entry_id,
-            "Deployed on 4x RTX 4090 cluster with RadixAttention. Latency dropped by 45%."
+            "Deployed on 4x RTX 4090 cluster with RadixAttention. Latency dropped by 45%.",
         )
         await uow.commit()
         assert "4x RTX 4090" in noted.metadata["user_notes"]
@@ -199,7 +203,9 @@ async def test_api_vault_and_deep_analysis_endpoints():
         target_id = target_entry["id"]
 
         # 1. Test POST /api/entries/{id}/toggle-vault
-        toggle_res = await client.post(f"/api/entries/{target_id}/toggle-vault?reason=Critical+Reasoning+Model")
+        toggle_res = await client.post(
+            f"/api/entries/{target_id}/toggle-vault?reason=Critical+Reasoning+Model"
+        )
         assert toggle_res.status_code == 200
         toggle_data = toggle_res.json()
         assert toggle_data["status"] == "ok"
@@ -209,7 +215,9 @@ async def test_api_vault_and_deep_analysis_endpoints():
         notes_payload = {
             "notes": "Verified locally: Token-per-second throughput is exceptional on modern TensorRT kernels."
         }
-        notes_res = await client.post(f"/api/entries/{target_id}/notes", json=notes_payload)
+        notes_res = await client.post(
+            f"/api/entries/{target_id}/notes", json=notes_payload
+        )
         assert notes_res.status_code == 200
         notes_data = notes_res.json()
         assert notes_data["status"] == "ok"

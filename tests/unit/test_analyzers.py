@@ -1,6 +1,7 @@
 """
 Unit tests for Analyzer plugins (Heuristic, Blast Radius, LLM).
 """
+
 import pytest
 
 from ai_security_monitor.infrastructure.analyzers.blast_radius_analyzer import (
@@ -61,16 +62,23 @@ async def test_mitre_attack_and_weaponization_detection(sample_entry):
 @pytest.mark.asyncio
 async def test_heuristic_analyzer_ai_innovation(sample_entry):
     from ai_security_monitor.domain.entities import Category
+
     analyzer = HeuristicAnalyzer()
 
     # Test Trending GitHub repo
     sample_entry.category = Category.GITHUB_TRENDING
     sample_entry.title = "vllm: Easy, fast, and cheap LLM serving for everyone"
-    sample_entry.summary = "High-throughput and memory-efficient inference and serving engine for LLMs."
+    sample_entry.summary = (
+        "High-throughput and memory-efficient inference and serving engine for LLMs."
+    )
     sample_entry.metadata = {"repo_name": "vllm-project/vllm", "language": "Python"}
     res_repo = await analyzer.analyze(sample_entry)
 
-    assert "Infrastructure" in res_repo.attack_vector or "Tool" in res_repo.attack_vector or "Open-Source" in res_repo.risk_assessment
+    assert (
+        "Infrastructure" in res_repo.attack_vector
+        or "Tool" in res_repo.attack_vector
+        or "Open-Source" in res_repo.risk_assessment
+    )
     assert res_repo.attack_archetype == "Trending Repository"
     assert res_repo.threat_velocity >= 50
 

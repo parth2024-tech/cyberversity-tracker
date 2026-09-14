@@ -16,7 +16,9 @@ from ai_security_monitor.infrastructure.delivery.base import (
 )
 
 
-def _smtp_send(smtp_server: str, smtp_port: int, username: str, password: str, msg: MIMEMultipart) -> None:
+def _smtp_send(
+    smtp_server: str, smtp_port: int, username: str, password: str, msg: MIMEMultipart
+) -> None:
     """Run SMTP send synchronously — called via asyncio.to_thread() to avoid blocking the event loop."""
     with smtplib.SMTP(smtp_server, smtp_port) as server:
         server.starttls()
@@ -47,18 +49,29 @@ class EmailDelivery(BaseDelivery):
         return "email"
 
     def validate_config(self) -> None:
-        required = ["smtp_server", "smtp_port", "username", "password", "from_email", "to_email"]
+        required = [
+            "smtp_server",
+            "smtp_port",
+            "username",
+            "password",
+            "from_email",
+            "to_email",
+        ]
         missing = [k for k in required if not self.config.get(k)]
         if missing:
             raise DeliveryConfigError(self.channel_name, missing)
 
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
+    async def send_digest(
+        self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]
+    ) -> DeliveryResult:
         """Send digest via email."""
         try:
             msg = MIMEMultipart()
             msg["From"] = self.config["from_email"]
             msg["To"] = self.config["to_email"]
-            msg["Subject"] = f"{settings.app_name} - {digest.schedule.title()} Digest ({digest.total_entries} items)"
+            msg["Subject"] = (
+                f"{settings.app_name} - {digest.schedule.title()} Digest ({digest.total_entries} items)"
+            )
 
             html = self._build_html_body(digest, entries_with_analysis)
             msg.attach(MIMEText(html, "html"))
@@ -74,11 +87,15 @@ class EmailDelivery(BaseDelivery):
             )
 
             await self._publish_delivery_event(digest.id, True)
-            return DeliveryResult(success=True, channel=self.channel_name, message="Email sent")
+            return DeliveryResult(
+                success=True, channel=self.channel_name, message="Email sent"
+            )
 
         except Exception as e:
             await self._publish_delivery_event(digest.id, False, str(e))
-            return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
+            return DeliveryResult(
+                success=False, channel=self.channel_name, error=str(e)
+            )
 
     async def send_alert(self, entry: Entry, analysis: Analysis) -> DeliveryResult:
         """Send alert email."""
@@ -112,9 +129,13 @@ class EmailDelivery(BaseDelivery):
                 msg,
             )
 
-            return DeliveryResult(success=True, channel=self.channel_name, message="Alert email sent")
+            return DeliveryResult(
+                success=True, channel=self.channel_name, message="Alert email sent"
+            )
         except Exception as e:
-            return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
+            return DeliveryResult(
+                success=False, channel=self.channel_name, error=str(e)
+            )
 
     async def send_newspaper_pdf(
         self,
@@ -133,7 +154,7 @@ class EmailDelivery(BaseDelivery):
                 return DeliveryResult(
                     success=False,
                     channel=self.channel_name,
-                    error="Recipient or sender email is missing."
+                    error="Recipient or sender email is missing.",
                 )
 
             import html as _html
@@ -142,11 +163,13 @@ class EmailDelivery(BaseDelivery):
             msg = MIMEMultipart()
             msg["From"] = from_email
             msg["To"] = target_to
-            msg["Subject"] = f"📰 The Global AI Gazette — Edition #{edition_number} (PDF Attached)"
+            msg["Subject"] = (
+                f"📰 The Global AI Gazette — Edition #{edition_number} (PDF Attached)"
+            )
 
             html_body = f"""<html><body style="font-family: Arial, sans-serif; max-width: 650px;">
               <h1>The Global AI Gazette — Edition #{edition_number}</h1>
-              <h2>🔥 Lead: {_html.escape(lead_story or 'Worldwide AI Intelligence Dispatch')}</h2>
+              <h2>🔥 Lead: {_html.escape(lead_story or "Worldwide AI Intelligence Dispatch")}</h2>
               <p><strong>{total_threats} stories</strong> analyzed. See attached PDF.</p>
             </body></html>"""
             msg.attach(MIMEText(html_body, "html"))
@@ -160,18 +183,22 @@ class EmailDelivery(BaseDelivery):
                 pdf_part.add_header(
                     "Content-Disposition",
                     "attachment",
-                    filename=f"Global_AI_Gazette_Edition_{edition_number}.pdf"
+                    filename=f"Global_AI_Gazette_Edition_{edition_number}.pdf",
                 )
                 msg.attach(pdf_part)
             else:
                 return DeliveryResult(
                     success=False,
                     channel=self.channel_name,
-                    error=f"PDF file not found at {pdf_path}"
+                    error=f"PDF file not found at {pdf_path}",
                 )
 
-            server_host = self.config.get("smtp_server", settings.delivery.email_smtp_server)
-            server_port = int(self.config.get("smtp_port", settings.delivery.email_smtp_port))
+            server_host = self.config.get(
+                "smtp_server", settings.delivery.email_smtp_server
+            )
+            server_port = int(
+                self.config.get("smtp_port", settings.delivery.email_smtp_port)
+            )
             username = self.config.get("username", settings.delivery.email_username)
             password = self.config.get("password", settings.delivery.email_password)
 
@@ -188,23 +215,29 @@ class EmailDelivery(BaseDelivery):
             return DeliveryResult(
                 success=True,
                 channel=self.channel_name,
-                message=f"Newspaper PDF Edition #{edition_number} emailed to {target_to}"
+                message=f"Newspaper PDF Edition #{edition_number} emailed to {target_to}",
             )
         except Exception as e:
-            return DeliveryResult(success=False, channel=self.channel_name, error=str(e))
+            return DeliveryResult(
+                success=False, channel=self.channel_name, error=str(e)
+            )
 
-    def _build_html_body(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> str:
+    def _build_html_body(
+        self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]
+    ) -> str:
         html = f"""
         <html><body style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
         <h1>{settings.app_name} - {digest.schedule.title()} Digest</h1>
-        <p>Period: {digest.period_start.strftime('%Y-%m-%d %H:%M')} - {digest.period_end.strftime('%Y-%m-%d %H:%M')}</p>
+        <p>Period: {digest.period_start.strftime("%Y-%m-%d %H:%M")} - {digest.period_end.strftime("%Y-%m-%d %H:%M")}</p>
         <p>Total Entries: {digest.total_entries}</p>
         """
 
         for category, entries in digest.entries_by_category.items():
             if not entries:
                 continue
-            cat_entries = [(e, a) for e, a in entries_with_analysis if e.category.value == category]
+            cat_entries = [
+                (e, a) for e, a in entries_with_analysis if e.category.value == category
+            ]
             if not cat_entries:
                 continue
 
@@ -214,7 +247,7 @@ class EmailDelivery(BaseDelivery):
                 html += f"""
                 <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px;">
                     <h3><a href="{entry.url}">{entry.title}</a></h3>
-                    <p>Source: {entry.metadata.get('source_name', 'Unknown')}</p>
+                    <p>Source: {entry.metadata.get("source_name", "Unknown")}</p>
                 """
 
                 if analysis:
@@ -225,7 +258,7 @@ class EmailDelivery(BaseDelivery):
                         <p><strong>💥 Blast Radius:</strong> {analysis.blast_radius_score}/100</p>
                         <p><strong>🎯 Archetype:</strong> {analysis.attack_archetype} ({analysis.weaponization_potential})</p>
                         {"<p style='color: red;'><strong>🚨 PRE-CVE WARNING</strong></p>" if analysis.is_pre_cve_warning else ""}
-                        <p><strong>💥 Ecosystems:</strong> {', '.join(analysis.affected_ecosystem) or 'None'}</p>
+                        <p><strong>💥 Ecosystems:</strong> {", ".join(analysis.affected_ecosystem) or "None"}</p>
                         <p><strong>📝 Vector:</strong> {analysis.attack_vector}</p>
                         <p><strong>🛡️ Mitigation:</strong> {analysis.mitigation}</p>
                     </div>

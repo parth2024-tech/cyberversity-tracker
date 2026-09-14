@@ -2,6 +2,7 @@
 Autonomous 10-Page Comprehensive Intelligence Broadsheet Service ("The Cyber Intelligence Chronicle").
 Compiles live security intelligence into authentic, publication-grade 10-page editorial dossiers (PDF, HTML, and Markdown).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -56,10 +57,26 @@ from ai_security_monitor.application.services.newspaper.renderer import (
 )
 
 COUNTRY_FLAGS: dict[str, str] = {
-    "US": "🇺🇸", "CN": "🇨🇳", "HK": "🇭🇰", "IN": "🇮🇳", "IL": "🇮🇱",
-    "JP": "🇯🇵", "KR": "🇰🇷", "GB": "🇬🇧", "EU": "🇪🇺", "SG": "🇸🇬",
-    "TW": "🇹🇼", "AE": "🇦🇪", "CA": "🇨🇦", "DE": "🇩🇪", "FR": "🇫🇷",
-    "NL": "🇳🇱", "FI": "🇫🇮", "SE": "🇸🇪", "CH": "🇨🇭", "AU": "🇦🇺",
+    "US": "🇺🇸",
+    "CN": "🇨🇳",
+    "HK": "🇭🇰",
+    "IN": "🇮🇳",
+    "IL": "🇮🇱",
+    "JP": "🇯🇵",
+    "KR": "🇰🇷",
+    "GB": "🇬🇧",
+    "EU": "🇪🇺",
+    "SG": "🇸🇬",
+    "TW": "🇹🇼",
+    "AE": "🇦🇪",
+    "CA": "🇨🇦",
+    "DE": "🇩🇪",
+    "FR": "🇫🇷",
+    "NL": "🇳🇱",
+    "FI": "🇫🇮",
+    "SE": "🇸🇪",
+    "CH": "🇨🇭",
+    "AU": "🇦🇺",
 }
 
 
@@ -93,10 +110,14 @@ class NewspaperService:
         """Compile an authentic, 100% AI-focused 10-page intelligence broadsheet dossier."""
         now = datetime.now(UTC)
         cutoff = now - timedelta(hours=max(5, window_hours))
-        logger.info(f"Initiating 10-page AI intelligence newspaper compilation (window={window_hours}h)...")
+        logger.info(
+            f"Initiating 10-page AI intelligence newspaper compilation (window={window_hours}h)..."
+        )
 
         def is_security_item(e: Entry) -> bool:
-            cat_val = e.category.value if hasattr(e.category, "value") else str(e.category)
+            cat_val = (
+                e.category.value if hasattr(e.category, "value") else str(e.category)
+            )
             if cat_val in ("vulnerabilities", "exploits_tricks", "cybersecurity"):
                 return True
             combined = f"{(e.title or '').lower()} {(e.summary or '').lower()}"
@@ -116,7 +137,12 @@ class NewspaperService:
             t_lower = title.lower()
 
             # Allow short titles if they are clearly a model/repo release
-            is_technical_id = bool(re.search(r"[\w\-]+/[\w\-]+|\b(?:qwen|deepseek|llama|mistral|gpt|claude|gemini|vllm|ollama|sglang|gguf)\b", t_lower))
+            is_technical_id = bool(
+                re.search(
+                    r"[\w\-]+/[\w\-]+|\b(?:qwen|deepseek|llama|mistral|gpt|claude|gemini|vllm|ollama|sglang|gguf)\b",
+                    t_lower,
+                )
+            )
             if len(words) < 3 and not is_technical_id:
                 return False
 
@@ -159,46 +185,128 @@ class NewspaperService:
                         existing_ids.add(item.id)
 
             def is_ai_relevant(e: Entry) -> bool:
-                cat_val = e.category.value if hasattr(e.category, "value") else str(e.category)
-                if cat_val in ("ai_models", "ai_research", "github_trending", "cyber_tools"):
+                cat_val = (
+                    e.category.value
+                    if hasattr(e.category, "value")
+                    else str(e.category)
+                )
+                if cat_val in (
+                    "ai_models",
+                    "ai_research",
+                    "github_trending",
+                    "cyber_tools",
+                ):
                     return True
                 combined = f"{(e.title or '').lower()} {(e.summary or '').lower()}"
                 ai_keywords = (
-                    "ai", "artificial intelligence", "llm", "model", "neural", "deep learning", "machine learning",
-                    "gpu", "tpu", "agent", "agentic", "transformer", "reasoning", "dataset", "inference",
-                    "quantization", "gguf", "algorithm", "compute", "silicon", "semiconductor", "chip", "chips",
-                    "robot", "robotics", "vision", "multimodal", "prompt", "token", "weights", "fine-tune",
-                    "embedding", "vector", "rag", "eval", "framework", "runtime", "huggingface", "openai",
-                    "anthropic", "meta ai", "deepseek", "qwen", "mistral", "google ai", "gemini", "claude", "llama",
-                    "data center", "datacenter", "open-source", "open source"
+                    "ai",
+                    "artificial intelligence",
+                    "llm",
+                    "model",
+                    "neural",
+                    "deep learning",
+                    "machine learning",
+                    "gpu",
+                    "tpu",
+                    "agent",
+                    "agentic",
+                    "transformer",
+                    "reasoning",
+                    "dataset",
+                    "inference",
+                    "quantization",
+                    "gguf",
+                    "algorithm",
+                    "compute",
+                    "silicon",
+                    "semiconductor",
+                    "chip",
+                    "chips",
+                    "robot",
+                    "robotics",
+                    "vision",
+                    "multimodal",
+                    "prompt",
+                    "token",
+                    "weights",
+                    "fine-tune",
+                    "embedding",
+                    "vector",
+                    "rag",
+                    "eval",
+                    "framework",
+                    "runtime",
+                    "huggingface",
+                    "openai",
+                    "anthropic",
+                    "meta ai",
+                    "deepseek",
+                    "qwen",
+                    "mistral",
+                    "google ai",
+                    "gemini",
+                    "claude",
+                    "llama",
+                    "data center",
+                    "datacenter",
+                    "open-source",
+                    "open source",
                 )
-                return any(re.search(rf"\b{re.escape(k)}\b", combined) for k in ai_keywords)
+                return any(
+                    re.search(rf"\b{re.escape(k)}\b", combined) for k in ai_keywords
+                )
 
             # Strict AI isolation: purge all CVE/vulnerability/exploit entries and non-AI general news
-            entries = [e for e in raw_entries if not is_security_item(e) and is_ai_relevant(e) and calculate_content_quality(e)]
+            entries = [
+                e
+                for e in raw_entries
+                if not is_security_item(e)
+                and is_ai_relevant(e)
+                and calculate_content_quality(e)
+            ]
 
             # Rich backfill if overall volume is sparse — query purely AI-focused historical records
             if len(entries) < 100:
-                logger.info("Backfilling historical AI intelligence to assemble comprehensive 10-page dossier.")
-                for pillar_cat in (Category.AI_MODELS, Category.AI_RESEARCH, Category.GITHUB_TRENDING, Category.AI_TECH):
-                    fallback_filters = EntryFilters(category=pillar_cat, sort_by="velocity")
+                logger.info(
+                    "Backfilling historical AI intelligence to assemble comprehensive 10-page dossier."
+                )
+                for pillar_cat in (
+                    Category.AI_MODELS,
+                    Category.AI_RESEARCH,
+                    Category.GITHUB_TRENDING,
+                    Category.AI_TECH,
+                ):
+                    fallback_filters = EntryFilters(
+                        category=pillar_cat, sort_by="velocity"
+                    )
                     fallback_items = await uow.entries.list(
                         filters=fallback_filters,
                         pagination=PaginationParams(limit=60, offset=0),
                     )
                     for item in fallback_items:
-                        if item.id not in existing_ids and not is_security_item(item) and is_ai_relevant(item) and calculate_content_quality(item):
+                        if (
+                            item.id not in existing_ids
+                            and not is_security_item(item)
+                            and is_ai_relevant(item)
+                            and calculate_content_quality(item)
+                        ):
                             entries.append(item)
                             existing_ids.add(item.id)
 
         # Autonomous Live Extraction Fallback: If database yielded fewer than 45 verified AI stories,
         # immediately execute a live sweep across arXiv, Hugging Face, and leading AI feeds.
         if len(entries) < 45:
-            logger.info(f"Database contains only {len(entries)} stories; executing autonomous live AI intelligence sweep...")
+            logger.info(
+                f"Database contains only {len(entries)} stories; executing autonomous live AI intelligence sweep..."
+            )
             try:
                 live_items = await self._fetch_live_ai_intelligence()
                 for item in live_items:
-                    if item.id not in existing_ids and not is_security_item(item) and is_ai_relevant(item):
+                    if (
+                        item.id not in existing_ids
+                        and not is_security_item(item)
+                        and is_ai_relevant(item)
+                    ):
                         entries.append(item)
                         existing_ids.add(item.id)
                 logger.info(f"Total stories after live sweep: {len(entries)}")
@@ -271,7 +379,9 @@ class NewspaperService:
             "total_stories": len(entries),
             "total_threats": len(entries),
             "pages_count": 10,
-            "lead_story": categorized["lead"].title if categorized["lead"] else "Global AI Intelligence Report",
+            "lead_story": categorized["lead"].title
+            if categorized["lead"]
+            else "Global AI Intelligence Report",
             "trending_repos_count": len(categorized.get("trending_repos", [])),
             "ai_models_count": len(categorized.get("ai_models", [])),
             "ai_research_count": len(categorized.get("ai_research", [])),
@@ -331,7 +441,9 @@ class NewspaperService:
     def list_editions(self, limit: int = 15) -> list[dict[str, Any]]:
         """List historical editions."""
         editions = []
-        for meta_file in sorted(self._output_dir.glob("chronicle_*.json"), reverse=True)[:limit]:
+        for meta_file in sorted(
+            self._output_dir.glob("chronicle_*.json"), reverse=True
+        )[:limit]:
             try:
                 data = json.loads(meta_file.read_text(encoding="utf-8"))
                 editions.append(data)
@@ -348,16 +460,26 @@ class NewspaperService:
         ctx_match = re.search(r"\b(\d+[kK]|\d+[mM]|\d+\s*context)\b", text)
         ctx = ctx_match.group(1).upper() if ctx_match else "128K"
 
-        quant_match = re.search(r"\b(GGUF|AWQ|EXL2|FP8|FP4|INT4|INT8|UD-[A-Z0-9_]+)\b", text, re.I)
+        quant_match = re.search(
+            r"\b(GGUF|AWQ|EXL2|FP8|FP4|INT4|INT8|UD-[A-Z0-9_]+)\b", text, re.I
+        )
         quant = quant_match.group(1).upper() if quant_match else "Native / FP16"
 
-        engine_match = re.search(r"\b(vLLM|SGLang|llama\.cpp|Ollama|MLX|MLX-serve|TensorRT-LLM|CUDA|PyTorch)\b", text, re.I)
+        engine_match = re.search(
+            r"\b(vLLM|SGLang|llama\.cpp|Ollama|MLX|MLX-serve|TensorRT-LLM|CUDA|PyTorch)\b",
+            text,
+            re.I,
+        )
         engine = engine_match.group(1) if engine_match else "PyTorch / ONNX"
 
-        thru_match = re.search(r"\b(\d+(?:\.\d+)?\s*(?:tok/s|t/s|tokens per second|GB/s))\b", text, re.I)
+        thru_match = re.search(
+            r"\b(\d+(?:\.\d+)?\s*(?:tok/s|t/s|tokens per second|GB/s))\b", text, re.I
+        )
         thru = thru_match.group(1) if thru_match else "High Velocity"
 
-        lang_match = re.search(r"\b(Python|Rust|C\+\+|TypeScript|Go|CUDA)\b", text, re.I)
+        lang_match = re.search(
+            r"\b(Python|Rust|C\+\+|TypeScript|Go|CUDA)\b", text, re.I
+        )
         lang = lang_match.group(1) if lang_match else "Python"
 
         return {
@@ -377,8 +499,15 @@ class NewspaperService:
             return "Intelligence Dispatch"
         t = html.unescape(title).strip()
         # Strip prefixes and tags
-        t = re.sub(r"^(?:Trending|Release|Tool|Update|RFC|Paper|PSA)\s*:\s*", "", t, flags=re.I)
-        t = re.sub(r"^\[(?:D|R|P|News|Project|Discussion|Research|webapps|remote)\]\s*", "", t, flags=re.I)
+        t = re.sub(
+            r"^(?:Trending|Release|Tool|Update|RFC|Paper|PSA)\s*:\s*", "", t, flags=re.I
+        )
+        t = re.sub(
+            r"^\[(?:D|R|P|News|Project|Discussion|Research|webapps|remote)\]\s*",
+            "",
+            t,
+            flags=re.I,
+        )
         t = re.sub(r"^Security Tool\s*/\s*PoC:\s*", "", t, flags=re.I)
         t = re.sub(r"^Security Tool:\s*", "", t, flags=re.I)
         t = re.sub(r"^PoC:\s*", "", t, flags=re.I)
@@ -409,20 +538,42 @@ class NewspaperService:
         text = re.sub(r"&#\d+;", " ", text)
 
         # 2. Strip Reddit and RSS scrape junk
-        text = re.sub(r"(?i)\b(?:submitted by|posted by)\b.*?(?:\[comments\]|\[link\]|$)", " ", text)
+        text = re.sub(
+            r"(?i)\b(?:submitted by|posted by)\b.*?(?:\[comments\]|\[link\]|$)",
+            " ",
+            text,
+        )
         text = re.sub(r"(?i)\[(?:link|comments)\]", " ", text)
         text = re.sub(r"(?i)/u/\S+", " ", text)
         text = re.sub(r"https?://\S+", " ", text)
         text = re.sub(r"\(http[^\)]+\)", " ", text)
-        text = re.sub(r"\b(?:here|at|see|check|demo|demo here)\s*:\s*(?=[A-Z])", " ", text, flags=re.I)
+        text = re.sub(
+            r"\b(?:here|at|see|check|demo|demo here)\s*:\s*(?=[A-Z])",
+            " ",
+            text,
+            flags=re.I,
+        )
 
         # 3. Clean WeChat / sovereign news header clutter
-        text = re.sub(r"^[A-Za-z\s]+ \d{4}-\d{2}-\d{2} \d{2}:\d{2} [A-Za-z\s]+", "", text)
-        text = re.sub(r"^Original Leading the Digital Supply Chain.*?\bBeijing\b", "", text, flags=re.I)
+        text = re.sub(
+            r"^[A-Za-z\s]+ \d{4}-\d{2}-\d{2} \d{2}:\d{2} [A-Za-z\s]+", "", text
+        )
+        text = re.sub(
+            r"^Original Leading the Digital Supply Chain.*?\bBeijing\b",
+            "",
+            text,
+            flags=re.I,
+        )
 
         # 4. Clean conversational forum slang and first-person informalities
-        text = re.sub(r"(?i)\b(?:lol|lmao|rofl|imho|tbh|fyi|btw|y'all|hey guys)\b", "", text)
-        text = re.sub(r"(?i)\b(?:i know lol|part 1 was|part 2 was|part 3 was|part 4 of the same box)\b", "", text)
+        text = re.sub(
+            r"(?i)\b(?:lol|lmao|rofl|imho|tbh|fyi|btw|y'all|hey guys)\b", "", text
+        )
+        text = re.sub(
+            r"(?i)\b(?:i know lol|part 1 was|part 2 was|part 3 was|part 4 of the same box)\b",
+            "",
+            text,
+        )
         text = re.sub(r"(?i)\b(?:upvote|downvote|karma|tldr|tl;dr)\b", "", text)
 
         # Normalize whitespace
@@ -430,7 +581,9 @@ class NewspaperService:
 
         words = text.split()
         # Fall back to deep technical synthesis if summary is too brief or contains repetitive canned boilerplate
-        if (len(words) < min_words or article_extractor._is_generic_canned(text)) and entry:
+        if (
+            len(words) < min_words or article_extractor._is_generic_canned(text)
+        ) and entry:
             return article_extractor.synthesize_technical_analysis(entry)
         if len(words) < 8:
             if entry:
@@ -456,14 +609,20 @@ class NewspaperService:
 
         return text
 
-    def _generate_executive_directive(self, entry: Entry | None, vector: str | None = None) -> str:
+    def _generate_executive_directive(
+        self, entry: Entry | None, vector: str | None = None
+    ) -> str:
         """Synthesize tailored, context-specific executive directives for AI ecosystem categories."""
         if not entry:
             return "Review the latest AI developments and evaluate strategic alignment with organizational automation priorities."
 
         t = entry.title or ""
         t_clean = self._clean_title(t)
-        match = re.search(r"\b(DeepSeek|Qwen|Llama|Mistral|OpenAI|Anthropic|Claude|Gemini|vLLM|Ollama|SGLang|Nvidia|TSMC|Apple|Meta|Google|Microsoft|Blackwell|Groq|Cerebras|Krutrim|Falcon)\b", t, re.I)
+        match = re.search(
+            r"\b(DeepSeek|Qwen|Llama|Mistral|OpenAI|Anthropic|Claude|Gemini|vLLM|Ollama|SGLang|Nvidia|TSMC|Apple|Meta|Google|Microsoft|Blackwell|Groq|Cerebras|Krutrim|Falcon)\b",
+            t,
+            re.I,
+        )
         subj = match.group(1) if match else t_clean[:28]
 
         vector_map = {
@@ -477,17 +636,73 @@ class NewspaperService:
         if vector and vector in vector_map:
             return vector_map[vector]
 
-        cat = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
+        cat = (
+            entry.category.value
+            if hasattr(entry.category, "value")
+            else str(entry.category)
+        )
         title_l = t.lower()
 
         # AI Hardware & Compute
-        if any(k in title_l for k in ("nvidia", "gpu", "tpu", "blackwell", "h100", "b200", "amd", "rocm", "cerebras", "groq", "silicon", "semiconductor", "tsmc", "asml", "datacenter", "hbm")):
+        if any(
+            k in title_l
+            for k in (
+                "nvidia",
+                "gpu",
+                "tpu",
+                "blackwell",
+                "h100",
+                "b200",
+                "amd",
+                "rocm",
+                "cerebras",
+                "groq",
+                "silicon",
+                "semiconductor",
+                "tsmc",
+                "asml",
+                "datacenter",
+                "hbm",
+            )
+        ):
             return f"Review infrastructure compute quotas with cloud providers; assess {subj} hardware efficiency benchmarks to reduce inference cost per token."
         # Autonomous Agents & Robotics
-        elif any(k in title_l for k in ("agent", "swarm", "robot", "robotics", "embodied", "computer-use", "browser-use", "action model", "autogen", "crewai", "langgraph", "tool use", "mcp")):
+        elif any(
+            k in title_l
+            for k in (
+                "agent",
+                "swarm",
+                "robot",
+                "robotics",
+                "embodied",
+                "computer-use",
+                "browser-use",
+                "action model",
+                "autogen",
+                "crewai",
+                "langgraph",
+                "tool use",
+                "mcp",
+            )
+        ):
             return f"Pilot {subj} agentic capabilities in sandboxed environments; enforce strict tool-execution schemas, rate limits, and human-in-the-loop validation."
         # Foundation Models
-        elif cat == "ai_models" or any(k in title_l for k in ("model", "deepseek", "qwen", "llama", "claude", "gpt", "gemini", "mistral", "grok", "weights", "gguf")):
+        elif cat == "ai_models" or any(
+            k in title_l
+            for k in (
+                "model",
+                "deepseek",
+                "qwen",
+                "llama",
+                "claude",
+                "gpt",
+                "gemini",
+                "mistral",
+                "grok",
+                "weights",
+                "gguf",
+            )
+        ):
             return f"Benchmark {subj} model against current production baselines; evaluate token economics, quantization tradeoffs, and commercial license terms."
         # Trending GitHub repos
         elif cat == "github_trending" or "github" in (entry.url or ""):
@@ -496,10 +711,40 @@ class NewspaperService:
         elif cat == "ai_research" or "arxiv" in (entry.url or "") or "paper" in title_l:
             return f"Review research findings for {subj}; schedule ML engineering briefing to evaluate test-time compute scaling and algorithmic applicability."
         # Developer Tools & Inference Frameworks
-        elif cat == "cyber_tools" or any(k in title_l for k in ("framework", "runtime", "sdk", "library", "tool", "engine", "inference", "rag", "vector", "vllm", "ollama", "sglang")):
+        elif cat == "cyber_tools" or any(
+            k in title_l
+            for k in (
+                "framework",
+                "runtime",
+                "sdk",
+                "library",
+                "tool",
+                "engine",
+                "inference",
+                "rag",
+                "vector",
+                "vllm",
+                "ollama",
+                "sglang",
+            )
+        ):
             return f"Deploy {subj} runtime in a proof-of-concept environment; evaluate throughput gains, KV-cache memory efficiency, and API compatibility."
         # Sovereign AI
-        elif any(k in title_l for k in ("sovereign", "national", "falcon", "kyutai", "tsmc", "france", "india", "japan", "germany", "china")):
+        elif any(
+            k in title_l
+            for k in (
+                "sovereign",
+                "national",
+                "falcon",
+                "kyutai",
+                "tsmc",
+                "france",
+                "india",
+                "japan",
+                "germany",
+                "china",
+            )
+        ):
             return f"Monitor regional sovereign AI regulatory frameworks and data residency requirements for {subj} deployment."
         # General AI Tech
         else:
@@ -523,6 +768,7 @@ class NewspaperService:
         if entry.url:
             try:
                 from urllib.parse import urlparse
+
                 host = urlparse(entry.url).netloc.replace("www.", "")
                 if host:
                     return host
@@ -564,6 +810,7 @@ class NewspaperService:
         from ai_security_monitor.application.services.translation_service import (
             translation_service,
         )
+
         for e in filtered_entries:
             # Only trigger translation if genuine non-ASCII text is present
             if re.search(r"[^\x00-\x7F]", (e.title or "") + " " + (e.summary or "")):
@@ -581,7 +828,33 @@ class NewspaperService:
                 score += e.analysis.severity_index
             if cat in ("ai_models", "github_trending", "ai_research", "cyber_tools"):
                 score += 260
-            if any(k in t_lower for k in ("deepseek", "openai", "anthropic", "qwen", "gemini", "claude", "vllm", "ollama", "llama", "reasoning", "breakthrough", "sota", "release", "launch", "open-source", "open source", "arxiv", "paper", "agent", "hardware", "nvidia", "chip")):
+            if any(
+                k in t_lower
+                for k in (
+                    "deepseek",
+                    "openai",
+                    "anthropic",
+                    "qwen",
+                    "gemini",
+                    "claude",
+                    "vllm",
+                    "ollama",
+                    "llama",
+                    "reasoning",
+                    "breakthrough",
+                    "sota",
+                    "release",
+                    "launch",
+                    "open-source",
+                    "open source",
+                    "arxiv",
+                    "paper",
+                    "agent",
+                    "hardware",
+                    "nvidia",
+                    "chip",
+                )
+            ):
                 score += 200
             return score
 
@@ -608,51 +881,226 @@ class NewspaperService:
             cat = e.category.value if hasattr(e.category, "value") else str(e.category)
             tags_lower = [t.lower() for t in (e.tags or [])]
 
-            is_hardware = any(k in t_lower or k in s_lower for k in (
-                "nvidia", "gpu", "gpus", "cuda", "tpu", "blackwell", "h100", "b200", "h200", "amd", "rocm",
-                "cerebras", "groq", "silicon", "semiconductor", "tsmc", "asml", "tensor core", "hardware",
-                "datacenter", "data center", "hbm", "vram", "rtx 4090", "rtx 3090", "apple silicon", "m4", "m5",
-                "npu", "chip", "chips", "wafer", "accelerator", "inference chip", "fp8", "fp4"
-            ))
+            is_hardware = any(
+                k in t_lower or k in s_lower
+                for k in (
+                    "nvidia",
+                    "gpu",
+                    "gpus",
+                    "cuda",
+                    "tpu",
+                    "blackwell",
+                    "h100",
+                    "b200",
+                    "h200",
+                    "amd",
+                    "rocm",
+                    "cerebras",
+                    "groq",
+                    "silicon",
+                    "semiconductor",
+                    "tsmc",
+                    "asml",
+                    "tensor core",
+                    "hardware",
+                    "datacenter",
+                    "data center",
+                    "hbm",
+                    "vram",
+                    "rtx 4090",
+                    "rtx 3090",
+                    "apple silicon",
+                    "m4",
+                    "m5",
+                    "npu",
+                    "chip",
+                    "chips",
+                    "wafer",
+                    "accelerator",
+                    "inference chip",
+                    "fp8",
+                    "fp4",
+                )
+            )
 
-            is_agent_robotics = any(k in t_lower or k in s_lower for k in (
-                "agent", "agents", "agentic", "swarm", "swarms", "robot", "robotics", "embodied",
-                "humanoid", "computer-use", "computer use", "browser-use", "browser use", "action model",
-                "autogen", "crewai", "langgraph", "tool use", "tool calling", "mcp", "multi-agent",
-                "vision-language-action", "vla", "autonomous workflow", "operator"
-            ))
+            is_agent_robotics = any(
+                k in t_lower or k in s_lower
+                for k in (
+                    "agent",
+                    "agents",
+                    "agentic",
+                    "swarm",
+                    "swarms",
+                    "robot",
+                    "robotics",
+                    "embodied",
+                    "humanoid",
+                    "computer-use",
+                    "computer use",
+                    "browser-use",
+                    "browser use",
+                    "action model",
+                    "autogen",
+                    "crewai",
+                    "langgraph",
+                    "tool use",
+                    "tool calling",
+                    "mcp",
+                    "multi-agent",
+                    "vision-language-action",
+                    "vla",
+                    "autonomous workflow",
+                    "operator",
+                )
+            )
 
             is_sovereign = (
-                region in ("china", "south_asia", "middle_east", "nordic", "europe", "east_asia")
-                or country in ("CN", "HK", "IN", "IL", "JP", "KR", "TW", "AE", "SG", "DE", "FR", "NL", "FI", "SE", "CH", "CA", "AU", "GB", "EU")
-                or any(k in t_lower or k in s_lower for k in (
-                    "deepseek", "qwen", "falcon", "mistral", "kyutai", "glm", "baichuan", "internlm",
-                    "tii", "sarvam", "krutrim", "sovereign", "national ai", "alicloud", "alibaba",
-                    "tsmc", "asml", "dfki", "inria", "kaist", "riken", "turing institute", "iisc"
-                ))
+                region
+                in (
+                    "china",
+                    "south_asia",
+                    "middle_east",
+                    "nordic",
+                    "europe",
+                    "east_asia",
+                )
+                or country
+                in (
+                    "CN",
+                    "HK",
+                    "IN",
+                    "IL",
+                    "JP",
+                    "KR",
+                    "TW",
+                    "AE",
+                    "SG",
+                    "DE",
+                    "FR",
+                    "NL",
+                    "FI",
+                    "SE",
+                    "CH",
+                    "CA",
+                    "AU",
+                    "GB",
+                    "EU",
+                )
+                or any(
+                    k in t_lower or k in s_lower
+                    for k in (
+                        "deepseek",
+                        "qwen",
+                        "falcon",
+                        "mistral",
+                        "kyutai",
+                        "glm",
+                        "baichuan",
+                        "internlm",
+                        "tii",
+                        "sarvam",
+                        "krutrim",
+                        "sovereign",
+                        "national ai",
+                        "alicloud",
+                        "alibaba",
+                        "tsmc",
+                        "asml",
+                        "dfki",
+                        "inria",
+                        "kaist",
+                        "riken",
+                        "turing institute",
+                        "iisc",
+                    )
+                )
             )
 
             is_research = (
                 cat == "ai_research"
                 or "arxiv" in (e.url or "").lower()
                 or "arxiv" in t_lower
-                or any(k in t_lower for k in ("paper", "preprint", "benchmark", "empirical", "formalizing", "scaling law", "test-time compute", "alignment", "reasoning architecture", "survey"))
+                or any(
+                    k in t_lower
+                    for k in (
+                        "paper",
+                        "preprint",
+                        "benchmark",
+                        "empirical",
+                        "formalizing",
+                        "scaling law",
+                        "test-time compute",
+                        "alignment",
+                        "reasoning architecture",
+                        "survey",
+                    )
+                )
             )
 
-            is_model = (
-                cat == "ai_models"
-                or any(k in t_lower for k in ("foundation model", "deepseek", "qwen", "llama", "mistral", "claude", "gpt", "gemini", "weights", "gguf", "moe", "mixture-of-experts", "reasoning model", "distill", "fine-tune", "70b", "8b", "7b", "32b", "671b"))
+            is_model = cat == "ai_models" or any(
+                k in t_lower
+                for k in (
+                    "foundation model",
+                    "deepseek",
+                    "qwen",
+                    "llama",
+                    "mistral",
+                    "claude",
+                    "gpt",
+                    "gemini",
+                    "weights",
+                    "gguf",
+                    "moe",
+                    "mixture-of-experts",
+                    "reasoning model",
+                    "distill",
+                    "fine-tune",
+                    "70b",
+                    "8b",
+                    "7b",
+                    "32b",
+                    "671b",
+                )
             )
 
-            is_tool = (
-                cat == "cyber_tools"
-                or any(k in t_lower for k in (
-                    "vllm", "ollama", "sglang", "llama.cpp", "tensorrt", "litellm", "unsloth", "axolotl",
-                    "deepspeed", "transformers", "diffusers", "torchtune", "outlines", "instructor",
-                    "langchain", "llamaindex", "chromadb", "qdrant", "weaviate", "milvus", "eval harness",
-                    "runtime", "framework", "library", "sdk", "toolkit", "serving engine", "rag pipeline",
-                    "vector database", "quantization", "mlx", "mlx-serve", "open-webui", "localai"
-                ))
+            is_tool = cat == "cyber_tools" or any(
+                k in t_lower
+                for k in (
+                    "vllm",
+                    "ollama",
+                    "sglang",
+                    "llama.cpp",
+                    "tensorrt",
+                    "litellm",
+                    "unsloth",
+                    "axolotl",
+                    "deepspeed",
+                    "transformers",
+                    "diffusers",
+                    "torchtune",
+                    "outlines",
+                    "instructor",
+                    "langchain",
+                    "llamaindex",
+                    "chromadb",
+                    "qdrant",
+                    "weaviate",
+                    "milvus",
+                    "eval harness",
+                    "runtime",
+                    "framework",
+                    "library",
+                    "sdk",
+                    "toolkit",
+                    "serving engine",
+                    "rag pipeline",
+                    "vector database",
+                    "quantization",
+                    "mlx",
+                    "mlx-serve",
+                    "open-webui",
+                    "localai",
+                )
             )
 
             is_trending = (
@@ -694,18 +1142,47 @@ class NewspaperService:
 
         # Backfill any sparsely populated categories from remaining pool
         pool = remaining[:]
+
         def fill_section(target_list, min_count, predicate):
             if len(target_list) < min_count:
                 candidates = [e for e in pool if predicate(e) and e not in target_list]
-                target_list.extend(candidates[:min_count - len(target_list)])
+                target_list.extend(candidates[: min_count - len(target_list)])
             if len(target_list) < min_count:
                 fallback_candidates = [e for e in pool if e not in target_list]
-                target_list.extend(fallback_candidates[:min_count - len(target_list)])
+                target_list.extend(fallback_candidates[: min_count - len(target_list)])
 
-        fill_section(trending_repos, 6, lambda e: (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("github_trending", "ai_tech", "cyber_tools"))
-        fill_section(ai_models_list, 6, lambda e: (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_models", "ai_tech"))
-        fill_section(ai_research_list, 6, lambda e: (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("ai_research", "ai_tech"))
-        fill_section(ai_tools_list, 6, lambda e: (e.category.value if hasattr(e.category, 'value') else str(e.category)) in ("cyber_tools", "ai_tech"))
+        fill_section(
+            trending_repos,
+            6,
+            lambda e: (
+                (e.category.value if hasattr(e.category, "value") else str(e.category))
+                in ("github_trending", "ai_tech", "cyber_tools")
+            ),
+        )
+        fill_section(
+            ai_models_list,
+            6,
+            lambda e: (
+                (e.category.value if hasattr(e.category, "value") else str(e.category))
+                in ("ai_models", "ai_tech")
+            ),
+        )
+        fill_section(
+            ai_research_list,
+            6,
+            lambda e: (
+                (e.category.value if hasattr(e.category, "value") else str(e.category))
+                in ("ai_research", "ai_tech")
+            ),
+        )
+        fill_section(
+            ai_tools_list,
+            6,
+            lambda e: (
+                (e.category.value if hasattr(e.category, "value") else str(e.category))
+                in ("cyber_tools", "ai_tech")
+            ),
+        )
         fill_section(sovereign_ai, 6, lambda e: True)
         fill_section(ai_hardware, 6, lambda e: True)
         fill_section(autonomous_agents, 6, lambda e: True)
@@ -729,18 +1206,24 @@ class NewspaperService:
 
         used_ids = {e.id for e in all_dossier_entries if e}
         overflow = [e for e in remaining if e.id not in used_ids]
-        overflow.sort(key=lambda e: e.analysis.threat_velocity if e.analysis else 0, reverse=True)
+        overflow.sort(
+            key=lambda e: e.analysis.threat_velocity if e.analysis else 0, reverse=True
+        )
         overflow = overflow[:10]
 
         candidates_to_enrich = [e for e in all_dossier_entries + overflow if e]
-        logger.info(f"Initiating deep autonomous extraction across all {len(candidates_to_enrich)} dossier stories...")
+        logger.info(
+            f"Initiating deep autonomous extraction across all {len(candidates_to_enrich)} dossier stories..."
+        )
 
         sem = asyncio.Semaphore(8)
 
         async def enrich_entry(entry: Entry):
             async with sem:
                 try:
-                    content = await article_extractor.extract_article_content(entry, min_words=60)
+                    content = await article_extractor.extract_article_content(
+                        entry, min_words=60
+                    )
                     if content and len(content.split()) >= 30:
                         entry.summary = content
                 except Exception as ex:
@@ -748,7 +1231,10 @@ class NewspaperService:
 
         if candidates_to_enrich:
             try:
-                await asyncio.gather(*[enrich_entry(e) for e in candidates_to_enrich], return_exceptions=True)
+                await asyncio.gather(
+                    *[enrich_entry(e) for e in candidates_to_enrich],
+                    return_exceptions=True,
+                )
             except Exception:
                 pass
 
@@ -756,11 +1242,15 @@ class NewspaperService:
         for item in all_dossier_entries:
             if item:
                 item.title = self._clean_title(item.title)
-                item.summary = self._clean_and_format_summary(item.summary, entry=item, min_words=25, max_words=160)
+                item.summary = self._clean_and_format_summary(
+                    item.summary, entry=item, min_words=25, max_words=160
+                )
 
         for item in overflow:
             item.title = self._clean_title(item.title)
-            item.summary = self._clean_and_format_summary(item.summary, entry=item, min_words=20, max_words=120)
+            item.summary = self._clean_and_format_summary(
+                item.summary, entry=item, min_words=20, max_words=120
+            )
 
         return {
             "lead": lead,

@@ -74,7 +74,7 @@ def test_entry_and_analysis_relationship(sample_source, sample_entry):
         is_pre_cve_warning=True,
         attack_archetype="Jailbreak",
         weaponization_potential="PoC Verified",
-        model=AnalysisModel.HEURISTIC
+        model=AnalysisModel.HEURISTIC,
     )
     sample_entry.analysis = analysis
     assert sample_entry.analysis.is_pre_cve_warning is True

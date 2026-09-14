@@ -7,6 +7,7 @@ Expanded test suite for China intelligence pipeline hardening:
 5. Regional isolation testing
 6. Provenance tagging verification
 """
+
 import uuid
 from datetime import datetime, timezone
 
@@ -87,7 +88,9 @@ def test_content_hash_deduplication_stability():
 async def test_regional_isolation_filters():
     """Verify that region=china does not leak into other regional queries."""
     app = create_app()
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         # China query
         resp_cn = await client.get("/api/entries?region=china&limit=10")
         assert resp_cn.status_code == 200

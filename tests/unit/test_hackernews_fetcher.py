@@ -1,4 +1,5 @@
 """Unit tests for HackerNewsFetcher."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -65,7 +66,10 @@ async def test_hackernews_fetcher_parses_hits(hn_source: Source):
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.fetchers.hackernews_fetcher.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.hackernews_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         fetcher = HackerNewsFetcher(hn_source)
         raw = await fetcher._fetch_raw()
 
@@ -88,7 +92,10 @@ async def test_hackernews_fetcher_url_fallback(hn_source: Source):
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.fetchers.hackernews_fetcher.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.hackernews_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         fetcher = HackerNewsFetcher(hn_source)
         raw = await fetcher._fetch_raw()
 
@@ -107,7 +114,12 @@ async def test_hackernews_parse_entry(hn_source: Source):
         "content": "Points: 400 | Comments: 90 | Author: ai_fan",
         "published_at": datetime.now(UTC),
         "tags": ["hackernews", "ai", "llm"],
-        "metadata": {"hn_id": "11111", "points": 400, "author": "ai_fan", "num_comments": 90},
+        "metadata": {
+            "hn_id": "11111",
+            "points": 400,
+            "author": "ai_fan",
+            "num_comments": 90,
+        },
     }
     entry = fetcher._parse_entry(raw)
     assert entry.title == raw["title"]

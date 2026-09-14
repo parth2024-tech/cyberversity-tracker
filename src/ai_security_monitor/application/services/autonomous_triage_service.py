@@ -2,6 +2,7 @@
 Autonomous High-Priority LLM Triage Service and Background Queue.
 Continuously triages high-velocity threats, Pre-CVE research, and Watchlist matches using local LLMs.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -68,15 +69,16 @@ class AutonomousTriageService:
         self._queued_ids.add(entry_id)
         await self._queue.put(entry_id)
         self._total_enqueued += 1
-        logger.info(f"Enqueued entry {entry_id} for autonomous LLM triage (queue depth: {self._queue.qsize()})")
+        logger.info(
+            f"Enqueued entry {entry_id} for autonomous LLM triage (queue depth: {self._queue.qsize()})"
+        )
 
         # Broadcast queue update
         if self._broadcast_callback:
             try:
-                self._broadcast_callback({
-                    "type": "triage_queue_updated",
-                    "data": self.get_status()
-                })
+                self._broadcast_callback(
+                    {"type": "triage_queue_updated", "data": self.get_status()}
+                )
             except Exception as e:
                 logger.warning(f"WebSocket broadcast error: {e}")
 
@@ -100,7 +102,9 @@ class AutonomousTriageService:
                 if enqueued_count >= limit:
                     break
 
-        logger.info(f"Backfill enqueued {enqueued_count} high-priority entries for LLM triage.")
+        logger.info(
+            f"Backfill enqueued {enqueued_count} high-priority entries for LLM triage."
+        )
         return enqueued_count
 
     async def start(self) -> None:
@@ -136,7 +140,9 @@ class AutonomousTriageService:
                     await self._process_entry(entry_id, analyzer)
                     self._total_completed += 1
                 except Exception as proc_err:
-                    logger.error(f"Error processing autonomous triage for {entry_id}: {proc_err}")
+                    logger.error(
+                        f"Error processing autonomous triage for {entry_id}: {proc_err}"
+                    )
                     self._total_failed += 1
                 finally:
                     self._queued_ids.discard(entry_id)
@@ -147,12 +153,16 @@ class AutonomousTriageService:
                     # Broadcast status update
                     if self._broadcast_callback:
                         try:
-                            self._broadcast_callback({
-                                "type": "triage_queue_updated",
-                                "data": self.get_status()
-                            })
+                            self._broadcast_callback(
+                                {
+                                    "type": "triage_queue_updated",
+                                    "data": self.get_status(),
+                                }
+                            )
                         except Exception as _bc_err:
-                            logger.debug(f"Triage broadcast callback error (non-critical): {_bc_err}")
+                            logger.debug(
+                                f"Triage broadcast callback error (non-critical): {_bc_err}"
+                            )
 
                 # Delay between inference jobs to protect hardware
                 await asyncio.sleep(settings.analyzer.triage_interval_seconds)
@@ -172,7 +182,9 @@ class AutonomousTriageService:
                 return
 
             self._current_entry_title = entry.title
-            logger.info(f"🤖 Autonomous LLM Triage executing for: {entry.title[:60]}...")
+            logger.info(
+                f"🤖 Autonomous LLM Triage executing for: {entry.title[:60]}..."
+            )
 
             # Run LLM analysis
             analysis_result = await analyzer.analyze(entry)
@@ -186,11 +198,19 @@ class AutonomousTriageService:
                 existing_analysis.mitigation = analysis_result.mitigation
                 existing_analysis.threat_velocity = analysis_result.threat_velocity
                 existing_analysis.severity_index = analysis_result.severity_index
-                existing_analysis.blast_radius_score = analysis_result.blast_radius_score
-                existing_analysis.affected_ecosystem = analysis_result.affected_ecosystem
-                existing_analysis.is_pre_cve_warning = analysis_result.is_pre_cve_warning
+                existing_analysis.blast_radius_score = (
+                    analysis_result.blast_radius_score
+                )
+                existing_analysis.affected_ecosystem = (
+                    analysis_result.affected_ecosystem
+                )
+                existing_analysis.is_pre_cve_warning = (
+                    analysis_result.is_pre_cve_warning
+                )
                 existing_analysis.attack_archetype = analysis_result.attack_archetype
-                existing_analysis.weaponization_potential = analysis_result.weaponization_potential or "Production Ready"
+                existing_analysis.weaponization_potential = (
+                    analysis_result.weaponization_potential or "Production Ready"
+                )
                 existing_analysis.model = AnalysisModel.OLLAMA
                 existing_analysis.updated_at = datetime.now(UTC)
                 await uow.analyses.update(existing_analysis)
@@ -207,49 +227,63 @@ class AutonomousTriageService:
                     affected_ecosystem=analysis_result.affected_ecosystem,
                     is_pre_cve_warning=analysis_result.is_pre_cve_warning,
                     attack_archetype=analysis_result.attack_archetype,
-                    weaponization_potential=analysis_result.weaponization_potential or "Production Ready",
+                    weaponization_potential=analysis_result.weaponization_potential
+                    or "Production Ready",
                     model=AnalysisModel.OLLAMA,
                 )
                 await uow.analyses.add(analysis)
 
             await uow.commit()
-            logger.info(f"✅ LLM Triage complete for {entry.title[:50]} (Model: {analysis.model.value})")
+            logger.info(
+                f"✅ LLM Triage complete for {entry.title[:50]} (Model: {analysis.model.value})"
+            )
 
             # Broadcast real-time triage update over WebSockets
             if self._broadcast_callback:
                 try:
-                    self._broadcast_callback({
-                        "type": "triage_completed",
-                        "data": {
-                            "entry_id": str(entry.id),
-                            "title": entry.title,
-                            "model": analysis.model.value,
-                            "threat_velocity": analysis.threat_velocity,
-                            "severity_index": analysis.severity_index,
-                            "blast_radius_score": analysis.blast_radius_score,
-                            "affected_ecosystem": analysis.affected_ecosystem,
-                            "attack_archetype": analysis.attack_archetype,
-                            "weaponization_potential": analysis.weaponization_potential,
-                            "attack_vector": analysis.attack_vector,
-                            "risk_assessment": analysis.risk_assessment,
-                            "mitigation": analysis.mitigation,
-                            "is_pre_cve_warning": analysis.is_pre_cve_warning,
+                    self._broadcast_callback(
+                        {
+                            "type": "triage_completed",
+                            "data": {
+                                "entry_id": str(entry.id),
+                                "title": entry.title,
+                                "model": analysis.model.value,
+                                "threat_velocity": analysis.threat_velocity,
+                                "severity_index": analysis.severity_index,
+                                "blast_radius_score": analysis.blast_radius_score,
+                                "affected_ecosystem": analysis.affected_ecosystem,
+                                "attack_archetype": analysis.attack_archetype,
+                                "weaponization_potential": analysis.weaponization_potential,
+                                "attack_vector": analysis.attack_vector,
+                                "risk_assessment": analysis.risk_assessment,
+                                "mitigation": analysis.mitigation,
+                                "is_pre_cve_warning": analysis.is_pre_cve_warning,
+                            },
                         }
-                    })
+                    )
                 except Exception as ws_err:
                     logger.warning(f"WebSocket broadcast error: {ws_err}")
 
             # Send Telegram Alert if critical or Pre-CVE
-            if settings.delivery.telegram_enabled and (analysis.threat_velocity >= 70 or analysis.is_pre_cve_warning):
+            if settings.delivery.telegram_enabled and (
+                analysis.threat_velocity >= 70 or analysis.is_pre_cve_warning
+            ):
                 try:
-                    telegram_delivery = delivery_registry.create("telegram", {
-                        "bot_token": settings.delivery.telegram_bot_token,
-                        "chat_id": settings.delivery.telegram_chat_id,
-                    })
+                    telegram_delivery = delivery_registry.create(
+                        "telegram",
+                        {
+                            "bot_token": settings.delivery.telegram_bot_token,
+                            "chat_id": settings.delivery.telegram_chat_id,
+                        },
+                    )
                     await telegram_delivery.send_alert(entry, analysis)
-                    logger.info(f"Telegram alert dispatched for autonomous triage of {entry.title[:40]}")
+                    logger.info(
+                        f"Telegram alert dispatched for autonomous triage of {entry.title[:40]}"
+                    )
                 except Exception as tg_err:
-                    logger.warning(f"Failed to dispatch Telegram alert for triage: {tg_err}")
+                    logger.warning(
+                        f"Failed to dispatch Telegram alert for triage: {tg_err}"
+                    )
 
 
 # Global Singleton Instance

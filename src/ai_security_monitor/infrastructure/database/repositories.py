@@ -2,6 +2,7 @@
 Repository implementations using SQLAlchemy async.
 Implements the domain repository interfaces.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
@@ -90,7 +91,11 @@ class SQLAlchemyEntryRepository(EntryRepository):
         return self._model_to_entity(model)
 
     async def get(self, entry_id: UUID, include_purged: bool = False) -> Entry | None:
-        stmt = select(EntryModel).options(selectinload(EntryModel.analysis)).where(EntryModel.id == _uuid_to_str(entry_id))
+        stmt = (
+            select(EntryModel)
+            .options(selectinload(EntryModel.analysis))
+            .where(EntryModel.id == _uuid_to_str(entry_id))
+        )
         if not include_purged:
             stmt = stmt.where(EntryModel.is_purged.is_(False))
         result = await self._session.execute(stmt)
@@ -118,42 +123,54 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         if filters and filters.sort_by == "velocity":
             if not analysis_joined:
-                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.outerjoin(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
             stmt = stmt.order_by(
                 desc(AnalysisModelDB.threat_velocity),
                 desc(EntryModel.published_at),
-                desc(EntryModel.fetched_at)
+                desc(EntryModel.fetched_at),
             )
         elif filters and filters.sort_by == "top":
             # Top news blends recency and impact: newest dispatches lead, ranked by velocity/stars
             if not analysis_joined:
-                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.outerjoin(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
             stmt = stmt.order_by(
                 desc(EntryModel.published_at),
                 desc(AnalysisModelDB.threat_velocity),
-                desc(EntryModel.fetched_at)
+                desc(EntryModel.fetched_at),
             )
         elif filters and filters.sort_by == "blast":
             if not analysis_joined:
-                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.outerjoin(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
             stmt = stmt.order_by(
                 desc(AnalysisModelDB.blast_radius_score),
                 desc(EntryModel.published_at),
-                desc(EntryModel.fetched_at)
+                desc(EntryModel.fetched_at),
             )
         elif filters and filters.sort_by == "severity":
             if not analysis_joined:
-                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.outerjoin(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
             stmt = stmt.order_by(
                 desc(AnalysisModelDB.severity_index),
                 desc(EntryModel.published_at),
-                desc(EntryModel.fetched_at)
+                desc(EntryModel.fetched_at),
             )
         elif filters and filters.sort_by == "published":
-            stmt = stmt.order_by(desc(EntryModel.published_at), desc(EntryModel.fetched_at))
+            stmt = stmt.order_by(
+                desc(EntryModel.published_at), desc(EntryModel.fetched_at)
+            )
         else:
             # Default "newest": order by published_at DESC so the latest research, models, and intelligence lead the feed
-            stmt = stmt.order_by(desc(EntryModel.published_at), desc(EntryModel.fetched_at))
+            stmt = stmt.order_by(
+                desc(EntryModel.published_at), desc(EntryModel.fetched_at)
+            )
 
         if pagination:
             stmt = stmt.limit(pagination.limit).offset(pagination.offset)
@@ -241,12 +258,15 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 not_(EntryModel.extra_metadata.like('%"is_important": true%')),
                 not_(EntryModel.extra_metadata.like('%"is_saved": true%')),
                 not_(EntryModel.extra_metadata.like('%"is_pinned": true%')),
-            )
+            ),
         )
         expired_cond = and_(
             or_(
                 EntryModel.fetched_at < cutoff,
-                and_(EntryModel.published_at.is_not(None), EntryModel.published_at < cutoff)
+                and_(
+                    EntryModel.published_at.is_not(None),
+                    EntryModel.published_at < cutoff,
+                ),
             ),
             not_vaulted_cond,
             EntryModel.is_purged.is_(False),
@@ -289,6 +309,86 @@ class SQLAlchemyEntryRepository(EntryRepository):
         self._session.expire_all()
         return del_result.rowcount or 0
 
+    async def restore_purged_entries(self) -> int:
+        """Restore all soft-purged entries back to active visibility (mark is_purged=False).
+
+        Returns the number of rows restored.
+        """
+        from sqlalchemy import update as sa_update
+
+        result = await self._session.execute(
+            sa_update(EntryModel)
+            .where(EntryModel.is_purged.is_(True))
+            .values(is_purged=False, purged_at=None)
+            .execution_options(synchronize_session=False)
+        )
+        self._session.expire_all()
+        return result.rowcount or 0
+
+    async def get_retention_counts(self, older_than_days: int = 7) -> dict[str, int]:
+        """Get counts of active entries, candidate entries older than X days, and soft-purged entries."""
+        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
+
+        active_stmt = select(func.count(EntryModel.id)).where(
+            EntryModel.is_purged.is_(False)
+        )
+        active_res = await self._session.execute(active_stmt)
+        active_count = active_res.scalar() or 0
+
+        purged_stmt = select(func.count(EntryModel.id)).where(
+            EntryModel.is_purged.is_(True)
+        )
+        purged_res = await self._session.execute(purged_stmt)
+        purged_count = purged_res.scalar() or 0
+
+        from sqlalchemy import not_
+
+        not_vaulted_cond = or_(
+            EntryModel.extra_metadata.is_(None),
+            and_(
+                not_(EntryModel.extra_metadata.like('%"is_important": true%')),
+                not_(EntryModel.extra_metadata.like('%"is_saved": true%')),
+                not_(EntryModel.extra_metadata.like('%"is_pinned": true%')),
+            ),
+        )
+        candidates_stmt = select(func.count(EntryModel.id)).where(
+            and_(
+                or_(
+                    EntryModel.fetched_at < cutoff,
+                    and_(
+                        EntryModel.published_at.is_not(None),
+                        EntryModel.published_at < cutoff,
+                    ),
+                ),
+                not_vaulted_cond,
+                EntryModel.is_purged.is_(False),
+            )
+        )
+        candidates_res = await self._session.execute(candidates_stmt)
+        candidates_count = candidates_res.scalar() or 0
+
+        # Vaulted count
+        vaulted_stmt = select(func.count(EntryModel.id)).where(
+            and_(
+                EntryModel.is_purged.is_(False),
+                or_(
+                    EntryModel.extra_metadata.like('%"is_important": true%'),
+                    EntryModel.extra_metadata.like('%"is_saved": true%'),
+                    EntryModel.extra_metadata.like('%"is_pinned": true%'),
+                ),
+            )
+        )
+        vaulted_res = await self._session.execute(vaulted_stmt)
+        vaulted_count = vaulted_res.scalar() or 0
+
+        return {
+            "active_count": active_count,
+            "purged_count": purged_count,
+            "candidates_count": candidates_count,
+            "vaulted_count": vaulted_count,
+            "older_than_days": older_than_days,
+        }
+
     async def toggle_importance(
         self,
         entry_id: UUID,
@@ -296,14 +396,20 @@ class SQLAlchemyEntryRepository(EntryRepository):
         reason: str | None = None,
     ) -> Entry:
         """Toggle or explicitly set an entry's vault/importance status with metadata persistence."""
-        stmt = select(EntryModel).options(selectinload(EntryModel.analysis)).where(EntryModel.id == _uuid_to_str(entry_id))
+        stmt = (
+            select(EntryModel)
+            .options(selectinload(EntryModel.analysis))
+            .where(EntryModel.id == _uuid_to_str(entry_id))
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         if not model:
             raise EntityNotFoundError("Entry", str(entry_id))
 
         meta = dict(model.extra_metadata or {})
-        current_state = bool(meta.get("is_important", False) or meta.get("is_saved", False))
+        current_state = bool(
+            meta.get("is_important", False) or meta.get("is_saved", False)
+        )
         new_state = (not current_state) if is_important is None else bool(is_important)
 
         meta["is_important"] = new_state
@@ -325,7 +431,11 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
     async def save_user_notes(self, entry_id: UUID, notes: str) -> Entry:
         """Attach user research, annotations, and analysis notes to an entry."""
-        stmt = select(EntryModel).options(selectinload(EntryModel.analysis)).where(EntryModel.id == _uuid_to_str(entry_id))
+        stmt = (
+            select(EntryModel)
+            .options(selectinload(EntryModel.analysis))
+            .where(EntryModel.id == _uuid_to_str(entry_id))
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         if not model:
@@ -375,7 +485,14 @@ class SQLAlchemyEntryRepository(EntryRepository):
         if filters.category:
             stmt = stmt.where(EntryModel.category == filters.category.value)
         elif filters.categories:
-            stmt = stmt.where(EntryModel.category.in_([c.value if hasattr(c, "value") else str(c) for c in filters.categories]))
+            stmt = stmt.where(
+                EntryModel.category.in_(
+                    [
+                        c.value if hasattr(c, "value") else str(c)
+                        for c in filters.categories
+                    ]
+                )
+            )
 
         if filters.source_id:
             stmt = stmt.where(EntryModel.source_id == _uuid_to_str(filters.source_id))
@@ -410,25 +527,33 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         if filters.pre_cve_only:
             if not analysis_joined:
-                stmt = stmt.join(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.join(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
                 analysis_joined = True
             stmt = stmt.where(AnalysisModelDB.is_pre_cve_warning.is_(True))
 
         if filters.high_velocity_only:
             if not analysis_joined:
-                stmt = stmt.join(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.join(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
                 analysis_joined = True
             stmt = stmt.where(AnalysisModelDB.threat_velocity >= 70)
 
         if filters.analyzed_only:
             if not analysis_joined:
-                stmt = stmt.join(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.join(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
                 analysis_joined = True
             stmt = stmt.where(AnalysisModelDB.entry_id.is_not(None))
 
         if filters.unanalyzed_only:
             if not analysis_joined:
-                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+                stmt = stmt.outerjoin(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
                 analysis_joined = True
             stmt = stmt.where(AnalysisModelDB.entry_id.is_(None))
 
@@ -512,7 +637,9 @@ class SQLAlchemyEntryRepository(EntryRepository):
                     )
                 )
             else:
-                stmt = stmt.where(SourceModel.config.like(f'%"region": "{filters.region}"%'))
+                stmt = stmt.where(
+                    SourceModel.config.like(f'%"region": "{filters.region}"%')
+                )
 
         if filters.country and filters.country != "all":
             if not source_joined:
@@ -541,7 +668,9 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 weaponization_potential=model.analysis.weaponization_potential,
                 mitre_attack_id=getattr(model.analysis, "mitre_attack_id", None),
                 mitre_technique=getattr(model.analysis, "mitre_technique", None),
-                model=AnalysisModel(model.analysis.model) if model.analysis.model in [m.value for m in AnalysisModel] else AnalysisModel.HEURISTIC,
+                model=AnalysisModel(model.analysis.model)
+                if model.analysis.model in [m.value for m in AnalysisModel]
+                else AnalysisModel.HEURISTIC,
                 confidence=model.analysis.confidence,
                 created_at=model.analysis.created_at,
                 updated_at=model.analysis.updated_at,
@@ -586,7 +715,8 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             affected_ecosystem=analysis.affected_ecosystem,
             is_pre_cve_warning=analysis.is_pre_cve_warning,
             attack_archetype=analysis.attack_archetype,
-            weaponization_potential=analysis.weaponization_potential or "Production Ready",
+            weaponization_potential=analysis.weaponization_potential
+            or "Production Ready",
             mitre_attack_id=analysis.mitre_attack_id,
             mitre_technique=analysis.mitre_technique,
             model=analysis.model.value,
@@ -599,7 +729,9 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         return self._model_to_entity(model)
 
     async def get(self, entry_id: UUID) -> Analysis | None:
-        stmt = select(AnalysisModelDB).where(AnalysisModelDB.entry_id == _uuid_to_str(entry_id))
+        stmt = select(AnalysisModelDB).where(
+            AnalysisModelDB.entry_id == _uuid_to_str(entry_id)
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
@@ -608,13 +740,17 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         return await self.get(entry_id)
 
     async def get_by_id(self, analysis_id: UUID) -> Analysis | None:
-        stmt = select(AnalysisModelDB).where(AnalysisModelDB.id == _uuid_to_str(analysis_id))
+        stmt = select(AnalysisModelDB).where(
+            AnalysisModelDB.id == _uuid_to_str(analysis_id)
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
     async def update(self, analysis: Analysis) -> Analysis:
-        stmt = select(AnalysisModelDB).where(AnalysisModelDB.id == _uuid_to_str(analysis.id))
+        stmt = select(AnalysisModelDB).where(
+            AnalysisModelDB.id == _uuid_to_str(analysis.id)
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
 
@@ -630,7 +766,9 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         model.affected_ecosystem = analysis.affected_ecosystem
         model.is_pre_cve_warning = analysis.is_pre_cve_warning
         model.attack_archetype = analysis.attack_archetype
-        model.weaponization_potential = analysis.weaponization_potential or "Production Ready"
+        model.weaponization_potential = (
+            analysis.weaponization_potential or "Production Ready"
+        )
         model.mitre_attack_id = analysis.mitre_attack_id
         model.mitre_technique = analysis.mitre_technique
         model.model = analysis.model.value
@@ -641,7 +779,9 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         return self._model_to_entity(model)
 
     async def delete(self, entry_id: UUID) -> bool:
-        stmt = select(AnalysisModelDB).where(AnalysisModelDB.entry_id == _uuid_to_str(entry_id))
+        stmt = select(AnalysisModelDB).where(
+            AnalysisModelDB.entry_id == _uuid_to_str(entry_id)
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
 
@@ -652,12 +792,16 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         return True
 
     async def count_high_velocity(self, threshold: int = 70) -> int:
-        stmt = select(func.count(AnalysisModelDB.id)).where(AnalysisModelDB.threat_velocity >= threshold)
+        stmt = select(func.count(AnalysisModelDB.id)).where(
+            AnalysisModelDB.threat_velocity >= threshold
+        )
         result = await self._session.execute(stmt)
         return result.scalar() or 0
 
     async def count_pre_cve_warnings(self) -> int:
-        stmt = select(func.count(AnalysisModelDB.id)).where(AnalysisModelDB.is_pre_cve_warning.is_(True))
+        stmt = select(func.count(AnalysisModelDB.id)).where(
+            AnalysisModelDB.is_pre_cve_warning.is_(True)
+        )
         result = await self._session.execute(stmt)
         return result.scalar() or 0
 
@@ -834,6 +978,7 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
     async def purge_old_logs(self, older_than_days: int = 7) -> int:
         """Delete fetch logs older than retention window."""
         from sqlalchemy import delete as sa_delete
+
         cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
         del_res = await self._session.execute(
             sa_delete(FetchLogModel).where(FetchLogModel.fetched_at < cutoff)
@@ -918,6 +1063,7 @@ class SQLAlchemyDigestRepository(DigestRepository):
     async def purge_old_digests(self, older_than_days: int = 7) -> int:
         """Delete temporary generated digests older than retention window."""
         from sqlalchemy import delete as sa_delete
+
         cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
         del_res = await self._session.execute(
             sa_delete(DigestModel).where(DigestModel.created_at < cutoff)
@@ -949,7 +1095,9 @@ class SQLAlchemyWatchlistRepository:
             id=_uuid_to_str(rule.id),
             name=rule.name,
             keywords=rule.keywords,
-            categories=[c.value if hasattr(c, "value") else str(c) for c in rule.categories],
+            categories=[
+                c.value if hasattr(c, "value") else str(c) for c in rule.categories
+            ],
             min_threat_velocity=rule.min_threat_velocity,
             enabled=rule.enabled,
             created_at=rule.created_at,
@@ -959,7 +1107,9 @@ class SQLAlchemyWatchlistRepository:
         return self._model_to_entity(model)
 
     async def get(self, rule_id: UUID) -> WatchlistRule | None:
-        stmt = select(WatchlistRuleModel).where(WatchlistRuleModel.id == _uuid_to_str(rule_id))
+        stmt = select(WatchlistRuleModel).where(
+            WatchlistRuleModel.id == _uuid_to_str(rule_id)
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
@@ -973,7 +1123,9 @@ class SQLAlchemyWatchlistRepository:
         return [self._model_to_entity(m) for m in models]
 
     async def delete(self, rule_id: UUID) -> bool:
-        stmt = select(WatchlistRuleModel).where(WatchlistRuleModel.id == _uuid_to_str(rule_id))
+        stmt = select(WatchlistRuleModel).where(
+            WatchlistRuleModel.id == _uuid_to_str(rule_id)
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         if not model:
@@ -983,7 +1135,9 @@ class SQLAlchemyWatchlistRepository:
         return True
 
     async def toggle(self, rule_id: UUID, enabled: bool) -> WatchlistRule:
-        stmt = select(WatchlistRuleModel).where(WatchlistRuleModel.id == _uuid_to_str(rule_id))
+        stmt = select(WatchlistRuleModel).where(
+            WatchlistRuleModel.id == _uuid_to_str(rule_id)
+        )
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         if not model:
@@ -997,9 +1151,12 @@ class SQLAlchemyWatchlistRepository:
             id=_str_to_uuid(model.id),
             name=model.name,
             keywords=model.keywords or [],
-            categories=[Category(c) for c in (model.categories or []) if c in [cat.value for cat in Category]],
+            categories=[
+                Category(c)
+                for c in (model.categories or [])
+                if c in [cat.value for cat in Category]
+            ],
             min_threat_velocity=model.min_threat_velocity or 0,
             enabled=model.enabled,
             created_at=model.created_at,
         )
-

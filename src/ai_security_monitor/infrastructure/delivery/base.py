@@ -11,6 +11,7 @@ from ai_security_monitor.domain.events import DigestDeliveredEvent, event_bus
 @dataclass
 class DeliveryResult:
     """Result of a delivery operation."""
+
     success: bool
     channel: str
     message: str = ""
@@ -36,7 +37,9 @@ class BaseDelivery(ABC):
         ...
 
     @abstractmethod
-    async def send_digest(self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]) -> DeliveryResult:
+    async def send_digest(
+        self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]
+    ) -> DeliveryResult:
         """Send a digest with analyzed entries."""
         ...
 
@@ -45,15 +48,19 @@ class BaseDelivery(ABC):
         """Send an immediate alert for a high-priority entry."""
         ...
 
-    async def _publish_delivery_event(self, digest_id: UUID, success: bool, error: str | None = None) -> None:
+    async def _publish_delivery_event(
+        self, digest_id: UUID, success: bool, error: str | None = None
+    ) -> None:
         """Publish delivery event."""
-        await event_bus.publish(DigestDeliveredEvent(
-            aggregate_id=digest_id,
-            digest_id=digest_id,
-            channel=self.channel_name,
-            success=success,
-            error=error,
-        ))
+        await event_bus.publish(
+            DigestDeliveredEvent(
+                aggregate_id=digest_id,
+                digest_id=digest_id,
+                channel=self.channel_name,
+                success=success,
+                error=error,
+            )
+        )
 
 
 class DeliveryRegistry:

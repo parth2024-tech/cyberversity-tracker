@@ -40,7 +40,9 @@ class UnitOfWork:
     @property
     def session(self) -> AsyncSession:
         if self._session is None:
-            raise RuntimeError("UnitOfWork not started. Use async with or call __aenter__")
+            raise RuntimeError(
+                "UnitOfWork not started. Use async with or call __aenter__"
+            )
         return self._session
 
     @property

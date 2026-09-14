@@ -11,6 +11,7 @@ from typing import Self
 @dataclass(frozen=True, slots=True)
 class ContentHash:
     """SHA256 content hash for deduplication."""
+
     value: str
 
     def __post_init__(self) -> None:
@@ -33,6 +34,7 @@ class ContentHash:
 @dataclass(frozen=True, slots=True)
 class ThreatScore:
     """Threat scoring value object (1-100)."""
+
     velocity: int  # 1-100: How fast threat is moving
     severity: int  # 1-100: How severe the impact
     blast_radius: int = 0  # 1-100: Ecosystem impact
@@ -57,6 +59,7 @@ class ThreatScore:
 
 class WeaponizationLevel(str, Enum):
     """Weaponization potential level."""
+
     THEORETICAL = "Theoretical"
     POC_VERIFIED = "PoC Verified"
     ACTIVE_WEAPONIZATION = "Active Weaponization"
@@ -79,6 +82,7 @@ class WeaponizationLevel(str, Enum):
 
 class AttackArchetype(str, Enum):
     """Known attack archetypes for classification."""
+
     JAILBREAK = "Jailbreak"
     RAG_POISONING = "RAG Poisoning"
     MODEL_INVERSION = "Model Inversion"

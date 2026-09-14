@@ -1,4 +1,5 @@
 """Unit tests for TelegramDelivery."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -64,7 +65,9 @@ def test_telegram_delivery_valid_config_does_not_raise():
 
 
 @pytest.mark.asyncio
-async def test_send_alert_success(tg_delivery: TelegramDelivery, sample_entry: Entry, sample_analysis: Analysis):
+async def test_send_alert_success(
+    tg_delivery: TelegramDelivery, sample_entry: Entry, sample_analysis: Analysis
+):
     """send_alert should POST to Telegram Bot API and return success result."""
     mock_response = MagicMock()
     mock_response.raise_for_status = MagicMock()
@@ -74,7 +77,10 @@ async def test_send_alert_success(tg_delivery: TelegramDelivery, sample_entry: E
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.delivery.telegram_delivery.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.delivery.telegram_delivery.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         result = await tg_delivery.send_alert(sample_entry, sample_analysis)
 
     assert result.success is True
@@ -94,7 +100,10 @@ async def test_send_alert_http_error_returns_failure(
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("ai_security_monitor.infrastructure.delivery.telegram_delivery.httpx.AsyncClient", return_value=mock_client):
+    with patch(
+        "ai_security_monitor.infrastructure.delivery.telegram_delivery.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
         result = await tg_delivery.send_alert(sample_entry, sample_analysis)
 
     assert result.success is False
@@ -102,7 +111,9 @@ async def test_send_alert_http_error_returns_failure(
 
 
 @pytest.mark.asyncio
-async def test_send_newspaper_missing_file_returns_failure(tg_delivery: TelegramDelivery):
+async def test_send_newspaper_missing_file_returns_failure(
+    tg_delivery: TelegramDelivery,
+):
     """send_newspaper_document should return failure if PDF file doesn't exist."""
     result = await tg_delivery.send_newspaper_document(
         pdf_path="/tmp/does_not_exist_xyz.pdf",

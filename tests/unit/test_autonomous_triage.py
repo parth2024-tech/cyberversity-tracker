@@ -1,6 +1,7 @@
 """
 Unit tests for Autonomous LLM Triage Service and Queue Worker.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -55,6 +56,7 @@ async def test_triage_worker_process_entry():
     """Test processing an entry upgrades analysis from heuristic to ollama."""
     test_entry_id = uuid4()
     from datetime import datetime
+
     mock_entry = Entry(
         id=test_entry_id,
         source_id=uuid4(),
@@ -110,7 +112,10 @@ async def test_triage_worker_process_entry():
     # Verify analysis was updated with real LLM data
     assert mock_analysis.model == AnalysisModel.OLLAMA
     assert mock_analysis.threat_velocity == 88
-    assert mock_analysis.attack_vector == "Dynamic Prompt AST Injection via unvalidated tool call parameter"
+    assert (
+        mock_analysis.attack_vector
+        == "Dynamic Prompt AST Injection via unvalidated tool call parameter"
+    )
     assert mock_analysis.is_pre_cve_warning is True
     assert "LangChain" in mock_analysis.affected_ecosystem
     mock_uow.analyses.update.assert_called_once_with(mock_analysis)

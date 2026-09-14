@@ -11,6 +11,7 @@ from ai_security_monitor.presentation.api.schemas.analysis import AnalysisRead
 
 class EntryBase(BaseModel):
     """Base entry schema."""
+
     title: str = Field(..., description="Entry title")
     url: str = Field(..., description="Entry URL")
     summary: str = Field(default="", description="Entry summary")
@@ -22,12 +23,14 @@ class EntryBase(BaseModel):
 
 class EntryCreate(EntryBase):
     """Schema for creating an entry."""
+
     source_id: UUID = Field(..., description="Source UUID")
     content_hash: str = Field(..., description="SHA256 content hash")
 
 
 class EntryRead(EntryBase):
     """Schema for reading an entry."""
+
     id: UUID
     source_id: UUID
     content_hash: str
@@ -41,6 +44,7 @@ class EntryRead(EntryBase):
 
 class EntryWithAnalysis(EntryRead):
     """Entry with analysis included."""
+
     analysis: AnalysisRead | None = None
 
     class Config:
@@ -49,6 +53,7 @@ class EntryWithAnalysis(EntryRead):
 
 class EntryListResponse(BaseModel):
     """Paginated entry list response."""
+
     entries: list[EntryRead]
     total: int
     limit: int
