@@ -190,7 +190,7 @@ class AutonomousTriageService:
                 existing_analysis.affected_ecosystem = analysis_result.affected_ecosystem
                 existing_analysis.is_pre_cve_warning = analysis_result.is_pre_cve_warning
                 existing_analysis.attack_archetype = analysis_result.attack_archetype
-                existing_analysis.weaponization_potential = analysis_result.weaponization_potential
+                existing_analysis.weaponization_potential = analysis_result.weaponization_potential or "Production Ready"
                 existing_analysis.model = AnalysisModel.OLLAMA
                 existing_analysis.updated_at = datetime.now(UTC)
                 await uow.analyses.update(existing_analysis)
@@ -207,7 +207,7 @@ class AutonomousTriageService:
                     affected_ecosystem=analysis_result.affected_ecosystem,
                     is_pre_cve_warning=analysis_result.is_pre_cve_warning,
                     attack_archetype=analysis_result.attack_archetype,
-                    weaponization_potential=analysis_result.weaponization_potential,
+                    weaponization_potential=analysis_result.weaponization_potential or "Production Ready",
                     model=AnalysisModel.OLLAMA,
                 )
                 await uow.analyses.add(analysis)

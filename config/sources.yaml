@@ -40,9 +40,9 @@ sources:
   region: north_america
   country: US
 - name: Mistral AI Research
-  category: ai_tech
+  category: ai_models
   type: rss
-  url: https://mistral.ai/news/index.xml
+  url: https://github.com/mistralai/mistral-inference/releases.atom
   rate_limit_seconds: 1800
   enabled: true
   region: europe
@@ -50,7 +50,7 @@ sources:
 - name: NVIDIA Developer AI Blog
   category: ai_tech
   type: rss
-  url: https://developer.nvidia.com/blog/category/deep-learning/feed/
+  url: https://developer.nvidia.com/blog/feed/
   rate_limit_seconds: 1800
   enabled: true
   region: north_america
@@ -76,7 +76,7 @@ sources:
   type: rss
   url: https://oecd.ai/en/feed
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: Euractiv European AI Policy
@@ -84,7 +84,7 @@ sources:
   type: rss
   url: https://www.euractiv.com/section/digital/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: EU
 - name: MIT Technology Review AI
@@ -99,7 +99,7 @@ sources:
   category: ai_tech
   type: rss
   url: https://venturebeat.com/category/ai/feed/
-  rate_limit_seconds: 1800
+  rate_limit_seconds: 3600
   enabled: true
   region: north_america
   country: US
@@ -155,15 +155,15 @@ sources:
 - name: Cohere AI Frontier Research
   category: ai_tech
   type: rss
-  url: https://cohere.com/blog/rss
+  url: https://huggingface.co/blog/cohere.rss
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: CA
 - name: xAI Grok Architecture Releases
-  category: ai_tech
+  category: ai_models
   type: rss
-  url: https://github.com/xai-org/grok-1/releases.atom
+  url: https://github.com/xai-org/grok-1/commits.atom
   rate_limit_seconds: 1800
   enabled: true
   region: north_america
@@ -212,8 +212,8 @@ sources:
 - name: arXiv AI Safety & Alignment (Pre-CVE Radar)
   category: ai_research
   type: arxiv
-  query: (cat:cs.CR AND (ti:LLM OR ti:"language model" OR ti:adversarial OR ti:jailbreak
-    OR ti:agent OR ti:safety OR ti:alignment OR ti:backdoor OR ti:trojan OR ti:multimodal))
+  query: (cat:cs.CR AND (ti:LLM OR ti:"language model" OR ti:adversarial OR ti:jailbreak OR ti:agent OR ti:safety OR ti:alignment
+    OR ti:backdoor OR ti:trojan OR ti:multimodal))
   max_results: 30
   rate_limit_seconds: 1800
   enabled: true
@@ -249,7 +249,7 @@ sources:
   type: rss
   url: https://cert.europa.eu/feed/security-advisories/rss
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: EU
 - name: UK NCSC (National Cyber Security Centre)
@@ -257,7 +257,7 @@ sources:
   type: rss
   url: https://www.ncsc.gov.uk/api/1/services/feed/reports/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: GB
 - name: France ANSSI (CERT-FR Alerts)
@@ -265,7 +265,7 @@ sources:
   type: rss
   url: https://www.cert.ssi.gouv.fr/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: FR
 - name: Germany BSI (Cybersecurity Alerts)
@@ -273,7 +273,7 @@ sources:
   type: rss
   url: https://www.bsi.bund.de/SiteGlobals/Functions/RSS/RSSNewsfeed/RSSNewsfeed_News.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: DE
 - name: Japan JPCERT/CC (East Asia Incident Grid)
@@ -281,7 +281,7 @@ sources:
   type: rss
   url: https://www.jpcert.or.jp/rss/jpcert.rdf
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: JP
 - name: Australian Cyber Security Centre (ACSC)
@@ -289,7 +289,7 @@ sources:
   type: rss
   url: https://www.cyber.gov.au/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: AU
 - name: Canadian Centre for Cyber Security (CCCS)
@@ -297,7 +297,7 @@ sources:
   type: rss
   url: https://cyber.gc.ca/api/sitrep/en/rss
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: CA
 - name: SANS Internet Storm Center (Worldwide Telemetry)
@@ -305,7 +305,7 @@ sources:
   type: rss
   url: https://isc.sans.edu/rssfeed.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: SecurityWeek (International Cyber Defense)
@@ -313,7 +313,7 @@ sources:
   type: rss
   url: https://www.securityweek.com/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: Krebs on Security
@@ -321,7 +321,7 @@ sources:
   type: rss
   url: https://krebsonsecurity.com/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: The Hacker News
@@ -329,7 +329,7 @@ sources:
   type: rss
   url: https://thehackernews.com/feeds/posts/default
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: Schneier on Security
@@ -337,7 +337,7 @@ sources:
   type: rss
   url: https://www.schneier.com/feed/atom/
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Dark Reading
@@ -345,7 +345,7 @@ sources:
   type: rss
   url: https://www.darkreading.com/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: BleepingComputer
@@ -353,7 +353,7 @@ sources:
   type: rss
   url: https://www.bleepingcomputer.com/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Wired Security
@@ -361,7 +361,7 @@ sources:
   type: rss
   url: https://www.wired.com/feed/category/security/latest/rss
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Ars Technica Security
@@ -369,14 +369,14 @@ sources:
   type: rss
   url: https://arstechnica.com/security/feed/
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: NVD Recent CVEs (API)
   category: vulnerabilities
   type: nvd_api
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: CISA Known Exploited Vulnerabilities
@@ -384,14 +384,14 @@ sources:
   type: cisa_kev_json
   url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: GitHub Security Advisories
   category: vulnerabilities
   type: github_advisories
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: Microsoft MSRC (Security Response Center)
@@ -399,7 +399,7 @@ sources:
   type: rss
   url: https://msrc.microsoft.com/blog/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Cisco PSIRT (Security Advisories)
@@ -407,7 +407,7 @@ sources:
   type: rss
   url: https://tools.cisco.com/security/center/psirtrss20/CiscoSecurityAdvisories.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Fortinet PSIRT (FortiGuard Advisories)
@@ -415,7 +415,7 @@ sources:
   type: rss
   url: https://www.fortiguard.com/rss/ir.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Ivanti Security Advisories
@@ -423,7 +423,7 @@ sources:
   type: rss
   url: https://www.ivanti.com/blog/feed
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: GitHub Trending AI Repositories (Daily)
@@ -434,6 +434,9 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  config:
+    frequency: daily
+    filter_mode: ai
 - name: GitHub Trending AI Repositories (Weekly)
   category: github_trending
   type: github_trending
@@ -442,6 +445,9 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  config:
+    frequency: weekly
+    filter_mode: ai
 - name: Open-WebUI Releases & Codebase
   category: github_trending
   type: rss
@@ -483,9 +489,9 @@ sources:
   region: apac
   country: CN
 - name: Qwen Open Source Releases
-  category: github_trending
+  category: ai_models
   type: rss
-  url: https://github.com/QwenLM/Qwen2.5/releases.atom
+  url: https://github.com/QwenLM/Qwen2.5/commits.atom
   rate_limit_seconds: 1800
   enabled: true
   region: apac
@@ -615,7 +621,7 @@ sources:
   type: rss
   url: https://rss.packetstormsecurity.com/files/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: PortSwigger Research (Attack Tricks)
@@ -623,7 +629,7 @@ sources:
   type: rss
   url: https://portswigger.net/research/rss
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: GB
 - name: Google Project Zero (Elite 0-Days)
@@ -631,7 +637,7 @@ sources:
   type: rss
   url: https://googleprojectzero.blogspot.com/feeds/posts/default
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Trail of Bits Research & Tradecraft
@@ -639,7 +645,7 @@ sources:
   type: rss
   url: https://blog.trailofbits.com/feed/
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Exploit-DB (Verified 0-Day PoCs)
@@ -647,7 +653,7 @@ sources:
   type: rss
   url: https://www.exploit-db.com/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: global
   country: GLOBAL
 - name: Rapid7 Metasploit Framework Modules
@@ -655,7 +661,7 @@ sources:
   type: rss
   url: https://www.rapid7.com/blog/rss/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Shodan Trends & Exposure Radar
@@ -663,7 +669,7 @@ sources:
   type: rss
   url: https://blog.shodan.io/rss/
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Censys Threat Research & Exposure
@@ -671,7 +677,7 @@ sources:
   type: rss
   url: https://censys.com/feed/
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: MITRE ATT&CK Framework Releases
@@ -679,7 +685,7 @@ sources:
   type: rss
   url: https://github.com/mitre-attack/attack-stix-data/releases.atom
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: north_america
   country: US
 - name: Have I Been Pwned (HIBP Breach Feed)
@@ -687,15 +693,15 @@ sources:
   type: rss
   url: https://www.troyhunt.com/rss/
   rate_limit_seconds: 3600
-  enabled: true
+  enabled: false
   region: apac
   country: AU
-- name: "CNNVD China Vulnerability Alerts (CNNVD\u5B89\u5168\u52A8\u6001)"
+- name: CNNVD China Vulnerability Alerts (CNNVD安全动态)
   category: vulnerabilities
   type: rss
   url: https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
 - name: GovCERT China / Hong Kong Alerts
@@ -703,48 +709,47 @@ sources:
   type: rss
   url: https://www.govcert.gov.hk/en/rss_security_alerts.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: HK
-- name: "Qihoo 360 Threat Intelligence (360\u5A01\u80C1\u60C5\u62A5\u4E2D\u5FC3)"
+- name: Qihoo 360 Threat Intelligence (360威胁情报中心)
   category: cybersecurity
   type: rss
   url: https://wechat2rss.xlab.app/feed/920f171e3dae0c8eeb4c97b366b229ba19807732.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Qi-AnXin Threat Research (\u5947\u5B89\u4FE1\u6280\u672F\u7814\u7A76\u9662\
-    )"
+- name: Qi-AnXin Threat Research (奇安信技术研究院)
   category: cybersecurity
   type: rss
   url: https://wechat2rss.xlab.app/feed/77a8d89f12dcb0aa75a19731e474a63427089081.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Qi-AnXin XLab (\u5947\u5B89\u4FE1XLab)"
+- name: Qi-AnXin XLab (奇安信XLab)
   category: cybersecurity
   type: rss
   url: https://wechat2rss.xlab.app/feed/5c7b6eec254fbb0afac7abf4eae95573fc374555.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Cyber Kunlun CERT (\u8D5B\u535A\u6606\u4ED1CERT)"
+- name: Cyber Kunlun CERT (赛博昆仑CERT)
   category: vulnerabilities
   type: rss
   url: https://wechat2rss.xlab.app/feed/fb14ec6353e6ebbeb470d35d633471d0bca583a0.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Antiy AVL Threat Intel (\u5B89\u5929AVL\u5A01\u80C1\u60C5\u62A5)"
+- name: Antiy AVL Threat Intel (安天AVL威胁情报)
   category: cybersecurity
   type: rss
   url: https://wechat2rss.xlab.app/feed/c17498223ad8f92e5434100b16f4894a3107a90b.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
 - name: DarkNavy Security Research
@@ -752,11 +757,10 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/0d4ffa4a2127cb603c2da49daa678b0e780fd66b.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Tsinghua NISL Lab (\u6E05\u534E\u5927\u5B66\u7F51\u7EDC\u4E0E\u4FE1\u606F\
-    \u5B89\u5168\u5B9E\u9A8C\u5BA4)"
+- name: Tsinghua NISL Lab (清华大学网络与信息安全实验室)
   category: ai_research
   type: rss
   url: https://wechat2rss.xlab.app/feed/9c5931fa813fd1a38149e52d5809ce9b19a48ec4.xml
@@ -764,40 +768,39 @@ sources:
   enabled: true
   region: china
   country: CN
-- name: "Venustech ADLab (\u542F\u660E\u661F\u8FB0\u79EF\u6781\u9632\u5FA1\u5B9E\u9A8C\
-    \u5BA4)"
+- name: Venustech ADLab (启明星辰积极防御实验室)
   category: vulnerabilities
   type: rss
   url: https://wechat2rss.xlab.app/feed/16f16b9f4eb45442a824a52e3ddb040941a49f68.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "0x727 Red Team (0x727\u5F00\u6E90\u5B89\u5168\u56E2\u961F)"
+- name: 0x727 Red Team (0x727开源安全团队)
   category: exploits_tricks
   type: rss
   url: https://wechat2rss.xlab.app/feed/fb95636ab2edd220c83bc38b7041bb8e0a723496.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Xmirror DevSecOps (\u60AC\u955C\u5B89\u5168\u6280\u672F\u7814\u7A76)"
+- name: Xmirror DevSecOps (悬镜安全技术研究)
   category: cybersecurity
   type: rss
   url: https://wechat2rss.xlab.app/feed/59c134d2e41c3a0724d89cc6fa359bc1abedbc26.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Hawkeye Threat Intelligence (\u9E70\u773C\u5A01\u80C1\u60C5\u62A5)"
+- name: Hawkeye Threat Intelligence (鹰眼威胁情报)
   category: cybersecurity
   type: rss
   url: https://wechat2rss.xlab.app/feed/6bdcd81fd3702868c913261790ec10ffb76df144.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: china
   country: CN
-- name: "Fudan CodeWisdom Lab (\u590D\u65E6\u5927\u5B66\u8F6F\u4EF6\u5B89\u5168)"
+- name: Fudan CodeWisdom Lab (复旦大学软件安全)
   category: ai_research
   type: rss
   url: https://wechat2rss.xlab.app/feed/4e361ed9f2258098a35e02a6b738d6e53107f8bb.xml
@@ -824,8 +827,7 @@ sources:
 - name: arXiv China Frontier AI Labs
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND (Tsinghua OR DeepSeek OR Qwen OR Peking OR Zhipu OR "Shanghai
-    AI Lab")
+  query: cat:cs.AI AND (Tsinghua OR DeepSeek OR Qwen OR Peking OR Zhipu OR "Shanghai AI Lab")
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -849,9 +851,9 @@ sources:
 - name: Analytics India Magazine (AIM AI & Models)
   category: ai_tech
   type: rss
-  url: https://analyticsindiamag.com/feed/
+  url: https://analyticsindiamag.com/category/expert-opinion/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: south_asia
   country: IN
 - name: Inc42 AI & Deep Tech India
@@ -867,14 +869,13 @@ sources:
   type: rss
   url: https://www.cert-in.org.in/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: south_asia
   country: IN
 - name: arXiv India AI & Deep Tech Radar (IIT / IISc)
   category: ai_research
   type: arxiv
-  query: (cat:cs.AI OR cat:cs.CR) AND (IIT OR "Indian Institute of Science" OR IISc
-    OR MeitY OR "India AI")
+  query: (cat:cs.AI OR cat:cs.CR) AND (IIT OR "Indian Institute of Science" OR IISc OR MeitY OR "India AI")
   rate_limit_seconds: 1800
   enabled: true
   region: south_asia
@@ -892,7 +893,7 @@ sources:
   type: rss
   url: https://research.checkpoint.com/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: middle_east
   country: IL
 - name: CTech by Calcalist (Israel Cyber & AI High-Tech)
@@ -900,7 +901,7 @@ sources:
   type: rss
   url: https://www.calcalistech.com/ctech/rss/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: middle_east
   country: IL
 - name: Team8 Cyber & AI Think Tank
@@ -914,8 +915,7 @@ sources:
 - name: arXiv Israel Cybernetics & AI Security
   category: ai_research
   type: arxiv
-  query: (cat:cs.AI OR cat:cs.CR) AND ("Tel Aviv University" OR "Technion" OR "Weizmann"
-    OR "Hebrew University")
+  query: (cat:cs.AI OR cat:cs.CR) AND ("Tel Aviv University" OR "Technion" OR "Weizmann" OR "Hebrew University")
   rate_limit_seconds: 1800
   enabled: true
   region: middle_east
@@ -949,7 +949,7 @@ sources:
   type: rss
   url: https://english.etnews.com/rss/all.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: KR
 - name: Korea JoongAng Daily Tech & AI
@@ -957,7 +957,7 @@ sources:
   type: rss
   url: https://koreajoongangdaily.joins.com/section/rss/tech
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: KR
 - name: KrCERT/CC (Korea Internet & Security Agency)
@@ -965,7 +965,7 @@ sources:
   type: rss
   url: https://www.boho.or.kr/kr/bbs/rss.do?bbsId=B0000021
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: KR
 - name: arXiv South Korea AI & HBM Memory Radar (KAIST / SNU)
@@ -984,12 +984,15 @@ sources:
   enabled: true
   region: apac
   country: TW
+  language: en
+  config:
+    language: en
 - name: Taiwan TWCERT/CC (Computer Emergency Response Team)
   category: cybersecurity
   type: rss
   url: https://www.twcert.org.tw/en/rss/1
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: TW
 - name: ITRI Taiwan (Industrial Technology Research Institute)
@@ -997,7 +1000,7 @@ sources:
   type: rss
   url: https://www.itri.org.tw/english/rss.aspx
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: TW
 - name: Technology Innovation Institute (TII Falcon Foundation Models)
@@ -1005,14 +1008,13 @@ sources:
   type: rss
   url: https://www.tii.ae/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: middle_east
   country: AE
 - name: arXiv UAE Falcon & Abu Dhabi AI Radar (TII / MBZUAI)
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND ("Technology Innovation Institute" OR TII OR Falcon OR "Mohamed
-    bin Zayed University" OR MBZUAI)
+  query: cat:cs.AI AND ("Technology Innovation Institute" OR TII OR Falcon OR "Mohamed bin Zayed University" OR MBZUAI)
   rate_limit_seconds: 1800
   enabled: true
   region: middle_east
@@ -1022,7 +1024,7 @@ sources:
   type: rss
   url: https://ai.gov.ae/feed/
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: middle_east
   country: AE
 - name: Cyber Security Agency of Singapore (CSA SingCERT)
@@ -1030,7 +1032,7 @@ sources:
   type: rss
   url: https://www.csa.gov.sg/rss/singcert-alerts
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: apac
   country: SG
 - name: AI Singapore (AISG National Frontier Initiatives)
@@ -1046,7 +1048,7 @@ sources:
   type: rss
   url: https://www.dfki.de/en/web/news/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: DE
 - name: Heise Security Alerts (German Cyber Defense)
@@ -1054,7 +1056,7 @@ sources:
   type: rss
   url: https://www.heise.de/security/rss/alert-news-atom.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: DE
 - name: INRIA (French National Institute for Digital & AI Research)
@@ -1078,7 +1080,7 @@ sources:
   type: rss
   url: https://www.ncsc.nl/actueel/beveiligingsadviezen/rss
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: NL
 - name: Bits of Freedom Dutch Tech & ASML Semiconductor Wire
@@ -1102,7 +1104,7 @@ sources:
   type: rss
   url: https://www.kyberturvallisuuskeskus.fi/en/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: nordic
   country: FI
 - name: VTT Technical Research Centre of Finland (AI & Microelectronics)
@@ -1118,13 +1120,13 @@ sources:
   type: rss
   url: https://www.cert.se/feed.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: nordic
   country: SE
 - name: AI Sweden (National Centre for Applied Artificial Intelligence)
   category: ai_tech
   type: rss
-  url: https://www.ai.se/en/rss.xml
+  url: https://www.ai.se/en/news/rss.xml
   rate_limit_seconds: 1800
   enabled: true
   region: nordic
@@ -1134,15 +1136,15 @@ sources:
   type: rss
   url: https://www.govcert.ch/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: CH
-- name: "ETH Z\xFCrich AI Center Research Wire"
+- name: ETH Zürich AI Center Research Wire
   category: ai_research
   type: rss
   url: https://ai.ethz.ch/news-and-events/news.rss
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: CH
 - name: CERN Computing & AI Technology Wire
@@ -1150,7 +1152,7 @@ sources:
   type: rss
   url: https://home.cern/rss/news/computing.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: CH
 - name: Vector Institute for Artificial Intelligence
@@ -1164,8 +1166,7 @@ sources:
 - name: arXiv Canada AI & Deep Learning (Mila / Vector / Waterloo)
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND (Mila OR "Vector Institute" OR "University of Toronto" OR McGill
-    OR Waterloo)
+  query: cat:cs.AI AND (Mila OR "Vector Institute" OR "University of Toronto" OR McGill OR Waterloo)
   rate_limit_seconds: 1800
   enabled: true
   region: north_america
@@ -1173,7 +1174,7 @@ sources:
 - name: CSIRO Data61 (Australia AI Research & Cybernetics)
   category: ai_research
   type: rss
-  url: https://data61.csiro.au/en/News/RSS
+  url: https://research.csiro.au/mlai-fsp/feed/
   rate_limit_seconds: 1800
   enabled: true
   region: apac
@@ -1183,7 +1184,7 @@ sources:
   type: rss
   url: https://www.turing.ac.uk/feed.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: GB
 - name: TechUK Digital & AI Policy Wire
@@ -1191,14 +1192,13 @@ sources:
   type: rss
   url: https://www.techuk.org/rss/insights.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: GB
 - name: arXiv UK AI Safety & Governance (Oxford / Cambridge / Turing)
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND ("Alan Turing Institute" OR "UK AI Safety Institute" OR Oxford
-    OR Cambridge)
+  query: cat:cs.AI AND ("Alan Turing Institute" OR "UK AI Safety Institute" OR Oxford OR Cambridge)
   rate_limit_seconds: 1800
   enabled: true
   region: europe
@@ -1224,7 +1224,7 @@ sources:
   type: rss
   url: https://www.enisa.europa.eu/news/enisa-news/RSS
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: europe
   country: EU
 - name: AlgorithmWatch (European AI & Algorithmic Accountability)
@@ -1235,6 +1235,336 @@ sources:
   enabled: true
   region: europe
   country: EU
+- name: Stanford HAI (Human-Centered AI Institute)
+  category: ai_research
+  type: rss
+  url: https://hai.stanford.edu/news/rss.xml
+  rate_limit_seconds: 1800
+  enabled: false
+  region: north_america
+  country: US
+- name: CSET Georgetown (AI Policy & National Security)
+  category: ai_tech
+  type: rss
+  url: https://cset.georgetown.edu/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Allen Institute for AI (AI2) Research
+  category: ai_research
+  type: rss
+  url: https://blog.allenai.org/feed
+  rate_limit_seconds: 1800
+  enabled: false
+  region: north_america
+  country: US
+- name: Mistral AI Official Blog
+  category: ai_models
+  type: rss
+  url: https://mistral.ai/en-US/news/rss
+  rate_limit_seconds: 1800
+  enabled: false
+  region: europe
+  country: FR
+- name: EleutherAI Open Source AI Research
+  category: ai_research
+  type: rss
+  url: https://blog.eleuther.ai/rss.xml
+  rate_limit_seconds: 1800
+  enabled: false
+  region: global
+  country: GLOBAL
+- name: Sebastian Raschka ML Research Blog
+  category: ai_research
+  type: rss
+  url: https://magazine.sebastianraschka.com/feed
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: The Gradient (AI Research Perspectives)
+  category: ai_research
+  type: rss
+  url: https://thegradient.pub/rss/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: Interconnects (AI Systems & Models Research)
+  category: ai_research
+  type: rss
+  url: https://www.interconnects.ai/feed
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: Andrej Karpathy Research Blog
+  category: ai_research
+  type: rss
+  url: https://karpathy.github.io/feed.xml
+  rate_limit_seconds: 3600
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: Lil'Log (Lilian Weng OpenAI Research)
+  category: ai_research
+  type: rss
+  url: https://lilianweng.github.io/index.xml
+  rate_limit_seconds: 3600
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: Chip Huyen AI Systems Engineering
+  category: ai_research
+  type: rss
+  url: https://huyenchip.com/feed.xml
+  rate_limit_seconds: 3600
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: CrewAI Multi-Agent Framework Releases
+  category: github_trending
+  type: rss
+  url: https://github.com/crewAIInc/crewAI/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Langflow Visual Agent Studio Releases
+  category: github_trending
+  type: rss
+  url: https://github.com/langflow-ai/langflow/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Flowise AI Generative Workflows Releases
+  category: github_trending
+  type: rss
+  url: https://github.com/FlowiseAI/Flowise/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: DSPy Programming Framework Releases
+  category: github_trending
+  type: rss
+  url: https://github.com/stanfordnlp/dspy/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: LiteLLM Universal Proxy Engine Releases
+  category: github_trending
+  type: rss
+  url: https://github.com/BerriAI/litellm/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: MemGPT / Letta Autonomous Memory Releases
+  category: github_trending
+  type: rss
+  url: https://github.com/letta-ai/letta/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Meta Llama Official Model Releases
+  category: ai_models
+  type: rss
+  url: https://github.com/meta-llama/llama3/commits.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Google Gemma Open Models Releases
+  category: ai_models
+  type: rss
+  url: https://github.com/google-deepmind/gemma/commits.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Kyutai Labs Moshi Audio LLM (France)
+  category: ai_models
+  type: rss
+  url: https://github.com/kyutai-labs/moshi/commits.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: europe
+  country: FR
+- name: Zhipu AI GLM-4 Foundation Models (China)
+  category: ai_models
+  type: rss
+  url: https://github.com/THUDM/GLM-4/commits.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+- name: Google DeepMind Research Blog
+  category: ai_research
+  type: rss
+  url: https://deepmind.google/blog/rss.xml
+  rate_limit_seconds: 1800
+  enabled: true
+  region: europe
+  country: GB
+- name: Microsoft Research AI Lab
+  category: ai_research
+  type: rss
+  url: https://www.microsoft.com/en-us/research/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Stanford CRFM Foundation Models Center
+  category: ai_research
+  type: rss
+  url: https://crfm.stanford.edu/feed.xml
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: AI4Bharat Indic NLP & Multilingual AI (India)
+  category: ai_research
+  type: rss
+  url: https://github.com/AI4Bharat/IndicTrans2/commits.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: south_asia
+  country: IN
+- name: NVIDIA TensorRT-LLM Inference Engine
+  category: cyber_tools
+  type: rss
+  url: https://github.com/NVIDIA/TensorRT-LLM/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Exo Distributed Edge LLM Cluster
+  category: cyber_tools
+  type: rss
+  url: https://github.com/exo-explore/exo/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: Weaviate Vector Database Releases
+  category: cyber_tools
+  type: rss
+  url: https://github.com/weaviate/weaviate/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: europe
+  country: NL
+- name: Milvus Cloud-Native Vector DB Releases
+  category: cyber_tools
+  type: rss
+  url: https://github.com/milvus-io/milvus/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+- name: LanceDB Multi-Modal Vector DB Releases
+  category: cyber_tools
+  type: rss
+  url: https://github.com/lancedb/lancedb/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: Promptfoo LLM Security & Eval Releases
+  category: cyber_tools
+  type: rss
+  url: https://github.com/promptfoo/promptfoo/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+- name: TechNode China AI & Tech Wire
+  category: ai_tech
+  type: rss
+  url: https://technode.com/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  language: en
+  config:
+    language: en
+- name: The Decoder Global Frontier AI (Germany/EU)
+  category: ai_tech
+  type: rss
+  url: https://the-decoder.com/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: europe
+  country: DE
+  language: en
+  config:
+    language: en
+- name: KED Global Tech & Chips (South Korea)
+  category: ai_tech
+  type: rss
+  url: https://www.kedglobal.com/rss/all.xml
+  rate_limit_seconds: 1800
+  enabled: true
+  region: apac
+  country: KR
+  language: en
+  config:
+    language: en
+- name: MediaNama Indian Digital & AI Wire
+  category: ai_tech
+  type: rss
+  url: https://www.medianama.com/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: south_asia
+  country: IN
+- name: Sakana AI Tokyo Research Releases
+  category: ai_tech
+  type: rss
+  url: https://github.com/SakanaAI/AI-Scientist/commits.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: apac
+  country: JP
+  language: en
+  config:
+    language: en
+- name: Taiwan AI Labs Wire
+  category: ai_tech
+  type: rss
+  url: https://ailabs.tw/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: apac
+  country: TW
+  language: en
+  config:
+    language: en
+- name: Silicon Republic Tech & AI (Europe)
+  category: ai_tech
+  type: rss
+  url: https://www.siliconrepublic.com/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: europe
+  country: IE
+- name: MarkTechPost Global AI Wire
+  category: ai_tech
+  type: rss
+  url: https://www.marktechpost.com/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: north_america
+  country: US
+  language: en
+  config:
+    language: en
 delivery:
   email:
     enabled: false

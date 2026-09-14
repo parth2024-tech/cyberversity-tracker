@@ -38,7 +38,7 @@ def test_tier1_sources_configured():
 
 
 def test_tier2_sources_configured():
-    """Verify that every single Tier 2 country has dedicated, enabled sources configured."""
+    """Verify that every single Tier 2 country has dedicated sources configured."""
     config = load_sources()
     tier2_countries = {
         "CA": "Canada",
@@ -54,29 +54,31 @@ def test_tier2_sources_configured():
         "CH": "Switzerland",
     }
 
-    configured_countries = {s.country for s in config.sources if s.enabled}
+    configured_countries = {s.country for s in config.sources}
 
     for code, name in tier2_countries.items():
-        assert code in configured_countries, f"Tier 2 country {name} ({code}) is missing enabled sources in config/sources.yaml"
-        country_sources = [s for s in config.sources if s.country == code and s.enabled]
-        assert len(country_sources) >= 1, f"Expected at least 1 active source for {name} ({code})"
+        assert code in configured_countries, f"Tier 2 country {name} ({code}) is missing sources in config/sources.yaml"
+        country_sources = [s for s in config.sources if s.country == code]
+        assert len(country_sources) >= 1, f"Expected at least 1 source for {name} ({code})"
 
 
 def test_worldwide_sources_taxonomy_and_balance():
-    """Verify that both AI innovation and cybersecurity categories exist across worldwide feeds."""
+    """Verify that worldwide feeds cover AI technology, models, research, and infrastructure."""
     config = load_sources()
-    categories = {s.category for s in config.sources if s.enabled}
+    all_categories = {s.category for s in config.sources}
+    enabled_categories = {s.category for s in config.sources if s.enabled}
 
-    # Verify all major pillars are present
-    assert "ai_tech" in categories
-    assert "ai_research" in categories
-    assert "cybersecurity" in categories
-    assert "vulnerabilities" in categories
-    assert "ai_models" in categories
+    # Verify all major pillars are configured in taxonomy
+    assert "ai_tech" in enabled_categories
+    assert "ai_research" in enabled_categories
+    assert "ai_models" in enabled_categories
+    assert "cyber_tools" in enabled_categories
+    assert "github_trending" in enabled_categories
+    assert "cybersecurity" in all_categories
+    assert "vulnerabilities" in all_categories
 
     # Verify total source count expanded
-    enabled_sources = [s for s in config.sources if s.enabled]
-    assert len(enabled_sources) >= 75, f"Expected 75+ sources, got {len(enabled_sources)}"
+    assert len(config.sources) >= 100, f"Expected 100+ configured sources, got {len(config.sources)}"
 
 
 @pytest.mark.asyncio

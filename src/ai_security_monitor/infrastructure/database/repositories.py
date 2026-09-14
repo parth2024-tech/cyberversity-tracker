@@ -116,12 +116,21 @@ class SQLAlchemyEntryRepository(EntryRepository):
         else:
             stmt = stmt.where(EntryModel.is_purged.is_(False))
 
-        if filters and filters.sort_by in ("top", "velocity"):
+        if filters and filters.sort_by == "velocity":
             if not analysis_joined:
                 stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
             stmt = stmt.order_by(
                 desc(AnalysisModelDB.threat_velocity),
                 desc(EntryModel.published_at),
+                desc(EntryModel.fetched_at)
+            )
+        elif filters and filters.sort_by == "top":
+            # Top news blends recency and impact: newest dispatches lead, ranked by velocity/stars
+            if not analysis_joined:
+                stmt = stmt.outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+            stmt = stmt.order_by(
+                desc(EntryModel.published_at),
+                desc(AnalysisModelDB.threat_velocity),
                 desc(EntryModel.fetched_at)
             )
         elif filters and filters.sort_by == "blast":
@@ -577,7 +586,7 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             affected_ecosystem=analysis.affected_ecosystem,
             is_pre_cve_warning=analysis.is_pre_cve_warning,
             attack_archetype=analysis.attack_archetype,
-            weaponization_potential=analysis.weaponization_potential,
+            weaponization_potential=analysis.weaponization_potential or "Production Ready",
             mitre_attack_id=analysis.mitre_attack_id,
             mitre_technique=analysis.mitre_technique,
             model=analysis.model.value,
@@ -621,7 +630,7 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         model.affected_ecosystem = analysis.affected_ecosystem
         model.is_pre_cve_warning = analysis.is_pre_cve_warning
         model.attack_archetype = analysis.attack_archetype
-        model.weaponization_potential = analysis.weaponization_potential
+        model.weaponization_potential = analysis.weaponization_potential or "Production Ready"
         model.mitre_attack_id = analysis.mitre_attack_id
         model.mitre_technique = analysis.mitre_technique
         model.model = analysis.model.value

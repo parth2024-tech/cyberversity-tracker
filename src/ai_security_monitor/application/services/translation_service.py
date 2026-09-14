@@ -68,28 +68,43 @@ class TranslationService:
         if re.search(r"[\u0600-\u06ff]", clean):
             return "ar"
 
-        # Pure ASCII short strings (repo names, release tags, versions) are English
-        if all(ord(c) < 128 for c in clean) and (len(clean) < 35 or len(clean.split()) <= 3):
-            return "en"
+        # Common English vocabulary & tech jargon heuristics
+        common_en = {
+            "the", "of", "and", "in", "to", "for", "with", "is", "on", "at", "from",
+            "by", "as", "this", "that", "an", "be", "are", "ai", "model", "models",
+            "learning", "system", "server", "release", "data", "code", "paper", "using",
+            "new", "vram", "ram", "gpu", "llm", "meets", "goes", "show", "hn", "agent",
+            "open", "weights", "source", "inference", "training", "benchmarks", "reasoning"
+        }
+        words = set(re.findall(r"\b[a-zA-Z]{2,}\b", clean.lower()))
+        has_accented = bool(re.search(r"[áéíóúüñäößàèìòùâêîôûç]", clean, re.I))
+
+        if words & common_en:
+            if not has_accented or len(words & common_en) >= 2:
+                return "en"
+
+        # Pure ASCII text without non-Latin scripts or foreign accents is English in tech feeds
+        if all(ord(c) < 128 for c in clean):
+            words_list = clean.split()
+            if len(clean) < 60 or len(words_list) <= 7 or not has_accented:
+                return "en"
 
         # Check with langdetect for European / Latin script languages
         try:
             from langdetect import DetectorFactory, detect_langs
             DetectorFactory.seed = 0
-            # Strip URLs and numbers before detection
             clean_detect = re.sub(r"https?://\S+|CVE-\d+-\d+|\b\d+\b", "", clean).strip()
-            if len(clean_detect) >= 20:
+            if len(clean_detect) >= 30:
                 langs = detect_langs(clean_detect)
                 if langs:
                     top = langs[0]
                     if top.lang == "en":
                         return "en"
+                    # If pure ASCII without accented letters, avoid false positives from short fragments
+                    if all(ord(c) < 128 for c in clean) and top.lang in ("de", "nl", "ca", "af", "so", "da", "no", "sv"):
+                        return "en"
                     threshold = getattr(settings.fetch, "langdetect_confidence_threshold", 0.7)
                     if top.prob < threshold:
-                        logger.debug(
-                            f"Language detection confidence {top.prob:.2f} for '{top.lang}' "
-                            f"below threshold {threshold}. Flagging as uncertain."
-                        )
                         return "uncertain"
                     return top.lang
         except Exception:

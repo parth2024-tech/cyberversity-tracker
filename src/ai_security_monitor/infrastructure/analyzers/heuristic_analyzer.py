@@ -423,7 +423,7 @@ class HeuristicAnalyzer(BaseAnalyzer):
                 "Open Weights Available" if entry.category == Category.AI_MODELS
                 else "Production Ready" if entry.category in (Category.GITHUB_TRENDING, Category.CYBER_TOOLS)
                 else "Research Preprint" if entry.category == Category.AI_RESEARCH
-                else None
+                else "Production Ready"
             )
 
             return AnalysisResult(

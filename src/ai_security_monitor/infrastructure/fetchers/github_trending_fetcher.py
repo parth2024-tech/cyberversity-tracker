@@ -1,6 +1,16 @@
-# GitHub Trending Security repos fetcher.
+"""GitHub Trending fetcher — top-tier, configurable filter modes.
 
-from datetime import UTC, datetime
+Architecture notes:
+- Supports filter_mode config key: "ai" (default), "security", "infra", "any"
+  This fixes GitHub Trending Security sources that returned 0 entries because
+  the strict AI keyword filter excluded all security repos (nuclei, zaproxy, etc.)
+- Weekly API fallback uses the correct time window (7 days for weekly, 2 for daily)
+  and an expanded topic set to avoid 0-result API responses.
+- GitHub Trending Security sources are repurposed as AI Infrastructure Tools
+  (vLLM, llama.cpp, inference runtimes) per project directive.
+"""
+
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from bs4 import BeautifulSoup
@@ -16,9 +26,33 @@ from ai_security_monitor.infrastructure.fetchers.base import (
 
 logger = get_logger(__name__)
 
+_AI_KEYWORDS = frozenset({
+    "ai", "llm", "agent", "agents", "machine-learning", "deep-learning",
+    "neural", "model", "models", "gpt", "transformer", "transformers",
+    "diffusion", "rag", "vision", "deepseek", "qwen", "claude", "llama",
+    "mistral", "vllm", "ollama", "sglang", "embedding", "embeddings",
+    "inference", "fine-tuning", "lora", "rlhf", "langchain", "llamaindex",
+    "gemini", "pytorch", "huggingface", "whisper", "vision-language",
+    "multimodal", "openai", "anthropic", "reasoning", "benchmark",
+})
+
+_INFRA_KEYWORDS = frozenset({
+    "inference", "serving", "runtime", "engine", "framework", "deploy",
+    "quantization", "optimization", "accelerator", "cuda", "triton",
+    "vllm", "sglang", "ollama", "llamacpp", "onnx", "trt", "tensorrt",
+    "mlops", "vector", "embedding", "rag", "retrieval", "monitoring",
+    "training", "fine-tuning", "lora", "qlora", "peft", "accelerate",
+})
+
+_SECURITY_KEYWORDS = frozenset({
+    "security", "pentest", "exploit", "vulnerability", "scanner", "fuzzer",
+    "red-team", "blue-team", "cve", "ctf", "malware", "forensics", "siem",
+    "ids", "ips", "waf", "recon", "osint", "threat", "detection", "edr",
+})
+
 
 class GitHubTrendingFetcher(BaseFetcher):
-    """Fetcher for GitHub Trending security repositories."""
+    """Fetcher for GitHub Trending repositories with per-source filter modes."""
 
     @property
     def fetcher_type(self) -> str:
@@ -26,39 +60,57 @@ class GitHubTrendingFetcher(BaseFetcher):
 
     def __init__(self, source: Source, timeout: int | None = None, max_retries: int | None = None):
         super().__init__(source, timeout, max_retries)
-        # Parse frequency from config (daily/weekly)
-        self.frequency = source.config.get("frequency", "daily")
+        self.frequency: str = source.config.get("frequency", "daily")
+        # filter_mode: "ai" | "infra" | "security" | "any"
+        self.filter_mode: str = source.config.get("filter_mode", "ai")
 
     async def _fetch_raw(self) -> list[dict]:
-        entries = []
+        entries: list[dict] = []
         scrape_failed = False
+
         try:
             entries = await self._fetch_raw_scraping()
         except Exception as scrape_err:
-            logger.warning(f"GitHub Trending scraping exception: {scrape_err}")
-            entries = []
+            logger.warning(f"GitHub Trending scraping exception for {self.source.name!r}: {scrape_err}")
             scrape_failed = True
 
-        # If scraping returned few/no AI entries or failed, fetch from official GitHub Search API
+        # Trigger API fallback if scraping returned too few results
         if len(entries) < 5:
             reason = "scraping exception" if scrape_failed else f"low yield ({len(entries)} repos found)"
             logger.warning(
-                f"GitHub Trending scrape health alert: {reason}. "
-                "Activating GitHub Search API fallback to guarantee ecosystem coverage."
+                f"GitHub Trending scrape health alert for {self.source.name!r}: {reason}. "
+                "Activating GitHub Search API fallback."
             )
-            from ai_security_monitor.core.diagnostics import diagnostics
-            diagnostics.record_scrape_fallback(self.source.name, reason)
             try:
                 api_entries = await self._fetch_raw_api()
                 existing_urls = {e["url"].lower() for e in entries}
+                added = 0
                 for ae in api_entries:
                     if ae["url"].lower() not in existing_urls:
                         entries.append(ae)
-                logger.info(f"GitHub Search API fallback enriched feed with {len(api_entries)} repos")
+                        added += 1
+                logger.info(
+                    f"GitHub Search API fallback enriched {self.source.name!r} "
+                    f"with {added} additional repos"
+                )
             except Exception as api_err:
-                logger.error(f"GitHub Search API fallback also failed: {api_err}")
+                logger.error(f"GitHub Search API fallback failed for {self.source.name!r}: {api_err}")
 
         return entries
+
+    def _passes_filter(self, repo_name: str, description: str) -> bool:
+        """Apply per-source keyword filter based on filter_mode config."""
+        if self.filter_mode == "any":
+            return True
+
+        combined = f"{repo_name} {description}".lower()
+
+        if self.filter_mode == "security":
+            return any(w in combined for w in _SECURITY_KEYWORDS)
+        elif self.filter_mode == "infra":
+            return any(w in combined for w in _INFRA_KEYWORDS) or any(w in combined for w in _AI_KEYWORDS)
+        else:  # "ai" (default)
+            return any(w in combined for w in _AI_KEYWORDS)
 
     async def _fetch_raw_scraping(self) -> list[dict]:
         since = self.frequency  # daily, weekly, monthly
@@ -66,26 +118,30 @@ class GitHubTrendingFetcher(BaseFetcher):
         params = {"spoken_language_code": "en"}
         headers = {"User-Agent": settings.fetch.user_agent}
 
-        async with httpx.AsyncClient(timeout=self.timeout, headers=headers, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout, headers=headers, follow_redirects=True
+        ) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
 
         soup = BeautifulSoup(response.content, "html.parser")
         repos = soup.find_all("article", class_="Box-row")
+
         if not repos:
             logger.warning(
-                "GitHub Trending DOM health check failed: no 'article.Box-row' elements matched. "
-                "GitHub layout or CSS classes may have updated."
+                f"GitHub Trending DOM health check failed for {self.source.name!r}: "
+                "no 'article.Box-row' elements matched. GitHub layout may have updated."
             )
         elif len(repos) < 5:
             logger.info(
-                f"GitHub Trending DOM health check warning: only {len(repos)} 'article.Box-row' elements parsed."
+                f"GitHub Trending DOM health check: only {len(repos)} "
+                "'article.Box-row' elements parsed."
             )
-        entries = []
+
+        entries: list[dict] = []
 
         for repo in repos[:30]:
             try:
-                # Repo name and link
                 h2 = repo.find("h2", class_="h3")
                 if not h2:
                     continue
@@ -96,19 +152,18 @@ class GitHubTrendingFetcher(BaseFetcher):
                 repo_name = a_tag.get_text(strip=True).replace(" ", "")
                 repo_url = "https://github.com" + a_tag["href"]
 
-                # Description
                 desc_tag = repo.find("p", class_="col-9")
                 description = desc_tag.get_text(strip=True) if desc_tag else ""
 
-                # Language
                 lang_tag = repo.find("span", itemprop="programmingLanguage")
                 language = lang_tag.get_text(strip=True) if lang_tag else ""
 
-                # Stars today/this period
                 stars_tag = repo.find("span", class_="d-inline-block float-sm-right")
                 stars_text = stars_tag.get_text(strip=True) if stars_tag else ""
 
-                # Build content
+                if not self._passes_filter(repo_name, description):
+                    continue
+
                 content_parts = []
                 if description:
                     content_parts.append(description)
@@ -116,24 +171,14 @@ class GitHubTrendingFetcher(BaseFetcher):
                     content_parts.append(f"Language: {language}")
                 if stars_text:
                     content_parts.append(f"Stars: {stars_text}")
-
                 content = "\n".join(content_parts)
 
-                # Enforce strict AI filter to guarantee feed quality
-                combined_info = f"{repo_name} {description}".lower()
-                ai_keywords = (
-                    "ai", "llm", "agent", "agents", "machine-learning", "deep-learning",
-                    "neural", "model", "models", "gpt", "transformer", "transformers",
-                    "diffusion", "rag", "vision", "deepseek", "qwen", "claude", "llama",
-                    "mistral", "vllm", "ollama", "sglang", "embedding", "embeddings",
-                    "inference", "fine-tuning", "lora", "rlhf", "langchain", "llamaindex",
-                    "gemini", "pytorch", "huggingface", "whisper", "vision-language", "multimodal"
+                clean_title = (
+                    f"{repo_name}: {description[:80]}..."
+                    if description and len(description) > 10
+                    else f"Trending Repo: {repo_name}"
                 )
-                if not any(w in combined_info for w in ai_keywords):
-                    continue
-
-                clean_title = f"{repo_name}: {description[:80]}..." if description and len(description) > 10 else f"Trending Repo: {repo_name}"
-                tags = ["github", "trending", "open-source", "ai", self.frequency]
+                tags = ["github", "trending", "open-source", self.frequency]
                 if language:
                     tags.append(language.lower())
 
@@ -148,7 +193,8 @@ class GitHubTrendingFetcher(BaseFetcher):
                         "language": language,
                         "stars_period": stars_text,
                         "frequency": self.frequency,
-                    }
+                        "filter_mode": self.filter_mode,
+                    },
                 })
             except Exception as e:
                 logger.warning(f"Failed to parse GitHub trending repo: {e}")
@@ -157,19 +203,46 @@ class GitHubTrendingFetcher(BaseFetcher):
         return entries
 
     async def _fetch_raw_api(self) -> list[dict]:
-        """Fetch trending AI repositories using GitHub REST Search API."""
-        from datetime import timedelta
+        """Fetch trending repositories using GitHub REST Search API.
+
+        Uses frequency-aligned time windows:
+        - daily  → pushed in last 2 days
+        - weekly → pushed in last 8 days  (7 + 1 buffer)
+        - monthly → pushed in last 32 days
+
+        Topic filter is expanded per filter_mode to avoid 0-result API responses.
+        """
         now = datetime.now(UTC)
-        days = 2 if self.frequency == "daily" else 8
+        days_map = {"daily": 2, "weekly": 8, "monthly": 32}
+        days = days_map.get(self.frequency, 2)
         since_date = (now - timedelta(days=days)).strftime("%Y-%m-%d")
+
+        # Build topic filter per mode
+        if self.filter_mode == "security":
+            topic_filter = "topic:security OR topic:pentest OR topic:red-team OR topic:osint"
+            stars_floor = "stars:>50"
+        elif self.filter_mode == "infra":
+            topic_filter = (
+                "topic:inference OR topic:llm OR topic:mlops OR "
+                "topic:machine-learning OR topic:deep-learning"
+            )
+            stars_floor = "stars:>100"
+        else:  # "ai" or "any"
+            topic_filter = (
+                "topic:ai OR topic:llm OR topic:ai-agents OR "
+                "topic:machine-learning OR topic:deep-learning"
+            )
+            stars_floor = "stars:>100"
 
         url = "https://api.github.com/search/repositories"
         headers = {
-            "User-Agent": "AetherGuard-AI-Monitor/1.0",
+            "User-Agent": "AetherGuard-AI-Monitor/2.0",
             "Accept": "application/vnd.github.v3+json",
         }
+
+        # Primary query: frequency-aligned recency + topic
         params = {
-            "q": f"stars:>100 pushed:>={since_date} topic:ai",
+            "q": f"{stars_floor} pushed:>={since_date} {topic_filter.split(' OR ')[0]}",
             "sort": "stars",
             "order": "desc",
             "per_page": 30,
@@ -178,14 +251,16 @@ class GitHubTrendingFetcher(BaseFetcher):
         async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
             response = await client.get(url, params=params)
             if response.status_code != 200:
-                params["q"] = "stars:>500 topic:llm OR topic:ai-agents OR topic:inference"
+                # Fallback query: relax to just topic + high stars
+                params["q"] = f"stars:>500 {topic_filter}"
                 params["sort"] = "updated"
                 response = await client.get(url, params=params)
-                response.raise_for_status()
+                if response.status_code != 200:
+                    response.raise_for_status()
 
         data = response.json()
         items = data.get("items", [])
-        entries = []
+        entries: list[dict] = []
 
         for repo in items[:30]:
             try:
@@ -197,6 +272,9 @@ class GitHubTrendingFetcher(BaseFetcher):
                 forks = repo.get("forks_count", 0)
                 topics = repo.get("topics", [])
 
+                if not self._passes_filter(repo_name, description):
+                    continue
+
                 content_parts = []
                 if description:
                     content_parts.append(description)
@@ -207,16 +285,22 @@ class GitHubTrendingFetcher(BaseFetcher):
                     content_parts.append(f"Topics: {', '.join(topics[:8])}")
                 content = "\n".join(content_parts)
 
-                clean_title = f"{repo_name}: {description[:80]}..." if description and len(description) > 10 else f"Trending Repo: {repo_name}"
-                tags = ["github", "trending", "open-source", "ai", self.frequency]
+                clean_title = (
+                    f"{repo_name}: {description[:80]}..."
+                    if description and len(description) > 10
+                    else f"Trending Repo: {repo_name}"
+                )
+                tags = ["github", "trending", "open-source", self.frequency]
                 if language:
                     tags.append(language.lower())
-                tags.extend([t.lower() for t in topics[:5]])
+                tags.extend(t.lower() for t in topics[:5])
 
                 published_at = datetime.now(UTC)
                 if repo.get("pushed_at"):
                     try:
-                        published_at = datetime.fromisoformat(repo["pushed_at"].replace("Z", "+00:00")).replace(tzinfo=None)
+                        published_at = datetime.fromisoformat(
+                            repo["pushed_at"].replace("Z", "+00:00")
+                        ).replace(tzinfo=None)
                     except Exception:
                         pass
 
@@ -232,7 +316,8 @@ class GitHubTrendingFetcher(BaseFetcher):
                         "stars": stars,
                         "forks": forks,
                         "frequency": self.frequency,
-                    }
+                        "filter_mode": self.filter_mode,
+                    },
                 })
             except Exception:
                 continue
@@ -241,10 +326,16 @@ class GitHubTrendingFetcher(BaseFetcher):
 
     def _parse_entry(self, raw: dict) -> Entry:
         repo_ident = raw.get("metadata", {}).get("repo_name") or raw["url"]
+        pub_date_str = (
+            raw["published_at"].strftime("%Y-%m-%d")
+            if hasattr(raw.get("published_at"), "strftime")
+            else "trending"
+        )
         content_hash = ContentHash.from_content(
-            "github_repo",
+            "github_trending",
             repo_ident.lower().strip(),
             raw["url"].lower().strip(),
+            pub_date_str,
         )
         return Entry(
             source_id=self.source.id,

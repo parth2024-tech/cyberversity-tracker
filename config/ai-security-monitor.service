@@ -4,11 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/thor/Projects/ai-security-monitor
-ExecStart=/home/thor/Projects/ai-security-monitor/.venv/bin/python -m ai_security_monitor.presentation.cli.main serve --host 127.0.0.1 --port 8080
+WorkingDirectory=/home/thor/Desktop/ai-security-monitor
+ExecStart=/home/thor/Desktop/ai-security-monitor/.venv/bin/python -m ai_security_monitor.presentation.cli.main serve --host 127.0.0.1 --port 8080
 Restart=always
 RestartSec=10
-Environment="PYTHONPATH=/home/thor/Projects/ai-security-monitor/src"
+Environment="PYTHONPATH=/home/thor/Desktop/ai-security-monitor/src"
 Environment="PORT=8080"
 Environment="API_PORT=8080"
 Environment="SCHEDULER_ENABLED=true"

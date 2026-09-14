@@ -5,12 +5,15 @@ from datetime import UTC, datetime
 import httpx
 
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
     fetcher_registry,
 )
+
+logger = get_logger(__name__)
 
 
 class HackerNewsFetcher(BaseFetcher):
@@ -21,48 +24,69 @@ class HackerNewsFetcher(BaseFetcher):
         return "hackernews"
 
     async def _fetch_raw(self) -> list[dict]:
-        # Use Algolia API to search for AI/ML stories
-        url = "https://hn.algolia.com/api/v1/search"
-        params = {
-            "tags": "story",
-            "query": "AI OR LLM OR GPT OR Claude OR Gemini OR DeepSeek OR Mistral OR Llama OR neural OR transformer OR \"machine learning\" OR \"generative AI\" OR agent",
-            "hitsPerPage": 75,
-            "page": 0,
-        }
+        # Algolia Search API does not support boolean 'OR' in query strings.
+        # We query recent stories using search_by_date across core AI topics and deduplicate.
+        base_url = "https://hn.algolia.com/api/v1/search_by_date"
+        keywords = self.source.config.get("tags") if self.source.config else None
+        if not keywords:
+            keywords = ["AI", "LLM", "Claude", "OpenAI", "DeepSeek", "Mistral", "Llama", "agents", "machine learning"]
+
         headers = {"User-Agent": settings.fetch.user_agent}
+        seen_ids: set[str] = set()
+        entries: list[dict] = []
 
         async with httpx.AsyncClient(timeout=self.timeout, headers=headers, follow_redirects=True) as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
+            for kw in keywords[:6]:
+                try:
+                    params = {
+                        "tags": "story",
+                        "query": kw,
+                        "hitsPerPage": 15,
+                    }
+                    response = await client.get(base_url, params=params)
+                    if response.status_code != 200:
+                        continue
+                    data = response.json()
+                    for hit in data.get("hits", []):
+                        oid = str(hit.get("objectID", ""))
+                        if not oid or oid in seen_ids:
+                            continue
+                        seen_ids.add(oid)
 
-        data = response.json()
-        entries = []
+                        title = hit.get("title", "Untitled")
+                        url_str = hit.get("url") or f"https://news.ycombinator.com/item?id={oid}"
+                        points = hit.get("points", 0)
+                        author = hit.get("author", "")
+                        num_comments = hit.get("num_comments", 0)
+                        created_at = hit.get("created_at", "")
 
-        for hit in data.get("hits", []):
-            title = hit.get("title", "Untitled")
-            url_str = hit.get("url") or f"https://news.ycombinator.com/item?id={hit.get('objectID')}"
-            points = hit.get("points", 0)
-            author = hit.get("author", "")
-            num_comments = hit.get("num_comments", 0)
-            created_at = hit.get("created_at", "")
+                        content = f"Points: {points} | Comments: {num_comments} | Author: {author}"
+                        if hit.get("story_text"):
+                            content = hit["story_text"][:500] + "\n\n" + content
 
-            content = f"Points: {points} | Comments: {num_comments} | Author: {author}"
-            if hit.get("story_text"):
-                content = hit["story_text"][:500] + "\n\n" + content
+                        pub_at = datetime.now(UTC)
+                        if created_at:
+                            try:
+                                pub_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                            except Exception:
+                                pass
 
-            entries.append({
-                "title": title,
-                "url": url_str,
-                "content": content,
-                "published_at": datetime.fromisoformat(created_at.replace("Z", "+00:00")).replace(tzinfo=None) if created_at else datetime.now(UTC),
-                "tags": ["hackernews", "ai", "ml", "llm", "gpt"],
-                "metadata": {
-                    "hn_id": hit.get("objectID"),
-                    "points": points,
-                    "author": author,
-                    "num_comments": num_comments,
-                }
-            })
+                        entries.append({
+                            "title": title,
+                            "url": url_str,
+                            "content": content,
+                            "published_at": pub_at,
+                            "tags": ["hackernews", "ai", kw.lower()],
+                            "metadata": {
+                                "hn_id": oid,
+                                "points": points,
+                                "author": author,
+                                "num_comments": num_comments,
+                            }
+                        })
+                except Exception as kw_err:
+                    logger.debug(f"Hacker News query failed for keyword '{kw}': {kw_err}")
+                    continue
 
         return entries
 

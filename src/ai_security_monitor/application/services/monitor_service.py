@@ -132,11 +132,14 @@ class MonitorService:
                     if existing.enabled != s_cfg.enabled:
                         existing.enabled = s_cfg.enabled
                         changed = True
-                    if existing.config.get('region') != s_cfg.region:
-                        existing.config['region'] = s_cfg.region
-                        changed = True
-                    if existing.config.get('country') != s_cfg.country:
-                        existing.config['country'] = s_cfg.country
+                    # Fully synchronize config dictionary including frequency and filter_mode
+                    new_cfg = dict(s_cfg.config or {})
+                    if getattr(s_cfg, 'since', None):
+                        new_cfg['frequency'] = s_cfg.since
+                    new_cfg['region'] = getattr(s_cfg, 'region', 'global')
+                    new_cfg['country'] = getattr(s_cfg, 'country', 'GLOBAL')
+                    if existing.config != new_cfg:
+                        existing.config = {**(existing.config or {}), **new_cfg}
                         changed = True
                     if changed:
                         await uow.sources.update(existing)
@@ -173,14 +176,20 @@ class MonitorService:
 
                     try:
                         # Automatically detect non-English text and translate title/summary to English.
-                        # Uses asyncio.to_thread() internally — does not block the event loop.
-                        try:
-                            from ai_security_monitor.application.services.translation_service import (
-                                translation_service,
-                            )
-                            await translation_service.translate_entry_async(entry)
-                        except Exception as trans_e:
-                            logger.debug(f"Translation skipped: {trans_e}")
+                        # Skip for inherently English feeds to prevent unnecessary overhead and provider throttling.
+                        is_english_source = (
+                            source.type.value in ("arxiv", "hackernews", "github_trending")
+                            or source.config.get("country") in ("US", "GB", "CA", "AU", "IE", "IN", "SG", "GLOBAL", "EU")
+                            or source.config.get("language") == "en"
+                        )
+                        if not is_english_source:
+                            try:
+                                from ai_security_monitor.application.services.translation_service import (
+                                    translation_service,
+                                )
+                                await translation_service.translate_entry_async(entry)
+                            except Exception as trans_e:
+                                logger.debug(f"Translation skipped: {trans_e}")
 
                         # Stamp sovereign region, country, and intelligence provenance from source config
                         entry.metadata = entry.metadata or {}
@@ -381,8 +390,14 @@ class MonitorService:
             nonlocal total_new, success, error
             async with sem:
                 try:
-                    # Timeout per source so slow network endpoints never stall the global sweep
-                    log = await asyncio.wait_for(self.fetch_source(src), timeout=25.0)
+                    # arXiv sources queue behind a class-level 3s pacing lock.
+                    # With 14 regional arXiv fetchers, the last waits 39s+ before
+                    # its HTTP request even starts.  Give arXiv sources 90s so
+                    # all regional sources complete instead of timing out silently.
+                    source_timeout = (
+                        90.0 if src.type.value == "arxiv" else 25.0
+                    )
+                    log = await asyncio.wait_for(self.fetch_source(src), timeout=source_timeout)
                     async with lock:
                         if log.status == FetchStatus.SUCCESS:
                             success += 1
@@ -416,6 +431,8 @@ class MonitorService:
         # Invalidate response caches so freshly ingested entries and updated stats are immediately visible on website
         from ai_security_monitor.infrastructure.cache import response_cache
         response_cache.invalidate_prefix("entries_")
+        response_cache.invalidate_prefix("sources_list_all_")
+        response_cache.invalidate("sources_map")
         response_cache.invalidate("total_unfiltered_count")
         response_cache.invalidate("stats_totals")
         response_cache.invalidate("sweep_status")

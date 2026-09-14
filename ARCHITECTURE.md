@@ -208,6 +208,7 @@ ai_security_monitor/
 │   └── verify_and_loadtest.py    # Automated behavioral load test & scenario verifier
 └── tests/
     ├── test_architectural_improvements.py # Comprehensive test suite for all 14 items
+    ├── test_advanced_resilience_and_concurrency.py # High-concurrency WAL & failure recovery tests
     ├── unit/test_diagnostics.py  # Unit tests for self-healing diagnostics tracker
-    └── ... (157 tests total)
+    └── ... (161 tests total)
 ```
