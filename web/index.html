@@ -1878,12 +1878,12 @@
       const tech = cats.ai_tech || 0;
       const totalAi = trending + models + research + tools + tech;
 
-      _set('total-entries', (totalAi || stats.total_entries || 0).toLocaleString());
-      _set('trending-repos-count', trending.toLocaleString());
-      _set('frontier-models-count', models.toLocaleString());
-      _set('ai-count', research.toLocaleString());
-      _set('developer-tools-count', tools.toLocaleString());
-      _set('global-tech-count', tech.toLocaleString());
+      _set('total-entries', (stats.total_entries || 0).toLocaleString());
+      _set('trending-repos-count', (cats.github_trending || 0).toLocaleString());
+      _set('frontier-models-count', (cats.ai_models || 0).toLocaleString());
+      _set('ai-count', (cats.ai_research || 0).toLocaleString());
+      _set('developer-tools-count', (cats.cyber_tools || 0).toLocaleString());
+      _set('global-tech-count', (cats.ai_tech || 0).toLocaleString());
       _set('pre-cve-count', (stats.pre_cve_warnings || 0).toLocaleString());
       _set('high-vel-count', (stats.high_velocity_entries || 0).toLocaleString());
       _set('active-sources-count', totalSrcs);
