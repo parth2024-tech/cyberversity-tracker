@@ -89,10 +89,10 @@ class NewspaperService:
         """Autonomously fetch live cutting-edge AI entries via NewspaperLiveFetcher."""
         return await self._live_fetcher.fetch_live_intelligence()
 
-    async def generate_edition(self, window_hours: int = 24) -> dict[str, Any]:
+    async def generate_edition(self, window_hours: int = 5) -> dict[str, Any]:
         """Compile an authentic, 100% AI-focused 10-page intelligence broadsheet dossier."""
         now = datetime.now(UTC)
-        cutoff = now - timedelta(hours=max(24, window_hours))
+        cutoff = now - timedelta(hours=max(5, window_hours))
         logger.info(f"Initiating 10-page AI intelligence newspaper compilation (window={window_hours}h)...")
 
         def is_security_item(e: Entry) -> bool:
