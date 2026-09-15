@@ -64,7 +64,7 @@
   <div id="toast-container" class="fixed top-20 right-5 z-50 flex flex-col gap-3 max-w-md w-full pointer-events-none"></div>
 
   <!-- MODAL: Full Article Deep Inspection -->
-  <dialog id="inspect-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="inspect-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-cyber-cyan/50 shadow-2xl">
       <button onclick="closeInspectModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white bg-gray-900/80 hover:bg-gray-800 p-2 rounded-xl border border-gray-700 transition">
         <i data-lucide="x" class="w-5 h-5"></i>
@@ -74,10 +74,10 @@
         <!-- Injected dynamically via JS -->
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Permanent Vault & Deep Technical Analysis Dossier -->
-  <dialog id="deep-analysis-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-2 sm:p-4">
+  <div id="deep-analysis-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4">
     <div class="glass-panel w-full max-w-5xl rounded-2xl p-4 sm:p-7 relative max-h-[95vh] flex flex-col border border-amber-500/30 shadow-2xl bg-[#070a12]">
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-white/[0.08] flex-wrap gap-3">
@@ -120,10 +120,10 @@
         <!-- Injected dynamically via JS -->
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Interactive AI Triage Playground / Sandbox -->
-  <dialog id="triage-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="triage-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-cyber-purple/50 shadow-2xl space-y-5">
       <div class="flex items-center justify-between pb-4 border-b border-cyber-border">
         <div class="flex items-center gap-3">
@@ -175,10 +175,10 @@
         </div>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Custom Framework Watchlist Manager -->
-  <dialog id="watchlist-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="watchlist-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-white/[0.1] shadow-2xl space-y-5">
       <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div class="flex items-center gap-3">
@@ -197,7 +197,7 @@
 
       <div class="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-3">
         <h3 class="text-xs font-mono font-semibold uppercase text-sky-400 flex items-center gap-1.5">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i> Create New Hunting Rule
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Create New Tracking Rule
         </h3>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -217,7 +217,7 @@
             <input id="new-wl-velocity" type="number" min="0" max="100" value="0" class="w-20 glass-input px-2 py-1 text-xs font-mono text-center">
           </div>
           <button onclick="createNewWatchlistRule()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs font-mono uppercase flex items-center gap-1.5 transition shadow-sm">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Save Hunting Rule
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Save Tracking Rule
           </button>
         </div>
       </div>
@@ -229,10 +229,10 @@
         </div>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: 5-Hour Intelligence Newspaper Chronicle Reader -->
-  <dialog id="newspaper-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-2 sm:p-4">
+  <div id="newspaper-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4">
     <div class="glass-panel w-full max-w-5xl rounded-2xl p-4 sm:p-6 relative max-h-[95vh] flex flex-col border border-white/[0.12] shadow-2xl bg-[#080c14]">
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-white/[0.08] flex-wrap gap-3">
@@ -316,10 +316,10 @@
         </div>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Email Newspaper PDF Dispatcher -->
-  <dialog id="email-pdf-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="email-pdf-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-white/[0.12] shadow-2xl bg-[#080c14]">
       <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
         <div class="flex items-center gap-3">
@@ -349,10 +349,10 @@
         </button>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Sources Management Switchboard -->
-  <dialog id="sources-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="sources-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-white/[0.1] shadow-2xl">
       <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div class="flex items-center gap-3">
@@ -360,8 +360,8 @@
             <i data-lucide="radio" class="w-5 h-5 text-sky-400"></i>
           </div>
           <div>
-            <h2 class="text-xl font-bold tracking-tight text-white">Global Ecosystem Feeds & Beacons</h2>
-            <p class="text-xs text-slate-400 font-sans">38 active verified channels across Frontier AI Labs, Global Journalism, arXiv Ecosystem & Research Radars</p>
+            <h2 class="text-xl font-bold tracking-tight text-white">Global AI Feeds & Beacons</h2>
+            <p class="text-xs text-slate-400 font-sans">38 active verified channels across Frontier AI Labs, Global Journalism, arXiv Breakthroughs & Foundation Models</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -379,10 +379,10 @@
         <!-- Injected via JS -->
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Telegram Dispatcher -->
-  <dialog id="telegram-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="telegram-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-white/[0.1] shadow-2xl">
       <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div class="flex items-center gap-3">
@@ -391,7 +391,7 @@
           </div>
           <div>
             <h2 class="text-lg font-bold text-white">Telegram Dispatch Hub</h2>
-            <p class="text-xs text-slate-400 font-sans">Dispatch curated intelligence digest instantly</p>
+            <p class="text-xs text-slate-400 font-sans">Dispatch curated AI intelligence digest instantly</p>
           </div>
         </div>
         <button onclick="closeTelegramModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
@@ -404,7 +404,7 @@
           <label class="block text-xs font-mono text-slate-400 mb-1.5 font-medium">SCHEDULE SCOPE</label>
           <select id="tg-schedule" class="w-full glass-input px-3 py-2 text-xs font-mono text-slate-300">
             <option value="daily">Daily Intelligence Brief (Last 24 Hours)</option>
-            <option value="weekly">Weekly Research Summary (Last 7 Days)</option>
+            <option value="weekly">Weekly AI Research Summary (Last 7 Days)</option>
           </select>
         </div>
 
@@ -415,15 +415,15 @@
         </button>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Spotlight Command Palette (Cmd+K) -->
-  <dialog id="command-palette-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-start justify-center p-4 pt-16 sm:pt-24" onclick="handlePaletteBackdrop(event)">
+  <div id="command-palette-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-xl flex items-start justify-center p-4 pt-16 sm:pt-24" onclick="handlePaletteBackdrop(event)">
     <div class="glass-panel w-full max-w-2xl rounded-2xl p-0 relative border border-white/[0.12] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
       <!-- Search Input Bar -->
       <div class="flex items-center px-4 py-3.5 border-b border-white/[0.08] gap-3 bg-black/50">
         <i data-lucide="search" class="w-4 h-4 text-sky-400"></i>
-        <input id="palette-search" type="text" placeholder="Type a command or search 4,330+ AI models & frameworks (PyTorch, DeepSeek, LangChain)..." class="w-full bg-transparent text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none" oninput="handlePaletteSearch()">
+        <input id="palette-search" type="text" placeholder="Type a command or search 4,330+ AI models & frameworks (vLLM, DeepSeek, PyTorch)..." class="w-full bg-transparent text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none" oninput="handlePaletteSearch()">
         <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.06] text-slate-400 border border-white/[0.08]">ESC</span>
       </div>
 
@@ -441,10 +441,10 @@
         <span class="text-sky-400 font-medium">AETHER-GUARD SPOTLIGHT</span>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Power-User Keyboard Shortcuts Cheatsheet -->
-  <dialog id="keyboard-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="keyboard-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-xl rounded-2xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4">
       <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
         <div class="flex items-center gap-3">
@@ -484,10 +484,10 @@
         </div>
       </div>
     </div>
-  </dialog>
+  </div>
 
   <!-- MODAL: Manual Intelligence Retention & Cleanup -->
-  <dialog id="purge-modal" class="m-auto w-full h-full p-4 flex items-center justify-center bg-transparent  flex items-center justify-center p-4">
+  <div id="purge-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-lg rounded-2xl p-6 relative border border-rose-500/30 shadow-2xl space-y-5">
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
@@ -579,7 +579,7 @@
         </button>
       </div>
     </div>
-  </dialog>
+  </div>
 
 
   <!-- AUTONOMOUS AI TRIAGE QUEUE CONTROL DRAWER -->
@@ -830,7 +830,7 @@
 
 
 
-    <!-- 3D WEBGL HOLOGRAPHIC Frontier Research Radar GLOBE -->
+    <!-- 3D WEBGL HOLOGRAPHIC THREAT RADAR GLOBE -->
     <div id="globe-panel" class="glass-panel p-4 relative overflow-hidden transition-all duration-500 border border-white/[0.08]">
       <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
         <div class="flex items-center gap-2">
@@ -972,10 +972,10 @@
 
             <!-- Export Hub -->
             <div class="flex items-center gap-2">
-              <button onclick="exportPdfReport()" class="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 hover:border-sky-400 text-sky-200 hover:text-white text-[11px] flex items-center gap-1.5 transition font-semibold" title="Export current/pinned Intels to Executive PDF Dossier">
+              <button onclick="exportPdfReport()" class="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 hover:border-sky-400 text-sky-200 hover:text-white text-[11px] flex items-center gap-1.5 transition font-semibold" title="Export current/pinned threats to Executive PDF Dossier">
                 <i data-lucide="file-down" class="w-3 h-3 text-sky-400"></i> Export PDF
               </button>
-              <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current/pinned Intels to Markdown Brief">
+              <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current/pinned threats to Markdown Brief">
                 <i data-lucide="file-text" class="w-3 h-3 text-slate-400"></i> Export MD
               </button>
               <button onclick="exportJsonData()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current feed to structured JSON dataset">
@@ -984,7 +984,7 @@
             </div>
           </div>
 
-          <!-- Geographic Worldwide Intel Theatre Selector -->
+          <!-- Geographic Worldwide Threat Theatre Selector -->
           <div class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.06] flex-wrap text-xs font-mono">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-[10px] text-sky-400 font-medium uppercase mr-1 flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3 text-sky-400"></i> THEATRE:</span>
@@ -1192,7 +1192,7 @@
     let currentCategory = 'all';
     let currentRegion = 'all';
     let currentTimeHorizon = 0;
-    const PINNED_STORAGE_KEY = 'aether_pinned_Intels';
+    const PINNED_STORAGE_KEY = 'aether_pinned_threats';
     let searchQuery = '';
     const categoryBadgeColors = {
       vulnerabilities: 'text-rose-300 border-rose-500/25 bg-rose-500/10',
@@ -1299,8 +1299,8 @@
       if (!input) return;
       const val = input.value.trim();
       if (clearBtn) {
-        if (val) clearBtn.showModal();
-        else clearBtn.close();
+        if (val) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
       }
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(() => {
@@ -1314,7 +1314,7 @@
       const input = document.getElementById('search-input');
       const clearBtn = document.getElementById('search-clear-btn');
       if (input) input.value = '';
-      if (clearBtn) clearBtn.close();
+      if (clearBtn) clearBtn.classList.add('hidden');
       searchQuery = '';
       updateActiveFiltersBar();
       loadFeed(true);
@@ -1370,9 +1370,9 @@
           </span>
         `).join('');
         window._activeFiltersList = filters;
-        bar.showModal();
+        bar.classList.remove('hidden');
       } else {
-        bar.close();
+        bar.classList.add('hidden');
         tagsContainer.innerHTML = '';
         window._activeFiltersList = [];
       }
@@ -1394,7 +1394,7 @@
       const searchInput = document.getElementById('search-input');
       if (searchInput) searchInput.value = '';
       const searchClear = document.getElementById('search-clear-btn');
-      if (searchClear) searchClear.close();
+      if (searchClear) searchClear.classList.add('hidden');
 
       document.querySelectorAll('.cat-tab').forEach(t => {
         t.classList.remove('active-tab', 'bg-white/[0.12]', 'text-white', 'border-white/20');
@@ -1437,12 +1437,12 @@
     function openKeyboardModal() {
       playBeep('click');
       const modal = document.getElementById('keyboard-modal');
-      if (modal) modal.showModal();
+      if (modal) modal.classList.remove('hidden');
     }
 
     function closeKeyboardModal() {
       const modal = document.getElementById('keyboard-modal');
-      if (modal) modal.close();
+      if (modal) modal.classList.add('hidden');
     }
 
     function toggleKeyboardModal() {
@@ -1942,17 +1942,17 @@
         const newBadgeEl = document.getElementById('new-tab-count-badge');
         if (newBadgeEl) {
           if (newCount > 0) {
-            newBadgeEl.showModal();
+            newBadgeEl.classList.remove('hidden');
             newBadgeEl.innerText = newCount;
           } else {
-            newBadgeEl.close();
+            newBadgeEl.classList.add('hidden');
           }
         }
 
         if (currentCategory === 'only_new') {
           data.entries = (data.entries || []).filter(e => e.is_new_since_refresh);
         } else if (currentCategory === 'pinned') {
-          const pinnedIds = new Set(getPinnedIntelIds());
+          const pinnedIds = new Set(getPinnedThreatIds());
           data.entries = (data.entries || []).filter(e => pinnedIds.has(e.id));
         }
 
@@ -2076,12 +2076,12 @@
 
     function createCardElement(entry) {
       const card = document.createElement('div');
-      card.id = 'Intel-card-' + entry.id;
+      card.id = 'threat-card-' + entry.id;
       card.setAttribute('data-entry-id', entry.id);
 
       const analysis = entry.analysis || {};
       const isPreCve = Boolean(analysis.is_pre_cve_warning || entry.is_pre_cve_warning);
-      const velocity = analysis.Intel_velocity !== undefined ? analysis.Intel_velocity : (entry.Intel_velocity || 25);
+      const velocity = analysis.threat_velocity !== undefined ? analysis.threat_velocity : (entry.threat_velocity || 25);
       const blastRadius = analysis.blast_radius_score !== undefined ? analysis.blast_radius_score : (entry.blast_radius_score || 20);
       const ecosystem = analysis.affected_ecosystem || entry.affected_ecosystem || [];
       const attackVector = analysis.attack_vector || entry.attack_vector || '';
@@ -2144,7 +2144,7 @@
         provenanceBadge = `<span class="text-[9px] font-mono font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded-sm">🇨🇳 CN INTEL</span>`;
       }
 
-      const isVaulted = Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isIntelVaulted === 'function' && isIntelVaulted(entry.id)));
+      const isVaulted = Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isThreatVaulted === 'function' && isThreatVaulted(entry.id)));
       const vaultBadge = isVaulted ? `<span class="text-[9px] font-mono font-bold text-amber-300 bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5 rounded-sm shadow-sm flex items-center gap-1">⭐ VAULT</span>` : '';
       const filteredEco = (ecosystem || []).filter(e => e && e !== 'INFRASTRUCTURE' && e !== 'Enterprise Systems');
 
@@ -2324,8 +2324,8 @@
                 <span>LISTEN</span>
               </button>
               <button onclick="toggleVaultFromInspectModal('${entry.id}')" id="modal-vault-btn" class="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-amber-400/40 text-slate-300 hover:text-amber-300 transition flex items-center gap-1.5 text-xs font-mono" title="Keep in Permanent Vault (Exempt from purge)">
-                <i data-lucide="archive" class="w-3.5 h-3.5 ${Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isIntelVaulted === 'function' && isIntelVaulted(entry.id))) ? 'text-amber-400' : ''}"></i>
-                <span id="modal-vault-text">${Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isIntelVaulted === 'function' && isIntelVaulted(entry.id))) ? 'IN VAULT' : 'KEEP IN VAULT'}</span>
+                <i data-lucide="archive" class="w-3.5 h-3.5 ${Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isThreatVaulted === 'function' && isThreatVaulted(entry.id))) ? 'text-amber-400' : ''}"></i>
+                <span id="modal-vault-text">${Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isThreatVaulted === 'function' && isThreatVaulted(entry.id))) ? 'IN VAULT' : 'KEEP IN VAULT'}</span>
               </button>
             </div>
           </div>
@@ -2401,12 +2401,12 @@
         </div>
       `;
 
-      modal.showModal();
+      modal.classList.remove('hidden');
       lucide.createIcons();
     }
 
     function closeInspectModal() {
-      document.getElementById('inspect-modal').close();
+      document.getElementById('inspect-modal').classList.add('hidden');
     }
 
     // Category Tabs Switching
@@ -2495,13 +2495,13 @@
 
     // Watchlist Management
     function openWatchlistModal() {
-      document.getElementById('watchlist-modal').showModal();
+      document.getElementById('watchlist-modal').classList.remove('hidden');
       playBeep('click');
       loadWatchlistRules();
     }
 
     function closeWatchlistModal() {
-      document.getElementById('watchlist-modal').close();
+      document.getElementById('watchlist-modal').classList.add('hidden');
     }
 
     async function loadWatchlistRules() {
@@ -2573,7 +2573,7 @@
           body: JSON.stringify({
             name,
             keywords,
-            min_Intel_velocity: velocity,
+            min_threat_velocity: velocity,
             enabled: true
           })
         });
@@ -2621,11 +2621,11 @@
 
     // Interactive AI Triage Sandbox
     function openTriageModal() {
-      document.getElementById('triage-modal').showModal();
+      document.getElementById('triage-modal').classList.remove('hidden');
       playBeep('click');
     }
     function closeTriageModal() {
-      document.getElementById('triage-modal').close();
+      document.getElementById('triage-modal').classList.add('hidden');
     }
     function fillTriageSample() {
       document.getElementById('triage-title').value = "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning";
@@ -2658,7 +2658,7 @@
         });
         const data = await res.json();
         
-        resultsBox.showModal();
+        resultsBox.classList.remove('hidden');
         const isPureAi = (data.blast_radius_score === 0) || (data.attack_archetype && !data.attack_archetype.includes('Vulnerability') && !data.attack_archetype.includes('Exploit'));
         resultsBox.innerHTML = `
           <div class="flex items-center justify-between border-b border-cyber-border pb-2 flex-wrap gap-2">
@@ -2668,7 +2668,7 @@
             </div>
             ${!isPureAi ? `
             <div class="flex gap-2 font-mono text-[10px]">
-              <span class="px-2 py-0.5 rounded bg-black border border-cyber-cyan text-cyber-cyan font-bold">VELOCITY: ${data.Intel_velocity}/100</span>
+              <span class="px-2 py-0.5 rounded bg-black border border-cyber-cyan text-cyber-cyan font-bold">VELOCITY: ${data.threat_velocity}/100</span>
               <span class="px-2 py-0.5 rounded bg-black border border-cyber-red text-cyber-red font-bold">SEVERITY: ${data.severity_index}/100</span>
               <span class="px-2 py-0.5 rounded bg-black border border-cyber-purple text-cyber-purple font-bold">BLAST: ${data.blast_radius_score}/100</span>
             </div>
@@ -2681,7 +2681,7 @@
         `;
         playBeep('alert');
       } catch (e) {
-        resultsBox.showModal();
+        resultsBox.classList.remove('hidden');
         resultsBox.innerHTML = `<p class="text-cyber-red">Analysis failed: ${e.message}</p>`;
       } finally {
         btn.disabled = false;
@@ -2694,9 +2694,9 @@
     async function openSourcesModal() {
       const modal = document.getElementById('sources-modal');
       const list = document.getElementById('sources-list');
-      modal.showModal();
+      modal.classList.remove('hidden');
       playBeep('click');
-      list.innerHTML = `<p class="text-center font-mono text-xs text-cyber-muted py-6">Loading configured Intel intelligence feeds...</p>`;
+      list.innerHTML = `<p class="text-center font-mono text-xs text-cyber-muted py-6">Loading configured threat intelligence feeds...</p>`;
 
       try {
         const res = await fetch('/api/sources');
@@ -2752,7 +2752,7 @@
     }
 
     function closeSourcesModal() {
-      document.getElementById('sources-modal').close();
+      document.getElementById('sources-modal').classList.add('hidden');
     }
 
     // (The Global AI Gazette autonomous broadsheet & dispatch engine extracted to /js/gazette.js)
@@ -2760,13 +2760,13 @@
 
     // Telegram Modal Management
     function openTelegramModal() {
-      document.getElementById('telegram-modal').showModal();
+      document.getElementById('telegram-modal').classList.remove('hidden');
       playBeep('click');
     }
 
     function closeTelegramModal() {
-      document.getElementById('telegram-modal').close();
-      document.getElementById('tg-status-box').close();
+      document.getElementById('telegram-modal').classList.add('hidden');
+      document.getElementById('tg-status-box').classList.add('hidden');
     }
 
     async function sendTelegramDigest() {
@@ -2810,7 +2810,7 @@
       if (typeof playBeep === 'function') playBeep('click');
       const modal = document.getElementById('purge-modal');
       if (modal) {
-        modal.showModal();
+        modal.classList.remove('hidden');
         await refreshRetentionTelemetry();
       }
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -2818,7 +2818,7 @@
 
     function closePurgeModal() {
       const modal = document.getElementById('purge-modal');
-      if (modal) modal.close();
+      if (modal) modal.classList.add('hidden');
     }
 
     function setPurgeDaysPreset(days) {
@@ -2895,7 +2895,7 @@
       if (statusBox) {
         statusBox.className = "p-3 rounded-xl text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center gap-2";
         statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Processing manual cleanup for items older than ${selectedPurgeDays} days...`;
-        statusBox.showModal();
+        statusBox.classList.remove('hidden');
       }
       if (typeof lucide !== 'undefined') lucide.createIcons();
 
@@ -2946,7 +2946,7 @@
       if (statusBox) {
         statusBox.className = "p-3 rounded-xl text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center gap-2";
         statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Restoring all soft-purged entries...`;
-        statusBox.showModal();
+        statusBox.classList.remove('hidden');
       }
       if (typeof lucide !== 'undefined') lucide.createIcons();
 
@@ -3001,7 +3001,7 @@
       playBeep('click');
       const modal = document.getElementById('triage-queue-modal');
       if (modal) {
-        modal.showModal();
+        modal.classList.remove('hidden');
         if (_lastTriageData) renderTriageModal(_lastTriageData);
         fetchTriageStatus();
       }
@@ -3009,7 +3009,7 @@
 
     function closeTriageQueueModal() {
       const modal = document.getElementById('triage-queue-modal');
-      if (modal) modal.close();
+      if (modal) modal.classList.add('hidden');
     }
 
     function renderTriageModal(data) {
@@ -3215,7 +3215,7 @@
       playBeep('alert');
       showHUDToast({
         title: data.title || "Deep AI Triage Completed",
-        message: `Architectural Breakdown: ${data.attack_vector ? data.attack_vector.slice(0, 70) + '...' : 'Optimized'} | Velocity: ${data.Intel_velocity}/100`,
+        message: `Architectural Breakdown: ${data.attack_vector ? data.attack_vector.slice(0, 70) + '...' : 'Optimized'} | Velocity: ${data.threat_velocity}/100`,
         badge: "AI ENGINE",
         icon: "sparkles",
         color: "text-indigo-400",
@@ -3223,7 +3223,7 @@
       });
 
       // Highlight card in-place if visible in feed
-      const card = document.getElementById(`Intel-card-${data.entry_id}`);
+      const card = document.getElementById(`threat-card-${data.entry_id}`);
       if (card) {
         card.classList.add('ring-1', 'ring-indigo-400/50');
         setTimeout(() => card.classList.remove('ring-1', 'ring-indigo-400/50'), 4000);
@@ -3260,7 +3260,7 @@
     // =========================================================================
     // FEATURE 4: PERSONAL INVESTIGATION PINBOARD & BOOKMARKS
     // =========================================================================
-    function getPinnedIntelIds() {
+    function getPinnedThreatIds() {
       try {
         return JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) || '[]');
       } catch (e) {
@@ -3268,15 +3268,15 @@
       }
     }
 
-    function isIntelPinned(id) {
-      return getPinnedIntelIds().includes(id);
+    function isThreatPinned(id) {
+      return getPinnedThreatIds().includes(id);
     }
 
-    function togglePinIntel(id, event) {
+    function togglePinThreat(id, event) {
       if (event) event.stopPropagation();
       playBeep('click');
 
-      let pinned = getPinnedIntelIds();
+      let pinned = getPinnedThreatIds();
       if (pinned.includes(id)) {
         pinned = pinned.filter(item => item !== id);
       } else {
@@ -3305,15 +3305,15 @@
     function updatePinnedBadge() {
       const countEl = document.getElementById('pinned-count');
       if (countEl) {
-        countEl.innerText = getPinnedIntelIds().length;
+        countEl.innerText = getPinnedThreatIds().length;
       }
     }
 
-    function togglePinIntelFromModal(id) {
-      togglePinIntel(id);
+    function togglePinThreatFromModal(id) {
+      togglePinThreat(id);
       const btn = document.getElementById('modal-pin-btn');
       if (btn) {
-        const pinned = isIntelPinned(id);
+        const pinned = isThreatPinned(id);
         btn.innerHTML = `<i data-lucide="star" class="w-3.5 h-3.5 ${pinned ? 'fill-amber-400 text-amber-400' : ''}"></i><span id="modal-pin-text">${pinned ? 'PINNED' : 'PIN'}</span>`;
         lucide.createIcons();
       }
@@ -3325,7 +3325,7 @@
     const VAULT_STORAGE_KEY = 'aether_permanent_vault';
     let currentAnalysisDossier = null;
 
-    function getVaultedIntelIds() {
+    function getVaultedThreatIds() {
       try {
         return JSON.parse(localStorage.getItem(VAULT_STORAGE_KEY) || '[]');
       } catch (e) {
@@ -3333,18 +3333,18 @@
       }
     }
 
-    function isIntelVaulted(id) {
+    function isThreatVaulted(id) {
       const feedItem = allFeedItems.find(e => e.id === id);
       if (feedItem && feedItem.is_important) return true;
       if (feedItem && feedItem.metadata && (feedItem.metadata.is_important || feedItem.metadata.is_saved || feedItem.metadata.is_pinned)) return true;
-      return getVaultedIntelIds().includes(id);
+      return getVaultedThreatIds().includes(id);
     }
 
     async function toggleVaultEntry(id, event, fromModal = false) {
       if (event) event.stopPropagation();
       playBeep('click');
 
-      let vaulted = getVaultedIntelIds();
+      let vaulted = getVaultedThreatIds();
       const isCurrentlyVaulted = vaulted.includes(id);
       const nextVaulted = !isCurrentlyVaulted;
 
@@ -3472,7 +3472,7 @@
       } catch (e) {
         // Fallback to local storage size
       }
-      const localCount = getVaultedIntelIds().length;
+      const localCount = getVaultedThreatIds().length;
       const el1 = document.getElementById('vault-count');
       const el2 = document.getElementById('sidebar-vault-count');
       if (el1) el1.innerText = localCount.toLocaleString();
@@ -3492,9 +3492,9 @@
 
       if (!modal || !body) return;
 
-      modal.showModal();
+      modal.classList.remove('hidden');
 
-      const isVaulted = isIntelVaulted(id);
+      const isVaulted = isThreatVaulted(id);
       if (vaultBtnText) vaultBtnText.innerText = isVaulted ? 'IN VAULT' : 'KEEP IN VAULT';
       if (vaultBtn) {
         if (isVaulted) vaultBtn.className = 'px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/50 flex items-center gap-1.5 transition';
@@ -3545,7 +3545,7 @@
 
     function closeDeepAnalysisModal() {
       const modal = document.getElementById('deep-analysis-modal');
-      if (modal) modal.close();
+      if (modal) modal.classList.add('hidden');
     }
 
     function renderDeepAnalysisDossier(dossier) {
@@ -3565,7 +3565,7 @@
         extLink.style.display = 'inline-flex';
       }
 
-      const isVaulted = isIntelVaulted(dossier.entry_id);
+      const isVaulted = isThreatVaulted(dossier.entry_id);
       if (vaultBtnText) vaultBtnText.innerText = isVaulted ? 'IN VAULT' : 'KEEP IN VAULT';
       if (vaultBtn) {
         if (isVaulted) vaultBtn.className = 'px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/50 flex items-center gap-1.5 transition';
@@ -3889,8 +3889,8 @@
     // =========================================================================
     // FEATURE 5: 1-CLICK EXPORT HUB (PDF, Markdown & STIX 2.1 JSON)
     // =========================================================================
-    function getExportIntelList() {
-      const pinnedIds = new Set(getPinnedIntelIds());
+    function getExportThreatList() {
+      const pinnedIds = new Set(getPinnedThreatIds());
       if (pinnedIds.size > 0) {
         const pinnedList = allFeedItems.filter(e => pinnedIds.has(e.id));
         if (pinnedList.length > 0) return pinnedList;
@@ -3900,7 +3900,7 @@
 
     function exportPdfReport() {
       playBeep('alert');
-      const pinnedIds = getPinnedIntelIds();
+      const pinnedIds = getPinnedThreatIds();
       const now = new Date().toISOString().slice(0, 10);
 
       if (pinnedIds && pinnedIds.length > 0) {
@@ -3910,7 +3910,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ids: pinnedIds,
-            title: 'AetherGuard Intel Intelligence Dossier',
+            title: 'AetherGuard Threat Intelligence Dossier',
             subtitle: `Active Investigation Pinboard (${pinnedIds.length} Pinned Advisories)`
           })
         })
@@ -3919,7 +3919,7 @@
           return res.blob();
         })
         .then(blob => {
-          downloadBlobFile(`aether-Intel-dossier-${now}.pdf`, blob);
+          downloadBlobFile(`aether-threat-dossier-${now}.pdf`, blob);
           showToast("PDF Dossier downloaded successfully!", "success");
         })
         .catch(err => {
@@ -3935,7 +3935,7 @@
         if (currentTimeHorizon > 0) url += `&hours=${currentTimeHorizon}`;
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
 
-        showToast("Generating Executive Intel Intelligence PDF...", "info");
+        showToast("Generating Executive Threat Intelligence PDF...", "info");
         window.open(url, '_blank');
       }
     }
@@ -3956,7 +3956,7 @@
 
     function exportMarkdownReport() {
       playBeep('alert');
-      const items = getExportIntelList();
+      const items = getExportThreatList();
       const now = new Date().toISOString().slice(0, 10);
 
       let md = `# AetherGuard Intelligence Report\n`;
@@ -3988,7 +3988,7 @@
 
     function exportJsonData() {
       playBeep('alert');
-      const items = getExportIntelList();
+      const items = getExportThreatList();
       const now = new Date().toISOString();
 
       const aiDataset = {
@@ -4420,6 +4420,22 @@
         txt.className = 'text-slate-400';
       }
     }
+  
+    // Universal Backdrop Click-to-Close for Modals
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[id$="-modal"]').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.classList.add('hidden');
+            if (modal.id === 'telegram-modal') {
+              const tgBox = document.getElementById('tg-status-box');
+              if (tgBox) tgBox.classList.add('hidden');
+            }
+          }
+        });
+      });
+    });
+
   </script>
 
   <!-- FLOATING TACTICAL AUDIO HUD (Voice AI Radar Player) -->

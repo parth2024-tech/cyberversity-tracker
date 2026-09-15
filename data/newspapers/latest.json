@@ -1,11 +1,11 @@
 {
-  "edition_id": "chronicle_20260915_2209",
+  "edition_id": "chronicle_20260915_2214",
   "edition_number": 2238,
   "title": "The Global AI Gazette \u2014 10-Page Edition #2238",
-  "generated_at": "2026-09-15T22:09:28.576934+00:00",
+  "generated_at": "2026-09-15T22:14:38.282143+00:00",
   "window_hours": 5,
-  "total_stories": 160,
-  "total_threats": 160,
+  "total_stories": 162,
+  "total_threats": 162,
   "pages_count": 10,
   "lead_story": "Intern-S2-397B (multimodal, reasoning, coding, and scientific agent capabilities)",
   "trending_repos_count": 12,
@@ -16,8 +16,8 @@
   "ai_hardware_count": 12,
   "autonomous_agents_count": 12,
   "overflow_count": 10,
-  "md_path": "data/newspapers/chronicle_20260915_2209.md",
-  "html_path": "data/newspapers/chronicle_20260915_2209.html",
-  "pdf_path": "data/newspapers/chronicle_20260915_2209.pdf",
+  "md_path": "data/newspapers/chronicle_20260915_2214.md",
+  "html_path": "data/newspapers/chronicle_20260915_2214.html",
+  "pdf_path": "data/newspapers/chronicle_20260915_2214.pdf",
   "has_pdf": true
 }

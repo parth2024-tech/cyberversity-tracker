@@ -395,17 +395,3 @@
     transform: translateY(0);
   }
 }
-
-/* Dialog Resets */
-dialog {
-  background: transparent;
-  color: inherit;
-  border: none;
-  padding: 0;
-  max-width: 100vw;
-  max-height: 100vh;
-}
-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
-}
