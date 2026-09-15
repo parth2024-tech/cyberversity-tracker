@@ -108,6 +108,13 @@ class SQLAlchemyEntryRepository(EntryRepository):
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
+    async def get_existing_hashes(self, hashes: list[str]) -> set[str]:
+        if not hashes:
+            return set()
+        stmt = select(EntryModel.content_hash).where(EntryModel.content_hash.in_(hashes))
+        result = await self._session.execute(stmt)
+        return set(result.scalars().all())
+
     async def list(
         self,
         filters: EntryFilters | None = None,

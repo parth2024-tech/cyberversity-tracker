@@ -365,6 +365,85 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
             all_ecosystems, entry.category, full_text
         )
 
+        # Check if entry is pure AI innovation vs active security disclosure / adversarial attack
+        threat_patterns = (
+            r"\bcve-\d{4}-\d{4,}\b",
+            r"\brce\b",
+            r"\bremote code execution\b",
+            r"\bzero[- ]day\b",
+            r"\b0[- ]day\b",
+            r"\bexploit\w*\b",
+            r"\bransomware\b",
+            r"\bjailbreak\b",
+            r"\bprompt injection\b",
+            r"\badversarial\b",
+            r"\bbackdoor\b",
+            r"\btrojan\b",
+            r"\bprivilege escalation\b",
+            r"\bdata poisoning\b",
+            r"\bmodel inversion\b",
+        )
+        has_threat_indicators = bool(
+            entry.category
+            in (
+                Category.VULNERABILITIES,
+                Category.CYBERSECURITY,
+                Category.EXPLOITS_TRICKS,
+            )
+            or any(re.search(p, full_text.lower()) for p in threat_patterns)
+        )
+
+        if not has_threat_indicators:
+            # AI Framework Compatibility & Adoption Footprint Mode
+            ai_archetype = (
+                "AI Model Release"
+                if entry.category == Category.AI_MODELS
+                else "Trending Repository"
+                if entry.category == Category.GITHUB_TRENDING
+                else "Academic Research Paper"
+                if entry.category == Category.AI_RESEARCH
+                else "Developer AI Tool"
+                if entry.category == Category.CYBER_TOOLS
+                else "AI Technology Launch"
+            )
+            weaponization = (
+                "Open Weights Available"
+                if entry.category == Category.AI_MODELS
+                else "Production Ready"
+            )
+            compat_vector = (
+                f"Compatible Architecture: {', '.join(all_ecosystems[:4])}"
+                if all_ecosystems
+                else "Framework Compatibility: General Open-Source AI Stack"
+            )
+            compat_assessment = (
+                f"Ecosystem Footprint: Directly integrates with {len(all_ecosystems)} major AI frameworks and developer runtimes."
+                if all_ecosystems
+                else "Ecosystem Footprint: Universal integration across standard Python / GPU environments."
+            )
+            compat_mitigation = (
+                "Integration Guide: Deployable via standard container runtimes, Hugging Face, or local inference engines (vLLM / Ollama)."
+            )
+            # Adoption velocity score proportional to ecosystem breadth
+            velocity = min(95, 70 + len(all_ecosystems) * 4)
+            severity = min(92, 65 + len(all_ecosystems) * 3)
+
+            return AnalysisResult(
+                entry_id=entry.id,
+                attack_vector=compat_vector,
+                risk_assessment=compat_assessment,
+                mitigation=compat_mitigation,
+                threat_velocity=velocity,
+                severity_index=severity,
+                blast_radius_score=0,
+                affected_ecosystem=all_ecosystems,
+                is_pre_cve_warning=False,
+                attack_archetype=ai_archetype,
+                weaponization_potential=weaponization,
+                model=AnalysisModel.BLAST_RADIUS,
+                confidence=0.88,
+            )
+
         # Pre-CVE detection
         is_pre_cve = self._detect_pre_cve_research(
             full_text, entry.category, all_ecosystems

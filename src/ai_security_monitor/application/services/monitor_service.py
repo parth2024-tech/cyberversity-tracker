@@ -8,6 +8,7 @@ import asyncio
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime
+from uuid import UUID
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.config.sources import load_sources_from_yaml
@@ -16,6 +17,7 @@ from ai_security_monitor.domain.entities import (
     Analysis,
     AnalysisModel,
     Category,
+    Entry,
     FetchLog,
     FetchStatus,
     Source,
@@ -190,251 +192,298 @@ class MonitorService:
             analyzer = analyzer_registry.create(settings.analyzer.default_model)
             blast_engine = analyzer_registry.create("blast_radius")
 
-            async with self._uow_factory() as uow:
-                for entry in fetch_result.entries:
-                    existing = await uow.entries.get_by_content_hash(entry.content_hash)
-                    if existing:
-                        continue
+            # 1. Batch Deduplication: pre-fetch existing hashes in single query
+            candidate_hashes = [
+                e.content_hash for e in fetch_result.entries if e.content_hash
+            ]
+            existing_hashes: set[str] = set()
+            if candidate_hashes:
+                async with self._uow_factory() as uow:
+                    existing_hashes = await uow.entries.get_existing_hashes(
+                        candidate_hashes
+                    )
 
+            new_raw_entries = [
+                e for e in fetch_result.entries if e.content_hash not in existing_hashes
+            ]
+
+            # 2. In-Memory Enrichment & Analysis (OUTSIDE write transaction)
+            prepared_items: list[tuple[Entry, Analysis, bool, str, bool]] = []
+            is_english_source = (
+                source.type.value in ("arxiv", "hackernews", "github_trending")
+                or source.config.get("country")
+                in (
+                    "US",
+                    "GB",
+                    "CA",
+                    "AU",
+                    "IE",
+                    "IN",
+                    "SG",
+                    "GLOBAL",
+                    "EU",
+                )
+                or source.config.get("language") == "en"
+            )
+
+            for entry in new_raw_entries:
+                if not is_english_source:
                     try:
-                        # Automatically detect non-English text and translate title/summary to English.
-                        # Skip for inherently English feeds to prevent unnecessary overhead and provider throttling.
-                        is_english_source = (
-                            source.type.value
-                            in ("arxiv", "hackernews", "github_trending")
-                            or source.config.get("country")
-                            in (
-                                "US",
-                                "GB",
-                                "CA",
-                                "AU",
-                                "IE",
-                                "IN",
-                                "SG",
-                                "GLOBAL",
-                                "EU",
+                        from ai_security_monitor.application.services.translation_service import (
+                            translation_service,
+                        )
+
+                        await translation_service.translate_entry_async(entry)
+                    except Exception as trans_e:
+                        logger.debug(f"Translation skipped: {trans_e}")
+
+                entry.metadata = entry.metadata or {}
+                entry.metadata["region"] = source.config.get("region", "global")
+                entry.metadata["country"] = source.config.get("country", "GLOBAL")
+                default_prov = (
+                    "model_release"
+                    if source.category == Category.AI_MODELS
+                    else "trending_repo"
+                    if source.category == Category.GITHUB_TRENDING
+                    else "ai_research"
+                    if source.category == Category.AI_RESEARCH
+                    else "developer_infra"
+                    if source.category == Category.CYBER_TOOLS
+                    else "ai_ecosystem"
+                )
+                entry.metadata["provenance_type"] = source.config.get(
+                    "provenance_type", default_prov
+                )
+
+                # Heuristic & blast radius analysis
+                analysis_res = await analyzer.analyze(entry)
+                blast_res = await blast_engine.analyze(entry)
+
+                import re
+
+                has_cve = bool(
+                    re.search(
+                        r"\bcve-\d{4}-\d{4,}\b",
+                        f"{entry.title} {entry.summary}".lower(),
+                    )
+                )
+                is_security_cat = entry.category in (
+                    Category.VULNERABILITIES,
+                    Category.CYBERSECURITY,
+                    Category.EXPLOITS_TRICKS,
+                )
+                is_ai_innovation = not has_cve and not is_security_cat
+
+                if is_ai_innovation:
+                    combined_ecosystem = sorted(
+                        set(
+                            (analysis_res.affected_ecosystem or [])
+                            + (blast_res.affected_ecosystem or [])
+                        )
+                    )
+                    analysis = Analysis(
+                        entry_id=entry.id,
+                        attack_vector=analysis_res.attack_vector
+                        or blast_res.attack_vector
+                        or "AI Architecture Specification",
+                        risk_assessment=analysis_res.risk_assessment
+                        or blast_res.risk_assessment
+                        or "Production Capability & Performance",
+                        mitigation=analysis_res.mitigation
+                        or blast_res.mitigation
+                        or "Integration & Deployment Guide",
+                        threat_velocity=analysis_res.threat_velocity,
+                        severity_index=analysis_res.severity_index,
+                        blast_radius_score=0,
+                        affected_ecosystem=combined_ecosystem,
+                        is_pre_cve_warning=False,
+                        attack_archetype=analysis_res.attack_archetype
+                        or blast_res.attack_archetype
+                        or "AI Ecosystem Development",
+                        weaponization_potential=analysis_res.weaponization_potential
+                        or "Production Ready",
+                        mitre_attack_id=None,
+                        mitre_technique=None,
+                        model=AnalysisModel.HEURISTIC,
+                    )
+                else:
+                    analysis = Analysis(
+                        entry_id=entry.id,
+                        attack_vector=analysis_res.attack_vector or "Standard vector",
+                        risk_assessment=analysis_res.risk_assessment
+                        or "Standard risk",
+                        mitigation=analysis_res.mitigation or "Standard patch",
+                        threat_velocity=analysis_res.threat_velocity,
+                        severity_index=analysis_res.severity_index,
+                        blast_radius_score=blast_res.blast_radius_score,
+                        affected_ecosystem=blast_res.affected_ecosystem,
+                        is_pre_cve_warning=blast_res.is_pre_cve_warning,
+                        attack_archetype=blast_res.attack_archetype,
+                        weaponization_potential=analysis_res.weaponization_potential
+                        or blast_res.weaponization_potential,
+                        mitre_attack_id=analysis_res.mitre_attack_id,
+                        mitre_technique=analysis_res.mitre_technique,
+                        model=AnalysisModel.HEURISTIC,
+                    )
+
+                title_lower = (entry.title or "").lower()
+                cat_val = (
+                    entry.category.value
+                    if hasattr(entry.category, "value")
+                    else str(entry.category)
+                )
+                is_landmark = (
+                    analysis.threat_velocity >= 85
+                    or any(
+                        k in title_lower
+                        for k in (
+                            "deepseek",
+                            "r1",
+                            "frontier",
+                            "qwen",
+                            "llama",
+                            "breakthrough",
+                            "sota",
+                            "vllm",
+                            "sglang",
+                            "reasoning",
+                            "reasoner",
+                        )
+                    )
+                    or (
+                        cat_val == "ai_models"
+                        and any(
+                            k in title_lower
+                            for k in (
+                                "release",
+                                "weights",
+                                "checkpoint",
+                                "model",
+                                "moe",
                             )
-                            or source.config.get("language") == "en"
                         )
-                        if not is_english_source:
-                            try:
-                                from ai_security_monitor.application.services.translation_service import (
-                                    translation_service,
-                                )
-
-                                await translation_service.translate_entry_async(entry)
-                            except Exception as trans_e:
-                                logger.debug(f"Translation skipped: {trans_e}")
-
-                        # Stamp sovereign region, country, and intelligence provenance from source config
-                        entry.metadata = entry.metadata or {}
-                        entry.metadata["region"] = source.config.get("region", "global")
-                        entry.metadata["country"] = source.config.get(
-                            "country", "GLOBAL"
+                    )
+                    or (
+                        cat_val == "ai_research"
+                        and analysis.threat_velocity >= 75
+                    )
+                )
+                if is_landmark:
+                    entry.metadata["is_important"] = True
+                    entry.metadata["importance_reason"] = (
+                        "Frontier Reasoning Architecture"
+                        if any(
+                            k in title_lower for k in ("reasoning", "deepseek", "r1")
                         )
-                        entry.metadata["provenance_type"] = source.config.get(
-                            "provenance_type", "threat_intel"
+                        else "Major Foundation Model Weights Release"
+                        if cat_val == "ai_models"
+                        else "Critical AI Developer Infrastructure"
+                        if any(
+                            k in title_lower
+                            for k in ("vllm", "sglang", "runtime", "engine")
                         )
+                        else "High-Impact Seminal Breakthrough"
+                    )
 
+                prepared_items.append(
+                    (entry, analysis, is_landmark, cat_val, is_ai_innovation)
+                )
+
+            # 3. Atomic Database Commit (Very short transaction holding write lock)
+            pending_broadcasts: list[dict] = []
+            pending_triage_entries: list[tuple[UUID, Entry]] = []
+            pending_telegram_alerts: list[tuple[Entry, Analysis]] = []
+
+            async with self._uow_factory() as uow:
+                for (
+                    entry,
+                    analysis,
+                    is_landmark,
+                    cat_name,
+                    is_ai_innovation,
+                ) in prepared_items:
+                    try:
                         added_entry = await uow.entries.add(entry)
-                        new_entries_count += 1
-
-                        # Auto-analyze entry
-                        analysis_res = await analyzer.analyze(added_entry)
-                        blast_res = await blast_engine.analyze(added_entry)
-
-                        analysis = Analysis(
-                            entry_id=added_entry.id,
-                            attack_vector=analysis_res.attack_vector
-                            or "Standard vector",
-                            risk_assessment=analysis_res.risk_assessment
-                            or "Standard risk",
-                            mitigation=analysis_res.mitigation or "Standard patch",
-                            threat_velocity=analysis_res.threat_velocity,
-                            severity_index=analysis_res.severity_index,
-                            blast_radius_score=blast_res.blast_radius_score,
-                            affected_ecosystem=blast_res.affected_ecosystem,
-                            is_pre_cve_warning=blast_res.is_pre_cve_warning,
-                            attack_archetype=blast_res.attack_archetype,
-                            weaponization_potential=analysis_res.weaponization_potential
-                            or blast_res.weaponization_potential,
-                            mitre_attack_id=analysis_res.mitre_attack_id,
-                            mitre_technique=analysis_res.mitre_technique,
-                            model=AnalysisModel.HEURISTIC,
-                        )
-
+                        analysis.entry_id = added_entry.id
                         await uow.analyses.add(analysis)
                         added_entry.analysis = analysis
+                        new_entries_count += 1
 
-                        # Auto-curate landmark AI breakthroughs into the Permanent Important Vault
-                        title_lower = (added_entry.title or "").lower()
-                        cat_val = (
-                            added_entry.category.value
-                            if hasattr(added_entry.category, "value")
-                            else str(added_entry.category)
+                        # Buffer WebSocket payload
+                        pending_broadcasts.append(
+                            {
+                                "type": "new_entry",
+                                "data": {
+                                    "id": str(added_entry.id),
+                                    "title": added_entry.title,
+                                    "url": added_entry.url,
+                                    "summary": added_entry.summary,
+                                    "category": added_entry.category.value
+                                    if hasattr(added_entry.category, "value")
+                                    else str(added_entry.category),
+                                    "source_name": source.name,
+                                    "region": source.config.get("region", "global"),
+                                    "country": source.config.get("country", "GLOBAL"),
+                                    "published_at": added_entry.published_at.isoformat(),
+                                    "tags": added_entry.tags,
+                                    "analysis": {
+                                        "threat_velocity": analysis.threat_velocity,
+                                        "severity_index": analysis.severity_index,
+                                        "blast_radius_score": analysis.blast_radius_score,
+                                        "affected_ecosystem": analysis.affected_ecosystem,
+                                        "is_pre_cve_warning": analysis.is_pre_cve_warning,
+                                        "attack_archetype": analysis.attack_archetype,
+                                        "weaponization_potential": analysis.weaponization_potential,
+                                        "mitre_attack_id": analysis.mitre_attack_id,
+                                        "mitre_technique": analysis.mitre_technique,
+                                        "attack_vector": analysis.attack_vector,
+                                        "risk_assessment": analysis.risk_assessment,
+                                        "mitigation": analysis.mitigation,
+                                    },
+                                },
+                            }
                         )
-                        is_landmark = (
-                            analysis.threat_velocity >= 85
-                            or any(
-                                k in title_lower
-                                for k in (
-                                    "deepseek",
-                                    "r1",
-                                    "frontier",
-                                    "qwen",
-                                    "llama",
-                                    "breakthrough",
-                                    "sota",
-                                    "vllm",
-                                    "sglang",
-                                    "reasoning",
-                                    "reasoner",
-                                )
-                            )
-                            or (
-                                cat_val == "ai_models"
-                                and any(
-                                    k in title_lower
-                                    for k in (
-                                        "release",
-                                        "weights",
-                                        "checkpoint",
-                                        "model",
-                                        "moe",
-                                    )
-                                )
-                            )
-                            or (
-                                cat_val == "ai_research"
-                                and analysis.threat_velocity >= 75
-                            )
-                        )
-                        if is_landmark:
-                            added_entry.metadata = dict(added_entry.metadata or {})
-                            added_entry.metadata["is_important"] = True
-                            added_entry.metadata["importance_reason"] = (
-                                "Frontier Reasoning Architecture"
-                                if any(
-                                    k in title_lower
-                                    for k in ("reasoning", "deepseek", "r1")
-                                )
-                                else "Major Foundation Model Weights Release"
-                                if cat_val == "ai_models"
-                                else "Critical AI Developer Infrastructure"
-                                if any(
-                                    k in title_lower
-                                    for k in ("vllm", "sglang", "runtime", "engine")
-                                )
-                                else "High-Impact Seminal Breakthrough"
-                            )
-                            await uow.entries.update(added_entry)
 
-                        # Real-time WebSocket Broadcast
-                        if self._broadcast_callback:
-                            try:
-                                self._broadcast_callback(
-                                    {
-                                        "type": "new_entry",
-                                        "data": {
-                                            "id": str(added_entry.id),
-                                            "title": added_entry.title,
-                                            "url": added_entry.url,
-                                            "summary": added_entry.summary,
-                                            "category": added_entry.category.value,
-                                            "source_name": source.name,
-                                            "region": source.config.get(
-                                                "region", "global"
-                                            ),
-                                            "country": source.config.get(
-                                                "country", "GLOBAL"
-                                            ),
-                                            "published_at": added_entry.published_at.isoformat(),
-                                            "tags": added_entry.tags,
-                                            "analysis": {
-                                                "threat_velocity": analysis.threat_velocity,
-                                                "severity_index": analysis.severity_index,
-                                                "blast_radius_score": analysis.blast_radius_score,
-                                                "affected_ecosystem": analysis.affected_ecosystem,
-                                                "is_pre_cve_warning": analysis.is_pre_cve_warning,
-                                                "attack_archetype": analysis.attack_archetype,
-                                                "weaponization_potential": analysis.weaponization_potential,
-                                                "mitre_attack_id": analysis.mitre_attack_id,
-                                                "mitre_technique": analysis.mitre_technique,
-                                                "attack_vector": analysis.attack_vector,
-                                                "risk_assessment": analysis.risk_assessment,
-                                                "mitigation": analysis.mitigation,
-                                            },
-                                        },
-                                    }
-                                )
-                            except Exception as ws_err:
-                                logger.warning(f"WebSocket broadcast error: {ws_err}")
-
-                        # Auto-enqueue high-priority entries into Autonomous LLM Triage Queue
+                        # Auto-triage qualification
                         if settings.analyzer.autonomous_triage_enabled:
-                            if (
-                                analysis.threat_velocity
+                            should_auto_triage = (
+                                is_landmark
+                                or cat_name in ("ai_models", "ai_research")
+                                or analysis.threat_velocity
                                 >= settings.analyzer.triage_velocity_threshold
-                                or analysis.is_pre_cve_warning
-                            ):
-                                try:
-                                    from ai_security_monitor.application.services.autonomous_triage_service import (
-                                        get_triage_service,
-                                    )
+                            )
+                            if should_auto_triage:
+                                pending_triage_entries.append(
+                                    (added_entry.id, added_entry)
+                                )
 
-                                    await get_triage_service().enqueue(added_entry.id)
-                                except Exception as triage_err:
-                                    logger.warning(
-                                        f"Failed to auto-enqueue entry for LLM triage: {triage_err}"
-                                    )
-
-                        # Autonomous Emergency Push Alert (Telegram & Event Broadcast)
+                        # Autonomous Milestone / Emergency Broadcast
                         if (
                             analysis.threat_velocity >= 80
                             or analysis.is_pre_cve_warning
+                            or is_landmark
                         ):
-                            if self._broadcast_callback:
-                                try:
-                                    self._broadcast_callback(
-                                        {
-                                            "type": "emergency_threat_alert",
-                                            "data": {
-                                                "id": str(added_entry.id),
-                                                "title": added_entry.title,
-                                                "url": added_entry.url,
-                                                "velocity": analysis.threat_velocity,
-                                                "is_pre_cve": analysis.is_pre_cve_warning,
-                                                "archetype": analysis.attack_archetype,
-                                                "source_name": source.name,
-                                            },
-                                        }
-                                    )
-                                except Exception as _bc_err:
-                                    logger.debug(
-                                        f"WebSocket broadcast error (non-critical): {_bc_err}"
-                                    )
-
-                            # Dispatch Telegram Emergency Alert if credentials present
-                            try:
-                                tg_token = getattr(
-                                    settings, "telegram_bot_token", None
-                                ) or os.getenv("TELEGRAM_BOT_TOKEN")
-                                tg_chat = getattr(
-                                    settings, "telegram_chat_id", None
-                                ) or os.getenv("TELEGRAM_CHAT_ID")
-                                if tg_token and tg_chat:
-                                    from ai_security_monitor.infrastructure.delivery.telegram_delivery import (
-                                        TelegramDelivery,
-                                    )
-
-                                    tg_delivery = TelegramDelivery(
-                                        {"bot_token": tg_token, "chat_id": tg_chat}
-                                    )
-                                    asyncio.create_task(
-                                        tg_delivery.send_alert(added_entry, analysis)
-                                    )
-                            except Exception as tg_err:
-                                logger.debug(f"Telegram auto-alert error: {tg_err}")
+                            event_type = (
+                                "landmark_ai_breakthrough"
+                                if is_ai_innovation
+                                else "emergency_threat_alert"
+                            )
+                            pending_broadcasts.append(
+                                {
+                                    "type": event_type,
+                                    "data": {
+                                        "id": str(added_entry.id),
+                                        "title": added_entry.title,
+                                        "url": added_entry.url,
+                                        "velocity": analysis.threat_velocity,
+                                        "is_pre_cve": analysis.is_pre_cve_warning,
+                                        "archetype": analysis.attack_archetype,
+                                        "source_name": source.name,
+                                        "category": cat_name,
+                                    },
+                                }
+                            )
+                            pending_telegram_alerts.append((added_entry, analysis))
 
                     except DuplicateEntryError:
                         continue
@@ -445,6 +494,52 @@ class MonitorService:
                 source.last_entries_new = new_entries_count
                 await uow.sources.update(source)
                 await uow.commit()
+
+            # 4. Post-Commit Safe Broadcasting & Triage Enqueue (Guaranteed No Phantom Entries)
+            if self._broadcast_callback:
+                for bc in pending_broadcasts:
+                    try:
+                        self._broadcast_callback(bc)
+                    except Exception as ws_err:
+                        logger.warning(f"WebSocket broadcast error: {ws_err}")
+
+            if pending_triage_entries:
+                try:
+                    from ai_security_monitor.application.services.autonomous_triage_service import (
+                        get_triage_service,
+                    )
+
+                    triage_svc = get_triage_service()
+                    for entry_id, ent in pending_triage_entries:
+                        p = triage_svc.calculate_priority(ent)
+                        await triage_svc.enqueue(entry_id, priority=p)
+                except Exception as triage_err:
+                    logger.warning(
+                        f"Failed to auto-enqueue entry for LLM triage: {triage_err}"
+                    )
+
+            # Telegram auto-alerts (post-commit)
+            for alert_entry, alert_analysis in pending_telegram_alerts:
+                try:
+                    tg_token = getattr(settings, "telegram_bot_token", None) or os.getenv(
+                        "TELEGRAM_BOT_TOKEN"
+                    )
+                    tg_chat = getattr(settings, "telegram_chat_id", None) or os.getenv(
+                        "TELEGRAM_CHAT_ID"
+                    )
+                    if tg_token and tg_chat:
+                        from ai_security_monitor.infrastructure.delivery.telegram_delivery import (
+                            TelegramDelivery,
+                        )
+
+                        tg_delivery = TelegramDelivery(
+                            {"bot_token": tg_token, "chat_id": tg_chat}
+                        )
+                        asyncio.create_task(
+                            tg_delivery.send_alert(alert_entry, alert_analysis)
+                        )
+                except Exception as tg_err:
+                    logger.debug(f"Telegram auto-alert error: {tg_err}")
 
         except Exception as e:
             logger.error(f"Error fetching from {source.name}: {e}")
@@ -491,6 +586,21 @@ class MonitorService:
             Category.AI_TECH: 5,
         }
         sources.sort(key=lambda s: (source_priority_order.get(s.category, 99), s.name))
+
+        # Respect source-level rate limits and cooldown unless force=True
+        if not force:
+            now_utc = datetime.now(UTC)
+            eligible_sources = []
+            for s in sources:
+                last = s.last_fetched_at
+                if last:
+                    if last.tzinfo is None:
+                        last = last.replace(tzinfo=UTC)
+                    limit_sec = s.rate_limit_seconds or settings.fetch.rate_limit_default
+                    if (now_utc - last).total_seconds() < limit_sec:
+                        continue
+                eligible_sources.append(s)
+            sources = eligible_sources
 
         # Adaptive concurrency: scales with source count, capped at configurable max_concurrency
         target_concurrency = (

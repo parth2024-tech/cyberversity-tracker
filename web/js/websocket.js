@@ -124,7 +124,7 @@ function handleWebSocketMessage(msg) {
     }
   } else if (msg.type === 'connected') {
     if (msg.stats && typeof renderStats === 'function') renderStats(msg.stats);
-  } else if (msg.type === 'emergency_threat_alert' || msg.type === 'new_entry') {
+  } else if (msg.type === 'emergency_threat_alert' || msg.type === 'new_entry' || msg.type === 'landmark_ai_breakthrough') {
     const entry = msg.data || msg.entry;
     if (!entry) return;
 
@@ -144,14 +144,37 @@ function handleWebSocketMessage(msg) {
       if (lb) { lb.classList.add('opacity-100'); setTimeout(() => lb.classList.remove('opacity-100'), 600); }
     }
 
-    // Soft Real-Time Telemetry Counter Increment
-    incrementKPICounter('total-entries');
-    const cat = entry.category || '';
-    if (cat === 'github_trending' || cat === 'trending_repos') incrementKPICounter('trending-repos-count');
-    else if (cat === 'ai_models' || cat === 'frontier_models') incrementKPICounter('frontier-models-count');
-    else if (cat === 'ai_research' || cat === 'research_papers') incrementKPICounter('ai-count');
-    else if (cat === 'cyber_tools' || cat === 'dev_tools') incrementKPICounter('developer-tools-count');
-    else if (cat === 'ai_tech') incrementKPICounter('global-tech-count');
+    if (msg.type === 'landmark_ai_breakthrough') {
+      showHUDToast({
+        title: 'Landmark AI Breakthrough',
+        message: entry.title,
+        badge: entry.archetype || 'BREAKTHROUGH',
+        icon: 'sparkles',
+        color: 'text-violet-400',
+        borderClass: 'border-violet-500/40',
+        onClick: () => {
+          if (typeof openInspectModal === 'function') openInspectModal(entry);
+        }
+      });
+      if (typeof playBeep === 'function') playBeep('alert');
+    }
+
+    // Soft Real-Time Telemetry Counter Increment (Deduplicated to prevent dual-event counter surges)
+    window._seenCounterEntryIds = window._seenCounterEntryIds || new Set();
+    if (!window._seenCounterEntryIds.has(entryId)) {
+      window._seenCounterEntryIds.add(entryId);
+      if (window._seenCounterEntryIds.size > 2000) {
+        const arr = Array.from(window._seenCounterEntryIds);
+        window._seenCounterEntryIds = new Set(arr.slice(arr.length - 1000));
+      }
+      incrementKPICounter('total-entries');
+      const cat = entry.category || '';
+      if (cat === 'github_trending' || cat === 'trending_repos') incrementKPICounter('trending-repos-count');
+      else if (cat === 'ai_models' || cat === 'frontier_models') incrementKPICounter('frontier-models-count');
+      else if (cat === 'ai_research' || cat === 'research_papers') incrementKPICounter('ai-count');
+      else if (cat === 'cyber_tools' || cat === 'dev_tools') incrementKPICounter('developer-tools-count');
+      else if (cat === 'ai_tech') incrementKPICounter('global-tech-count');
+    }
 
     // Mark stats dirty so engine proactively refreshes on next tick
     if (window.DataSyncEngine) window.DataSyncEngine.invalidate('stats');
@@ -231,7 +254,7 @@ function showHUDToast({ title, message, badge = "SYSTEM", icon = "info", color =
     toast.querySelector('.flex-1').addEventListener('click', onClick);
   }
   container.prepend(toast);
-  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons({ root: toast });
   setTimeout(() => dismissToast(toastId), 4500);
 }
 
@@ -334,7 +357,7 @@ function showToastNotification(entry) {
   });
 
   container.prepend(toast);
-  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons({ root: toast });
 
   setTimeout(() => dismissToast(toastId), 4500);
 }

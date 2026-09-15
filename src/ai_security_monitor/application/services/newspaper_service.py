@@ -348,15 +348,19 @@ class NewspaperService:
         latest_pdf = self._output_dir / "latest.pdf"
         meta_file = self._output_dir / f"{edition_id}.json"
         latest_meta = self._output_dir / "latest.json"
+        # Non-blocking file I/O offloaded to worker thread
+        def _write_edition_files():
+            md_file.write_text(markdown_content, encoding="utf-8")
+            html_file.write_text(html_content, encoding="utf-8")
+            latest_md.write_text(markdown_content, encoding="utf-8")
+            latest_html.write_text(html_content, encoding="utf-8")
 
-        md_file.write_text(markdown_content, encoding="utf-8")
-        html_file.write_text(html_content, encoding="utf-8")
-        latest_md.write_text(markdown_content, encoding="utf-8")
-        latest_html.write_text(html_content, encoding="utf-8")
+        await asyncio.to_thread(_write_edition_files)
 
-        # Generate 10-Page PDF Document
+        # Generate 10-Page PDF Document in worker thread to prevent event loop stalls
         try:
-            self._render_pdf(
+            await asyncio.to_thread(
+                self._render_pdf,
                 pdf_path=pdf_file,
                 entries=entries,
                 categorized=categorized,
@@ -364,7 +368,7 @@ class NewspaperService:
                 generated_at=now,
                 window_hours=window_hours,
             )
-            shutil.copyfile(pdf_file, latest_pdf)
+            await asyncio.to_thread(shutil.copyfile, pdf_file, latest_pdf)
             has_pdf = True
         except Exception as pdf_err:
             logger.error(f"Failed to generate 10-page newspaper PDF: {pdf_err}")
@@ -397,8 +401,12 @@ class NewspaperService:
         }
 
         meta_json = json.dumps(metadata, indent=2)
-        meta_file.write_text(meta_json, encoding="utf-8")
-        latest_meta.write_text(meta_json, encoding="utf-8")
+
+        def _write_metadata():
+            meta_file.write_text(meta_json, encoding="utf-8")
+            latest_meta.write_text(meta_json, encoding="utf-8")
+
+        await asyncio.to_thread(_write_metadata)
 
         logger.info(
             f"Successfully published 10-Page Newspaper Edition #{edition_num} "

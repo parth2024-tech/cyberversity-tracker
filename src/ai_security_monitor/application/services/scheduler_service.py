@@ -130,7 +130,7 @@ class SchedulerService:
                 meta = await self._newspaper.generate_edition(window_hours=5)
                 logger.info(
                     f"Published Newspaper Edition #{meta['edition_number']} "
-                    f"({meta['total_threats']} threats compiled into {meta['md_path']})"
+                    f"({meta.get('total_stories', meta.get('total_threats', 0))} global AI stories compiled into {meta['md_path']})"
                 )
 
                 # Auto-email PDF if email delivery is enabled
@@ -275,12 +275,17 @@ class SchedulerService:
                 db_file = Path(db_path_str)
                 if db_file.exists() and db_file.is_file():
                     backup_dir = db_file.parent / "backups"
-                    backup_dir.mkdir(parents=True, exist_ok=True)
-
                     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
                     dest_file = backup_dir / f"monitor_backup_{timestamp}.db"
 
-                    shutil.copy2(db_file, dest_file)
+                    # Perform safe SQLite online backup capturing all WAL pages with zero page tearing
+                    def _safe_sqlite_backup(src_p: Path, dst_p: Path) -> None:
+                        import sqlite3
+                        with sqlite3.connect(str(src_p)) as src_conn:
+                            with sqlite3.connect(str(dst_p)) as dst_conn:
+                                src_conn.backup(dst_conn)
+
+                    await asyncio.to_thread(_safe_sqlite_backup, db_file, dest_file)
                     size_kb = dest_file.stat().st_size / 1024.0
                     logger.info(
                         f"Automated SQLite backup created: {dest_file.name} "

@@ -71,6 +71,10 @@ class EntryRepository(ABC):
         """Get entry by content hash (for deduplication)."""
         ...
 
+    async def get_existing_hashes(self, hashes: list[str]) -> set[str]:
+        """Check a list of content hashes and return the set that already exists."""
+        return set()
+
     @abstractmethod
     async def list(
         self,

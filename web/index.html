@@ -960,6 +960,87 @@
   </div>
 
 
+  <!-- AUTONOMOUS AI TRIAGE QUEUE CONTROL DRAWER -->
+  <div id="triage-queue-modal" class="modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 space-y-5 border border-indigo-500/30 shadow-2xl relative">
+      <button onclick="closeTriageQueueModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center gap-3 border-b border-white/[0.08] pb-4">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-bold text-white font-mono uppercase tracking-wider">Autonomous AI Triage Engine</h3>
+            <span id="triage-modal-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/40">READY</span>
+          </div>
+          <p class="text-xs text-slate-400 font-mono">Priority-weighted GPU/LLM telemetry and deep architectural extraction</p>
+        </div>
+      </div>
+
+      <!-- Telemetry Stats Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <span class="text-slate-500 block text-[10px] font-mono uppercase font-bold">Queue Backlog</span>
+          <span id="triage-modal-queue-count" class="text-xl font-bold font-mono text-sky-300">0</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <span class="text-slate-500 block text-[10px] font-mono uppercase font-bold">Completed</span>
+          <span id="triage-modal-completed-count" class="text-xl font-bold font-mono text-emerald-300">0</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <span class="text-slate-500 block text-[10px] font-mono uppercase font-bold">Active Priority</span>
+          <span id="triage-modal-priority" class="text-xs font-bold font-mono text-amber-300 mt-1 block truncate">P0: Frontier</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
+          <span class="text-slate-500 block text-[10px] font-mono uppercase font-bold">Model Engine</span>
+          <span id="triage-modal-model" class="text-xs font-bold font-mono text-indigo-300 mt-1 block truncate">Ollama / GPU</span>
+        </div>
+      </div>
+
+      <!-- Active Triage Task Card -->
+      <div id="triage-modal-active-card" class="p-4 rounded-xl bg-indigo-950/20 border border-indigo-500/25 space-y-2">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <span class="text-indigo-300 font-semibold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
+            ACTIVE TASK:
+          </span>
+          <span id="triage-modal-active-status" class="text-slate-400">Idle</span>
+        </div>
+        <div id="triage-modal-active-title" class="text-sm font-semibold text-white font-sans truncate">
+          No item currently in processing
+        </div>
+      </div>
+
+      <!-- Recently Completed Triage Items -->
+      <div class="space-y-2">
+        <div class="text-xs font-mono uppercase text-slate-400 font-semibold flex items-center justify-between">
+          <span>Recently Triaged Breakthroughs</span>
+          <span class="text-[10px] text-slate-500 font-mono">LIVE TELEMETRY</span>
+        </div>
+        <div id="triage-modal-recent-list" class="space-y-1.5 max-h-48 overflow-y-auto font-mono text-xs">
+          <p class="text-slate-500 text-center py-3 text-[11px]">No items triaged in current session.</p>
+        </div>
+      </div>
+
+      <!-- Action Controls -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/[0.06]">
+        <button onclick="prioritizeFrontierModelsAction()" id="btn-modal-prioritize" class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-indigo-950/50 transition active:scale-[0.98]">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          <span>Prioritize Frontier Models (P0)</span>
+        </button>
+        <button onclick="flushTriageQueueAction()" id="btn-modal-flush" class="py-2.5 px-4 rounded-xl bg-white/[0.04] hover:bg-rose-500/20 border border-white/[0.08] hover:border-rose-500/40 text-slate-300 hover:text-rose-300 font-mono text-xs flex items-center justify-center gap-2 transition active:scale-[0.98]">
+          <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+          <span>Flush Accumulated Queue</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
 
   <!-- LEFT ICON SIDEBAR: Mission Control Nav Strip -->
   <nav id="sidebar-nav">
@@ -1080,7 +1161,7 @@
                 <span id="sweep-freshness-text" class="text-slate-500">SWEEP —</span>
               </span>
               <span class="text-slate-700">│</span>
-              <span id="triage-status-badge" class="flex items-center gap-1 cursor-pointer" onclick="triggerTriageBackfill()">
+              <span id="triage-status-badge" class="flex items-center gap-1 cursor-pointer hover:text-indigo-300 transition" onclick="openTriageQueueModal()" title="Autonomous AI Triage Engine: Click to open Priority Queue Control & Telemetry">
                 <span id="triage-dot" class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
                 <span id="triage-status-text" class="text-indigo-400">QUEUE: 0</span>
               </span>
@@ -2366,7 +2447,9 @@
       while (container.children.length > 250) {
         container.lastElementChild.remove();
       }
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons({ root: card });
+      }
     }
 
     function createCardElement(entry) {
@@ -2423,20 +2506,18 @@
 
       let provenanceBadge = '';
       const provType = (entry.metadata && entry.metadata.provenance_type) || '';
-      if (entry.category === 'github_trending') {
+      if (entry.category === 'github_trending' || provType === 'trending_repo') {
         provenanceBadge = `<span class="text-[9px] font-mono font-bold text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.5 rounded-sm">🚀 TRENDING REPO</span>`;
-      } else if (entry.category === 'ai_models') {
+      } else if (entry.category === 'ai_models' || provType === 'model_release' || provType === 'frontier_model') {
         provenanceBadge = `<span class="text-[9px] font-mono font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.5 rounded-sm">🤖 FRONTIER MODEL</span>`;
-      } else if (entry.category === 'ai_research') {
+      } else if (entry.category === 'ai_research' || provType === 'ai_research') {
         provenanceBadge = `<span class="text-[9px] font-mono font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-1.5 py-0.5 rounded-sm">🔬 AI RESEARCH</span>`;
-      } else if (entry.category === 'cyber_tools') {
+      } else if (entry.category === 'cyber_tools' || provType === 'developer_infra') {
         provenanceBadge = `<span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded-sm">🛠️ AI TOOL</span>`;
       } else if (provType === 'state_cert') {
-        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-blue-300 bg-blue-500/15 border border-blue-500/30 px-1.5 py-0.5 rounded-sm">🏛️ STATE CERT</span>`;
-      } else if (provType === 'threat_intel') {
-        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-red-300 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-sm">🎯 THREAT INTEL</span>`;
-      } else if (provType === 'model_release') {
-        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded-sm">🚀 MODEL RELEASE</span>`;
+        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-blue-300 bg-blue-500/15 border border-blue-500/30 px-1.5 py-0.5 rounded-sm">🏛️ SOVEREIGN LAB</span>`;
+      } else if (provType === 'ai_ecosystem') {
+        provenanceBadge = `<span class="text-[9px] font-mono font-bold text-sky-300 bg-sky-500/15 border border-sky-500/30 px-1.5 py-0.5 rounded-sm">🌐 AI ECOSYSTEM</span>`;
       } else if (isChina) {
         provenanceBadge = `<span class="text-[9px] font-mono font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded-sm">🇨🇳 CN INTEL</span>`;
       }
@@ -2495,7 +2576,7 @@
                 ${provenanceBadge}
                 ${vaultBadge}
                 ${newBadge}
-                ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `<span class="text-[9px] font-mono text-indigo-400">✦ AI</span>` : ''}
+                ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local' || (entry.metadata && entry.metadata.is_triaged)) ? `<span class="text-[9px] font-mono text-indigo-300 font-semibold px-1.5 py-0.2 rounded bg-indigo-500/15 border border-indigo-500/30">✦ AI TRIAGED</span>` : ''}
                 ${(entry.matched_watchlist_rules || []).map(w => `<span class="text-[9px] font-mono text-cyan-400 uppercase">◉ ${w}</span>`).join('')}
               </div>
               <div class="flex items-center gap-2 flex-shrink-0 text-[9px] font-mono">
@@ -3279,25 +3360,101 @@
       }
     }
 
-    // Autonomous LLM Triage Queue Management
+    // Autonomous LLM Triage Queue Management & Priority Engine
+    let _lastTriageData = null;
+
     async function fetchTriageStatus() {
       try {
         const res = await fetch('/api/triage/queue');
         const data = await res.json();
+        _lastTriageData = data;
         updateTriageStatus(data);
+        renderTriageModal(data);
       } catch (e) {
         console.warn("Failed to fetch triage queue status:", e);
       }
     }
 
+    function openTriageQueueModal() {
+      playBeep('click');
+      const modal = document.getElementById('triage-queue-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (_lastTriageData) renderTriageModal(_lastTriageData);
+        fetchTriageStatus();
+      }
+    }
+
+    function closeTriageQueueModal() {
+      const modal = document.getElementById('triage-queue-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderTriageModal(data) {
+      if (!data) return;
+      const qCount = document.getElementById('triage-modal-queue-count');
+      const cCount = document.getElementById('triage-modal-completed-count');
+      const pText = document.getElementById('triage-modal-priority');
+      const mText = document.getElementById('triage-modal-model');
+      const statusBadge = document.getElementById('triage-modal-status-badge');
+      const activeStatus = document.getElementById('triage-modal-active-status');
+      const activeTitle = document.getElementById('triage-modal-active-title');
+      const recentList = document.getElementById('triage-modal-recent-list');
+
+      if (qCount) qCount.innerText = (data.queue_size || 0).toLocaleString();
+      if (cCount) cCount.innerText = (data.total_completed || 0).toLocaleString();
+      if (pText) pText.innerText = data.current_priority || (data.queue_size > 0 ? "P0: Frontier" : "P1: Standard");
+      if (mText) mText.innerText = data.model || "Ollama / GPU";
+
+      if (statusBadge) {
+        if (data.is_processing) {
+          statusBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse";
+          statusBadge.innerText = "TRIAGING";
+        } else if (data.queue_size > 0) {
+          statusBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/40";
+          statusBadge.innerText = "QUEUED";
+        } else {
+          statusBadge.className = "px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/40";
+          statusBadge.innerText = "IDLE / READY";
+        }
+      }
+
+      if (activeStatus && activeTitle) {
+        if (data.is_processing) {
+          activeStatus.innerText = "Active GPU Inference";
+          activeTitle.innerText = data.current_entry || "Processing high-priority entry...";
+        } else {
+          activeStatus.innerText = "Queue Idle";
+          activeTitle.innerText = data.queue_size > 0 ? `Waiting for next cycle (${data.queue_size} items queued)` : "Ready for next feed sweep or manual trigger";
+        }
+      }
+
+      if (recentList && data.recent_triaged && data.recent_triaged.length > 0) {
+        recentList.innerHTML = data.recent_triaged.slice().reverse().map(item => `
+          <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
+            <div class="flex items-center gap-2 truncate pr-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span class="truncate text-slate-200">${item.title}</span>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${item.archetype || 'Frontier AI'}</span>
+              <span class="text-[10px] font-mono text-cyan-400 font-bold">${item.velocity}/100</span>
+            </div>
+          </div>
+        `).join('');
+      }
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+
     function updateTriageStatus(data) {
+      _lastTriageData = data;
       const textEl = document.getElementById('triage-status-text');
       const dotEl = document.getElementById('triage-dot');
       if (!textEl || !dotEl) return;
 
       if (data.is_processing) {
         dotEl.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse";
-        const entryName = data.current_entry ? (data.current_entry.slice(0, 20) + '...') : 'Threat';
+        const entryName = data.current_entry ? (data.current_entry.slice(0, 22) + '...') : 'Model';
         textEl.innerHTML = `<span class="text-amber-300 font-medium">TRIAGING: ${entryName}</span> (<span class="text-white">${data.queue_size}</span>)`;
       } else if (data.queue_size > 0) {
         dotEl.className = "w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse";
@@ -3305,6 +3462,67 @@
       } else {
         dotEl.className = "w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse";
         textEl.innerHTML = `AI QUEUE: READY (<span class="text-slate-400">${data.total_completed || 0} triaged</span>)`;
+      }
+      renderTriageModal(data);
+    }
+
+    async function prioritizeFrontierModelsAction() {
+      const btn = document.getElementById('btn-modal-prioritize');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Prioritizing...`;
+      }
+      playBeep('alert');
+      try {
+        const res = await fetch('/api/triage/prioritize-frontier?limit=25', { method: 'POST' });
+        const data = await res.json();
+        showHUDToast({
+          title: "Frontier Models Prioritized",
+          message: data.message || `Promoted ${data.enqueued_count || 0} frontier foundation models to P0 priority.`,
+          badge: "P0 PRIORITY",
+          icon: "zap",
+          color: "text-amber-400",
+          borderClass: "border-amber-500/40"
+        });
+        await fetchTriageStatus();
+      } catch (e) {
+        console.error("Prioritize error:", e);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4"></i> Prioritize Frontier Models (P0)`;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    async function flushTriageQueueAction() {
+      const btn = document.getElementById('btn-modal-flush');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Flushing...`;
+      }
+      playBeep('alert');
+      try {
+        const res = await fetch('/api/triage/clear', { method: 'POST' });
+        const data = await res.json();
+        showHUDToast({
+          title: "Triage Backlog Flushed",
+          message: data.message || `Flushed ${data.cleared_count || 0} entries from the triage queue.`,
+          badge: "QUEUE RESET",
+          icon: "trash",
+          color: "text-rose-400",
+          borderClass: "border-rose-500/40"
+        });
+        await fetchTriageStatus();
+      } catch (e) {
+        console.error("Flush queue error:", e);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="trash" class="w-3.5 h-3.5"></i> Flush Accumulated Queue`;
+          lucide.createIcons();
+        }
       }
     }
 
@@ -3317,18 +3535,18 @@
       }
       if (sideBtn) {
         sideBtn.disabled = true;
-        sideBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin text-indigo-400"></i> Queuing Top AI Models...`;
+        sideBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin text-indigo-400"></i> Prioritizing Top AI Models...`;
       }
       lucide.createIcons();
       playBeep('alert');
 
       try {
-        const res = await fetch(`/api/triage/backfill?limit=${limit}`, { method: 'POST' });
+        const res = await fetch(`/api/triage/prioritize-frontier?limit=${limit}`, { method: 'POST' });
         const data = await res.json();
         showHUDToast({
-          title: "Autonomous LLM Triage Dispatched",
-          message: `Enqueued ${data.enqueued_count || 0} AI models and research breakthroughs into local Ollama queue (RTX 3050 GPU).`,
-          badge: "OLLAMA QUEUE",
+          title: "Autonomous AI Triage Dispatched",
+          message: `Enqueued ${data.enqueued_count || 0} frontier AI models and research breakthroughs into priority queue.`,
+          badge: "P0 QUEUE",
           icon: "sparkles",
           color: "text-indigo-400",
           borderClass: "border-indigo-500/40"
@@ -3358,9 +3576,9 @@
         const res = await fetch(`/api/triage/enqueue/${entryId}`, { method: 'POST' });
         const data = await res.json();
         showHUDToast({
-          title: data.status === 'already_queued' ? "Already Queued" : "Queued for LLM Triage",
-          message: data.message || "Threat enqueued for autonomous local Ollama triage.",
-          badge: "OLLAMA",
+          title: data.status === 'already_queued' ? "Already Queued" : "Queued for AI Triage",
+          message: data.message || "Entry enqueued for deep AI architecture triage.",
+          badge: "PRIORITY QUEUE",
           icon: "sparkles",
           color: "text-indigo-400",
           borderClass: "border-indigo-500/30"
@@ -3374,9 +3592,9 @@
     function handleTriageCompleted(data) {
       playBeep('alert');
       showHUDToast({
-        title: data.title || "Deep Triage Completed",
-        message: `GPU Autonomous Triage Complete: Attack Vector: ${data.attack_vector ? data.attack_vector.slice(0, 70) + '...' : 'Hardened'} | Velocity: ${data.threat_velocity}/100`,
-        badge: "OLLAMA GPU",
+        title: data.title || "Deep AI Triage Completed",
+        message: `Architectural Breakdown: ${data.attack_vector ? data.attack_vector.slice(0, 70) + '...' : 'Optimized'} | Velocity: ${data.threat_velocity}/100`,
+        badge: "AI ENGINE",
         icon: "sparkles",
         color: "text-indigo-400",
         borderClass: "border-indigo-500/40"

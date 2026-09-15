@@ -41,18 +41,32 @@ async def enqueue_entry_for_triage(entry_id: UUID):
     }
 
 
-@triage_router.post("/backfill")
-async def backfill_high_priority_triage(
-    limit: int = Query(
-        default=10, ge=1, le=50, description="Max high-velocity entries to enqueue"
-    ),
-):
-    """Backfill and enqueue top high-velocity un-triaged entries for LLM processing."""
+@triage_router.post("/clear")
+async def clear_triage_queue():
+    """Flush the in-memory triage queue to eliminate backlogs."""
     service = get_triage_service()
-    enqueued_count = await service.backfill_high_priority(limit=limit)
+    cleared = service.clear_queue()
     return {
         "status": "success",
-        "enqueued_count": enqueued_count,
+        "cleared_count": cleared,
         "queue_size": service.queue_size,
-        "message": f"Enqueued {enqueued_count} high-priority threats for autonomous LLM triage.",
+        "message": f"Successfully flushed {cleared} entries from the triage queue.",
     }
+
+
+@triage_router.post("/prioritize-frontier")
+async def prioritize_frontier_models(
+    limit: int = Query(
+        default=25, ge=1, le=100, description="Max frontier models & breakthrough research to enqueue"
+    )
+):
+    """Clear stale queue items and prioritize frontier models and landmark arXiv research."""
+    service = get_triage_service()
+    enqueued = await service.backfill_high_priority(limit=limit)
+    return {
+        "status": "success",
+        "enqueued_count": enqueued,
+        "queue_size": service.queue_size,
+        "message": f"Prioritized {enqueued} frontier models & landmark arXiv papers for autonomous GPU/LLM triage.",
+    }
+

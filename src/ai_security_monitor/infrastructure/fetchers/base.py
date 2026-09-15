@@ -101,15 +101,6 @@ class BaseFetcher(ABC):
                         )
                         continue
 
-                # Publish events for new entries
-                for entry in entries:
-                    await event_bus.publish(
-                        EntryFetchedEvent(
-                            aggregate_id=entry.id,
-                            entry=entry,
-                        )
-                    )
-
                 duration_ms = int(
                     (datetime.now(UTC) - start_time).total_seconds() * 1000
                 )
@@ -159,15 +150,23 @@ class BaseFetcher(ABC):
             duration_ms=duration_ms,
         )
 
+    _last_fetch_times_by_source: dict[str, datetime] = {}
+
     async def _respect_rate_limit(self) -> None:
         """Enforce rate limiting between fetches."""
-        if self._last_fetch_time:
-            elapsed = (datetime.now(UTC) - self._last_fetch_time).total_seconds()
+        source_key = str(self.source.id) if self.source and self.source.id else (self.source.name if self.source else "default")
+        last_time = BaseFetcher._last_fetch_times_by_source.get(source_key) or (self.source.last_fetched_at if self.source else None)
+        if last_time:
+            if last_time.tzinfo is None:
+                last_time = last_time.replace(tzinfo=UTC)
+            elapsed = (datetime.now(UTC) - last_time).total_seconds()
             if elapsed < self._rate_limit_seconds:
                 wait_time = self._rate_limit_seconds - elapsed
                 await asyncio.sleep(wait_time)
 
-        self._last_fetch_time = datetime.now(UTC)
+        now = datetime.now(UTC)
+        BaseFetcher._last_fetch_times_by_source[source_key] = now
+        self._last_fetch_time = now
 
 
 class FetcherRegistry:
