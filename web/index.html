@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AETHERGUARD // Global AI Intelligence & Frontier Research Radar</title>
-  
-  <!-- Fonts & Tailwind CSS -->
+  <!-- Preconnect External CDNs -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -745,7 +748,7 @@
   </nav>
 
   <!-- MAIN CONTAINER -->
-  <div class="main-layout max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5 lg:ml-14">
+  <div class="main-layout max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-24 lg:pb-8 space-y-5 lg:ml-14">
 
     <!-- MISSION CONTROL BAR -->
     <header id="mission-header" class="glass-panel px-5 py-3 flex items-center justify-between gap-4">
@@ -830,7 +833,7 @@
 
 
 
-    <!-- 3D WEBGL HOLOGRAPHIC THREAT RADAR GLOBE -->
+    <!-- 3D WEBGL HOLOGRAPHIC AI OBSERVATORY GLOBE -->
     <div id="globe-panel" class="glass-panel p-4 relative overflow-hidden transition-all duration-500 border border-white/[0.08]">
       <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
         <div class="flex items-center gap-2">
@@ -906,7 +909,7 @@
 
 
     <!-- GLOBAL AI INTELLIGENCE MARQUEE BANNER -->
-    <div id="precve-radar-banner" class="scan-banner py-2 px-4 flex items-center gap-4 overflow-hidden">
+    <div id="ai-radar-marquee-banner" class="scan-banner py-2 px-4 flex items-center gap-4 overflow-hidden">
       <span class="flex-shrink-0 flex items-center gap-1.5 font-mono text-[10px] font-bold text-cyan-400 uppercase tracking-widest border-r border-cyan-500/20 pr-4">
         <i data-lucide="activity" class="w-3.5 h-3.5"></i> GLOBAL AI WIRE
       </span>
@@ -972,10 +975,10 @@
 
             <!-- Export Hub -->
             <div class="flex items-center gap-2">
-              <button onclick="exportPdfReport()" class="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 hover:border-sky-400 text-sky-200 hover:text-white text-[11px] flex items-center gap-1.5 transition font-semibold" title="Export current/pinned threats to Executive PDF Dossier">
+              <button onclick="exportPdfReport()" class="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/35 hover:border-sky-400 text-sky-200 hover:text-white text-[11px] flex items-center gap-1.5 transition font-semibold" title="Export current/pinned items to Executive AI Dossier">
                 <i data-lucide="file-down" class="w-3 h-3 text-sky-400"></i> Export PDF
               </button>
-              <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current/pinned threats to Markdown Brief">
+              <button onclick="exportMarkdownReport()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current/pinned items to AI Intelligence Brief">
                 <i data-lucide="file-text" class="w-3 h-3 text-slate-400"></i> Export MD
               </button>
               <button onclick="exportJsonData()" class="px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[11px] flex items-center gap-1.5 transition" title="Export current feed to structured JSON dataset">
@@ -984,7 +987,7 @@
             </div>
           </div>
 
-          <!-- Geographic Worldwide Threat Theatre Selector -->
+          <!-- Geographic Worldwide AI Ecosystem Theatre Selector -->
           <div class="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.06] flex-wrap text-xs font-mono">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="text-[10px] text-sky-400 font-medium uppercase mr-1 flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3 text-sky-400"></i> THEATRE:</span>
@@ -1017,7 +1020,7 @@
                 <option value="top" selected>★ Top News First</option>
                 <option value="newest">Newest First</option>
                 <option value="velocity">Velocity / Stars</option>
-                <option value="blast">Impact / Blast</option>
+                <option value="blast">Impact / Significance</option>
               </select>
 
               <!-- View Mode Toggle Buttons -->
@@ -1192,7 +1195,13 @@
     let currentCategory = 'all';
     let currentRegion = 'all';
     let currentTimeHorizon = 0;
-    const PINNED_STORAGE_KEY = 'aether_pinned_threats';
+        // Pinned storage key with automatic migration
+    const PINNED_STORAGE_KEY = 'aether_pinned_items';
+    try {
+      if (!localStorage.getItem(PINNED_STORAGE_KEY) && localStorage.getItem('aether_pinned_threats')) {
+        localStorage.setItem(PINNED_STORAGE_KEY, localStorage.getItem('aether_pinned_threats'));
+      }
+    } catch(e) {}
     let searchQuery = '';
     const categoryBadgeColors = {
       vulnerabilities: 'text-rose-300 border-rose-500/25 bg-rose-500/10',
@@ -1953,7 +1962,7 @@
           data.entries = (data.entries || []).filter(e => e.is_new_since_refresh);
         } else if (currentCategory === 'pinned') {
           const pinnedIds = new Set(getPinnedThreatIds());
-          data.entries = (data.entries || []).filter(e => pinnedIds.has(e.id));
+          data.entries = (data.entries || []).filter(e => pinnedIds.has(e.id) || isThreatVaulted(e.id));
         }
 
         updateActiveFiltersBar();
@@ -1963,8 +1972,14 @@
             container.classList.remove('feed-dimmed');
             if (loadingBar) loadingBar.classList.remove('opacity-100');
             const catTitle = (currentCategory || 'selected').replace(/_/g, ' ');
-            const emptyMsg = currentCategory === 'pinned' 
-              ? "No pinned items in your investigation board. Click the ⭐ icon on any card to pin it here!"
+            const isSearching = Boolean(effectiveSearch);
+            const emptyTitle = isSearching 
+              ? `No AI Signals Found for "${effectiveSearch}"` 
+              : `Category Ingesting / Awaiting Data`;
+            const emptyMsg = isSearching
+              ? `No intelligence entries matched your query "${effectiveSearch}". Try one of the popular topics below or reset your search.`
+              : currentCategory === 'pinned' 
+              ? "No pinned items in your collection. Click the ⭐ icon on any card to pin and preserve it here!"
               : currentCategory === 'important'
               ? "Your Permanent Intel Vault is currently empty. Click [⭐ KEEP IN VAULT] on any landmark foundation model, arXiv paper, or open-source tool to preserve it indefinitely!"
               : currentCategory === 'only_new'
@@ -1973,16 +1988,27 @@
             container.innerHTML = `
               <div class="glass-panel rounded-2xl p-10 text-center space-y-4 border border-cyan-500/20 col-span-full">
                 <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
-                  <i data-lucide="${currentCategory === 'pinned' ? 'star' : currentCategory === 'important' ? 'archive' : currentCategory === 'only_new' ? 'sparkles' : 'inbox'}" class="w-6 h-6"></i>
+                  <i data-lucide="${isSearching ? 'search-x' : currentCategory === 'pinned' ? 'star' : currentCategory === 'important' ? 'archive' : currentCategory === 'only_new' ? 'sparkles' : 'inbox'}" class="w-6 h-6"></i>
                 </div>
                 <div class="space-y-1">
-                  <h3 class="text-sm font-semibold text-white font-mono uppercase tracking-wide">Category Ingesting / Awaiting Data</h3>
+                  <h3 class="text-sm font-semibold text-white font-mono uppercase tracking-wide">${emptyTitle}</h3>
                   <p class="text-xs text-slate-400 font-mono max-w-md mx-auto leading-relaxed">${emptyMsg}</p>
                 </div>
-                <div class="flex items-center justify-center gap-3 pt-2">
-                  <button onclick="setCategory('all')" class="px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-medium transition cursor-pointer">★ View All AI Intel</button>
-                  <button onclick="triggerScan()" class="px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-slate-300 font-mono text-xs transition cursor-pointer">⚡ Sweep Global Feeds</button>
-                </div>
+                ${isSearching ? `
+                  <div class="flex items-center justify-center gap-2 flex-wrap pt-2 max-w-md mx-auto">
+                    <span class="text-[10px] font-mono text-slate-500 uppercase w-full">Quick Suggestions:</span>
+                    <button onclick="setQuickChip('deepseek')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-cyan-500/15 border border-white/[0.08] hover:border-cyan-400 text-xs font-mono text-cyan-300 transition">⚡ DeepSeek</button>
+                    <button onclick="setQuickChip('vllm')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.08] hover:border-emerald-400 text-xs font-mono text-emerald-300 transition">🛠️ vLLM</button>
+                    <button onclick="setQuickChip('claude')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-purple-500/15 border border-white/[0.08] hover:border-purple-400 text-xs font-mono text-purple-300 transition">🤖 Claude</button>
+                    <button onclick="setQuickChip('ollama')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-amber-500/15 border border-white/[0.08] hover:border-amber-400 text-xs font-mono text-amber-300 transition">🦙 Ollama</button>
+                    <button onclick="clearSearch()" class="px-3 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-xs font-mono text-rose-300 transition font-semibold">✕ Clear Search</button>
+                  </div>
+                ` : `
+                  <div class="flex items-center justify-center gap-3 pt-2">
+                    <button onclick="setCategory('all')" class="px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-medium transition cursor-pointer">★ View All AI Intel</button>
+                    <button onclick="triggerScan()" class="px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-slate-300 font-mono text-xs transition cursor-pointer">⚡ Sweep Global Feeds</button>
+                  </div>
+                `}
               </div>
             `;
             if (typeof lucide !== 'undefined' && lucide.createIcons) {
@@ -2076,7 +2102,7 @@
 
     function createCardElement(entry) {
       const card = document.createElement('div');
-      card.id = 'threat-card-' + entry.id;
+      card.id = 'ai-card-' + entry.id; card.setAttribute('data-card-id', entry.id);
       card.setAttribute('data-entry-id', entry.id);
 
       const analysis = entry.analysis || {};
@@ -2248,7 +2274,7 @@
               <button onclick="event.stopPropagation(); openDeepAnalysisModal('${entry.id}')" class="text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded transition flex items-center gap-1 font-mono text-[9px] font-semibold" title="Deep Technical Analysis Dossier">
                 <i data-lucide="microscope" class="w-3 h-3 text-amber-400"></i> ANALYZE
               </button>
-              <button onclick="event.stopPropagation(); VoiceRadar.speakSingleEntry('${entry.id}')" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Read Advisory Aloud">
+              <button onclick="event.stopPropagation(); VoiceRadar.speakSingleEntry('${entry.id}')" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Read Aloud">
                 <i data-lucide="volume-2" class="w-3 h-3 text-cyan-400"></i> READ
               </button>
               <button onclick="event.stopPropagation(); shareCardLink('${entry.id}', event)" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Share Link">
@@ -2322,6 +2348,10 @@
               <button onclick="VoiceRadar.speakSingleEntry('${entry.id}')" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/35 hover:border-cyan-400 text-cyan-300 transition flex items-center gap-1.5 text-xs font-mono" title="Listen to Readout">
                 <i data-lucide="volume-2" class="w-3.5 h-3.5 text-cyan-400"></i>
                 <span>LISTEN</span>
+              </button>
+              <button onclick="togglePinThreatFromModal('${entry.id}')" id="modal-pin-btn" class="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-amber-400/40 text-slate-300 hover:text-amber-300 transition flex items-center gap-1.5 text-xs font-mono" title="Pin / Bookmark this item">
+                <i data-lucide="star" class="w-3.5 h-3.5 ${Boolean(isThreatPinned(entry.id) || entry.is_important || isThreatVaulted(entry.id)) ? 'text-amber-400 fill-amber-400' : ''}"></i>
+                <span id="modal-pin-text">${Boolean(isThreatPinned(entry.id) || entry.is_important || isThreatVaulted(entry.id)) ? 'PINNED' : 'PIN'}</span>
               </button>
               <button onclick="toggleVaultFromInspectModal('${entry.id}')" id="modal-vault-btn" class="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-amber-400/40 text-slate-300 hover:text-amber-300 transition flex items-center gap-1.5 text-xs font-mono" title="Keep in Permanent Vault (Exempt from purge)">
                 <i data-lucide="archive" class="w-3.5 h-3.5 ${Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isThreatVaulted === 'function' && isThreatVaulted(entry.id))) ? 'text-amber-400' : ''}"></i>
@@ -2573,7 +2603,7 @@
           body: JSON.stringify({
             name,
             keywords,
-            min_threat_velocity: velocity,
+            min_velocity: velocity,
             enabled: true
           })
         });
@@ -2696,7 +2726,7 @@
       const list = document.getElementById('sources-list');
       modal.classList.remove('hidden');
       playBeep('click');
-      list.innerHTML = `<p class="text-center font-mono text-xs text-cyber-muted py-6">Loading configured threat intelligence feeds...</p>`;
+      list.innerHTML = `<p class="text-center font-mono text-xs text-cyber-muted py-6">Loading configured AI ecosystem intelligence feeds...</p>`;
 
       try {
         const res = await fetch('/api/sources');
@@ -3223,7 +3253,7 @@
       });
 
       // Highlight card in-place if visible in feed
-      const card = document.getElementById(`threat-card-${data.entry_id}`);
+      const card = document.getElementById(`ai-card-${data.entry_id}`) || document.getElementById(`threat-card-${data.entry_id}`);
       if (card) {
         card.classList.add('ring-1', 'ring-indigo-400/50');
         setTimeout(() => card.classList.remove('ring-1', 'ring-indigo-400/50'), 4000);
@@ -3581,7 +3611,7 @@
         <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 flex-wrap">
           <div class="flex items-center gap-2.5">
             <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
-              <i data-lucide="shield-alert" class="w-4 h-4"></i>
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
             </div>
             <div>
               <div class="text-xs font-mono font-bold text-amber-300 flex items-center gap-1.5">
@@ -3910,7 +3940,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ids: pinnedIds,
-            title: 'AetherGuard Threat Intelligence Dossier',
+            title: 'AetherGuard AI Intelligence Dossier',
             subtitle: `Active Investigation Pinboard (${pinnedIds.length} Pinned Advisories)`
           })
         })
@@ -3919,7 +3949,7 @@
           return res.blob();
         })
         .then(blob => {
-          downloadBlobFile(`aether-threat-dossier-${now}.pdf`, blob);
+          downloadBlobFile(`aether-ai-dossier-${now}.pdf`, blob);
           showToast("PDF Dossier downloaded successfully!", "success");
         })
         .catch(err => {
@@ -3935,7 +3965,7 @@
         if (currentTimeHorizon > 0) url += `&hours=${currentTimeHorizon}`;
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
 
-        showToast("Generating Executive Threat Intelligence PDF...", "info");
+        showToast("Generating Executive AI Intelligence PDF...", "info");
         window.open(url, '_blank');
       }
     }
@@ -4535,6 +4565,34 @@
       <i data-lucide="arrow-up" class="w-3.5 h-3.5 text-cyan-400"></i>
     </button>
   </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION DOCK (Screens < 1024px) -->
+  <nav id="mobile-dock" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-white/[0.08] px-2 py-2 flex items-center justify-around text-slate-400 font-mono text-[10px] shadow-2xl">
+    <button onclick="setCategory('all')" class="flex flex-col items-center gap-0.5 px-2 py-1 text-cyan-400 hover:text-cyan-300 transition">
+      <i data-lucide="activity" class="w-4 h-4"></i>
+      <span>Feed</span>
+    </button>
+    <button onclick="setCategory('important')" class="flex flex-col items-center gap-0.5 px-2 py-1 hover:text-amber-300 transition">
+      <i data-lucide="archive" class="w-4 h-4 text-amber-400"></i>
+      <span>Vault</span>
+    </button>
+    <button onclick="toggle3DGlobe()" class="flex flex-col items-center gap-0.5 px-2 py-1 hover:text-sky-300 transition">
+      <i data-lucide="globe" class="w-4 h-4"></i>
+      <span>3D Radar</span>
+    </button>
+    <button onclick="openNewspaperModal()" class="flex flex-col items-center gap-0.5 px-2 py-1 hover:text-cyan-300 transition">
+      <i data-lucide="newspaper" class="w-4 h-4 text-cyan-400"></i>
+      <span>Gazette</span>
+    </button>
+    <button onclick="openCommandPalette()" class="flex flex-col items-center gap-0.5 px-2 py-1 hover:text-white transition">
+      <i data-lucide="command" class="w-4 h-4"></i>
+      <span>Spotlight</span>
+    </button>
+    <button onclick="openSourcesModal()" class="flex flex-col items-center gap-0.5 px-2 py-1 hover:text-sky-300 transition">
+      <i data-lucide="radio" class="w-4 h-4"></i>
+      <span>Feeds</span>
+    </button>
+  </nav>
 
 </body>
 </html>

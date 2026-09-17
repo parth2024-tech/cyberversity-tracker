@@ -203,12 +203,12 @@ var VoiceRadar = {
 
   _highlightCard(cardId) {
     if (this._activeCardId) {
-      const prev = document.getElementById('threat-card-' + this._activeCardId);
+      const prev = document.getElementById('ai-card-' + this._activeCardId) || document.getElementById('threat-card-' + this._activeCardId);
       if (prev) prev.classList.remove('card-speaking');
     }
     this._activeCardId = cardId;
     if (cardId) {
-      const el = document.getElementById('threat-card-' + cardId);
+      const el = document.getElementById('ai-card-' + cardId) || document.getElementById('threat-card-' + cardId);
       if (el) {
         el.classList.add('card-speaking');
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });

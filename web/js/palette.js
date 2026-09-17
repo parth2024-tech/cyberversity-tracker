@@ -67,11 +67,11 @@ function handlePaletteSearch() {
       a.title.toLowerCase().includes(query) || a.subtitle.toLowerCase().includes(query) || a.badge.toLowerCase().includes(query)
     );
 
-    // Fetch live threats matching search query
+    // Fetch live AI models and research matching search query
     try {
       const res = await fetch(`/api/entries?search=${encodeURIComponent(query)}&limit=8`);
       const data = await res.json();
-      const threatMatches = (data.entries || []).map(entry => ({
+      const aiMatches = (data.entries || []).map(entry => ({
         id: `threat-${entry.id}`,
         title: entry.title,
         subtitle: `${entry.source_name} • ${entry.category} • Velocity: ${entry.threat_velocity || 25}/100`,
@@ -191,6 +191,8 @@ document.addEventListener('keydown', (e) => {
     if (typeof closeTelegramModal === 'function') closeTelegramModal();
     if (typeof closeKeyboardModal === 'function') closeKeyboardModal();
     if (typeof closePurgeModal === 'function') closePurgeModal();
+    if (typeof closeDeepAnalysisModal === 'function') closeDeepAnalysisModal();
+    if (typeof closeTriageQueueModal === 'function') closeTriageQueueModal();
     closeCommandPalette();
     const cards = document.querySelectorAll('#feed-container .feed-card');
     cards.forEach(c => c.classList.remove('card-focused'));

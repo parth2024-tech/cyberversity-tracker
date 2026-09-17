@@ -27,7 +27,7 @@ function initWebSocket() {
   window.ws = ws;
 
   ws.onopen = () => {
-    console.log("WebSocket connected to Threat Radar");
+    console.log("WebSocket connected to Global AI Intelligence Radar");
     _wsReconnectDelay = 3000; // reset backoff on successful connect
     const statusEl = document.getElementById('connection-status');
     if (statusEl) statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> WS:<span id="ping-time" class="text-emerald-400 ml-0.5">0ms</span>`;
@@ -135,7 +135,7 @@ function handleWebSocketMessage(msg) {
 
     const allItems = window.allFeedItems || [];
     // Deduplicate: skip if card already in DOM or allFeedItems
-    if (!document.getElementById('threat-card-' + entryId) && !allItems.some(e => e.id === entryId)) {
+    if (!document.getElementById('ai-card-' + entryId) && !document.getElementById('threat-card-' + entryId) && !allItems.some(e => e.id === entryId)) {
       allItems.unshift(entry);
       if (allItems.length > 250) allItems.length = 250;
       if (typeof prependFeedItem === 'function') prependFeedItem(entry);

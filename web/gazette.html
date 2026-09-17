@@ -292,7 +292,7 @@ body{
 .article .tag.poc{background:var(--accent-gold);color:var(--paper);border-color:var(--accent-gold);}
 .article p{font-size:13.5px;color:var(--ink-light);margin-top:6px;}
 
-/* MITRE Threat Matrix Section */
+/* AI Architecture & Innovation Matrix Section */
 .matrix-section{
   border-top:3px double var(--rule);
   padding-top:18px;
@@ -628,7 +628,7 @@ footer{
 
   <!-- Main Newspaper Grid -->
   <div class="grid">
-    <!-- Left Broad Column: Lead Story & Articles & Threat Matrix -->
+    <!-- Left Broad Column: Lead Story & Articles -->
     <div>
       <!-- Lead Feature Story -->
       <div class="headline" id="leadStory" onclick="openLeadModal()">
@@ -729,7 +729,7 @@ footer{
   </footer>
 </div>
 
-<!-- Threat Dossier Modal Overlay -->
+<!-- AI Intelligence Dossier Modal Overlay -->
 <div class="modal-overlay" id="dispatchModal" onclick="closeModalOnBackdrop(event)">
   <div class="modal-card">
     <button class="modal-close" onclick="closeDispatchModal()">&times;</button>
@@ -777,7 +777,7 @@ function scoreClass(v) {
 function renderArticle(e) {
   const isAi = ['github_trending', 'ai_models', 'ai_research', 'ai_tech', 'cyber_tools'].includes(e.category);
   const score = isAi 
-    ? (e.innovation_score || (e.analysis && e.analysis.threat_velocity) || e.threat_velocity || 85)
+    ? (e.innovation_score || (e.analysis && e.analysis.velocity) || e.threat_velocity || 85)
     : (e.severity ?? (e.analysis && e.analysis.severity_index) ?? e.blast_radius ?? (e.analysis && e.analysis.blast_radius_score) ?? 0);
   const scoreLabel = isAi ? 'impact' : 'score';
   const source = e.source || e.source_name || 'Wire';
@@ -856,7 +856,7 @@ function renderCurrentView() {
   // Update Lead Story
   const isLeadAi = ['github_trending', 'ai_models', 'ai_research', 'ai_tech', 'cyber_tools'].includes(lead.category);
   const leadScore = isLeadAi 
-    ? (lead.innovation_score || (lead.analysis && lead.analysis.threat_velocity) || lead.threat_velocity || 88)
+    ? (lead.innovation_score || (lead.analysis && lead.analysis.velocity) || lead.threat_velocity || 88)
     : (lead.severity ?? (lead.analysis && lead.analysis.severity_index) ?? '—');
   const leadBlast = lead.blast_radius ?? (lead.analysis && lead.analysis.blast_radius_score) ?? '—';
   const leadSource = lead.source || lead.source_name || 'Wire';
