@@ -72,12 +72,12 @@ function handlePaletteSearch() {
       const res = await fetch(`/api/entries?search=${encodeURIComponent(query)}&limit=8`);
       const data = await res.json();
       const aiMatches = (data.entries || []).map(entry => ({
-        id: `threat-${entry.id}`,
+        id: `entry-${entry.id}`,
         title: entry.title,
-        subtitle: `${entry.source_name} • ${entry.category} • Velocity: ${entry.threat_velocity || 25}/100`,
-        icon: 'alert-triangle',
-        badge: (entry.category || 'INTEL').toUpperCase(),
-        type: 'threat',
+        subtitle: `${entry.source_name || 'Feed'} • ${(entry.category || 'intel').replace(/_/g, ' ')} • Velocity: ${entry.threat_velocity || 25}/100`,
+        icon: 'sparkles',
+        badge: (entry.category || 'INTEL').replace(/_/g, ' ').toUpperCase(),
+        type: 'entry',
         entry: entry,
         run: () => {
           closeCommandPalette();
@@ -85,7 +85,7 @@ function handlePaletteSearch() {
         }
       }));
 
-      paletteItems = [...matchedActions, ...threatMatches];
+      paletteItems = [...matchedActions, ...aiMatches];
       paletteSelectedIndex = 0;
       renderPaletteItems();
     } catch (e) {
@@ -103,25 +103,27 @@ function renderPaletteItems() {
     container.innerHTML = `
       <div class="p-8 text-center text-gray-500 font-mono text-xs">
         <i data-lucide="compass" class="w-6 h-6 mx-auto mb-2 text-gray-600"></i>
-        No matching commands or threat advisories found.
+        No matching commands or intelligence entries found.
       </div>
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
     return;
   }
 
+  const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   container.innerHTML = paletteItems.map((item, idx) => `
     <div onclick="executePaletteItem(${idx})" class="p-3 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition border ${idx === paletteSelectedIndex ? 'bg-white/[0.08] border-white/25 text-white shadow-md' : 'bg-black/40 border-white/[0.05] hover:bg-white/[0.04] text-slate-300'}">
       <div class="flex items-center gap-3 overflow-hidden">
         <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${idx === paletteSelectedIndex ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' : 'bg-white/[0.04] border border-white/[0.08] text-slate-400'}">
-          <i data-lucide="${item.icon}" class="w-4 h-4"></i>
+          <i data-lucide="${esc(item.icon)}" class="w-4 h-4"></i>
         </div>
         <div class="overflow-hidden">
-          <div class="font-medium text-xs truncate ${idx === paletteSelectedIndex ? 'text-white' : 'text-slate-200'}">${item.title}</div>
-          <div class="text-[10px] text-slate-400 truncate">${item.subtitle}</div>
+          <div class="font-medium text-xs truncate ${idx === paletteSelectedIndex ? 'text-white' : 'text-slate-200'}">${esc(item.title)}</div>
+          <div class="text-[10px] text-slate-400 truncate">${esc(item.subtitle)}</div>
         </div>
       </div>
-      <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 flex-shrink-0">${item.badge}</span>
+      <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 flex-shrink-0">${esc(item.badge)}</span>
     </div>
   `).join('');
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -194,9 +196,11 @@ document.addEventListener('keydown', (e) => {
     if (typeof closeDeepAnalysisModal === 'function') closeDeepAnalysisModal();
     if (typeof closeTriageQueueModal === 'function') closeTriageQueueModal();
     closeCommandPalette();
-    const cards = document.querySelectorAll('#feed-container .feed-card');
-    cards.forEach(c => c.classList.remove('card-focused'));
-    if (typeof focusedCardIndex !== 'undefined') window.focusedCardIndex = -1;
+    if (typeof clearFeedCardFocus === 'function') clearFeedCardFocus();
+    else {
+      const cards = document.querySelectorAll('#feed-container .feed-card');
+      cards.forEach(c => c.classList.remove('card-focused'));
+    }
     return;
   }
 

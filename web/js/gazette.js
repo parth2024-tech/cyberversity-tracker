@@ -29,7 +29,7 @@ async function openNewspaperModal() {
       if (badgeEl) badgeEl.textContent = `EDITION #${data.edition_number || '100'}`;
       if (dateEl) {
         const dt = data.generated_at ? new Date(data.generated_at).toLocaleString() : 'Recent';
-        dateEl.textContent = `5-Hour Intelligence Cycle • Compiled: ${dt} • ${data.total_threats || 0} Stories & Models Analyzed`;
+        dateEl.textContent = `5-Hour Intelligence Cycle • Compiled: ${dt} • ${data.total_stories || data.total_threats || 0} Stories & Models Analyzed`;
       }
       if (mdView) mdView.textContent = _latestNewspaperMarkdown;
     }

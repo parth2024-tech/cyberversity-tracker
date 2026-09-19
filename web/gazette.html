@@ -768,6 +768,15 @@ let currentLeadEntry = null;
 let currentModalEntry = null;
 let isSpeaking = false;
 
+function escapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function scoreClass(v) {
   if (v >= 80) return 'crit';
   if (v >= 50) return 'poc';
@@ -784,22 +793,30 @@ function renderArticle(e) {
   const category = (e.category || 'INTEL').replace(/_/g, ' ').toUpperCase();
   const archetype = e.tech_focus || e.attack_archetype || (e.analysis && (e.analysis.attack_archetype || e.analysis.attack_vector));
   const text = e.capability_summary || e.summary || e.description || (e.analysis && (e.analysis.risk_assessment || e.analysis.attack_vector)) || '';
+  const snippet = text.slice(0, 240) + (text.length > 240 ? '…' : '');
   
   return `
-    <div class="article" onclick="openArticleModal('${e.id}')">
-      <div class="score">${score}<small>${scoreLabel}</small></div>
+    <div class="article" onclick="openArticleModal('${escapeHtml(e.id)}')">
+      <div class="score">${escapeHtml(score)}<small>${scoreLabel}</small></div>
       <div>
-        <span class="tag ${scoreClass(score)}">${category}</span>
-        ${archetype ? `<span class="tag" style="background:#e8dfc7;">${archetype}</span>` : ''}
-        <span class="tag" style="background:#f4ecd8;color:#555;">${source}</span>
-        <h3>${e.title || 'Untitled entry'}</h3>
-        <p>${text.slice(0, 240)}${text.length > 240 ? '…' : ''}</p>
+        <span class="tag ${scoreClass(score)}">${escapeHtml(category)}</span>
+        ${archetype ? `<span class="tag" style="background:#e8dfc7;">${escapeHtml(archetype)}</span>` : ''}
+        <span class="tag" style="background:#f4ecd8;color:#555;">${escapeHtml(source)}</span>
+        <h3>${escapeHtml(e.title || 'Untitled entry')}</h3>
+        <p>${escapeHtml(snippet)}</p>
       </div>
     </div>`;
 }
 
 function renderCurrentView() {
-  if (!allEntries || allEntries.length === 0) return;
+  if (!allEntries || allEntries.length === 0) {
+    currentLeadEntry = null;
+    document.getElementById('leadTitle').textContent = 'No dispatches on the wire yet';
+    document.getElementById('leadMeta').textContent = 'Waiting for the next worldwide AI sweep';
+    document.getElementById('leadBody').innerHTML = '<p>The telegraph is live, but this edition has no stories yet. Refresh after the next intelligence sweep.</p>';
+    document.getElementById('articleList').innerHTML = '<div style="padding:40px 20px;text-align:center;font-style:italic;color:#666;">No dispatches available.</div>';
+    return;
+  }
 
   // Apply category and search filter
   filteredEntries = allEntries.filter(e => {
@@ -818,8 +835,6 @@ function renderCurrentView() {
       if (cat !== 'ai_research' && !title.includes('arxiv') && !title.includes('research') && !tags.includes('arxiv')) return false;
     } else if (currentCategory === 'ai') {
       if (!['ai_models', 'ai_tech'].includes(cat) && !title.includes('model') && !title.includes('deepseek') && !title.includes('gpt') && !title.includes('llm')) return false;
-    } else if (currentCategory === 'exploits') {
-      if (cat !== 'exploits_tricks' && !title.includes('poc') && !title.includes('cve-') && !title.includes('exploit') && !title.includes('rce')) return false;
     } else if (currentCategory === 'china') {
       const region = (e.region || '').toLowerCase();
       const country = (e.country || '').toUpperCase();
@@ -866,8 +881,8 @@ function renderCurrentView() {
   document.getElementById('leadTitle').textContent = lead.title || 'Global AI & Technology Wire';
   document.getElementById('leadMeta').textContent = `Wire: ${leadSource} · Category: ${(lead.category || 'Global AI').replace('_', ' ').toUpperCase()}`;
   document.getElementById('leadBody').innerHTML =
-    `<p>${leadSummary}</p>` +
-    (leadAction ? `<p><strong>Deployment & Quick Start:</strong> ${leadAction}</p>` : '');
+    `<p>${escapeHtml(leadSummary)}</p>` +
+    (leadAction ? `<p><strong>Deployment & Quick Start:</strong> ${escapeHtml(leadAction)}</p>` : '');
 
   // Update Article List
   document.getElementById('articleList').innerHTML = rest.length > 0 
@@ -880,9 +895,9 @@ function renderCurrentView() {
 
   // Update Briefs
   document.getElementById('briefsList').innerHTML = allEntries.slice(10, 16).map(e => `
-    <div class="brief-item" onclick="openArticleModal('${e.id}')">
-      <b>${e.title}</b>
-      <span>${e.source || e.source_name || 'Wire'} · ${(e.category || 'Intel').toUpperCase()}</span>
+    <div class="brief-item" onclick="openArticleModal('${escapeHtml(e.id)}')">
+      <b>${escapeHtml(e.title)}</b>
+      <span>${escapeHtml(e.source || e.source_name || 'Wire')} · ${escapeHtml((e.category || 'Intel').toUpperCase())}</span>
     </div>
   `).join('');
 
@@ -911,9 +926,7 @@ async function loadFeed(force = false) {
     const res = await fetch(`${API_BASE}/entries?limit=150&sort=newest${force ? '&_t=' + Date.now() : ''}`);
     if (!res.ok) throw new Error('Telegraph wire unavailable');
     const data = await res.json();
-    allEntries = data.entries || data || [];
-    if (allEntries.length === 0) return;
-
+    allEntries = Array.isArray(data.entries) ? data.entries : (Array.isArray(data) ? data : []);
     renderCurrentView();
     document.getElementById('connStatus').textContent = 'LIVE WIRE FEED';
   } catch (err) {
@@ -968,9 +981,12 @@ function openArticleModal(id) {
   document.getElementById('modalKicker').textContent = (entry.category || 'GLOBAL AI').replace('_', ' ').toUpperCase();
   document.getElementById('modalTitle').textContent = entry.title || 'Intelligence Dispatch';
   document.getElementById('modalMeta').textContent = `Wire Origin: ${src} · Category: ${(entry.category || 'Intel').replace('_', ' ').toUpperCase()}`;
+  const related = (entry.analysis && entry.analysis.affected_ecosystem)
+    ? entry.analysis.affected_ecosystem.filter(x => x && x !== 'INFRASTRUCTURE' && x !== 'Enterprise Systems')
+    : [];
   document.getElementById('modalBody').innerHTML = `
-    <p>${bodyText}</p>
-    ${entry.analysis?.affected_ecosystem && entry.analysis.affected_ecosystem.length ? `<p style="margin-top:8px;"><strong>Related Technologies:</strong> ${entry.analysis.affected_ecosystem.filter(e => e !== 'INFRASTRUCTURE' && e !== 'Enterprise Systems').join(', ')}</p>` : ''}
+    <p>${escapeHtml(bodyText)}</p>
+    ${related.length ? `<p style="margin-top:8px;"><strong>Related Technologies:</strong> ${escapeHtml(related.join(', '))}</p>` : ''}
   `;
   document.getElementById('modalMitigation').textContent = 'Follow authoritative source link for full documentation and code access.';
   
@@ -1057,8 +1073,11 @@ async function dispatchTelegramNewspaper(force = false) {
   btn.disabled = true;
 
   try {
-    const url = force ? `${API_BASE}/newspaper/telegram?force=true` : `${API_BASE}/newspaper/telegram`;
-    const res = await fetch(url, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/newspaper/telegram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force: Boolean(force) })
+    });
     const data = await res.json();
     if (res.ok) {
       if (data.status === 'skipped') {
@@ -1090,7 +1109,17 @@ function connectWS() {
   try {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const ws = new WebSocket(`${proto}://${location.host}/ws`);
-    ws.onmessage = () => loadFeed();
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (!msg || msg.type === 'pong' || msg.type === 'ping') return;
+        if (msg.type === 'new_entry' || msg.type === 'landmark_ai_breakthrough' || msg.type === 'scan_status' || msg.type === 'connected') {
+          loadFeed();
+        }
+      } catch (err) {
+        // Ignore malformed frames rather than refetching the entire broadsheet
+      }
+    };
     ws.onclose = () => setTimeout(connectWS, 6000);
   } catch (e) {}
 }

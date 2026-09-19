@@ -140,9 +140,15 @@ async def test_repository_restore_purged_entries(test_uow):
 
 
 @pytest.mark.asyncio
-async def test_api_retention_and_purge_endpoints():
+async def test_api_retention_and_purge_endpoints(test_uow):
     """Verify REST API endpoints: GET /api/stats/retention, POST /api/stats/purge, and POST /api/stats/restore-purged."""
+    from ai_security_monitor.application.services.monitor_service import MonitorService
+    from ai_security_monitor.presentation.api.routers.stats import get_monitor_service
+
     app = create_app()
+    app.dependency_overrides[get_monitor_service] = lambda: MonitorService(
+        lambda: test_uow
+    )
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         # 1. GET /api/stats/retention
@@ -169,3 +175,179 @@ async def test_api_retention_and_purge_endpoints():
         r_data = restore_res.json()
         assert "restored" in r_data
         assert r_data["success"] is True
+
+        # 4. POST /api/stats/purge with days=0, hard_delete=true, include_vaulted=true
+        all_purge_res = await client.post(
+            "/api/stats/purge?days=0&hard_delete=true&include_vaulted=true"
+        )
+        assert all_purge_res.status_code == 200
+        ap_data = all_purge_res.json()
+        assert ap_data["older_than_days"] == 0
+        assert ap_data["hard_delete"] is True
+        assert ap_data["include_vaulted"] is True
+
+
+@pytest.mark.asyncio
+async def test_purge_hard_delete_and_vault_override(test_uow):
+    """Verify that hard_delete permanently erases records and include_vaulted overrides vault exemption."""
+    vaulted_id = uuid4()
+    normal_id = uuid4()
+    now = datetime.now(UTC)
+    old_time = now - timedelta(days=400)
+
+    # 1. Normal entry older than 365 days
+    e_normal = Entry(
+        id=normal_id,
+        source_id=uuid4(),
+        title="Old Normal Entry",
+        url="https://example.com/norm",
+        content_hash="hash-norm-1",
+        category=Category.AI_RESEARCH,
+        published_at=old_time,
+        metadata={"is_important": False},
+    )
+    # 2. Vaulted entry older than 365 days
+    e_vault = Entry(
+        id=vaulted_id,
+        source_id=uuid4(),
+        title="Old Vaulted Entry",
+        url="https://example.com/vault",
+        content_hash="hash-vault-1",
+        category=Category.AI_MODELS,
+        published_at=old_time,
+        metadata={"is_important": True},
+    )
+
+    await test_uow.entries.add(e_normal)
+    await test_uow.entries.add(e_vault)
+    await test_uow.commit()
+
+    # Retention count without include_vaulted: should count only normal
+    counts_excl = await test_uow.entries.get_retention_counts(
+        older_than_days=365, include_vaulted=False
+    )
+    assert counts_excl["candidates_count"] == 1
+    assert counts_excl["vaulted_count"] == 1
+
+    # Retention count with include_vaulted: should count both
+    counts_incl = await test_uow.entries.get_retention_counts(
+        older_than_days=365, include_vaulted=True
+    )
+    assert counts_incl["candidates_count"] == 2
+
+    # Purge with include_vaulted=True and hard_delete=True
+    purged = await test_uow.entries.purge_old_entries(
+        older_than_days=365,
+        hard_delete=True,
+        include_vaulted=True,
+    )
+    assert purged == 2
+    await test_uow.commit()
+
+    # Verify both are permanently deleted from database disk
+    check_normal = await test_uow.session.get(EntryModel, str(normal_id))
+    check_vault = await test_uow.session.get(EntryModel, str(vaulted_id))
+    assert check_normal is None
+    assert check_vault is None
+
+
+@pytest.mark.asyncio
+async def test_purge_all_data_zero_days(test_uow):
+    """Verify that older_than_days=0 purges all active entries up to current time."""
+    entry_id = uuid4()
+    e = Entry(
+        id=entry_id,
+        source_id=uuid4(),
+        title="Recent Active Entry",
+        url="https://example.com/recent",
+        content_hash="hash-recent-1",
+        category=Category.AI_TECH,
+        published_at=datetime.now(UTC),
+    )
+    await test_uow.entries.add(e)
+    await test_uow.commit()
+
+    # Purge with older_than_days=0
+    purged = await test_uow.entries.purge_old_entries(
+        older_than_days=0,
+        hard_delete=False,
+        include_vaulted=True,
+    )
+    assert purged >= 1
+    await test_uow.commit()
+
+    # Verify entry is marked soft-purged
+    model = await test_uow.session.get(EntryModel, str(entry_id))
+    assert model is not None
+    assert model.is_purged is True
+
+
+@pytest.mark.asyncio
+async def test_ingestion_freshness_guard_skips_stale_articles(test_uow):
+    """Verify that fetch_source discards articles published older than max_ingest_age_days."""
+    from ai_security_monitor.application.services.monitor_service import MonitorService
+    from ai_security_monitor.domain.entities import Source, SourceType
+    from ai_security_monitor.infrastructure.fetchers.base import FetchResult
+
+    service = MonitorService(lambda: test_uow)
+
+    source = Source(
+        id=uuid4(),
+        name="Test Feed Source",
+        category=Category.AI_TECH,
+        type=SourceType.RSS,
+        url="https://example.com/feed.xml",
+    )
+    await test_uow.sources.add(source)
+    await test_uow.commit()
+
+    now = datetime.now(UTC)
+    stale_date = now - timedelta(days=200)  # > 90 days default
+    fresh_date = now - timedelta(days=5)
+
+    stale_entry = Entry(
+        id=uuid4(),
+        source_id=source.id,
+        title="Ancient Archive Article from 200 days ago",
+        url="https://example.com/ancient",
+        content_hash="hash-ancient-1",
+        published_at=stale_date,
+        category=Category.AI_TECH,
+    )
+    fresh_entry = Entry(
+        id=uuid4(),
+        source_id=source.id,
+        title="Brand New Release Article",
+        url="https://example.com/fresh",
+        content_hash="hash-fresh-1",
+        published_at=fresh_date,
+        category=Category.AI_TECH,
+    )
+
+    from ai_security_monitor.domain.entities import FetchStatus
+
+    mock_fetcher = MagicMock()
+    mock_fetcher.fetch = AsyncMock(
+        return_value=FetchResult(
+            entries=[stale_entry, fresh_entry],
+            entries_total=2,
+            entries_new=2,
+            status=FetchStatus.SUCCESS,
+        )
+    )
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.fetcher_registry.get",
+        return_value=lambda s: mock_fetcher,
+    ):
+        log = await service.fetch_source(source)
+        # Only fresh_entry should have been ingested, stale_entry skipped!
+        assert log.entries_new == 1
+
+        # Check DB: fresh_entry must exist, stale_entry must NOT exist
+        fresh_in_db = await test_uow.entries.get_by_content_hash("hash-fresh-1")
+        stale_in_db = await test_uow.entries.get_by_content_hash("hash-ancient-1")
+        assert fresh_in_db is not None
+        assert stale_in_db is None
+
+

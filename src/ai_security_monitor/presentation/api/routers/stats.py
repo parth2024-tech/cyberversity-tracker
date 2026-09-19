@@ -51,28 +51,47 @@ async def get_sweep_status(service: MonitorService = Depends(get_monitor_service
 async def get_retention_status(
     days: int = Query(
         default=7,
-        ge=1,
-        le=365,
-        description="Check purge candidates older than this many days",
+        ge=0,
+        le=1825,
+        description="Check purge candidates older than this many days (0 = all active data)",
+    ),
+    include_vaulted: bool = Query(
+        default=False,
+        description="Whether to include permanent vault / starred entries in purge candidates",
     ),
     service: MonitorService = Depends(get_monitor_service),
 ):
     """Retrieve current retention policy, active vs soft-purged count, and candidate purge count."""
-    return await service.get_retention_status(older_than_days=days)
+    return await service.get_retention_status(
+        older_than_days=days,
+        include_vaulted=include_vaulted,
+    )
 
 
 @stats_router.post("/purge")
 async def purge_stale_entries(
     days: int = Query(
         default=7,
-        ge=1,
-        le=365,
-        description="Delete entries older than this many days (default 7 days / 1 week)",
+        ge=0,
+        le=1825,
+        description="Delete entries older than this many days (0 = all active data)",
+    ),
+    hard_delete: bool = Query(
+        default=False,
+        description="Permanently delete matching records from disk immediately (cannot be undone)",
+    ),
+    include_vaulted: bool = Query(
+        default=False,
+        description="Whether to also purge vault-protected and landmark entries",
     ),
     service: MonitorService = Depends(get_monitor_service),
 ):
     """Manually trigger data hygiene: delete all entries older than `days` days."""
-    result = await service.purge_stale_entries(older_than_days=days)
+    result = await service.purge_stale_entries(
+        older_than_days=days,
+        hard_delete=hard_delete,
+        include_vaulted=include_vaulted,
+    )
     return result
 
 

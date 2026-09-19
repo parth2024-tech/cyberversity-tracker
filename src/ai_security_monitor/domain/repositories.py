@@ -134,8 +134,13 @@ class EntryRepository(ABC):
         ...
 
     @abstractmethod
-    async def purge_old_entries(self, older_than_days: int = 7) -> int:
-        """Soft-delete entries older than retention window. Returns count."""
+    async def purge_old_entries(
+        self,
+        older_than_days: int = 7,
+        hard_delete: bool = False,
+        include_vaulted: bool = False,
+    ) -> int:
+        """Purge entries older than retention window. Returns count of purged rows."""
         ...
 
     @abstractmethod
@@ -149,8 +154,12 @@ class EntryRepository(ABC):
         ...
 
     @abstractmethod
-    async def get_retention_counts(self, older_than_days: int = 7) -> dict[str, int]:
-        """Get counts of active, purged, and candidate entries."""
+    async def get_retention_counts(
+        self,
+        older_than_days: int = 7,
+        include_vaulted: bool = False,
+    ) -> dict[str, int]:
+        """Get counts of active, purged, candidate, and vaulted entries."""
         ...
 
 

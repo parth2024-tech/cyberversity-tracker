@@ -247,37 +247,70 @@ class SQLAlchemyEntryRepository(EntryRepository):
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 
-    async def purge_old_entries(self, older_than_days: int = 7) -> int:
-        """Soft-delete entries older than retention window (mark is_purged=True).
-        Entries marked as important or saved in the vault are permanently exempted and preserved.
+    async def purge_old_entries(
+        self,
+        older_than_days: int = 7,
+        hard_delete: bool = False,
+        include_vaulted: bool = False,
+    ) -> int:
+        """Purge entries older than retention window.
 
-        Returns the number of rows soft-purged.
+        - If older_than_days == 0: targets all active entries up to current time.
+        - If include_vaulted == False: entries marked as important/saved/pinned are preserved.
+        - If include_vaulted == True: all entries matching the time window (including vault) are purged.
+        - If hard_delete == True: records and their analyses are permanently deleted from database disk.
+        - If hard_delete == False: records are marked soft-deleted (is_purged=True, purged_at=now).
+
+        Returns the number of rows purged.
         """
+        from sqlalchemy import delete as sa_delete
         from sqlalchemy import not_
         from sqlalchemy import update as sa_update
 
-        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
-
-        # Exclude entries marked important, saved, or pinned in the vault from being purged
-        not_vaulted_cond = or_(
-            EntryModel.extra_metadata.is_(None),
-            and_(
-                not_(EntryModel.extra_metadata.like('%"is_important": true%')),
-                not_(EntryModel.extra_metadata.like('%"is_saved": true%')),
-                not_(EntryModel.extra_metadata.like('%"is_pinned": true%')),
-            ),
-        )
-        expired_cond = and_(
-            or_(
+        # Time condition
+        if older_than_days == 0:
+            time_cond = True
+        else:
+            cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
+            time_cond = or_(
                 EntryModel.fetched_at < cutoff,
                 and_(
                     EntryModel.published_at.is_not(None),
                     EntryModel.published_at < cutoff,
                 ),
-            ),
-            not_vaulted_cond,
-            EntryModel.is_purged.is_(False),
-        )
+            )
+
+        conds = [EntryModel.is_purged.is_(False)]
+        if time_cond is not True:
+            conds.append(time_cond)
+
+        if not include_vaulted:
+            not_vaulted_cond = or_(
+                EntryModel.extra_metadata.is_(None),
+                and_(
+                    not_(EntryModel.extra_metadata.like('%"is_important": true%')),
+                    not_(EntryModel.extra_metadata.like('%"is_saved": true%')),
+                    not_(EntryModel.extra_metadata.like('%"is_pinned": true%')),
+                ),
+            )
+            conds.append(not_vaulted_cond)
+
+        expired_cond = and_(*conds)
+
+        if hard_delete:
+            subquery = select(EntryModel.id).where(expired_cond)
+            await self._session.execute(
+                sa_delete(AnalysisModelDB)
+                .where(AnalysisModelDB.entry_id.in_(subquery))
+                .execution_options(synchronize_session=False)
+            )
+            del_result = await self._session.execute(
+                sa_delete(EntryModel)
+                .where(expired_cond)
+                .execution_options(synchronize_session=False)
+            )
+            self._session.expire_all()
+            return del_result.rowcount or 0
 
         soft_del_result = await self._session.execute(
             sa_update(EntryModel)
@@ -332,10 +365,12 @@ class SQLAlchemyEntryRepository(EntryRepository):
         self._session.expire_all()
         return result.rowcount or 0
 
-    async def get_retention_counts(self, older_than_days: int = 7) -> dict[str, int]:
+    async def get_retention_counts(
+        self,
+        older_than_days: int = 7,
+        include_vaulted: bool = False,
+    ) -> dict[str, int]:
         """Get counts of active entries, candidate entries older than X days, and soft-purged entries."""
-        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
-
         active_stmt = select(func.count(EntryModel.id)).where(
             EntryModel.is_purged.is_(False)
         )
@@ -350,27 +385,34 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         from sqlalchemy import not_
 
-        not_vaulted_cond = or_(
-            EntryModel.extra_metadata.is_(None),
-            and_(
-                not_(EntryModel.extra_metadata.like('%"is_important": true%')),
-                not_(EntryModel.extra_metadata.like('%"is_saved": true%')),
-                not_(EntryModel.extra_metadata.like('%"is_pinned": true%')),
-            ),
-        )
-        candidates_stmt = select(func.count(EntryModel.id)).where(
-            and_(
-                or_(
-                    EntryModel.fetched_at < cutoff,
-                    and_(
-                        EntryModel.published_at.is_not(None),
-                        EntryModel.published_at < cutoff,
-                    ),
+        if older_than_days == 0:
+            time_cond = True
+        else:
+            cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
+            time_cond = or_(
+                EntryModel.fetched_at < cutoff,
+                and_(
+                    EntryModel.published_at.is_not(None),
+                    EntryModel.published_at < cutoff,
                 ),
-                not_vaulted_cond,
-                EntryModel.is_purged.is_(False),
             )
-        )
+
+        conds = [EntryModel.is_purged.is_(False)]
+        if time_cond is not True:
+            conds.append(time_cond)
+
+        if not include_vaulted:
+            not_vaulted_cond = or_(
+                EntryModel.extra_metadata.is_(None),
+                and_(
+                    not_(EntryModel.extra_metadata.like('%"is_important": true%')),
+                    not_(EntryModel.extra_metadata.like('%"is_saved": true%')),
+                    not_(EntryModel.extra_metadata.like('%"is_pinned": true%')),
+                ),
+            )
+            conds.append(not_vaulted_cond)
+
+        candidates_stmt = select(func.count(EntryModel.id)).where(and_(*conds))
         candidates_res = await self._session.execute(candidates_stmt)
         candidates_count = candidates_res.scalar() or 0
 
@@ -394,6 +436,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             "candidates_count": candidates_count,
             "vaulted_count": vaulted_count,
             "older_than_days": older_than_days,
+            "include_vaulted": include_vaulted,
         }
 
     async def toggle_importance(

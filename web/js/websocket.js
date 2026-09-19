@@ -219,6 +219,14 @@ function showToast(message, type = 'info') {
   });
 }
 
+function _escapeToast(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function showHUDToast({ title, message, badge = "SYSTEM", icon = "info", color = "text-sky-400", borderClass = "border-white/[0.08]", onClick = null }) {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -240,11 +248,11 @@ function showHUDToast({ title, message, badge = "SYSTEM", icon = "info", color =
     </div>
     <div class="flex-1 min-w-0 ${onClick ? 'cursor-pointer' : ''}">
       <div class="flex items-center justify-between gap-2">
-        <span class="text-[10px] font-mono uppercase font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] ${color}">${badge}</span>
+        <span class="text-[10px] font-mono uppercase font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] ${color}">${_escapeToast(badge)}</span>
         <span class="text-[10px] font-mono text-slate-500">SYSTEM</span>
       </div>
-      <h4 class="text-xs font-semibold text-white mt-1 line-clamp-1">${title}</h4>
-      <p class="text-[11px] text-slate-400 mt-0.5 font-sans line-clamp-2">${message}</p>
+      <h4 class="text-xs font-semibold text-white mt-1 line-clamp-1">${_escapeToast(title)}</h4>
+      <p class="text-[11px] text-slate-400 mt-0.5 font-sans line-clamp-2">${_escapeToast(message)}</p>
     </div>
     <button onclick="dismissToast('${toastId}')" class="text-slate-400 hover:text-white self-start">
       <i data-lucide="x" class="w-3.5 h-3.5"></i>

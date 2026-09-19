@@ -7,7 +7,7 @@ from __future__ import annotations
 import asyncio
 import os
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from ai_security_monitor.config.settings import settings
@@ -206,6 +206,24 @@ class MonitorService:
             new_raw_entries = [
                 e for e in fetch_result.entries if e.content_hash not in existing_hashes
             ]
+
+            # Ingestion Freshness Guard: Skip historical archive dumps from feeds (> max_ingest_age_days)
+            max_age_days = getattr(settings.database, "max_ingest_age_days", 90)
+            if max_age_days and max_age_days > 0:
+                cutoff_ingest = datetime.now(UTC) - timedelta(days=max_age_days)
+                fresh_entries = []
+                for e in new_raw_entries:
+                    pub_at = e.published_at
+                    if pub_at is not None:
+                        if pub_at.tzinfo is None:
+                            pub_at = pub_at.replace(tzinfo=UTC)
+                        if pub_at < cutoff_ingest:
+                            logger.debug(
+                                f"Skipping historical entry '{e.title}' published {e.published_at} (> {max_age_days}d ago)"
+                            )
+                            continue
+                    fresh_entries.append(e)
+                new_raw_entries = fresh_entries
 
             # 2. In-Memory Enrichment & Analysis (OUTSIDE write transaction)
             prepared_items: list[tuple[Entry, Analysis, bool, str, bool]] = []
@@ -688,8 +706,17 @@ class MonitorService:
             "total_new": total_new,
         }
 
-    async def purge_stale_entries(self, older_than_days: int | None = None) -> dict:
+    async def purge_stale_entries(
+        self,
+        older_than_days: int | None = None,
+        hard_delete: bool = False,
+        include_vaulted: bool = False,
+    ) -> dict:
         """Remove entries, logs, and digests older than retention window (defaults to settings.database.retention_days = 7).
+
+        - older_than_days: 0 means purge all active entries up to now.
+        - hard_delete: If True, permanently removes matching records from SQLite disk.
+        - include_vaulted: If True, overrides vault protection and purges all matching entries.
 
         Returns a summary dict with the count of purged items.
         """
@@ -699,8 +726,14 @@ class MonitorService:
             else settings.database.retention_days
         )
         async with self._uow_factory() as uow:
-            purged = await uow.entries.purge_old_entries(older_than_days=days)
-            hard_purged = await uow.entries.hard_delete_purged(grace_days=30)
+            purged = await uow.entries.purge_old_entries(
+                older_than_days=days,
+                hard_delete=hard_delete,
+                include_vaulted=include_vaulted,
+            )
+            hard_purged = await uow.entries.hard_delete_purged(
+                grace_days=0 if hard_delete else 30
+            )
             purged_logs = await uow.fetch_logs.purge_old_logs(older_than_days=days)
             purged_digests = await uow.digests.purge_old_digests(older_than_days=days)
             try:
@@ -720,7 +753,7 @@ class MonitorService:
         response_cache.invalidate("sweep_status")
 
         logger.info(
-            f"Data hygiene purge complete: removed {purged} entries, "
+            f"Data hygiene purge complete: removed {purged} entries (hard_delete={hard_delete}, include_vaulted={include_vaulted}), "
             f"{purged_logs} logs, {purged_digests} digests older than {days} days"
         )
         return {
@@ -730,6 +763,8 @@ class MonitorService:
             "purged_logs": purged_logs,
             "purged_digests": purged_digests,
             "older_than_days": days,
+            "hard_delete": hard_delete,
+            "include_vaulted": include_vaulted,
         }
 
     async def restore_purged_entries(self) -> dict:
@@ -750,17 +785,25 @@ class MonitorService:
         )
         return {"restored": restored, "success": True}
 
-    async def get_retention_status(self, older_than_days: int = 7) -> dict:
+    async def get_retention_status(
+        self,
+        older_than_days: int = 7,
+        include_vaulted: bool = False,
+    ) -> dict:
         """Retrieve retention policy and entry counts for manual cleanup planning."""
         async with self._uow_factory() as uow:
             counts = await uow.entries.get_retention_counts(
-                older_than_days=older_than_days
+                older_than_days=older_than_days,
+                include_vaulted=include_vaulted,
             )
 
         counts["auto_purge_enabled"] = getattr(
             settings.database, "auto_purge_enabled", False
         )
         counts["default_retention_days"] = settings.database.retention_days
+        counts["max_ingest_age_days"] = getattr(
+            settings.database, "max_ingest_age_days", 90
+        )
         return counts
 
     async def get_sweep_status(self) -> dict:
