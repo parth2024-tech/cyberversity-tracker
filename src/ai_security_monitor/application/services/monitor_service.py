@@ -731,9 +731,11 @@ class MonitorService:
                 hard_delete=hard_delete,
                 include_vaulted=include_vaulted,
             )
-            hard_purged = await uow.entries.hard_delete_purged(
-                grace_days=0 if hard_delete else 30
-            )
+            # Hard-delete previously soft-purged records ONLY when the user explicitly
+            # requests it via hard_delete=True. Never silently wipe records automatically.
+            hard_purged = 0
+            if hard_delete:
+                hard_purged = await uow.entries.hard_delete_purged(grace_days=0)
             purged_logs = await uow.fetch_logs.purge_old_logs(older_than_days=days)
             purged_digests = await uow.digests.purge_old_digests(older_than_days=days)
             try:

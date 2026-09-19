@@ -195,7 +195,7 @@ async def test_purge_hard_delete_and_vault_override(test_uow):
     now = datetime.now(UTC)
     old_time = now - timedelta(days=400)
 
-    # 1. Normal entry older than 365 days
+    # 1. Normal entry older than 365 days — fetched_at is set to old_time so purge picks it up
     e_normal = Entry(
         id=normal_id,
         source_id=uuid4(),
@@ -204,9 +204,10 @@ async def test_purge_hard_delete_and_vault_override(test_uow):
         content_hash="hash-norm-1",
         category=Category.AI_RESEARCH,
         published_at=old_time,
+        fetched_at=old_time,
         metadata={"is_important": False},
     )
-    # 2. Vaulted entry older than 365 days
+    # 2. Vaulted entry older than 365 days — fetched_at set to old_time
     e_vault = Entry(
         id=vaulted_id,
         source_id=uuid4(),
@@ -215,6 +216,7 @@ async def test_purge_hard_delete_and_vault_override(test_uow):
         content_hash="hash-vault-1",
         category=Category.AI_MODELS,
         published_at=old_time,
+        fetched_at=old_time,
         metadata={"is_important": True},
     )
 

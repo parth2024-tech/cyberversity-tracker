@@ -255,7 +255,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
     ) -> int:
         """Purge entries older than retention window.
 
-        - If older_than_days == 0: targets all active entries up to current time.
+        - If older_than_days == 0: targets ALL active entries immediately.
         - If include_vaulted == False: entries marked as important/saved/pinned are preserved.
         - If include_vaulted == True: all entries matching the time window (including vault) are purged.
         - If hard_delete == True: records and their analyses are permanently deleted from database disk.
@@ -267,18 +267,15 @@ class SQLAlchemyEntryRepository(EntryRepository):
         from sqlalchemy import not_
         from sqlalchemy import update as sa_update
 
-        # Time condition
+        # Time condition — use fetched_at ONLY.
+        # fetched_at is the authoritative date we physically ingested the record into the DB.
+        # published_at can be years old for arXiv papers fetched today, making OR logic unpredictable.
+        # "Delete data older than X days" must always mean "data fetched more than X days ago".
         if older_than_days == 0:
             time_cond = True
         else:
             cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
-            time_cond = or_(
-                EntryModel.fetched_at < cutoff,
-                and_(
-                    EntryModel.published_at.is_not(None),
-                    EntryModel.published_at < cutoff,
-                ),
-            )
+            time_cond = EntryModel.fetched_at < cutoff
 
         conds = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:
@@ -389,13 +386,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
             time_cond = True
         else:
             cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
-            time_cond = or_(
-                EntryModel.fetched_at < cutoff,
-                and_(
-                    EntryModel.published_at.is_not(None),
-                    EntryModel.published_at < cutoff,
-                ),
-            )
+            # Use fetched_at ONLY — same logic as purge_old_entries for consistent preview counts.
+            time_cond = EntryModel.fetched_at < cutoff
 
         conds = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:

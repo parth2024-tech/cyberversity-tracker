@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
 **Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2256**  
-*Saturday, September 19, 2026 • 18:16 UTC • Coverage Window: 5h • 212 verified AI stories analyzed*
+*Saturday, September 19, 2026 • 18:46 UTC • Coverage Window: 5h • 213 verified AI stories analyzed*
 
 ---
 
@@ -268,7 +268,7 @@ Three open source foundations share one stage in Shanghai reflects the rapid acc
 | **Qwen3.8-Flash-Next on MLX-serve, 1m context is rel** | `reddit.com` | `40 tok/s` | `96/100` | Hi, I'm the co-creator of this Qwen3.8-Flash-Next engine support in MLX-serve. I've been tuning this one to run both fast. |
 | **OpenBMB Releases MiniCPM5-2B: A 2.52B Dense Model ** | `marktechpost.com` | `High Velocity` | `80/100` | OpenBMB has released MiniCPM5-2B, the second checkpoint in the MiniCPM5 series and the follow-up to MiniCPM5-1B. |
 | **Axis Robotics Releases AXIS: A Browser-Based Data ** | `marktechpost.com` | `High Velocity` | `80/100` | Robot manipulation datasets have grown far slower than the models trained on them, mostly because collection stays closed and centralized.. |
-| **llama.cpp High-Performance LLM Engine b11053: serv** | `github.com` | `High Velocity` | `88/100` | ggml / ops / maintainer PRs%20sort%3Aupdated-desc) / dev stats / lib llama API / llama-server REST API A few options. |
+| **GGUF-Metadata Prediction of Single-Sequence llama.** | `arxiv.org` | `High Velocity` | `88/100` | We predict single-sequence model throughput from GGUF metadata using roofline-shaped predictors with quantization-specific scale factors fitted on reference models. |
 
 ### ⚡ Running Vision Qwen 3.8 27B on a 16GB Card, the config (45tks).
 - **Source**: `reddit.com`
@@ -295,10 +295,10 @@ OpenBMB has released MiniCPM5-2B, the second checkpoint in the MiniCPM5 series a
 
 Robot manipulation datasets have grown far slower than the models trained on them, mostly because collection stays closed and centralized. Expert operators gather demonstrations on lab hardware, process them offline, and ship a fixed benchmark that never grows again. A research team from Axis Robotics, UC Berkeley, Georgia Tech, NTU… is proposing a different shape for the problem.
 
-### ⚡ llama.cpp High-Performance LLM Engine b11053: server : improve startup log messages server-models : show source per model in log Show
-- **Source**: `github.com`
+### ⚡ GGUF-Metadata Prediction of Single-Sequence llama.cpp Throughput Across Three Systems
+- **Source**: `arxiv.org`
 
-ggml / ops / maintainer PRs%20sort%3Aupdated-desc) / dev stats / lib llama API / llama-server REST API A few options to get `llama.cpp` installed on your machine: Visit and follow the instructions - Run with Docker - see our Docker documentation - Download pre-built binaries from the releases page - Build from source by cloning this repository - check out our build.
+We predict single-sequence model throughput from GGUF metadata using roofline-shaped predictors with quantization-specific scale factors fitted on reference models. The scored cohort comprises 318 phase-depth measurements from 53 host-file configurations on two Apple M4 Max systems and an NVIDIA RTX 5080. On host-specific held-out sets of four, five, and two configurations, an active-parameter decode model obtains 13.1%, 14.4%, and 36.1% mean absolute percentage error (MAPE), versus 49.4%, 55.3%.
 
 
 ---
@@ -403,4 +403,4 @@ Software repositories contain vast amounts of data on code contributions, bug re
 
 
 ---
-*Compiled autonomously • Saturday, September 19, 2026 • 18:16 UTC • Edition #2256 • 212 items processed from worldwide AI feeds*
+*Compiled autonomously • Saturday, September 19, 2026 • 18:46 UTC • Edition #2256 • 213 items processed from worldwide AI feeds*
