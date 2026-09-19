@@ -7,7 +7,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ai_security_monitor.application.services.monitor_service import MonitorService
 from ai_security_monitor.domain.entities import Category, Entry
@@ -17,13 +17,13 @@ analysis_router = APIRouter(prefix="/analysis")
 
 
 class QuickAnalyzeRequest(BaseModel):
-    title: str = ""
+    title: str = Field(..., min_length=1, description="Title or headline for analysis")
     summary: str | None = ""
     content: str | None = ""
     raw_text: str | None = None
     category: str = "ai_tech"
     model: str = "heuristic"
-    tags: list[str] = []
+    tags: list[str] = Field(default_factory=list)
 
 
 @analysis_router.post("/quick")

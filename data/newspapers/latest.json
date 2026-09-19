@@ -1,11 +1,11 @@
 {
-  "edition_id": "chronicle_20260919_1632",
+  "edition_id": "chronicle_20260919_1816",
   "edition_number": 2256,
   "title": "The Global AI Gazette \u2014 10-Page Edition #2256",
-  "generated_at": "2026-09-19T16:32:48.242889+00:00",
+  "generated_at": "2026-09-19T18:16:12.460331+00:00",
   "window_hours": 5,
-  "total_stories": 144,
-  "total_threats": 144,
+  "total_stories": 212,
+  "total_threats": 212,
   "pages_count": 10,
   "lead_story": "ANOTHER researcher accuses OpenAI of training on conversations and then claiming a breakthrough",
   "trending_repos_count": 12,
@@ -16,8 +16,8 @@
   "ai_hardware_count": 12,
   "autonomous_agents_count": 12,
   "overflow_count": 10,
-  "md_path": "data/newspapers/chronicle_20260919_1632.md",
-  "html_path": "data/newspapers/chronicle_20260919_1632.html",
-  "pdf_path": "data/newspapers/chronicle_20260919_1632.pdf",
+  "md_path": "data/newspapers/chronicle_20260919_1816.md",
+  "html_path": "data/newspapers/chronicle_20260919_1816.html",
+  "pdf_path": "data/newspapers/chronicle_20260919_1816.pdf",
   "has_pdf": true
 }

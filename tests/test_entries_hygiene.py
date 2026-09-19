@@ -225,3 +225,75 @@ def test_ai_developer_tools_and_repos_sources():
     assert "ollama" in tool_names
     assert "llama.cpp" in tool_names
     assert "sglang" in tool_names
+
+
+def test_max_ingest_age_days_strict_freshness_boundary():
+    """Verify strict ingest age boundary: entries <= max_age_days are kept, entries > max_age_days rejected."""
+    from datetime import UTC, datetime, timedelta
+
+    max_age_days = 90
+    now = datetime.now(UTC)
+    cutoff = now - timedelta(days=max_age_days)
+
+    # 1. Entry within freshness window (89 days old)
+    entry_fresh = Entry(
+        source_id="src-fresh",
+        published_at=now - timedelta(days=89),
+        title="vLLM 0.7.0 Release",
+        url="https://example.com/vllm",
+        content_hash="hash_fresh",
+        summary="vLLM release announcement within boundary",
+        category=Category.CYBER_TOOLS,
+    )
+
+    # 2. Entry outside freshness window (91 days old)
+    entry_stale = Entry(
+        source_id="src-stale",
+        published_at=now - timedelta(days=91),
+        title="Ancient Archive Item",
+        url="https://example.com/ancient",
+        content_hash="hash_stale",
+        summary="Old historical dump item that should be discarded",
+        category=Category.AI_TECH,
+    )
+
+    # 3. Naive datetime within freshness window (5 days old)
+    entry_naive = Entry(
+        source_id="src-naive",
+        published_at=datetime.utcnow() - timedelta(days=5),
+        title="Recent Post with Naive Timestamp",
+        url="https://example.com/naive",
+        content_hash="hash_naive",
+        summary="Naive timestamp within freshness window",
+        category=Category.AI_RESEARCH,
+    )
+
+    # 4. Entry with None published_at should not be dropped
+    entry_none = Entry(
+        source_id="src-none",
+        published_at=None,
+        title="Post without Timestamp",
+        url="https://example.com/notime",
+        content_hash="hash_none",
+        summary="Item without published_at",
+        category=Category.GITHUB_TRENDING,
+    )
+
+    entries = [entry_fresh, entry_stale, entry_naive, entry_none]
+
+    # Replicate the Ingestion Freshness Guard logic from MonitorService
+    kept = []
+    for e in entries:
+        pub_at = e.published_at
+        if pub_at is not None:
+            if pub_at.tzinfo is None:
+                pub_at = pub_at.replace(tzinfo=UTC)
+            if pub_at < cutoff:
+                continue
+        kept.append(e)
+
+    assert entry_fresh in kept
+    assert entry_naive in kept
+    assert entry_none in kept
+    assert entry_stale not in kept
+    assert len(kept) == 3

@@ -435,7 +435,7 @@ async def list_entries(
     country: str | None = Query(None),
     sort: str | None = Query(None),
     sort_by: str = Query("top"),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ):
     """Query intelligence entries with pagination, search, watchlist, vault, and feature filters — cached 60s."""

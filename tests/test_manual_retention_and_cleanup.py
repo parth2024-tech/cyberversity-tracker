@@ -244,11 +244,19 @@ async def test_purge_hard_delete_and_vault_override(test_uow):
     assert purged == 2
     await test_uow.commit()
 
-    # Verify both are permanently deleted from database disk
+    # Verify both are permanently deleted from database disk (ORM and raw SQL level)
     check_normal = await test_uow.session.get(EntryModel, str(normal_id))
     check_vault = await test_uow.session.get(EntryModel, str(vaulted_id))
     assert check_normal is None
     assert check_vault is None
+
+    from sqlalchemy import text
+
+    raw_check = await test_uow.session.execute(
+        text("SELECT count(*) FROM entries WHERE id IN (:id1, :id2)"),
+        {"id1": str(normal_id), "id2": str(vaulted_id)},
+    )
+    assert raw_check.scalar() == 0
 
 
 @pytest.mark.asyncio
