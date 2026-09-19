@@ -361,3 +361,53 @@ async def test_ingestion_freshness_guard_skips_stale_articles(test_uow):
         assert stale_in_db is None
 
 
+@pytest.mark.asyncio
+async def test_get_stats_excludes_soft_purged_entries(test_uow):
+    """Verify that get_stats strictly excludes soft-purged entries from totals and category counts."""
+    from ai_security_monitor.application.services.monitor_service import MonitorService
+
+    service = MonitorService(lambda: test_uow)
+
+    stats_initial = await service.get_stats()
+    init_total = stats_initial["total_entries"]
+
+    e1 = Entry(
+        id=uuid4(),
+        source_id=uuid4(),
+        title="Active Entry One",
+        url="https://example.com/test-e1",
+        content_hash="hash-e1-stats",
+        category=Category.AI_RESEARCH,
+        published_at=datetime.now(UTC),
+    )
+    e2 = Entry(
+        id=uuid4(),
+        source_id=uuid4(),
+        title="Active Entry Two",
+        url="https://example.com/test-e2",
+        content_hash="hash-e2-stats",
+        category=Category.AI_RESEARCH,
+        published_at=datetime.now(UTC) - timedelta(days=20),
+    )
+    await test_uow.entries.add(e1)
+    await test_uow.entries.add(e2)
+    await test_uow.commit()
+
+    stats_after_add = await service.get_stats()
+    assert stats_after_add["total_entries"] == init_total + 2
+
+    # Purge entries older than 10 days
+    purged_res = await service.purge_stale_entries(older_than_days=10)
+    assert purged_res["purged"] >= 1
+
+    stats_after_purge = await service.get_stats()
+    # stats total MUST have dropped!
+    assert stats_after_purge["total_entries"] == stats_after_add["total_entries"] - purged_res["purged"]
+
+    # Restore all soft-purged
+    await service.restore_purged_entries()
+    stats_after_restore = await service.get_stats()
+    assert stats_after_restore["total_entries"] == stats_after_add["total_entries"]
+
+
+

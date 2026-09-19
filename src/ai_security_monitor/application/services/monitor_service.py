@@ -746,13 +746,10 @@ class MonitorService:
                 pass
             await uow.commit()
 
-        # Invalidate caches after data hygiene purge
+        # Invalidate all caches after data hygiene purge
         from ai_security_monitor.infrastructure.cache import response_cache
 
-        response_cache.invalidate_prefix("entries_")
-        response_cache.invalidate("total_unfiltered_count")
-        response_cache.invalidate("stats_totals")
-        response_cache.invalidate("sweep_status")
+        response_cache.clear()
 
         logger.info(
             f"Data hygiene purge complete: removed {purged} entries (hard_delete={hard_delete}, include_vaulted={include_vaulted}), "
@@ -777,10 +774,7 @@ class MonitorService:
 
         from ai_security_monitor.infrastructure.cache import response_cache
 
-        response_cache.invalidate_prefix("entries_")
-        response_cache.invalidate("total_unfiltered_count")
-        response_cache.invalidate("stats_totals")
-        response_cache.invalidate("sweep_status")
+        response_cache.clear()
 
         logger.info(
             f"Manual restoration complete: restored {restored} previously soft-purged entries."
@@ -889,7 +883,11 @@ class MonitorService:
         async with self._uow_factory() as uow:
             # Fast scalar count queries (single table index scans, no entity conversions)
             total_entries = (
-                await uow.session.execute(select(func.count(EntryModel.id)))
+                await uow.session.execute(
+                    select(func.count(EntryModel.id)).where(
+                        EntryModel.is_purged.is_(False)
+                    )
+                )
             ).scalar() or 0
             total_sources = (
                 await uow.session.execute(
@@ -900,16 +898,18 @@ class MonitorService:
             ).scalar() or 0
             high_velocity = (
                 await uow.session.execute(
-                    select(func.count(AnalysisModel.id)).where(
-                        AnalysisModel.threat_velocity >= 70
-                    )
+                    select(func.count(AnalysisModel.id))
+                    .join(EntryModel, AnalysisModel.entry_id == EntryModel.id)
+                    .where(EntryModel.is_purged.is_(False))
+                    .where(AnalysisModel.threat_velocity >= 70)
                 )
             ).scalar() or 0
             pre_cve_warnings = (
                 await uow.session.execute(
-                    select(func.count(AnalysisModel.id)).where(
-                        AnalysisModel.is_pre_cve_warning.is_(True)
-                    )
+                    select(func.count(AnalysisModel.id))
+                    .join(EntryModel, AnalysisModel.entry_id == EntryModel.id)
+                    .where(EntryModel.is_purged.is_(False))
+                    .where(AnalysisModel.is_pre_cve_warning.is_(True))
                 )
             ).scalar() or 0
             watchlist_rules = (
@@ -917,8 +917,10 @@ class MonitorService:
             ).scalar() or 0
 
             # Single group-by query for all categories (replaces 8 sequential table scans)
-            cat_stmt = select(EntryModel.category, func.count(EntryModel.id)).group_by(
-                EntryModel.category
+            cat_stmt = (
+                select(EntryModel.category, func.count(EntryModel.id))
+                .where(EntryModel.is_purged.is_(False))
+                .group_by(EntryModel.category)
             )
             cat_rows = (await uow.session.execute(cat_stmt)).all()
             cats = {cat.value: 0 for cat in Category} | dict(cat_rows)

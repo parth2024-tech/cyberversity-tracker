@@ -267,15 +267,18 @@ class SQLAlchemyEntryRepository(EntryRepository):
         from sqlalchemy import not_
         from sqlalchemy import update as sa_update
 
-        # Time condition — use fetched_at ONLY.
-        # fetched_at is the authoritative date we physically ingested the record into the DB.
-        # published_at can be years old for arXiv papers fetched today, making OR logic unpredictable.
-        # "Delete data older than X days" must always mean "data fetched more than X days ago".
+        # Time condition:
+        # If older_than_days == 0: targets ALL active entries immediately.
+        # Otherwise: an entry is matched if published_at < cutoff OR fetched_at < cutoff.
+        # This guarantees that stale articles are always pruned, whether by publish date or ingest date.
         if older_than_days == 0:
             time_cond = True
         else:
             cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
-            time_cond = EntryModel.fetched_at < cutoff
+            time_cond = or_(
+                EntryModel.published_at < cutoff,
+                EntryModel.fetched_at < cutoff,
+            )
 
         conds = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:
@@ -386,8 +389,10 @@ class SQLAlchemyEntryRepository(EntryRepository):
             time_cond = True
         else:
             cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
-            # Use fetched_at ONLY — same logic as purge_old_entries for consistent preview counts.
-            time_cond = EntryModel.fetched_at < cutoff
+            time_cond = or_(
+                EntryModel.published_at < cutoff,
+                EntryModel.fetched_at < cutoff,
+            )
 
         conds = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:

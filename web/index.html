@@ -1397,7 +1397,19 @@
 
       const filters = [];
       if (currentCategory !== 'all') {
-        const catLabel = currentCategory === 'important' ? '⭐ Important Vault' : `Category: ${currentCategory.replace(/_/g, ' ')}`;
+        const catMap = {
+          'all': '★ All Intel',
+          'important': '⭐ Important Vault',
+          'github_trending': '🚀 Trending Repos',
+          'cyber_tools': '🛠️ AI Tools',
+          'ai_research': '🔬 AI Research',
+          'ai_models': '🤖 Frontier Models',
+          'ai_tech': '🌐 Global Tech',
+          'only_new': '⚡ Only New',
+          'pinned': '⭐ Pinned',
+          'watchlist': '🎯 Watchlist'
+        };
+        const catLabel = catMap[currentCategory] ? `Category: ${catMap[currentCategory]}` : `Category: ${currentCategory.replace(/_/g, ' ')}`;
         filters.push({ label: catLabel, clear: () => setCategory('all') });
       }
       if (activeTechChip) {
@@ -2927,6 +2939,10 @@
       selectedPurgeDays = parseInt(days, 10);
       const input = document.getElementById('purge-custom-days');
       if (input) input.value = selectedPurgeDays;
+      if (selectedPurgeDays === 0) {
+        const vaultCb = document.getElementById('purge-include-vault');
+        if (vaultCb) vaultCb.checked = true;
+      }
       document.querySelectorAll('.purge-preset-btn').forEach(btn => {
         const bDays = parseInt(btn.getAttribute('data-days'), 10);
         if (bDays === selectedPurgeDays) {
@@ -2984,7 +3000,7 @@
     }
 
     async function executeManualPurge() {
-      const includeVault = document.getElementById('purge-include-vault')?.checked || false;
+      const includeVault = (selectedPurgeDays === 0) ? true : (document.getElementById('purge-include-vault')?.checked || false);
       const hardDelete = document.getElementById('purge-hard-delete')?.checked || false;
       const targetLabel = selectedPurgeDays === 0 ? "ALL ACTIVE DATA" : `entries older than ${selectedPurgeDays} days`;
 
@@ -3021,8 +3037,8 @@
             statusBox.innerHTML = `✓ Manual cleanup successful: ${actionWord} ${data.purged || 0} ${scopeDesc}.`;
           }
           await refreshRetentionTelemetry();
-          if (typeof loadStats === 'function') loadStats();
-          if (typeof loadFeed === 'function') loadFeed(true);
+          if (typeof refreshStats === 'function') await refreshStats();
+          if (typeof loadFeed === 'function') await loadFeed(true);
         } else {
           if (statusBox) {
             statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
@@ -3072,8 +3088,8 @@
             statusBox.innerHTML = `✓ Successfully restored ${data.restored || 0} entries back to your active dashboard!`;
           }
           await refreshRetentionTelemetry();
-          if (typeof loadStats === 'function') loadStats();
-          if (typeof loadFeed === 'function') loadFeed(true);
+          if (typeof refreshStats === 'function') await refreshStats();
+          if (typeof loadFeed === 'function') await loadFeed(true);
         } else {
           if (statusBox) {
             statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
