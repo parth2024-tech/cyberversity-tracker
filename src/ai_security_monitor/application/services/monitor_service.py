@@ -207,8 +207,8 @@ class MonitorService:
                 e for e in fetch_result.entries if e.content_hash not in existing_hashes
             ]
 
-            # Ingestion Freshness Guard: Skip historical archive dumps from feeds (> max_ingest_age_days)
-            max_age_days = getattr(settings.database, "max_ingest_age_days", 90)
+            # Ingestion Freshness Guard: Skip historical archive dumps from feeds (> max_ingest_age_days, max 14d)
+            max_age_days = getattr(settings.database, "max_ingest_age_days", 14)
             if max_age_days and max_age_days > 0:
                 cutoff_ingest = datetime.now(UTC) - timedelta(days=max_age_days)
                 fresh_entries = []
@@ -804,7 +804,7 @@ class MonitorService:
         )
         counts["default_retention_days"] = settings.database.retention_days
         counts["max_ingest_age_days"] = getattr(
-            settings.database, "max_ingest_age_days", 90
+            settings.database, "max_ingest_age_days", 14
         )
         return counts
 

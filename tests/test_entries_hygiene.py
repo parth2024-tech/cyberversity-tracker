@@ -231,14 +231,14 @@ def test_max_ingest_age_days_strict_freshness_boundary():
     """Verify strict ingest age boundary: entries <= max_age_days are kept, entries > max_age_days rejected."""
     from datetime import UTC, datetime, timedelta
 
-    max_age_days = 90
+    max_age_days = 14  # 2 weeks maximum news age rule
     now = datetime.now(UTC)
     cutoff = now - timedelta(days=max_age_days)
 
-    # 1. Entry within freshness window (89 days old)
+    # 1. Entry within freshness window (13 days old — within 2 weeks)
     entry_fresh = Entry(
         source_id="src-fresh",
-        published_at=now - timedelta(days=89),
+        published_at=now - timedelta(days=13),
         title="vLLM 0.7.0 Release",
         url="https://example.com/vllm",
         content_hash="hash_fresh",
@@ -246,10 +246,10 @@ def test_max_ingest_age_days_strict_freshness_boundary():
         category=Category.CYBER_TOOLS,
     )
 
-    # 2. Entry outside freshness window (91 days old)
+    # 2. Entry outside freshness window (15 days old — older than 2 weeks)
     entry_stale = Entry(
         source_id="src-stale",
-        published_at=now - timedelta(days=91),
+        published_at=now - timedelta(days=15),
         title="Ancient Archive Item",
         url="https://example.com/ancient",
         content_hash="hash_stale",

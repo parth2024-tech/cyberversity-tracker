@@ -15,7 +15,8 @@
     "Async SQLAlchemy Unit of Work pattern for persistence",
     "Strict type hinting and dataclasses across domain models",
     "Luxury dark aesthetic with obsidian palette and refined glassmorphism",
-    "Strict user rule: Focus on broad global AI news (trending GitHub repos, developer tools, frontier models, research breakthroughs) and omit security unless explicitly asked"
+    "Strict user rule: Focus on broad global AI news (trending GitHub repos, developer tools, frontier models, research breakthroughs) and omit security unless explicitly asked",
+    "Strict user rule: News must mostly be within 2 weeks old (maximum 14 days) — discard stale historical items"
   ],
   "architecture_patterns": [
     "Domain-Driven Design (DDD) with clear boundary contexts",
@@ -57,6 +58,7 @@
   ],
   "never_do": [
     "Never focus on cybersecurity, CVEs, or vulnerability telemetry unless the user explicitly requests it",
+    "Never ingest or surface news older than 2 weeks (14 days max) — keep all intelligence strictly fresh",
     "Never use useEffect for data fetching — use Server Components or SWR",
     "Never store secrets in .env files committed to git",
     "Never use inline styles — always use Tailwind classes",

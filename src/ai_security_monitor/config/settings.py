@@ -36,8 +36,8 @@ class DatabaseSettings(BaseSettings):
         description="Grace period in days before permanent deletion of soft-purged entries",
     )
     max_ingest_age_days: int = Field(
-        default=90,
-        description="Max age in days for newly fetched entries to prevent historical feed pollution (default 90 days)",
+        default=14,
+        description="Max age in days for newly fetched entries to prevent historical feed pollution (default 14 days / 2 weeks)",
     )
     backup_interval_hours: int = Field(
         default=12,

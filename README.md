@@ -52,7 +52,7 @@ Built on Clean Domain-Driven Architecture (DDD), it continuously aggregates open
 
 ### 7. User-Controlled Data Retention & Hygiene
 - **Strict User Control**: Automatic background data deletion is disabled by default. Data is only modified upon explicit user command.
-- **Ingestion Freshness Guard**: Automatically prevents stale feed archive dumps (> 90 days old) from polluting the active database.
+- **Ingestion Freshness Guard**: Automatically prevents stale feed archive dumps (> 14 days / 2 weeks old) from polluting the active database.
 - **Flexible Cleanup**: Support for soft-purge with instant one-click restoration, or permanent raw disk wiping (`hard_delete=True`).
 
 ### 8. Real-Time Glassmorphic Command Center
@@ -219,7 +219,7 @@ ENVIRONMENT=production
 
 # Database
 DATABASE__URL=sqlite+aiosqlite:///./data/monitor.db
-DATABASE__MAX_INGEST_AGE_DAYS=90
+DATABASE__MAX_INGEST_AGE_DAYS=14
 DATABASE__AUTO_PURGE_ENABLED=false
 DATABASE__RETENTION_DAYS=7
 
