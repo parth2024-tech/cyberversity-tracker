@@ -664,15 +664,21 @@
       </div>
 
       <!-- Action Controls -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/[0.06]">
-        <button onclick="prioritizeFrontierModelsAction()" id="btn-modal-prioritize" class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-indigo-950/50 transition active:scale-[0.98]">
-          <i data-lucide="zap" class="w-4 h-4"></i>
-          <span>Prioritize Frontier Models (P0)</span>
+      <div class="space-y-2 pt-2 border-t border-white/[0.06]">
+        <button onclick="pushAllQueuedAction()" id="btn-modal-push" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-sky-950/50 transition active:scale-[0.98]">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          <span>Push All Queued to Website Now</span>
         </button>
-        <button onclick="flushTriageQueueAction()" id="btn-modal-flush" class="py-2.5 px-4 rounded-xl bg-white/[0.04] hover:bg-rose-500/20 border border-white/[0.08] hover:border-rose-500/40 text-slate-300 hover:text-rose-300 font-mono text-xs flex items-center justify-center gap-2 transition active:scale-[0.98]">
-          <i data-lucide="trash" class="w-3.5 h-3.5"></i>
-          <span>Flush Accumulated Queue</span>
-        </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button onclick="prioritizeFrontierModelsAction()" id="btn-modal-prioritize" class="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 font-mono text-xs flex items-center justify-center gap-1.5 transition active:scale-[0.98]">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Prioritize Models (P0)</span>
+          </button>
+          <button onclick="flushTriageQueueAction()" id="btn-modal-flush" class="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-rose-500/20 border border-white/[0.08] hover:border-rose-500/40 text-slate-300 hover:text-rose-300 font-mono text-xs flex items-center justify-center gap-1.5 transition active:scale-[0.98]">
+            <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+            <span>Flush Queue</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2548,7 +2554,12 @@
         const data = await res.json();
         console.log("Sweep completed:", data);
         const newCount = (data && data.results && typeof data.results.total_new === 'number') ? data.results.total_new : 0;
-        showToast(`✅ Live sweep completed: ${newCount} new updates ingested`, "success");
+        const queuedPushed = (data && typeof data.queued_pushed === 'number') ? data.queued_pushed : 0;
+        if (queuedPushed > 0) {
+          showToast(`✅ Live sweep completed: ${newCount} new updates, pushed all ${queuedPushed} queued items to website`, "success");
+        } else {
+          showToast(`✅ Live sweep completed: ${newCount} new updates ingested`, "success");
+        }
 
         // DataSyncEngine: force-refresh all channels immediately after a user-triggered sweep
         // forceRefresh bypasses staleness budgets — data is always fresh post-scan
@@ -2561,6 +2572,7 @@
             loadFeed(true)
           ]);
         }
+        if (typeof fetchTriageStatus === 'function') fetchTriageStatus();
       } catch (e) {
         console.error("Scan error: ", e);
         showToast("⚠️ Sweep failed: " + e.message, "alert");
@@ -3147,7 +3159,7 @@
           activeTitle.innerText = data.current_entry || "Processing high-priority entry...";
         } else {
           activeStatus.innerText = "Queue Idle";
-          activeTitle.innerText = data.queue_size > 0 ? `Waiting for next cycle (${data.queue_size} items queued)` : "Ready for next feed sweep or manual trigger";
+          activeTitle.innerText = data.queue_size > 0 ? `Waiting for Live Sweep (${data.queue_size} items queued)` : "Ready for next feed sweep or manual trigger";
         }
       }
 
@@ -3186,6 +3198,36 @@
         textEl.innerHTML = `AI QUEUE: READY (<span class="text-slate-400">${data.total_completed || 0} triaged</span>)`;
       }
       renderTriageModal(data);
+    }
+
+    async function pushAllQueuedAction() {
+      const btn = document.getElementById('btn-modal-push');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Pushing...`;
+      }
+      playBeep('alert');
+      try {
+        const res = await fetch('/api/triage/push-all', { method: 'POST' });
+        const data = await res.json();
+        const pushed = (data && typeof data.pushed_count === 'number') ? data.pushed_count : 0;
+        showToast(`🚀 Pushed all ${pushed} queued items to live website!`, 'success');
+        await fetchTriageStatus();
+        if (window.DataSyncEngine) {
+          await window.DataSyncEngine.forceRefresh('all');
+        } else {
+          refreshStats();
+          loadFeed(true);
+        }
+      } catch (e) {
+        showToast('Push failed: ' + e.message, 'alert');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> <span>Push All Queued to Website Now</span>`;
+          if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        }
+      }
     }
 
     async function prioritizeFrontierModelsAction() {
@@ -3332,6 +3374,26 @@
       fetchTriageStatus();
       refreshStats();
       loadFeed(true);
+    }
+
+    function handleTriageBatchPushed(data) {
+      playBeep('alert');
+      const count = (data && typeof data.pushed_count === 'number') ? data.pushed_count : 0;
+      showHUDToast({
+        title: "Live Intelligence Pushed",
+        message: `Pushed all ${count} queued items to live website feed.`,
+        badge: "AI WIRE",
+        icon: "zap",
+        color: "text-sky-400",
+        borderClass: "border-sky-500/40"
+      });
+      fetchTriageStatus();
+      if (window.DataSyncEngine) {
+        window.DataSyncEngine.forceRefresh('all');
+      } else {
+        refreshStats();
+        loadFeed(true);
+      }
     }
 
     // (Three.js Holographic Globe radar extracted to /js/globe.js)

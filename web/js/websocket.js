@@ -204,6 +204,8 @@ function handleWebSocketMessage(msg) {
     if (typeof updateTriageStatus === 'function') updateTriageStatus(msg.data);
   } else if (msg.type === 'triage_completed') {
     if (typeof handleTriageCompleted === 'function') handleTriageCompleted(msg.data);
+  } else if (msg.type === 'triage_batch_pushed') {
+    if (typeof handleTriageBatchPushed === 'function') handleTriageBatchPushed(msg.data);
   }
 }
 

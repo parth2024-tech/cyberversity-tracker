@@ -70,3 +70,34 @@ async def prioritize_frontier_models(
         "message": f"Prioritized {enqueued} frontier models & landmark arXiv papers for autonomous GPU/LLM triage.",
     }
 
+
+@triage_router.post("/push-all")
+async def push_all_queued():
+    """Push and process all queued entries to the website immediately."""
+    service = get_triage_service()
+    pushed = await service.push_all_queued()
+    return {
+        "status": "success",
+        "pushed_count": pushed,
+        "queue_size": service.queue_size,
+        "message": f"Successfully pushed {pushed} queued items to website.",
+    }
+
+
+@triage_router.post("/mode")
+async def toggle_hold_mode(
+    hold: bool = Query(
+        default=True,
+        description="True = hold queue until live sweep; False = continuous background worker",
+    )
+):
+    """Toggle triage queue hold mode."""
+    service = get_triage_service()
+    current = service.set_hold_mode(hold)
+    return {
+        "status": "success",
+        "hold_until_sweep": current,
+        "message": f"Queue hold mode set to {current}.",
+    }
+
+

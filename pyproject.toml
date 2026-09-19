@@ -99,7 +99,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = ["--strict-markers", "--strict-config", "-ra", "--cov=src/ai_security_monitor", "--cov-report=term-missing", "--cov-report=html:htmlcov"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.black]

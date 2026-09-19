@@ -86,9 +86,21 @@ async def toggle_source(source_id: str, req: SourceToggleRequest):
 @sources_router.post("/fetch")
 @limiter.limit("5/minute")
 async def trigger_fetch_sweep(request: Request):
-    """Trigger an immediate radar sweep across all sources."""
+    """Trigger an immediate radar sweep across all sources and push all queued entries."""
+    from ai_security_monitor.application.services.autonomous_triage_service import (
+        get_triage_service,
+    )
     from ai_security_monitor.application.services.monitor_service import MonitorService
 
     service = MonitorService()
     results = await service.fetch_all()
-    return {"status": "success", "results": results}
+
+    # Automatically push and process all queued entries to website
+    triage_svc = get_triage_service()
+    queued_pushed = await triage_svc.push_all_queued()
+
+    return {
+        "status": "success",
+        "results": results,
+        "queued_pushed": queued_pushed,
+    }

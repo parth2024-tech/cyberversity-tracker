@@ -163,6 +163,10 @@ class AnalyzerSettings(BaseSettings):
     triage_interval_seconds: float = Field(
         default=2.0, description="Pause between queued triage tasks"
     )
+    queue_hold_until_sweep: bool = Field(
+        default=True,
+        description="Hold queued entries in triage queue until user triggers Live Sweep",
+    )
 
     model_config = SettingsConfigDict(env_prefix="ANALYZER_")
 
