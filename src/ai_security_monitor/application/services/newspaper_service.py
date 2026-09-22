@@ -1,6 +1,6 @@
 """
-Autonomous 10-Page Comprehensive Intelligence Broadsheet Service ("The Cyber Intelligence Chronicle").
-Compiles live security intelligence into authentic, publication-grade 10-page editorial dossiers (PDF, HTML, and Markdown).
+Autonomous 10-Page Comprehensive Intelligence Broadsheet Service ("The Global AI Gazette").
+Compiles live worldwide AI ecosystem intelligence into authentic, publication-grade 10-page editorial dossiers (PDF, HTML, and Markdown).
 """
 
 from __future__ import annotations

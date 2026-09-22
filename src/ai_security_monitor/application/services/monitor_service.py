@@ -97,6 +97,28 @@ class MonitorService:
         """Set WebSocket broadcast callback."""
         self._broadcast_callback = cb
 
+    def _broadcast(self, msg: dict) -> None:
+        """Broadcast event to WebSocket clients via callback or manager fallback."""
+        if self._broadcast_callback:
+            try:
+                self._broadcast_callback(msg)
+                return
+            except Exception as ws_err:
+                logger.warning(f"WebSocket broadcast error: {ws_err}")
+        try:
+            from ai_security_monitor.presentation.api.websocket.manager import (
+                manager as _ws_manager,
+            )
+
+            try:
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    asyncio.create_task(_ws_manager.broadcast(msg))
+            except RuntimeError:
+                pass
+        except Exception:
+            pass
+
     async def init_sources(self, config_path: str | None = None) -> int:
         """Initialize sources from YAML config into the database."""
         sources_cfg = load_sources_from_yaml(config_path)
@@ -514,12 +536,8 @@ class MonitorService:
                 await uow.commit()
 
             # 4. Post-Commit Safe Broadcasting & Triage Enqueue (Guaranteed No Phantom Entries)
-            if self._broadcast_callback:
-                for bc in pending_broadcasts:
-                    try:
-                        self._broadcast_callback(bc)
-                    except Exception as ws_err:
-                        logger.warning(f"WebSocket broadcast error: {ws_err}")
+            for bc in pending_broadcasts:
+                self._broadcast(bc)
 
             if pending_triage_entries:
                 try:
@@ -751,6 +769,10 @@ class MonitorService:
 
         response_cache.clear()
 
+        self._broadcast(
+            {"type": "feed_updated", "data": {"purged": purged, "hard_delete": hard_delete}}
+        )
+
         logger.info(
             f"Data hygiene purge complete: removed {purged} entries (hard_delete={hard_delete}, include_vaulted={include_vaulted}), "
             f"{purged_logs} logs, {purged_digests} digests older than {days} days"
@@ -775,6 +797,10 @@ class MonitorService:
         from ai_security_monitor.infrastructure.cache import response_cache
 
         response_cache.clear()
+
+        self._broadcast(
+            {"type": "feed_updated", "data": {"restored": restored}}
+        )
 
         logger.info(
             f"Manual restoration complete: restored {restored} previously soft-purged entries."

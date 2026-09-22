@@ -396,16 +396,22 @@ async def test_get_stats_excludes_soft_purged_entries(test_uow):
     stats_after_add = await service.get_stats()
     assert stats_after_add["total_entries"] == init_total + 2
 
+    broadcast_events: list[dict] = []
+    service.set_broadcast_callback(lambda msg: broadcast_events.append(msg))
+
     # Purge entries older than 10 days
     purged_res = await service.purge_stale_entries(older_than_days=10)
     assert purged_res["purged"] >= 1
+    assert any(ev.get("type") == "feed_updated" for ev in broadcast_events)
 
     stats_after_purge = await service.get_stats()
     # stats total MUST have dropped!
     assert stats_after_purge["total_entries"] == stats_after_add["total_entries"] - purged_res["purged"]
 
+    broadcast_events.clear()
     # Restore all soft-purged
     await service.restore_purged_entries()
+    assert any(ev.get("type") == "feed_updated" for ev in broadcast_events)
     stats_after_restore = await service.get_stats()
     assert stats_after_restore["total_entries"] == stats_after_add["total_entries"]
 

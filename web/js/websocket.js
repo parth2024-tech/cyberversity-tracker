@@ -206,6 +206,14 @@ function handleWebSocketMessage(msg) {
     if (typeof handleTriageCompleted === 'function') handleTriageCompleted(msg.data);
   } else if (msg.type === 'triage_batch_pushed') {
     if (typeof handleTriageBatchPushed === 'function') handleTriageBatchPushed(msg.data);
+  } else if (msg.type === 'feed_updated' || msg.type === 'stats_updated') {
+    if (window.DataSyncEngine) {
+      window.DataSyncEngine.invalidate('stats');
+      window.DataSyncEngine.invalidate('feed');
+    } else {
+      if (typeof refreshStats === 'function') refreshStats();
+      if (typeof loadFeed === 'function') loadFeed(true);
+    }
   }
 }
 

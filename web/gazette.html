@@ -1113,7 +1113,7 @@ function connectWS() {
       try {
         const msg = JSON.parse(event.data);
         if (!msg || msg.type === 'pong' || msg.type === 'ping') return;
-        if (msg.type === 'new_entry' || msg.type === 'landmark_ai_breakthrough' || msg.type === 'scan_status' || msg.type === 'connected') {
+        if (msg.type === 'new_entry' || msg.type === 'landmark_ai_breakthrough' || msg.type === 'scan_status' || msg.type === 'connected' || msg.type === 'feed_updated') {
           loadFeed();
         }
       } catch (err) {
