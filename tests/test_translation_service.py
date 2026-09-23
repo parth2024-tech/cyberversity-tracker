@@ -115,17 +115,22 @@ async def test_translation_api_endpoints():
     app = create_app()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # 1. Translate Arbitrary Text
-        res = await client.post(
-            "/api/translate", json={"text": "DeepSeek-R1 安全通报", "target": "en"}
-        )
-        assert res.status_code == 200
-        data = res.json()
-        assert "translated" in data
-        assert data["detected_language"] in ("zh-cn", "zh")
+        with patch.object(
+            TranslationService,
+            "_execute_translation",
+            return_value="DeepSeek-R1 Security Notice",
+        ):
+            # 1. Translate Arbitrary Text
+            res = await client.post(
+                "/api/translate", json={"text": "DeepSeek-R1 安全通报", "target": "en"}
+            )
+            assert res.status_code == 200
+            data = res.json()
+            assert "translated" in data
+            assert data["detected_language"] in ("zh-cn", "zh")
 
-        # 2. Backfill Endpoint
-        res_backfill = await client.post("/api/translate/backfill", json={"limit": 5})
-        assert res_backfill.status_code == 200
-        assert "status" in res_backfill.json()
-        assert res_backfill.json()["status"] == "success"
+            # 2. Backfill Endpoint
+            res_backfill = await client.post("/api/translate/backfill", json={"limit": 5})
+            assert res_backfill.status_code == 200
+            assert "status" in res_backfill.json()
+            assert res_backfill.json()["status"] == "success"

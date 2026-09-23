@@ -3037,8 +3037,12 @@
             statusBox.innerHTML = `✓ Manual cleanup successful: ${actionWord} ${data.purged || 0} ${scopeDesc}.`;
           }
           await refreshRetentionTelemetry();
-          if (typeof refreshStats === 'function') await refreshStats();
-          if (typeof loadFeed === 'function') await loadFeed(true);
+          if (window.DataSyncEngine) {
+            await window.DataSyncEngine.forceRefresh('all');
+          } else {
+            if (typeof refreshStats === 'function') await refreshStats();
+            if (typeof loadFeed === 'function') await loadFeed(true);
+          }
         } else {
           if (statusBox) {
             statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
@@ -3088,8 +3092,12 @@
             statusBox.innerHTML = `✓ Successfully restored ${data.restored || 0} entries back to your active dashboard!`;
           }
           await refreshRetentionTelemetry();
-          if (typeof refreshStats === 'function') await refreshStats();
-          if (typeof loadFeed === 'function') await loadFeed(true);
+          if (window.DataSyncEngine) {
+            await window.DataSyncEngine.forceRefresh('all');
+          } else {
+            if (typeof refreshStats === 'function') await refreshStats();
+            if (typeof loadFeed === 'function') await loadFeed(true);
+          }
         } else {
           if (statusBox) {
             statusBox.className = "p-3 rounded-xl text-xs font-mono bg-rose-500/10 border border-rose-500/30 text-rose-300";
@@ -4363,12 +4371,12 @@
       const TICK_MS = 2000; // evaluate channels every 2s
 
       // ── Dispatch one channel fetch ──────────────────────────────────────
-      async function _fetchChannel(ch) {
+      async function _fetchChannel(ch, force = false) {
         const s = _state[ch];
         const cfg = CHANNELS[ch];
         if (s.inflight) return; // dedup
         const now = performance.now();
-        if ((now - s.lastAttemptAt) < cfg.minIntervalMs) return; // too soon
+        if (!force && (now - s.lastAttemptAt) < cfg.minIntervalMs) return; // too soon
 
         s.inflight = true;
         s.lastAttemptAt = now;
@@ -4408,22 +4416,23 @@
 
           const ageMs = now - s.lastFetchedAt;
           const budget = cfg.maxAgeMs * cfg.backoffMulti;
-          if (s.dirty || ageMs > budget) _fetchChannel(ch);
+          if (s.dirty || ageMs > budget) _fetchChannel(ch, s.dirty);
         });
       }
 
       // ── Public API ──────────────────────────────────────────────────────
 
-      /** Mark channel(s) dirty → refresh on next tick. Pass 'all' to invalidate everything. */
+      /** Mark channel(s) dirty → refresh immediately. Pass 'all' to invalidate everything. */
       function invalidate(ch) {
         if (ch === 'all') Object.keys(CHANNELS).forEach(c => { _state[c].dirty = true; });
         else if (_state[ch]) _state[ch].dirty = true;
+        forceRefresh(ch);
       }
 
-      /** Force-refresh a channel immediately, bypassing tick schedule. */
+      /** Force-refresh a channel immediately, bypassing tick schedule and minInterval. */
       async function forceRefresh(ch) {
-        if (ch === 'all') return Promise.allSettled(Object.keys(CHANNELS).map(_fetchChannel));
-        return _fetchChannel(ch);
+        if (ch === 'all') return Promise.allSettled(Object.keys(CHANNELS).map(c => _fetchChannel(c, true)));
+        return _fetchChannel(ch, true);
       }
 
       function _pause() { _enginePaused = true; }

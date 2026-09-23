@@ -4,6 +4,7 @@ Unit and integration tests for the 5-Hour Autonomous Newspaper Document Service.
 
 from datetime import datetime, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -37,6 +38,7 @@ async def test_newspaper_generation_creates_files(temp_output_dir: Path):
     latest_md = temp_output_dir / "latest.md"
     latest_html = temp_output_dir / "latest.html"
     latest_json = temp_output_dir / "latest.json"
+    latest_pdf = temp_output_dir / "latest.pdf"
 
     assert md_file.exists()
     assert html_file.exists()
@@ -44,6 +46,7 @@ async def test_newspaper_generation_creates_files(temp_output_dir: Path):
     assert latest_md.exists()
     assert latest_html.exists()
     assert latest_json.exists()
+    assert latest_pdf.exists()
 
     md_content = md_file.read_text(encoding="utf-8")
     assert "THE GLOBAL AI GAZETTE" in md_content
@@ -60,7 +63,12 @@ async def test_newspaper_generation_creates_files(temp_output_dir: Path):
 async def test_newspaper_service_getters_and_listing(temp_output_dir: Path):
     """Test get_latest_edition, get_latest_html, and list_editions."""
     service = NewspaperService(output_dir=temp_output_dir)
-    await service.generate_edition(window_hours=5)
+
+    def _quick_render_pdf(pdf_path, *args, **kwargs):
+        pdf_path.write_bytes(b"%PDF-1.4\n%mock\n%%EOF\n")
+
+    with patch.object(service, "_render_pdf", side_effect=_quick_render_pdf):
+        await service.generate_edition(window_hours=5)
 
     latest = service.get_latest_edition()
     assert latest is not None
@@ -78,56 +86,68 @@ async def test_newspaper_service_getters_and_listing(temp_output_dir: Path):
 
 
 @pytest.mark.asyncio
-async def test_newspaper_api_endpoints():
+async def test_newspaper_api_endpoints(temp_output_dir: Path):
     """Test all /api/newspaper REST endpoints."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # 1. GET latest metadata & markdown
-        res_latest = await client.get("/api/newspaper/latest")
-        assert res_latest.status_code == 200
-        data = res_latest.json()
-        assert "edition_number" in data
-        assert "markdown" in data
+    service = NewspaperService(output_dir=temp_output_dir)
 
-        # 2. GET latest HTML document
-        res_html = await client.get("/api/newspaper/latest/html")
-        assert res_html.status_code == 200
-        assert "text/html" in res_html.headers.get("content-type", "")
-        assert "<!DOCTYPE html>" in res_html.text
+    def _quick_render_pdf(pdf_path, *args, **kwargs):
+        pdf_path.write_bytes(b"%PDF-1.4\n%mock\n%%EOF\n")
 
-        # 3. GET download as markdown
-        res_dl_md = await client.get("/api/newspaper/download?format=md")
-        assert res_dl_md.status_code == 200
-        assert "THE GLOBAL AI GAZETTE" in res_dl_md.text
+    with (
+        patch.object(service, "_render_pdf", side_effect=_quick_render_pdf),
+        patch("ai_security_monitor.presentation.api.routers.newspaper._newspaper_service", service),
+    ):
+        # Generate initial edition in temp directory
+        await service.generate_edition(window_hours=5)
 
-        # 4. GET download as HTML
-        res_dl_html = await client.get("/api/newspaper/download?format=html")
-        assert res_dl_html.status_code == 200
-        assert "<!DOCTYPE html>" in res_dl_html.text
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            # 1. GET latest metadata & markdown
+            res_latest = await client.get("/api/newspaper/latest")
+            assert res_latest.status_code == 200
+            data = res_latest.json()
+            assert "edition_number" in data
+            assert "markdown" in data
 
-        # 5. GET download as PDF
-        res_dl_pdf = await client.get("/api/newspaper/download?format=pdf")
-        assert res_dl_pdf.status_code == 200
-        assert "application/pdf" in res_dl_pdf.headers.get("content-type", "")
+            # 2. GET latest HTML document
+            res_html = await client.get("/api/newspaper/latest/html")
+            assert res_html.status_code == 200
+            assert "text/html" in res_html.headers.get("content-type", "")
+            assert "<!DOCTYPE html>" in res_html.text
 
-        # 6. GET editions list
-        res_editions = await client.get("/api/newspaper/editions")
-        assert res_editions.status_code == 200
-        assert "editions" in res_editions.json()
+            # 3. GET download as markdown
+            res_dl_md = await client.get("/api/newspaper/download?format=md")
+            assert res_dl_md.status_code == 200
+            assert "THE GLOBAL AI GAZETTE" in res_dl_md.text
 
-        # 7. POST manual trigger generation
-        res_gen = await client.post("/api/newspaper/generate", json={"window_hours": 5})
-        assert res_gen.status_code == 200
-        assert res_gen.json()["status"] == "success"
+            # 4. GET download as HTML
+            res_dl_html = await client.get("/api/newspaper/download?format=html")
+            assert res_dl_html.status_code == 200
+            assert "<!DOCTYPE html>" in res_dl_html.text
 
-        # 8. POST email newspaper with invalid config triggers proper error response
-        res_mail = await client.post(
-            "/api/newspaper/email", json={"to_email": "test@example.com"}
-        )
-        assert res_mail.status_code in (200, 400, 500)
+            # 5. GET download as PDF
+            res_dl_pdf = await client.get("/api/newspaper/download?format=pdf")
+            assert res_dl_pdf.status_code == 200
+            assert "application/pdf" in res_dl_pdf.headers.get("content-type", "")
 
-        # 9. POST telegram newspaper triggers proper response
-        res_tg = await client.post(
-            "/api/newspaper/telegram", json={"chat_id": "1650972026"}
-        )
-        assert res_tg.status_code in (200, 400, 500)
+            # 6. GET editions list
+            res_editions = await client.get("/api/newspaper/editions")
+            assert res_editions.status_code == 200
+            assert "editions" in res_editions.json()
+
+            # 7. POST manual trigger generation
+            res_gen = await client.post("/api/newspaper/generate", json={"window_hours": 5})
+            assert res_gen.status_code == 200
+            assert res_gen.json()["status"] == "success"
+
+            # 8. POST email newspaper with invalid config triggers proper error response
+            res_mail = await client.post(
+                "/api/newspaper/email", json={"to_email": "test@example.com"}
+            )
+            assert res_mail.status_code in (200, 400, 500)
+
+            # 9. POST telegram newspaper triggers proper response
+            res_tg = await client.post(
+                "/api/newspaper/telegram", json={"chat_id": "1650972026"}
+            )
+            assert res_tg.status_code in (200, 400, 500)
