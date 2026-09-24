@@ -28,47 +28,41 @@ logger = get_logger(__name__)
 
 _AI_KEYWORDS = frozenset(
     {
-        "ai",
-        "llm",
-        "agent",
-        "agents",
-        "machine-learning",
-        "deep-learning",
-        "neural",
-        "model",
-        "models",
-        "gpt",
-        "transformer",
-        "transformers",
-        "diffusion",
-        "rag",
-        "vision",
-        "deepseek",
-        "qwen",
-        "claude",
-        "llama",
-        "mistral",
-        "vllm",
-        "ollama",
-        "sglang",
-        "embedding",
-        "embeddings",
-        "inference",
-        "fine-tuning",
-        "lora",
-        "rlhf",
-        "langchain",
-        "llamaindex",
-        "gemini",
-        "pytorch",
-        "huggingface",
-        "whisper",
-        "vision-language",
-        "multimodal",
-        "openai",
-        "anthropic",
-        "reasoning",
-        "benchmark",
+        # Core AI/ML
+        "ai", "llm", "agent", "agents", "machine-learning", "deep-learning",
+        "neural", "model", "models", "transformer", "transformers", "diffusion",
+        "rag", "vision", "multimodal", "reasoning", "benchmark", "embedding", "embeddings",
+        "inference", "fine-tuning", "lora", "rlhf",
+        # Major labs / brands
+        "openai", "anthropic", "deepseek", "qwen", "claude", "llama", "mistral",
+        "gemini", "gemma", "grok", "kimi", "moonshot", "internlm", "phi", "falcon",
+        "huggingface", "pytorch",
+        # Frontier model keywords
+        "o1", "o3", "gpt-4", "gpt-5", "llama3", "deepseek-r1", "deepseek-v3",
+        # Inference runtimes
+        "vllm", "ollama", "sglang", "llamacpp", "llama.cpp", "tensorrt", "tensorrt-llm",
+        "nim", "triton", "flashattention", "flash-attn", "mlx", "rocm",
+        # Training / fine-tuning
+        "dpo", "grpo", "sft", "qlora", "peft", "alignment", "unsloth", "axolotl",
+        "finetuning", "pretraining",
+        # Frameworks and libraries
+        "langchain", "llamaindex", "langgraph", "autogen", "crewai", "litellm",
+        "openrouter", "haystack", "dspy",
+        # Vector stores / RAG infra
+        "chroma", "chromadb", "qdrant", "weaviate", "milvus", "pinecone", "faiss",
+        # Media generation
+        "whisper", "stable-diffusion", "sdxl", "flux", "comfyui", "tts", "stt",
+        "text-to-image", "text-to-video", "vision-language",
+        # Agentic / automation
+        "agentic", "tool-calling", "function-calling", "workflow", "autonomous",
+        "swarm", "orchestration",
+        # Hardware / acceleration
+        "cuda", "gpu", "npu", "accelerator", "quantization", "gguf", "ggml",
+        "awq", "gptq", "fp8", "fp4", "fp16", "int8", "int4",
+        # Modalities / domains
+        "robotics", "embodied", "humanoid", "speech",
+        # Evaluation / research
+        "arxiv", "preprint", "dataset", "evaluate", "leaderboard",
     }
 )
 

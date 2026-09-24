@@ -38,13 +38,31 @@ entries_router = APIRouter(prefix="/entries")
 
 
 def _clean_entry_title(title: str | None) -> str:
-    """Sanitize title: unescape HTML entities, strip scrape prefixes, normalize whitespace."""
+    """Sanitize title: unescape HTML entities, strip scrape prefixes, tags, LaTeX math, normalize whitespace."""
     if not title:
         return "Intelligence Dispatch"
     t = html.unescape(title).strip()
     t = re.sub(r"^Security Tool\s*/\s*PoC:\s*", "", t, flags=re.I)
     t = re.sub(r"^Security Tool:\s*", "", t, flags=re.I)
     t = re.sub(r"^PoC:\s*", "", t, flags=re.I)
+    t = re.sub(
+        r"^(?:Trending|Release|Tool|Update|RFC|Paper|PSA)\s*:\s*", "", t, flags=re.I
+    )
+    t = re.sub(
+        r"^\[(?:D|R|P|News|Project|Discussion|Research|webapps|remote)\]\s*",
+        "",
+        t,
+        flags=re.I,
+    )
+    t = re.sub(
+        r"^(?:arXiv:\S+\s+)?(?:Announce Type:\s*\w+\s*)?(?:Title:\s*)?",
+        "",
+        t,
+        flags=re.I,
+    )
+    # Strip LaTeX math artifacts often found in arXiv titles
+    t = re.sub(r"\$(.*?)\$", r"\1", t)
+    t = re.sub(r"\\(?:mathcal|mathbb|mathbf|text|mathrm)\{([^}]+)\}", r"\1", t)
     t = re.sub(r"^(llama\.cpp[^:]*):\s*b(\d+)", r"\1 Build b\2", t, flags=re.I)
     t = re.sub(
         r"^(LangChain[^:]*):\s*([a-zA-Z0-9_\-]+)==([0-9\.]+)",

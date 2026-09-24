@@ -90,3 +90,47 @@ async def test_heuristic_analyzer_ai_innovation(sample_entry):
 
     assert res_model.attack_archetype == "AI Model Release"
     assert res_model.is_pre_cve_warning is False
+    assert res_model.threat_velocity >= 85
+    assert "Reasoning" in res_model.attack_vector
+    assert "Breakthrough" in res_model.risk_assessment
+
+
+@pytest.mark.asyncio
+async def test_heuristic_analyzer_hardware_and_sovereign_signals(sample_entry):
+    from ai_security_monitor.domain.entities import Category
+
+    analyzer = HeuristicAnalyzer()
+
+    # Hardware AI Accelerator
+    sample_entry.category = Category.CYBER_TOOLS
+    sample_entry.title = "NVIDIA Blackwell B200 and GB200 Silicon Architecture Deep Dive"
+    sample_entry.summary = "Next-generation GPU accelerator delivering 20 petaflops of FP4 inference throughput."
+    sample_entry.metadata = {}
+    res_hw = await analyzer.analyze(sample_entry)
+    assert "Hardware" in res_hw.attack_vector
+    assert "Silicon" in res_hw.attack_vector or "Accelerator" in res_hw.attack_vector
+
+    # Sovereign AI Governance
+    sample_entry.category = Category.AI_TECH
+    sample_entry.title = "National AI Strategy and Sovereign AI Infrastructure Initiative"
+    sample_entry.summary = "A comprehensive policy framework for domestic foundation model hosting and data residency."
+    res_sov = await analyzer.analyze(sample_entry)
+    assert "Policy" in res_sov.attack_vector or "Sovereign" in res_sov.attack_vector
+
+
+@pytest.mark.asyncio
+async def test_heuristic_analyzer_ecosystem_detection(sample_entry):
+    from ai_security_monitor.domain.entities import Category
+
+    analyzer = HeuristicAnalyzer()
+    sample_entry.category = Category.AI_MODELS
+    sample_entry.title = "Qwen 2.5 and SGLang Integration with Apple MLX Support"
+    sample_entry.summary = "Run Qwen models using SGLang high throughput engine or locally on Apple silicon via MLX."
+    sample_entry.metadata = {}
+
+    res = await analyzer.analyze(sample_entry)
+    ecos = set(res.affected_ecosystem or [])
+    assert any("Qwen" in e for e in ecos)
+    assert "SGLang" in ecos
+    assert "Apple MLX" in ecos
+

@@ -1768,6 +1768,8 @@
       const fwList = document.getElementById('framework-exposure-list');
       if (fwList && stats.framework_exposure && stats.framework_exposure.length > 0) {
         const riskColors = {
+          'HIGH ADOPTION': { text: 'text-emerald-400', bar: 'from-emerald-500/80 to-emerald-400' },
+          'ACTIVE': { text: 'text-cyan-400', bar: 'from-cyan-500/80 to-cyan-400' },
           'HIGH RISK': { text: 'text-rose-400', bar: 'from-rose-500/80 to-rose-400' },
           'ELEVATED': { text: 'text-amber-400', bar: 'from-amber-500/80 to-amber-400' },
           'MODERATE': { text: 'text-sky-400', bar: 'from-sky-500/80 to-sky-400' },

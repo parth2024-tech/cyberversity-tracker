@@ -27,6 +27,12 @@ class HackerNewsFetcher(BaseFetcher):
         # Algolia Search API does not support boolean 'OR' in query strings.
         # We query recent stories using search_by_date across core AI topics and deduplicate.
         base_url = "https://hn.algolia.com/api/v1/search_by_date"
+        from datetime import timedelta
+
+        max_age_days = getattr(settings.database, "max_ingest_age_days", 14)
+        cutoff_dt = datetime.now(UTC) - timedelta(days=max_age_days)
+        cutoff_ts = int(cutoff_dt.timestamp())
+
         keywords = self.source.config.get("tags") if self.source.config else None
         if not keywords:
             keywords = [
@@ -35,8 +41,11 @@ class HackerNewsFetcher(BaseFetcher):
                 "Claude",
                 "OpenAI",
                 "DeepSeek",
+                "Qwen",
                 "Mistral",
                 "Llama",
+                "vLLM",
+                "reasoning",
                 "agents",
                 "machine learning",
             ]
@@ -48,12 +57,13 @@ class HackerNewsFetcher(BaseFetcher):
         async with httpx.AsyncClient(
             timeout=self.timeout, headers=headers, follow_redirects=True
         ) as client:
-            for kw in keywords[:6]:
+            for kw in keywords[:8]:
                 try:
                     params = {
                         "tags": "story",
                         "query": kw,
                         "hitsPerPage": 15,
+                        "numericFilters": f"created_at_i>{cutoff_ts}",
                     }
                     response = await client.get(base_url, params=params)
                     if response.status_code != 200:

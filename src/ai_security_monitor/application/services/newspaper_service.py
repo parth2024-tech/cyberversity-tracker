@@ -139,7 +139,16 @@ class NewspaperService:
             # Allow short titles if they are clearly a model/repo release
             is_technical_id = bool(
                 re.search(
-                    r"[\w\-]+/[\w\-]+|\b(?:qwen|deepseek|llama|mistral|gpt|claude|gemini|vllm|ollama|sglang|gguf)\b",
+                    r"[\w\-]+/[\w\-]+"  # GitHub repo slugs
+                    r"|\b(?:qwen|deepseek|llama|mistral|gpt|claude|gemini|gemma)"
+                    r"|\b(?:vllm|ollama|sglang|gguf|mlx|tensorrt|flashattention)"
+                    r"|\b(?:grok|phi|kimi|moonshot|internlm|falcon|cohere)"
+                    r"|\b(?:o1|o3|r1|gpt-4|gpt-5|deepseek-r1)"
+                    r"|\b(?:crewai|autogen|langgraph|dspy|haystack)"
+                    r"|\b(?:unsloth|axolotl|qlora|lora|dpo|grpo)"
+                    r"|\b(?:qdrant|weaviate|chroma|milvus|pinecone)"
+                    r"|\b(?:blackwell|h100|h200|rocm|npu|cuda)"
+                    r"|\b(?:arxiv|preprint|benchmark|sota)\b",
                     t_lower,
                 )
             )
@@ -251,6 +260,67 @@ class NewspaperService:
                     "datacenter",
                     "open-source",
                     "open source",
+                    # New: frontier models & brands
+                    "grok",
+                    "phi",
+                    "kimi",
+                    "moonshot",
+                    "internlm",
+                    "falcon",
+                    "o1",
+                    "o3",
+                    "gpt-4",
+                    "gpt-5",
+                    # New: inference runtimes
+                    "vllm",
+                    "ollama",
+                    "sglang",
+                    "llama.cpp",
+                    "tensorrt",
+                    "mlx",
+                    "flashattention",
+                    # New: training techniques
+                    "lora",
+                    "qlora",
+                    "dpo",
+                    "grpo",
+                    "rlhf",
+                    "sft",
+                    "alignment",
+                    "unsloth",
+                    "axolotl",
+                    # New: agentic / orchestration
+                    "crewai",
+                    "autogen",
+                    "langgraph",
+                    "mcp",
+                    "dspy",
+                    "haystack",
+                    "tool-calling",
+                    # New: vector stores / RAG
+                    "qdrant",
+                    "weaviate",
+                    "chroma",
+                    "milvus",
+                    "pinecone",
+                    # New: hardware
+                    "blackwell",
+                    "h100",
+                    "h200",
+                    "rocm",
+                    "npu",
+                    "asic",
+                    # New: media generation
+                    "text-to-image",
+                    "text-to-video",
+                    "stable diffusion",
+                    "flux",
+                    "whisper",
+                    # New: embodied AI
+                    "embodied",
+                    "humanoid",
+                    "drone",
+                    "manipulation",
                 )
                 return any(
                     re.search(rf"\b{re.escape(k)}\b", combined) for k in ai_keywords
@@ -627,7 +697,11 @@ class NewspaperService:
         t = entry.title or ""
         t_clean = self._clean_title(t)
         match = re.search(
-            r"\b(DeepSeek|Qwen|Llama|Mistral|OpenAI|Anthropic|Claude|Gemini|vLLM|Ollama|SGLang|Nvidia|TSMC|Apple|Meta|Google|Microsoft|Blackwell|Groq|Cerebras|Krutrim|Falcon)\b",
+            r"\b(DeepSeek|Qwen|Llama|Mistral|OpenAI|Anthropic|Claude|Gemini|Gemma|"
+            r"vLLM|Ollama|SGLang|MLX|Nvidia|TSMC|Apple|Meta|Google|Microsoft|"
+            r"Blackwell|Groq|Cerebras|Krutrim|Falcon|Grok|xAI|Phi|Kimi|Moonshot|"
+            r"InternLM|Cohere|AMD|AWS|Bedrock|Vertex|LangGraph|CrewAI|AutoGen|Unsloth|"
+            r"TensorRT|FlashAttention|Axolotl|Qdrant|Weaviate|ChromaDB|Pinecone)\b",
             t,
             re.I,
         )
@@ -839,28 +913,25 @@ class NewspaperService:
             if any(
                 k in t_lower
                 for k in (
-                    "deepseek",
-                    "openai",
-                    "anthropic",
-                    "qwen",
-                    "gemini",
-                    "claude",
-                    "vllm",
-                    "ollama",
-                    "llama",
-                    "reasoning",
-                    "breakthrough",
-                    "sota",
-                    "release",
-                    "launch",
-                    "open-source",
-                    "open source",
-                    "arxiv",
-                    "paper",
-                    "agent",
-                    "hardware",
-                    "nvidia",
-                    "chip",
+                    # Frontier labs
+                    "deepseek", "openai", "anthropic", "qwen", "gemini", "claude",
+                    "meta ai", "xai", "mistral ai",
+                    # Flagship models
+                    "llama", "grok", "phi", "kimi", "moonshot", "internlm", "falcon",
+                    "o1", "o3", "gpt-4", "gpt-5", "r1", "deepseek-r1",
+                    # Infra
+                    "vllm", "ollama", "sglang", "llama.cpp", "tensorrt", "mlx",
+                    # Breakthroughs
+                    "reasoning", "breakthrough", "sota", "state-of-the-art",
+                    "release", "launch", "open-source", "open source",
+                    # Research
+                    "arxiv", "paper", "benchmark", "test-time compute",
+                    # Agentic
+                    "agent", "crewai", "autogen", "langgraph", "mcp",
+                    # Hardware
+                    "hardware", "nvidia", "chip", "blackwell", "h100", "h200",
+                    # Embodied
+                    "robot", "robotics", "embodied", "humanoid",
                 )
             ):
                 score += 200

@@ -100,6 +100,28 @@ class HeuristicAnalyzer(BaseAnalyzer):
         "ONNX": [r"\bonnx\b"],
         "CUDA": [r"\bcuda\b", r"\bcudnn\b"],
         "JAX": [r"\bjax\b", r"\bflax\b"],
+        "SGLang": [r"\bsglang\b"],
+        "llama.cpp": [r"\bllama\.cpp\b", r"\bllama-cpp\b"],
+        "Mistral AI": [r"\bmistral\b", r"\bpixtral\b"],
+        "Anthropic Claude": [r"\bclaude\b", r"\bsonnet\b", r"\bhaiku\b", r"\bopus\b"],
+        "xAI Grok": [r"\bgrok\b"],
+        "OpenAI o-series": [r"\bo1\b", r"\bo3\b", r"\bgpt-4\b", r"\bgpt-5\b"],
+        "Google Gemini": [r"\bgemini\b", r"\bgemma\b"],
+        "Meta Llama": [r"\bllama\b", r"\bllama3\b"],
+        "Stability AI": [r"\bstable diffusion\b", r"\bsdxl\b", r"\bflux\b"],
+        "FlashAttention": [r"\bflashattention\b", r"\bflash-attn\b"],
+        "Apple MLX": [r"\bmlx\b"],
+        "NVIDIA TensorRT": [r"\btensorrt\b", r"\btensorrt-llm\b", r"\bnim\b"],
+        "AMD ROCm": [r"\brocm\b", r"\bmi300\b"],
+        "CrewAI": [r"\bcrewai\b"],
+        "AutoGen": [r"\bautogen\b"],
+        "unsloth": [r"\bunsloth\b"],
+        "Axolotl": [r"\baxolotl\b"],
+        "ChromaDB": [r"\bchroma\b", r"\bchromadb\b"],
+        "Qdrant": [r"\bqdrant\b"],
+        "Weaviate": [r"\bweaviate\b"],
+        "LiteLLM": [r"\blitellm\b"],
+        "ComfyUI": [r"\bcomfyui\b"],
     }
 
     ATTACK_ARCHETYPE_PATTERNS = {
@@ -538,6 +560,15 @@ class HeuristicAnalyzer(BaseAnalyzer):
         if any(
             k in text_lower
             for k in (
+                "chip", "hardware", "semiconductor", "silicon", "blackwell",
+                "b200", "gb200", "h100", "h200", "npu", "asic", "tpu",
+                "amd mi", "nvidia h", "gaudi", "cerebras", "ascend",
+            )
+        ):
+            return "Hardware: Next-Generation AI Accelerator & Silicon Architecture"
+        if any(
+            k in text_lower
+            for k in (
                 "vllm",
                 "ollama",
                 "inference",
@@ -559,6 +590,16 @@ class HeuristicAnalyzer(BaseAnalyzer):
             for k in ("fine-tun", "lora", "qlora", "sft", "rlhf", "dpo", "grpo")
         ):
             return "Methodology: Post-Training Alignment & Efficient Fine-Tuning"
+        if any(
+            k in text_lower
+            for k in ("sovereign", "national ai", "regulation", "policy", "governance", "safety research", "alignment research")
+        ):
+            return "Policy: AI Governance, Safety Research & Sovereign AI Ecosystem"
+        if any(
+            k in text_lower
+            for k in ("robot", "robotics", "embodied", "manipulation", "locomotion", "drone", "humanoid")
+        ):
+            return "Domain: Physical AI & Embodied Robotics Systems"
         if category == Category.GITHUB_TRENDING:
             return "Tool: Trending Open-Source Developer Repository"
         if category == Category.AI_RESEARCH:
@@ -571,31 +612,48 @@ class HeuristicAnalyzer(BaseAnalyzer):
         text_lower = text.lower()
         if any(
             k in text_lower
-            for k in ("benchmark", "state-of-the-art", "sota", "outperform", "record")
+            for k in ("state-of-the-art", "sota", "outperform", "record", "surpass", "human-level", "beats")
         ):
-            return (
-                "Breakthrough: Outperforms baselines on complex reasoning benchmarks."
-            )
+            return "Breakthrough: Outperforms baselines on complex reasoning benchmarks."
         if any(
             k in text_lower
-            for k in (
-                "open weights",
-                "open-source",
-                "weights",
-                "hugging face",
-                "checkpoint",
-            )
+            for k in ("open weights", "open-weights", "weights released", "open-source",
+                      "hugging face", "checkpoint", "publicly available")
         ):
             return "Capability: Open weights checkpoint available for fine-tuning and inference."
         if any(
             k in text_lower
-            for k in ("efficiency", "throughput", "low latency", "quant", "memory")
+            for k in ("reasoning", "chain of thought", "cot", "test-time compute", "extended thinking",
+                      "inference-time", "o1", "o3", "r1", "long thinking")
         ):
-            return "Efficiency: Latency reduction and compute optimizations."
+            return "Architecture: Advanced reasoning with multi-step chain-of-thought capabilities."
+        if any(
+            k in text_lower
+            for k in ("efficiency", "throughput", "low latency", "quant", "memory",
+                      "faster", "speed", "optimized", "tokens/s")
+        ):
+            return "Efficiency: Significant latency reduction and compute optimizations."
+        if any(
+            k in text_lower
+            for k in ("multimodal", "vision", "audio", "video", "vlm", "text-to-image", "speech")
+        ):
+            return "Capability: Multimodal understanding across vision, audio, and text modalities."
+        if any(
+            k in text_lower
+            for k in ("agent", "autonomous", "tool use", "function calling", "workflow", "agentic")
+        ):
+            return "Capability: Autonomous agent execution with tool-calling and multi-step planning."
+        if any(
+            k in text_lower
+            for k in ("fine-tun", "lora", "qlora", "sft", "rlhf", "dpo", "grpo", "alignment")
+        ):
+            return "Training: Post-training alignment and efficient fine-tuning methodology."
         if category == Category.GITHUB_TRENDING:
-            return "Ecosystem: High adoption velocity across developer communities."
+            return "Ecosystem: High adoption velocity across developer communities worldwide."
         if category == Category.AI_RESEARCH:
-            return "Research: Theoretical framework with empirical validation."
+            return "Research: Theoretical framework with empirical validation on key benchmarks."
+        if category == Category.AI_MODELS:
+            return "Release: New foundation model weights available for production deployment."
         return ""
 
     def _generate_ai_quickstart(
@@ -626,26 +684,80 @@ class HeuristicAnalyzer(BaseAnalyzer):
             )
             _, ecosystems = self._calculate_blast_radius(full_text, entry.category)
 
-            # Compute adoption velocity (70 - 98)
-            velocity = 72
+            # Compute adoption velocity (45 - 98) — multi-signal scoring
+            velocity = 65  # strong base for all AI content
             text_lower = full_text.lower()
+
+            # Tier 1: Major frontier labs (+20)
             if any(
                 k in text_lower
                 for k in (
-                    "deepseek",
-                    "openai",
-                    "anthropic",
-                    "qwen",
-                    "meta",
-                    "mistral",
-                    "google",
-                    "vllm",
-                    "ollama",
+                    "deepseek", "openai", "anthropic", "google deepmind",
+                    "meta ai", "mistral ai", "xai", "grok", "cohere",
                 )
             ):
-                velocity += 16
-            if entry.category in (Category.GITHUB_TRENDING, Category.AI_MODELS):
+                velocity += 20
+
+            # Tier 2: Popular open-source infra (+12)
+            if any(
+                k in text_lower
+                for k in (
+                    "vllm", "ollama", "sglang", "llama.cpp", "tensorrt-llm",
+                    "hugging face", "huggingface", "unsloth", "axolotl", "mlx",
+                )
+            ):
+                velocity += 12
+
+            # Breakthrough / milestone signals (+15)
+            if any(
+                k in text_lower
+                for k in (
+                    "state-of-the-art", "sota", "outperform", "benchmark record",
+                    "surpass", "human-level", "beats gpt", "beats claude",
+                    "new record", "achieves",
+                )
+            ):
+                velocity += 15
+
+            # Reasoning / test-time compute signals (+12)
+            if any(
+                k in text_lower
+                for k in (
+                    "reasoning", "chain of thought", "cot", "test-time compute",
+                    "extended thinking", "inference-time scaling", "long thinking",
+                    "r1", "o1", "o3",
+                )
+            ):
+                velocity += 12
+
+            # Open weights / release signals (+10)
+            if any(
+                k in text_lower
+                for k in (
+                    "open weights", "open-weights", "weights released",
+                    "publicly available", "checkpoints", "now available",
+                )
+            ):
+                velocity += 10
+
+            # Multimodal / specialized capability signals (+8)
+            if any(
+                k in text_lower
+                for k in (
+                    "multimodal", "vision-language", "vlm", "text-to-image",
+                    "text-to-video", "speech recognition", "robotics", "embodied",
+                )
+            ):
                 velocity += 8
+
+            # Category boosts
+            if entry.category == Category.AI_MODELS:
+                velocity += 10
+            elif entry.category == Category.GITHUB_TRENDING:
+                velocity += 6
+            elif entry.category == Category.AI_RESEARCH:
+                velocity += 5
+
             velocity = min(98, max(45, velocity))
 
             # Impact rating (65 - 95)

@@ -372,58 +372,75 @@ class MonitorService:
                     if hasattr(entry.category, "value")
                     else str(entry.category)
                 )
+                # ── Landmark AI event detection ─────────────────────────────────────────
+                # Multi-signal detection: frontier labs, flagship models, reasoning
+                # architectures, inference infra milestones, and open-source releases.
+                landmark_any_lower = (
+                    # Frontier labs
+                    "deepseek", "anthropic", "openai", "google deepmind", "xai", "mistral ai",
+                    # Flagship model series
+                    "gpt-5", "gpt-4", "o1", "o3", "claude", "gemini", "gemma", "grok",
+                    "llama", "llama-3", "llama3", "qwen", "r1", "deepseek-r1", "deepseek-v3",
+                    "kimi", "moonshot", "internlm", "phi-", "falcon",
+                    # Inference infrastructure
+                    "vllm", "sglang", "llama.cpp", "ollama", "tensorrt-llm", "nvidia nim", "mlx",
+                    # Reasoning / test-time compute
+                    "reasoning", "reasoner", "chain-of-thought", "test-time compute",
+                    "inference-time scaling", "extended thinking", "long thinking",
+                    # Research milestones
+                    "breakthrough", "frontier", "sota", "state-of-the-art", "human-level",
+                    # AI hardware
+                    "nvidia h100", "nvidia h200", "gb200", "blackwell", "amd mi300",
+                    # Agentic frameworks
+                    "autogen", "crewai", "langgraph",
+                    # Open-source milestones
+                    "open weights", "weights released", "open-source release",
+                )
+                landmark_ai_model_signals = (
+                    "release", "weights", "checkpoint", "model", "moe", "mixture",
+                    "parameters", "billion", "trillion", "preview", "launch", "announce",
+                    "available", "access", "download",
+                )
+                landmark_github_signals = (
+                    "trending", "record", "milestone", "new release", "major release",
+                    "v1.0", "v2.0", "v3.0",
+                )
                 is_landmark = (
-                    analysis.threat_velocity >= 85
-                    or any(
-                        k in title_lower
-                        for k in (
-                            "deepseek",
-                            "r1",
-                            "frontier",
-                            "qwen",
-                            "llama",
-                            "breakthrough",
-                            "sota",
-                            "vllm",
-                            "sglang",
-                            "reasoning",
-                            "reasoner",
-                        )
-                    )
+                    analysis.threat_velocity >= 82
+                    or any(k in title_lower for k in landmark_any_lower)
                     or (
                         cat_val == "ai_models"
-                        and any(
-                            k in title_lower
-                            for k in (
-                                "release",
-                                "weights",
-                                "checkpoint",
-                                "model",
-                                "moe",
-                            )
-                        )
+                        and any(k in title_lower for k in landmark_ai_model_signals)
+                    )
+                    or (
+                        cat_val == "github_trending"
+                        and any(k in title_lower for k in landmark_github_signals)
                     )
                     or (
                         cat_val == "ai_research"
-                        and analysis.threat_velocity >= 75
+                        and analysis.threat_velocity >= 72
                     )
                 )
                 if is_landmark:
                     entry.metadata["is_important"] = True
-                    entry.metadata["importance_reason"] = (
-                        "Frontier Reasoning Architecture"
-                        if any(
-                            k in title_lower for k in ("reasoning", "deepseek", "r1")
-                        )
-                        else "Major Foundation Model Weights Release"
-                        if cat_val == "ai_models"
-                        else "Critical AI Developer Infrastructure"
-                        if any(
-                            k in title_lower
-                            for k in ("vllm", "sglang", "runtime", "engine")
-                        )
-                        else "High-Impact Seminal Breakthrough"
-                    )
+                    # Richer 7-category importance reason classification
+                    if any(k in title_lower for k in ("reasoning", "r1", "o1", "o3", "chain-of-thought", "test-time compute", "extended thinking")):
+                        importance_reason = "Frontier Reasoning Architecture & Test-Time Compute"
+                    elif any(k in title_lower for k in ("vllm", "sglang", "llama.cpp", "tensorrt", "nim", "serving", "runtime", "engine", "inference")):
+                        importance_reason = "Critical AI Inference Infrastructure Milestone"
+                    elif any(k in title_lower for k in ("open weights", "weights released", "open-source release", "checkpoint")):
+                        importance_reason = "Major Open-Source Model Weights Release"
+                    elif cat_val == "ai_models":
+                        importance_reason = "Frontier Foundation Model Launch"
+                    elif cat_val == "ai_research":
+                        importance_reason = "High-Impact Academic Research Breakthrough"
+                    elif cat_val == "github_trending":
+                        importance_reason = "Rapidly Trending AI Developer Repository"
+                    elif any(k in title_lower for k in ("hardware", "chip", "silicon", "gpu", "npu", "blackwell", "mi300")):
+                        importance_reason = "AI Hardware & Accelerator Milestone"
+                    else:
+                        importance_reason = "High-Impact AI Ecosystem Development"
+                    entry.metadata["importance_reason"] = importance_reason
 
                 prepared_items.append(
                     (entry, analysis, is_landmark, cat_val, is_ai_innovation)
@@ -986,18 +1003,21 @@ class MonitorService:
 
                 for name, data in sorted(
                     f_stats.items(), key=lambda x: x[1]["count"], reverse=True
-                )[:5]:
+                )[:8]:
                     cnt = int(data["count"])
                     avg_b = round(data["total_blast"] / cnt, 1) if cnt > 0 else 0.0
-                    risk_label = (
-                        "HIGH RISK"
-                        if avg_b >= 75
-                        else (
-                            "ELEVATED"
-                            if avg_b >= 60
-                            else ("MODERATE" if avg_b >= 35 else "MONITORED")
+                    if avg_b == 0.0:
+                        risk_label = "HIGH ADOPTION" if cnt >= 5 else "ACTIVE"
+                    else:
+                        risk_label = (
+                            "HIGH RISK"
+                            if avg_b >= 75
+                            else (
+                                "ELEVATED"
+                                if avg_b >= 60
+                                else ("MODERATE" if avg_b >= 35 else "MONITORED")
+                            )
                         )
-                    )
                     framework_exposure.append(
                         {
                             "name": name,

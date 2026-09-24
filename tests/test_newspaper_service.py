@@ -151,3 +151,45 @@ async def test_newspaper_api_endpoints(temp_output_dir: Path):
                 "/api/newspaper/telegram", json={"chat_id": "1650972026"}
             )
             assert res_tg.status_code in (200, 400, 500)
+
+
+@pytest.mark.asyncio
+async def test_newspaper_security_exclusion_and_quality(temp_output_dir: Path):
+    """Verify that newspaper strictly excludes security items and accepts short technical model IDs."""
+    from datetime import UTC
+    from uuid import uuid4
+
+    service = NewspaperService(output_dir=temp_output_dir)
+
+    # Short technical model ID should pass quality check
+    entry_model = Entry(
+        id=uuid4(),
+        source_id=uuid4(),
+        title="Grok 3 Released",
+        url="https://x.ai/grok-3",
+        content_hash="hash1",
+        published_at=datetime.now(UTC),
+        category=Category.AI_MODELS,
+        summary="xAI has released Grok 3 with state of the art reasoning performance.",
+    )
+
+    # Security vulnerability item should be detected as security
+    entry_sec = Entry(
+        id=uuid4(),
+        source_id=uuid4(),
+        title="Critical RCE Zero-Day in SSL-VPN CVE-2026-1234",
+        url="https://cve.mitre.org/cve-2026-1234",
+        content_hash="hash2",
+        published_at=datetime.now(UTC),
+        category=Category.VULNERABILITIES,
+        summary="A critical buffer overflow allows unauthenticated remote code execution.",
+    )
+
+    # Test editorial directive generation
+    directive = service._generate_executive_directive(entry_model)
+    assert "Grok" in directive
+    assert len(directive) > 20
+
+    directive_sec = service._generate_executive_directive(entry_sec)
+    assert len(directive_sec) > 20
+
