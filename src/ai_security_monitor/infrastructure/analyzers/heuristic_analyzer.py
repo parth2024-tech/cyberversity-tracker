@@ -122,6 +122,11 @@ class HeuristicAnalyzer(BaseAnalyzer):
         "Weaviate": [r"\bweaviate\b"],
         "LiteLLM": [r"\blitellm\b"],
         "ComfyUI": [r"\bcomfyui\b"],
+        "BitNet 1-Bit LLM": [r"\bbitnet\b", r"\b1-bit\b", r"\bternary\b", r"\bbitnet-b1\.58\b"],
+        "Model Context Protocol": [r"\bmcp\b", r"\bmodel context protocol\b", r"\bmodelcontextprotocol\b"],
+        "Autonomous Coding Agents": [r"\bclaude code\b", r"\bdevin\b", r"\bswe-agent\b", r"\baider\b", r"\bcursor\b"],
+        "Video & World Models": [r"\bwan\s*2\.1\b", r"\bwan-2\.1\b", r"\bhunyuanvideo\b", r"\bhunyuan\b", r"\bsora\b", r"\bworld model\b"],
+        "Compact Frontier Models": [r"\bminicpm\b", r"\bsmollm\b", r"\bk1\.5\b"],
     }
 
     ATTACK_ARCHETYPE_PATTERNS = {

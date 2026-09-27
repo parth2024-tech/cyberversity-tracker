@@ -134,3 +134,23 @@ async def test_heuristic_analyzer_ecosystem_detection(sample_entry):
     assert "SGLang" in ecos
     assert "Apple MLX" in ecos
 
+
+@pytest.mark.asyncio
+async def test_heuristic_analyzer_modern_ecosystem_patterns(sample_entry):
+    from ai_security_monitor.domain.entities import Category
+
+    analyzer = HeuristicAnalyzer()
+    sample_entry.category = Category.AI_MODELS
+    sample_entry.title = "BitNet 1-Bit LLM with Model Context Protocol (MCP) and Wan 2.1 Video Support"
+    sample_entry.summary = "Aider and Claude Code integration for 1-bit quantized inference alongside MiniCPM edge models."
+    sample_entry.metadata = {}
+
+    res = await analyzer.analyze(sample_entry)
+    ecos = set(res.affected_ecosystem or [])
+    assert "BitNet 1-Bit LLM" in ecos
+    assert "Model Context Protocol" in ecos
+    assert "Video & World Models" in ecos
+    assert "Autonomous Coding Agents" in ecos
+    assert "Compact Frontier Models" in ecos
+
+

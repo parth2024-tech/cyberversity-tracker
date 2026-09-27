@@ -588,6 +588,12 @@ footer{
       <button class="action-btn primary" onclick="toggleRadioSpeech()" id="radioBtn">
         📻 <span>Listen to Wire Radio</span>
       </button>
+      <button class="action-btn" onclick="triggerCompileGazette()" id="compileBtn" title="Compile and publish fresh 5-hour newspaper edition">
+        📰 <span>Compile Edition</span>
+      </button>
+      <button class="action-btn" onclick="openEmailPdfModal()" id="emailBtn" title="Email 10-page broadsheet PDF to recipient">
+        ✉️ <span>Email PDF</span>
+      </button>
       <button class="action-btn" onclick="window.print()">
         🖨️ <span>Print Broadsheet</span>
       </button>
@@ -750,6 +756,30 @@ footer{
       <a href="#" target="_blank" id="modalSourceLink" class="action-btn primary">Open Original Wire ↗</a>
       <button class="action-btn" style="background:#701a1a;color:#fff;border-color:#501010;" onclick="deleteCurrentModalEntry()">🗑️ Delete Dispatch</button>
       <button class="action-btn" onclick="closeDispatchModal()">Close Dispatch</button>
+    </div>
+  </div>
+</div>
+
+<!-- Email Broadsheet PDF Modal -->
+<div class="modal-overlay" id="emailModal" onclick="closeModalOnBackdrop(event)">
+  <div class="modal-card" style="max-width:520px;">
+    <button class="modal-close" onclick="closeEmailPdfModal()">&times;</button>
+    <div class="modal-header">
+      <span class="kicker">DISPATCH WIRE</span>
+      <h3 style="font-size:24px;">Email Broadsheet PDF</h3>
+      <div class="modal-meta">Direct dispatch of 10-Page formatted intelligence edition</div>
+    </div>
+    <div class="modal-body" style="font-size:13px;line-height:1.5;">
+      <p style="margin-bottom:12px;">Enter recipient email address to send the current 5-hour Global AI Gazette PDF dossier:</p>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:11px;font-weight:bold;text-transform:uppercase;margin-bottom:4px;color:var(--ink-light);">Recipient Email Address:</label>
+        <input type="email" id="emailRecipient" placeholder="analyst@domain.com" style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:'Georgia',serif;font-size:14px;border:1px solid var(--rule);background:var(--paper-dark);color:var(--ink);">
+      </div>
+      <div id="emailStatusBox" style="display:none;padding:10px;margin-bottom:12px;font-size:12px;border:1px solid #c4b899;background:var(--paper-dark);"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="action-btn primary" id="sendEmailBtn" onclick="submitEmailPdf()">✉️ Send PDF Dossier</button>
+      <button class="action-btn" onclick="closeEmailPdfModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -1021,6 +1051,8 @@ function closeDispatchModal() {
 function closeModalOnBackdrop(e) {
   if (e.target.id === 'dispatchModal') {
     closeDispatchModal();
+  } else if (e.target.id === 'emailModal') {
+    closeEmailPdfModal();
   }
 }
 
@@ -1135,10 +1167,120 @@ async function deleteCurrentModalEntry() {
   closeDispatchModal();
 }
 
+async function triggerCompileGazette() {
+  const btn = document.getElementById('compileBtn');
+  if (btn) {
+    btn.innerHTML = '⏳ <span>Compiling...</span>';
+    btn.disabled = true;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/newspaper/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ window_hours: 5 })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`📰 ${data.message || 'Fresh 5-Hour Gazette edition compiled and published!'}`);
+      await loadFeed(true);
+    } else {
+      alert(`Compilation failed: ${data.detail || 'Server error'}`);
+    }
+  } catch (err) {
+    alert(`Error compiling broadsheet edition: ${err.message}`);
+  } finally {
+    if (btn) {
+      btn.innerHTML = '📰 <span>Compile Edition</span>';
+      btn.disabled = false;
+    }
+  }
+}
+
+function openEmailPdfModal() {
+  const modal = document.getElementById('emailModal');
+  const statusBox = document.getElementById('emailStatusBox');
+  if (statusBox) statusBox.style.display = 'none';
+  if (modal) modal.classList.add('active');
+}
+
+function closeEmailPdfModal() {
+  const modal = document.getElementById('emailModal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function submitEmailPdf(force = false) {
+  const input = document.getElementById('emailRecipient');
+  const statusBox = document.getElementById('emailStatusBox');
+  const btn = document.getElementById('sendEmailBtn');
+  const email = input ? input.value.trim() : '';
+
+  if (!email || !email.includes('@')) {
+    alert('Please enter a valid recipient email address.');
+    return;
+  }
+
+  if (btn) {
+    btn.innerHTML = '⏳ <span>Dispatching...</span>';
+    btn.disabled = true;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/newspaper/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to_email: email, force: Boolean(force) })
+    });
+    const data = await res.json();
+    if (data.status === 'skipped') {
+      if (statusBox) {
+        statusBox.style.display = 'block';
+        statusBox.style.color = '#b45309';
+        statusBox.style.borderColor = '#f59e0b';
+        statusBox.textContent = data.message;
+      }
+      if (!force && confirm(`${data.message}\n\nForce dispatch the email anyway?`)) {
+        return submitEmailPdf(true);
+      }
+    } else if (res.ok) {
+      if (statusBox) {
+        statusBox.style.display = 'block';
+        statusBox.style.color = '#15803d';
+        statusBox.style.borderColor = '#22c55e';
+        statusBox.textContent = data.message || `PDF edition emailed successfully to ${email}!`;
+      }
+      alert(`📰 The Global AI Gazette PDF sent to ${email}!`);
+      setTimeout(closeEmailPdfModal, 1200);
+    } else {
+      if (statusBox) {
+        statusBox.style.display = 'block';
+        statusBox.style.color = '#b91c1c';
+        statusBox.style.borderColor = '#ef4444';
+        statusBox.textContent = data.detail || 'Email delivery failed. Please check SMTP settings.';
+      }
+    }
+  } catch (err) {
+    if (statusBox) {
+      statusBox.style.display = 'block';
+      statusBox.style.color = '#b91c1c';
+      statusBox.style.borderColor = '#ef4444';
+      statusBox.textContent = 'Network error: ' + err.message;
+    }
+  } finally {
+    if (btn) {
+      btn.innerHTML = '✉️ <span>Send PDF Dossier</span>';
+      btn.disabled = false;
+    }
+  }
+}
+
 function connectWS() {
   try {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const ws = new WebSocket(`${proto}://${location.host}/ws`);
+    ws.onopen = () => {
+      const statusEl = document.getElementById('connStatus');
+      if (statusEl) statusEl.textContent = 'LIVE TELEGRAPH';
+    };
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
@@ -1158,7 +1300,15 @@ function connectWS() {
         // Ignore malformed frames rather than refetching the entire broadsheet
       }
     };
-    ws.onclose = () => setTimeout(connectWS, 6000);
+    ws.onclose = () => {
+      const statusEl = document.getElementById('connStatus');
+      if (statusEl) statusEl.textContent = 'WIRE OFFLINE';
+      setTimeout(connectWS, 6000);
+    };
+    ws.onerror = () => {
+      const statusEl = document.getElementById('connStatus');
+      if (statusEl) statusEl.textContent = 'WIRE RECONNECTING';
+    };
   } catch (e) {}
 }
 

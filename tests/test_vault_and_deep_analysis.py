@@ -382,3 +382,63 @@ async def test_purge_stale_entries_by_category(test_uow):
         assert purge_data["categories"] == ["ai_models"]
 
 
+def test_deep_analysis_service_bitnet_quantization():
+    service = DeepAnalysisService()
+    entry = Entry(
+        id=uuid4(),
+        source_id="src-bitnet",
+        published_at=datetime.utcnow(),
+        title="BitNet b1.58: Native 1-Bit Ternary Large Language Model Architecture",
+        url="https://github.com/microsoft/BitNet",
+        content_hash="hash-bitnet-1",
+        summary="Extreme 1-bit quantization replacing matrix multiplication with addition-only arithmetic.",
+        category=Category.AI_MODELS,
+    )
+
+    dossier = service.generate_dossier(entry)
+    assert "1-Bit" in dossier["importance_reason"]
+    assert "Multiplication-Free Matrix Arithmetic" in dossier["architectural_deep_dive"]
+    assert any("Energy Per Token" in b["benchmark"] for b in dossier["benchmarks"])
+    assert any("bitnet.cpp" in c for c in dossier["actionable_checklist"])
+
+
+def test_deep_analysis_service_test_time_compute_reasoning():
+    service = DeepAnalysisService()
+    entry = Entry(
+        id=uuid4(),
+        source_id="src-reasoning",
+        published_at=datetime.utcnow(),
+        title="OpenAI o3 & DeepSeek-R1: Dynamic Test-Time Compute and Process Reward Engine",
+        url="https://github.com/openai/reasoning-engine",
+        content_hash="hash-reasoning-1",
+        summary="A study on step-level verification, PRM scoring, and test-time budget allocation.",
+        category=Category.AI_MODELS,
+    )
+
+    dossier = service.generate_dossier(entry)
+    assert "Test-Time Compute" in dossier["importance_reason"]
+    assert "Dynamic Thought Budget Allocation" in dossier["architectural_deep_dive"]
+    assert any("thought token budget" in c for c in dossier["actionable_checklist"])
+
+
+def test_deep_analysis_service_world_video_model():
+    service = DeepAnalysisService()
+    entry = Entry(
+        id=uuid4(),
+        source_id="src-wan",
+        published_at=datetime.utcnow(),
+        title="Wan 2.1: Open-Source Diffusion Transformer Video Generation and Physical World Simulation",
+        url="https://github.com/Wan-Video/Wan2.1",
+        content_hash="hash-wan-1",
+        summary="SOTA DiT video generation model delivering physical world simulation and temporal coherence.",
+        category=Category.AI_MODELS,
+    )
+
+    dossier = service.generate_dossier(entry)
+    assert "World Simulator" in dossier["importance_reason"]
+    assert "Diffusion Transformer (DiT)" in dossier["architectural_deep_dive"]
+    assert any("VBench" in b["benchmark"] for b in dossier["benchmarks"])
+    assert any("3D VAE" in c for c in dossier["actionable_checklist"])
+
+
+
