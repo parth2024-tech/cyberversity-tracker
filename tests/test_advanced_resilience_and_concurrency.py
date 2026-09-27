@@ -20,7 +20,11 @@ from ai_security_monitor.domain.entities import (
 )
 from ai_security_monitor.infrastructure.analyzers.llm_analyzer import LLMAnalyzer
 from ai_security_monitor.infrastructure.database.connection import DatabaseManager
-from ai_security_monitor.infrastructure.database.models import EntryModel, SourceModel
+from ai_security_monitor.infrastructure.database.models import (
+    Base,
+    EntryModel,
+    SourceModel,
+)
 
 
 @pytest.mark.asyncio
@@ -135,10 +139,12 @@ async def test_llm_analyzer_fallback_and_timeouts():
 
 
 @pytest.mark.asyncio
-async def test_database_sqlite_concurrency_and_wal_robustness(test_db_engine):
-    """Test database manager under high-concurrency multi-source polling simulation using test_db_engine."""
-    manager = DatabaseManager()
-    manager._engine = test_db_engine
+async def test_database_sqlite_concurrency_and_wal_robustness(tmp_path):
+    """Test database manager under high-concurrency multi-source polling simulation with WAL mode."""
+    db_file = tmp_path / "concurrent_wal.db"
+    manager = DatabaseManager(url=f"sqlite+aiosqlite:///{db_file}")
+    async with manager.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     # Create a source model directly using SQLAlchemy session / model to satisfy table mapping
     async with manager.session() as session:
@@ -180,3 +186,4 @@ async def test_database_sqlite_concurrency_and_wal_robustness(test_db_engine):
         )
         count = result.scalar()
         assert count == 20
+    await manager.engine.dispose()

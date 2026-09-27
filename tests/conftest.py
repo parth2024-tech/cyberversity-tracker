@@ -10,6 +10,7 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 from ai_security_monitor.domain.entities import (
     Category,
@@ -24,7 +25,12 @@ from ai_security_monitor.infrastructure.database.unit_of_work import UnitOfWork
 @pytest_asyncio.fixture
 async def test_db_engine():
     """Create in-memory SQLite engine for fast testing."""
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
