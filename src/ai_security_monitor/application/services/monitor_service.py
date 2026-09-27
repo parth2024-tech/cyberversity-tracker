@@ -734,6 +734,22 @@ class MonitorService:
         response_cache.invalidate("stats_totals")
         response_cache.invalidate("sweep_status")
 
+        # Broadcast sweep completion and telemetry refresh to all live UI clients
+        self._broadcast(
+            {
+                "type": "sweep_completed",
+                "data": {
+                    "total_sources": len(sources),
+                    "success": success,
+                    "error": error,
+                    "total_new": total_new,
+                },
+            }
+        )
+        if total_new > 0:
+            self._broadcast({"type": "feed_updated", "data": {"count": total_new}})
+            self._broadcast({"type": "stats_updated", "data": {}})
+
         return {
             "total_sources": len(sources),
             "success": success,
@@ -746,12 +762,14 @@ class MonitorService:
         older_than_days: int | None = None,
         hard_delete: bool = False,
         include_vaulted: bool = False,
+        categories: list[str] | None = None,
     ) -> dict:
         """Remove entries, logs, and digests older than retention window (defaults to settings.database.retention_days = 7).
 
         - older_than_days: 0 means purge all active entries up to now.
         - hard_delete: If True, permanently removes matching records from SQLite disk.
         - include_vaulted: If True, overrides vault protection and purges all matching entries.
+        - categories: If provided, targets only entries matching the specified categories.
 
         Returns a summary dict with the count of purged items.
         """
@@ -765,6 +783,7 @@ class MonitorService:
                 older_than_days=days,
                 hard_delete=hard_delete,
                 include_vaulted=include_vaulted,
+                categories=categories,
             )
             # Hard-delete previously soft-purged records ONLY when the user explicitly
             # requests it via hard_delete=True. Never silently wipe records automatically.
@@ -789,9 +808,10 @@ class MonitorService:
         self._broadcast(
             {"type": "feed_updated", "data": {"purged": purged, "hard_delete": hard_delete}}
         )
+        self._broadcast({"type": "stats_updated", "data": {}})
 
         logger.info(
-            f"Data hygiene purge complete: removed {purged} entries (hard_delete={hard_delete}, include_vaulted={include_vaulted}), "
+            f"Data hygiene purge complete: removed {purged} entries (hard_delete={hard_delete}, include_vaulted={include_vaulted}, categories={categories}), "
             f"{purged_logs} logs, {purged_digests} digests older than {days} days"
         )
         return {
@@ -803,6 +823,7 @@ class MonitorService:
             "older_than_days": days,
             "hard_delete": hard_delete,
             "include_vaulted": include_vaulted,
+            "categories": categories,
         }
 
     async def restore_purged_entries(self) -> dict:
@@ -818,22 +839,81 @@ class MonitorService:
         self._broadcast(
             {"type": "feed_updated", "data": {"restored": restored}}
         )
+        self._broadcast({"type": "stats_updated", "data": {}})
 
         logger.info(
             f"Manual restoration complete: restored {restored} previously soft-purged entries."
         )
         return {"restored": restored, "success": True}
 
+    async def delete_entry(
+        self, entry_id: UUID, hard_delete: bool = True
+    ) -> bool:
+        """Explicit manual deletion of a single intelligence entry."""
+        async with self._uow_factory() as uow:
+            deleted = await uow.entries.delete(entry_id, hard_delete=hard_delete)
+            await uow.commit()
+
+        if deleted:
+            from ai_security_monitor.infrastructure.cache import response_cache
+
+            response_cache.clear()
+            self._broadcast(
+                {
+                    "type": "feed_updated",
+                    "data": {"deleted_id": str(entry_id), "hard_delete": hard_delete},
+                }
+            )
+            self._broadcast({"type": "stats_updated", "data": {}})
+            logger.info(
+                f"Explicit manual deletion: entry {entry_id} removed (hard_delete={hard_delete})"
+            )
+        return deleted
+
+    async def delete_entries_batch(
+        self, entry_ids: list[UUID], hard_delete: bool = True
+    ) -> int:
+        """Explicit manual bulk deletion of selected intelligence entries."""
+        if not entry_ids:
+            return 0
+        async with self._uow_factory() as uow:
+            count = await uow.entries.delete_entries_by_ids(
+                entry_ids, hard_delete=hard_delete
+            )
+            await uow.commit()
+
+        if count > 0:
+            from ai_security_monitor.infrastructure.cache import response_cache
+
+            response_cache.clear()
+            self._broadcast(
+                {
+                    "type": "feed_updated",
+                    "data": {
+                        "deleted_ids": [str(eid) for eid in entry_ids],
+                        "deleted_count": count,
+                        "hard_delete": hard_delete,
+                    },
+                }
+            )
+            self._broadcast({"type": "stats_updated", "data": {}})
+            logger.info(
+                f"Explicit manual selection cleanup: {count} entries deleted (hard_delete={hard_delete})"
+            )
+        return count
+
     async def get_retention_status(
         self,
         older_than_days: int = 7,
         include_vaulted: bool = False,
+        categories: list[str] | None = None,
     ) -> dict:
         """Retrieve retention policy and entry counts for manual cleanup planning."""
         async with self._uow_factory() as uow:
             counts = await uow.entries.get_retention_counts(
                 older_than_days=older_than_days,
                 include_vaulted=include_vaulted,
+                categories=categories,
             )
 
         counts["auto_purge_enabled"] = getattr(

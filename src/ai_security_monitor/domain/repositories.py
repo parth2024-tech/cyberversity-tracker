@@ -95,9 +95,15 @@ class EntryRepository(ABC):
         ...
 
     @abstractmethod
-    async def delete(self, entry_id: UUID) -> bool:
+    async def delete(self, entry_id: UUID, hard_delete: bool = True) -> bool:
         """Delete entry by ID. Returns True if deleted."""
         ...
+
+    async def delete_entries_by_ids(
+        self, entry_ids: list[UUID], hard_delete: bool = True
+    ) -> int:
+        """Delete multiple entries by IDs. Returns count of deleted entries."""
+        return 0
 
     @abstractmethod
     async def get_unanalyzed(
@@ -139,6 +145,7 @@ class EntryRepository(ABC):
         older_than_days: int = 7,
         hard_delete: bool = False,
         include_vaulted: bool = False,
+        categories: list[str] | None = None,
     ) -> int:
         """Purge entries older than retention window. Returns count of purged rows."""
         ...
@@ -158,6 +165,7 @@ class EntryRepository(ABC):
         self,
         older_than_days: int = 7,
         include_vaulted: bool = False,
+        categories: list[str] | None = None,
     ) -> dict[str, int]:
         """Get counts of active, purged, candidate, and vaulted entries."""
         ...

@@ -206,7 +206,7 @@ function handleWebSocketMessage(msg) {
     if (typeof handleTriageCompleted === 'function') handleTriageCompleted(msg.data);
   } else if (msg.type === 'triage_batch_pushed') {
     if (typeof handleTriageBatchPushed === 'function') handleTriageBatchPushed(msg.data);
-  } else if (msg.type === 'feed_updated' || msg.type === 'stats_updated') {
+  } else if (msg.type === 'feed_updated' || msg.type === 'stats_updated' || msg.type === 'sweep_completed') {
     if (window.DataSyncEngine) {
       window.DataSyncEngine.forceRefresh('all');
     } else {

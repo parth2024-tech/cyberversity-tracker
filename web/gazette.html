@@ -839,8 +839,8 @@ function renderCurrentView() {
       const region = (e.region || '').toLowerCase();
       const country = (e.country || '').toUpperCase();
       const sovereignCountries = ['CN', 'HK', 'IN', 'IL', 'JP', 'KR', 'TW', 'AE', 'SG', 'DE', 'FR', 'NL', 'FI', 'SE', 'CH', 'CA', 'AU', 'GB', 'EU'];
-      const sovereignRegions = ['china', 'south_asia', 'middle_east', 'nordic', 'apac', 'europe'];
-      if (!sovereignCountries.includes(country) && !sovereignRegions.includes(region) && !title.includes('cert') && !title.includes('sovereign') && !title.includes('deepseek') && !title.includes('china')) return false;
+      const sovereignTerms = ['sovereign', 'national', 'falcon', 'mistral', 'qwen', 'kyutai', 'deepseek', 'china'];
+      if (!sovereignCountries.includes(country) && !sovereignRegions.includes(region) && !sovereignTerms.some(term => title.includes(term))) return false;
     }
 
     // Search query match
@@ -910,9 +910,8 @@ function renderCurrentView() {
   _setCount('countAi', allEntries.filter(e => ['ai_models', 'ai_tech'].includes(e.category) || (e.title||'').toLowerCase().includes('model')).length);
   _setCount('countCrit', allEntries.filter(e => (e.severity ?? e.analysis?.severity_index ?? 0) >= 80).length);
   _setCount('countPoc', allEntries.filter(e => ((e.category||'') + (e.title||'')).toLowerCase().includes('exploit') || (e.title||'').toLowerCase().includes('poc')).length);
-  const _sovCountries = ['CN', 'HK', 'IN', 'IL', 'JP', 'KR', 'TW', 'AE', 'SG', 'DE', 'FR', 'NL', 'FI', 'SE', 'CH', 'CA', 'AU', 'GB', 'EU'];
-  const _sovRegions = ['china', 'south_asia', 'middle_east', 'nordic', 'apac', 'europe'];
-  _setCount('countChina', allEntries.filter(e => _sovCountries.includes((e.country||'').toUpperCase()) || _sovRegions.includes((e.region||'').toLowerCase()) || (e.title||'').toLowerCase().includes('cert') || (e.title||'').toLowerCase().includes('deepseek')).length);
+  const _sovTerms = ['sovereign', 'national', 'falcon', 'mistral', 'qwen', 'kyutai', 'deepseek'];
+  _setCount('countChina', allEntries.filter(e => _sovCountries.includes((e.country||'').toUpperCase()) || _sovRegions.includes((e.region||'').toLowerCase()) || _sovTerms.some(term => (e.title||'').toLowerCase().includes(term))).length);
 
   // Update Statistics Box
   document.getElementById('statEntries').textContent = allEntries.length;

@@ -775,3 +775,74 @@ async def get_entry_deep_analysis(entry_id: str):
 
     dossier = deep_analysis_service.generate_dossier(entry)
     return JSONResponse(content=dossier)
+
+
+class BatchDeleteRequest(BaseModel):
+    entry_ids: list[str]
+    hard_delete: bool = True
+
+
+@entries_router.delete("/{entry_id}")
+async def delete_single_entry(
+    entry_id: str,
+    hard_delete: bool = Query(
+        default=True,
+        description="Permanently delete from database (True) or soft-purge (False)",
+    ),
+):
+    """Explicitly delete a single intelligence entry upon user command."""
+    from uuid import UUID
+
+    from ai_security_monitor.application.services.monitor_service import MonitorService
+
+    try:
+        uid = UUID(entry_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid entry UUID")
+
+    service = MonitorService(lambda: SqlAlchemyUnitOfWork())
+    deleted = await service.delete_entry(uid, hard_delete=hard_delete)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Entry not found or already deleted")
+
+    return {
+        "success": True,
+        "deleted_id": entry_id,
+        "hard_delete": hard_delete,
+        "message": "Entry successfully deleted",
+    }
+
+
+@entries_router.post("/batch-delete")
+async def batch_delete_entries(
+    payload: BatchDeleteRequest,
+):
+    """Explicitly delete selected intelligence entries upon user command."""
+    from uuid import UUID
+
+    from ai_security_monitor.application.services.monitor_service import MonitorService
+
+    valid_uids: list[UUID] = []
+    for eid_str in payload.entry_ids:
+        try:
+            valid_uids.append(UUID(eid_str))
+        except ValueError:
+            continue
+
+    if not valid_uids:
+        raise HTTPException(
+            status_code=400, detail="No valid entry UUIDs provided for deletion"
+        )
+
+    service = MonitorService(lambda: SqlAlchemyUnitOfWork())
+    count = await service.delete_entries_batch(
+        valid_uids, hard_delete=payload.hard_delete
+    )
+    return {
+        "success": True,
+        "deleted_count": count,
+        "entry_ids": [str(u) for u in valid_uids],
+        "hard_delete": payload.hard_delete,
+        "message": f"Successfully deleted {count} selected entries",
+    }
+

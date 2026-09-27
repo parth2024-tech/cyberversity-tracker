@@ -90,6 +90,86 @@ def test_deep_analysis_service_arxiv_paper():
     assert any("Methodology" in c for c in dossier["actionable_checklist"])
 
 
+def test_deep_analysis_service_silicon_hardware():
+    entry = Entry(
+        id=uuid4(),
+        source_id="src-hw",
+        published_at=datetime.utcnow(),
+        title="NVIDIA Blackwell B200 NVLink 5 Architecture and FP4 Tensor Core System",
+        url="https://nvidia.com/blackwell",
+        content_hash="hash-hw-1",
+        summary="Next-generation silicon delivering 20 petaflops of FP4 inference throughput with 8TB/s memory bandwidth.",
+        category=Category.CYBER_TOOLS,
+    )
+
+    dossier = deep_analysis_service.generate_dossier(entry)
+    assert "accelerator hardware" in dossier["executive_summary"].lower() or "silicon" in dossier["executive_summary"].lower()
+    assert "Low-Precision Tensor Compute" in dossier["architectural_deep_dive"]
+    assert "Interconnect & Memory Bandwidth" in dossier["architectural_deep_dive"]
+    assert any("Memory Bandwidth" in b["benchmark"] for b in dossier["benchmarks"])
+    assert any("interconnect" in c.lower() for c in dossier["actionable_checklist"])
+    assert "Hardware Accelerator" in dossier["importance_reason"]
+
+
+def test_deep_analysis_service_multi_agent_system():
+    entry = Entry(
+        id=uuid4(),
+        source_id="src-agent",
+        published_at=datetime.utcnow(),
+        title="LangGraph and CrewAI Multi-Agent Swarm Orchestration with MCP Server Support",
+        url="https://github.com/langchain-ai/langgraph",
+        content_hash="hash-agent-1",
+        summary="Stateful multi-agent execution framework with persistent checkpoints and Model Context Protocol tooling.",
+        category=Category.GITHUB_TRENDING,
+    )
+
+    dossier = deep_analysis_service.generate_dossier(entry)
+    assert "agentic execution" in dossier["executive_summary"].lower()
+    assert "Stateful Graph Execution" in dossier["architectural_deep_dive"]
+    assert "Strict Tool-Calling Contracts" in dossier["architectural_deep_dive"]
+    assert any("GAIA" in b["benchmark"] or "ToolBench" in b["benchmark"] for b in dossier["benchmarks"])
+    assert any("mcp" in c.lower() or "schema" in c.lower() for c in dossier["actionable_checklist"])
+    assert "Autonomous Multi-Agent" in dossier["importance_reason"]
+
+
+def test_deep_analysis_service_embodied_robotics():
+    entry = Entry(
+        id=uuid4(),
+        source_id="src-robot",
+        published_at=datetime.utcnow(),
+        title="Humanoid Locomotion and Manipulation via Vision-Language-Action Policy Rollouts",
+        url="https://arxiv.org/abs/2603.09999",
+        content_hash="hash-robot-1",
+        summary="An embodied robotics policy capable of continuous real-time 30Hz closed-loop physical interaction.",
+        category=Category.AI_RESEARCH,
+    )
+
+    dossier = deep_analysis_service.generate_dossier(entry)
+    assert "physical artificial intelligence" in dossier["executive_summary"].lower() or "robotic" in dossier["executive_summary"].lower()
+    assert "Vision-Language-Action" in dossier["architectural_deep_dive"]
+    assert "Real-Time Latency Envelopes" in dossier["architectural_deep_dive"]
+    assert "Physical AI" in dossier["importance_reason"]
+
+
+def test_deep_analysis_service_sovereign_ai():
+    entry = Entry(
+        id=uuid4(),
+        source_id="src-sov",
+        published_at=datetime.utcnow(),
+        title="National Sovereign AI Strategy: Domestic Cluster Expansion and Governance Framework",
+        url="https://sovereign.ai/national-strategy",
+        content_hash="hash-sov-1",
+        summary="National deployment of sovereign compute infrastructure ensuring strict data residency compliance.",
+        category=Category.AI_TECH,
+    )
+
+    dossier = deep_analysis_service.generate_dossier(entry)
+    assert "sovereign" in dossier["executive_summary"].lower()
+    assert "Independent Foundation Compute" in dossier["architectural_deep_dive"]
+    assert "Cultural & Linguistic Alignment" in dossier["architectural_deep_dive"]
+    assert "Global Sovereign AI" in dossier["importance_reason"]
+
+
 @pytest.mark.asyncio
 async def test_repository_permanent_vault_exemption_from_purge(test_uow):
     uow = test_uow
@@ -241,3 +321,64 @@ async def test_api_vault_and_deep_analysis_endpoints():
         vault_data = vault_res.json()
         assert "entries" in vault_data
         assert any(e["id"] == target_id for e in vault_data["entries"])
+
+
+@pytest.mark.asyncio
+async def test_manual_entry_deletion_and_batch_cleanup(test_uow):
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        res = await client.get("/api/entries?limit=10")
+        assert res.status_code == 200
+        entries = res.json()["entries"]
+        assert len(entries) >= 2
+
+        entry1_id = entries[0]["id"]
+        entry2_id = entries[1]["id"]
+
+        # Test single manual delete
+        del_single = await client.delete(f"/api/entries/{entry1_id}")
+        assert del_single.status_code == 200
+        del_data = del_single.json()
+        assert del_data["success"] is True
+        assert del_data["deleted_id"] == entry1_id
+
+        # Verify entry1 is gone
+        get_res = await client.get(f"/api/entries/{entry1_id}")
+        assert get_res.status_code == 404
+
+        # Test batch delete
+        batch_del = await client.post(
+            "/api/entries/batch-delete",
+            json={"entry_ids": [entry2_id], "hard_delete": True},
+        )
+        assert batch_del.status_code == 200
+        batch_data = batch_del.json()
+        assert batch_data["success"] is True
+        assert batch_data["deleted_count"] == 1
+
+        # Verify entry2 is gone
+        get_res2 = await client.get(f"/api/entries/{entry2_id}")
+        assert get_res2.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_purge_stale_entries_by_category(test_uow):
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Check retention count for specific category
+        ret_res = await client.get("/api/stats/retention?days=0&categories=ai_models")
+        assert ret_res.status_code == 200
+        ret_data = ret_res.json()
+        assert "candidates_count" in ret_data
+
+        # Purge only specific category
+        purge_res = await client.post(
+            "/api/stats/purge?days=0&hard_delete=true&include_vaulted=true&categories=ai_models"
+        )
+        assert purge_res.status_code == 200
+        purge_data = purge_res.json()
+        assert purge_data["categories"] == ["ai_models"]
+
+

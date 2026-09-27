@@ -524,6 +524,23 @@
         </div>
       </div>
 
+      <!-- Current Selection Action Banner -->
+      <div id="purge-modal-selection-banner" class="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-3">
+        <div class="space-y-0.5">
+          <div class="text-xs font-mono font-bold text-rose-300 flex items-center gap-1.5">
+            <i data-lucide="check-square" class="w-4 h-4 text-rose-400"></i>
+            <span>SELECTED ENTRIES CLEANUP</span>
+          </div>
+          <p class="text-[11px] text-slate-300 font-mono">
+            <span id="purge-modal-sel-count" class="font-bold text-rose-400">0</span> items currently selected in feed
+          </p>
+        </div>
+        <button id="btn-purge-selected-modal" onclick="executeSelectedCleanup()" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-md shadow-rose-900/40">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Delete Selected</span>
+        </button>
+      </div>
+
       <!-- Live Database Telemetry Grid -->
       <div class="grid grid-cols-2 gap-2.5 font-mono text-xs">
         <div class="p-3 rounded-xl bg-black/40 border border-white/[0.06]">
@@ -566,6 +583,41 @@
           <input type="number" id="purge-custom-days" min="0" max="3650" value="30" oninput="handlePurgeDaysChange(this.value)" class="glass-input w-24 px-2 py-1 text-xs font-mono text-center">
           <span class="text-[11px] font-mono text-slate-500">days (0 = all data)</span>
         </div>
+
+        <!-- Target Category Filter Selection -->
+        <div class="space-y-1.5 pt-2 border-t border-white/[0.08]">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono text-slate-300 font-medium">FILTER BY CATEGORY (OPTIONAL):</span>
+            <button type="button" onclick="toggleAllPurgeCategories()" id="btn-toggle-all-cats" class="text-[10px] font-mono text-cyan-400 hover:text-cyan-200">Select All</button>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] font-mono" id="purge-category-checkboxes">
+            <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/[0.06] cursor-pointer hover:border-white/20 select-none">
+              <input type="checkbox" value="github_trending" class="purge-cat-cb rounded border-white/20 bg-black/60 text-cyan-500 focus:ring-0" onchange="refreshRetentionTelemetry()">
+              <span class="text-cyan-300">GitHub Trending</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/[0.06] cursor-pointer hover:border-white/20 select-none">
+              <input type="checkbox" value="ai_models" class="purge-cat-cb rounded border-white/20 bg-black/60 text-violet-500 focus:ring-0" onchange="refreshRetentionTelemetry()">
+              <span class="text-violet-300">AI Models</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/[0.06] cursor-pointer hover:border-white/20 select-none">
+              <input type="checkbox" value="ai_research" class="purge-cat-cb rounded border-white/20 bg-black/60 text-indigo-500 focus:ring-0" onchange="refreshRetentionTelemetry()">
+              <span class="text-indigo-300">AI Research</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/[0.06] cursor-pointer hover:border-white/20 select-none">
+              <input type="checkbox" value="cyber_tools" class="purge-cat-cb rounded border-white/20 bg-black/60 text-emerald-500 focus:ring-0" onchange="refreshRetentionTelemetry()">
+              <span class="text-emerald-300">Developer Infra</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/[0.06] cursor-pointer hover:border-white/20 select-none">
+              <input type="checkbox" value="ai_tech" class="purge-cat-cb rounded border-white/20 bg-black/60 text-sky-500 focus:ring-0" onchange="refreshRetentionTelemetry()">
+              <span class="text-sky-300">AI Tech</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/[0.06] cursor-pointer hover:border-white/20 select-none">
+              <input type="checkbox" value="cybersecurity" class="purge-cat-cb rounded border-white/20 bg-black/60 text-slate-500 focus:ring-0" onchange="refreshRetentionTelemetry()">
+              <span class="text-slate-400">Cybersecurity</span>
+            </label>
+          </div>
+        </div>
+
         <div class="space-y-2 pt-2 border-t border-white/[0.08]">
           <label class="flex items-center gap-2.5 cursor-pointer text-xs font-mono text-slate-300 hover:text-white select-none">
             <input type="checkbox" id="purge-include-vault" onchange="refreshRetentionTelemetry()" class="w-3.5 h-3.5 rounded border-white/20 bg-black/40 text-rose-500 focus:ring-0">
@@ -1041,13 +1093,17 @@
                 <option value="blast">Impact / Significance</option>
               </select>
 
-              <!-- View Mode Toggle Buttons -->
+              <!-- View Mode Toggle Buttons & Multi-Select -->
               <div class="flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08]">
                 <button id="view-mode-grid-btn" onclick="setViewMode('grid')" class="p-1.5 rounded-md text-cyan-400 bg-white/[0.08] hover:text-white transition" title="Grid View (2 Columns)">
                   <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
                 </button>
                 <button id="view-mode-list-btn" onclick="setViewMode('list')" class="p-1.5 rounded-md text-slate-500 hover:text-white transition" title="Compact List View">
                   <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                </button>
+                <button id="btn-toggle-select-all" onclick="toggleSelectAllVisible()" class="p-1.5 rounded-md text-slate-400 hover:text-white transition flex items-center gap-1 text-[11px] font-mono border-l border-white/[0.08] ml-1 pl-2" title="Select or deselect all visible entries for cleanup">
+                  <i data-lucide="check-square" class="w-3.5 h-3.5 text-rose-400"></i>
+                  <span id="select-all-btn-text" class="hidden sm:inline">Select All</span>
                 </button>
               </div>
             </div>
@@ -2261,8 +2317,11 @@
 
       // Render mode check: Compact List vs Grid
       if (currentViewMode === 'list') {
-        card.className = `feed-card feed-card-compact ${accentClass}`;
+        card.className = `feed-card feed-card-compact ${accentClass} ${selectedEntryIds.has(eid) ? 'ring-1 ring-rose-500/60 bg-rose-500/[0.03]' : ''}`;
         card.innerHTML = `
+          <div class="flex items-center gap-2 flex-shrink-0 pl-1">
+            <input type="checkbox" class="entry-select-cb w-3.5 h-3.5 rounded border-white/20 bg-black/60 text-rose-500 focus:ring-0 cursor-pointer" data-id="${eid}" onchange="toggleSelectEntry('${eid}', this.checked)" ${selectedEntryIds.has(eid) ? 'checked' : ''} onclick="event.stopPropagation()" title="Select for cleanup">
+          </div>
           <div class="card-body-compact">
             <div class="flex items-center gap-2 mb-1 flex-wrap">
               <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${safeCat}</span>
@@ -2288,17 +2347,21 @@
             <button onclick="event.stopPropagation(); shareCardLink('${eid}', event)" class="p-1 text-slate-500 hover:text-cyan-300 transition" title="Share Link">
               <i data-lucide="share-2" class="w-3.5 h-3.5 text-sky-400"></i>
             </button>
+            <button onclick="event.stopPropagation(); deleteSingleEntryCard('${eid}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete entry (Manual Cleanup)">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
             ${sourceAnchor}
             <button class="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-[10px] font-medium transition">INSPECT →</button>
           </div>
         `;
       } else {
-        card.className = `feed-card ${accentClass} p-4 flex flex-col justify-between`;
+        card.className = `feed-card ${accentClass} p-4 flex flex-col justify-between ${selectedEntryIds.has(eid) ? 'ring-1 ring-rose-500/60 bg-rose-500/[0.03]' : ''}`;
         card.innerHTML = `
           <div>
             <!-- Top Row: Category + Provenance + Badges + Quick Actions -->
             <div class="flex items-center justify-between gap-2 mb-2.5">
               <div class="flex items-center gap-1.5 flex-wrap">
+                <input type="checkbox" class="entry-select-cb w-3.5 h-3.5 rounded border-white/20 bg-black/60 text-rose-500 focus:ring-0 cursor-pointer flex-shrink-0 mr-0.5" data-id="${eid}" onchange="toggleSelectEntry('${eid}', this.checked)" ${selectedEntryIds.has(eid) ? 'checked' : ''} onclick="event.stopPropagation()" title="Select for cleanup">
                 <span class="text-[9px] font-mono font-bold uppercase tracking-widest ${catColor}">${safeCat}</span>
                 ${provenanceBadge}
                 ${vaultBadge}
@@ -2360,6 +2423,9 @@
               <button onclick="event.stopPropagation(); shareCardLink('${eid}', event)" class="text-slate-400 hover:text-cyan-300 transition flex items-center gap-1 font-mono text-[9px]" title="Share Link">
                 <i data-lucide="share-2" class="w-3 h-3 text-sky-400"></i> SHARE
               </button>
+              <button onclick="event.stopPropagation(); deleteSingleEntryCard('${eid}')" class="text-slate-500 hover:text-rose-400 transition p-1" title="Delete entry (Manual Cleanup)">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
               ${sourceFooter}
               <button class="text-cyan-400 hover:text-cyan-200 transition font-bold">INSPECT →</button>
             </div>
@@ -2368,7 +2434,7 @@
       }
 
       card.onclick = (e) => {
-        if (e.target.tagName !== 'A' && !e.target.closest('button')) {
+        if (e.target.tagName !== 'A' && !e.target.closest('button') && !e.target.closest('input')) {
           playBeep('click');
           openInspectModal(entry);
         }
@@ -2436,6 +2502,10 @@
               <button onclick="toggleVaultFromInspectModal('${entry.id}')" id="modal-vault-btn" class="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-amber-400/40 text-slate-300 hover:text-amber-300 transition flex items-center gap-1.5 text-xs font-mono" title="Keep in Permanent Vault (Exempt from purge)">
                 <i data-lucide="archive" class="w-3.5 h-3.5 ${Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isThreatVaulted === 'function' && isThreatVaulted(entry.id))) ? 'text-amber-400' : ''}"></i>
                 <span id="modal-vault-text">${Boolean(entry.is_important || (entry.metadata && (entry.metadata.is_important || entry.metadata.is_saved || entry.metadata.is_pinned)) || (typeof isThreatVaulted === 'function' && isThreatVaulted(entry.id))) ? 'IN VAULT' : 'KEEP IN VAULT'}</span>
+              </button>
+              <button onclick="deleteSingleEntryCard('${entry.id}', true)" id="modal-delete-btn" class="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 hover:border-rose-400 hover:bg-rose-500/20 text-rose-300 hover:text-white transition flex items-center gap-1.5 text-xs font-mono" title="Permanently delete this entry from database">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>DELETE</span>
               </button>
             </div>
           </div>
@@ -2918,6 +2988,200 @@
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    // Interactive Entry Selection & Batch Manual Cleanup System
+    // ══════════════════════════════════════════════════════════════════════════
+    const selectedEntryIds = new Set();
+
+    function toggleSelectEntry(id, isChecked) {
+      if (isChecked) {
+        selectedEntryIds.add(id);
+      } else {
+        selectedEntryIds.delete(id);
+      }
+      updateSelectionUI();
+    }
+
+    function selectAllVisibleEntries() {
+      const cbs = document.querySelectorAll('.entry-select-cb');
+      cbs.forEach(cb => {
+        cb.checked = true;
+        const id = cb.getAttribute('data-id');
+        if (id) selectedEntryIds.add(id);
+      });
+      updateSelectionUI();
+    }
+
+    function clearEntrySelection() {
+      selectedEntryIds.clear();
+      document.querySelectorAll('.entry-select-cb').forEach(cb => { cb.checked = false; });
+      updateSelectionUI();
+    }
+
+    function toggleSelectAllVisible() {
+      const cbs = document.querySelectorAll('.entry-select-cb');
+      if (selectedEntryIds.size >= cbs.length && cbs.length > 0) {
+        clearEntrySelection();
+      } else {
+        selectAllVisibleEntries();
+      }
+    }
+
+    function updateSelectionUI() {
+      const count = selectedEntryIds.size;
+      const bar = document.getElementById('selection-action-bar');
+      const badge = document.getElementById('selected-count-badge');
+      const btnCount = document.getElementById('selected-count-btn');
+      const modalCount = document.getElementById('purge-modal-sel-count');
+      const toggleText = document.getElementById('select-all-btn-text');
+      const modalBtn = document.getElementById('btn-purge-selected-modal');
+
+      if (badge) badge.innerText = count;
+      if (btnCount) btnCount.innerText = count;
+      if (modalCount) modalCount.innerText = count;
+      if (modalBtn) modalBtn.disabled = (count === 0);
+
+      const allCbs = document.querySelectorAll('.entry-select-cb');
+      if (toggleText) {
+        toggleText.innerText = (count > 0 && count >= allCbs.length && allCbs.length > 0) ? 'Deselect All' : (count > 0 ? `Selected (${count})` : 'Select All');
+      }
+
+      if (bar) {
+        if (count > 0) {
+          bar.classList.remove('hidden');
+          bar.classList.add('flex');
+        } else {
+          bar.classList.add('hidden');
+          bar.classList.remove('flex');
+        }
+      }
+
+      // Visual border highlight on selected cards
+      document.querySelectorAll('[data-card-id]').forEach(card => {
+        const id = card.getAttribute('data-card-id');
+        if (selectedEntryIds.has(id)) {
+          card.classList.add('ring-1', 'ring-rose-500/60', 'bg-rose-500/[0.03]');
+        } else {
+          card.classList.remove('ring-1', 'ring-rose-500/60', 'bg-rose-500/[0.03]');
+        }
+      });
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    async function executeSelectedCleanup() {
+      if (selectedEntryIds.size === 0) {
+        alert("No entries are currently selected. Click the checkbox on any feed card to select entries for cleanup.");
+        return;
+      }
+
+      const count = selectedEntryIds.size;
+      const confirmed = confirm(
+        `Are you sure you want to permanently delete these ${count} selected intelligence entries?\n\n` +
+        `• Only your explicitly selected items will be deleted.\n` +
+        `• They will be permanently removed from SQLite disk.\n` +
+        `• This action executes ONLY upon your explicit confirmation.`
+      );
+      if (!confirmed) return;
+
+      try {
+        const ids = Array.from(selectedEntryIds);
+        const res = await fetch('/api/entries/batch-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entry_ids: ids, hard_delete: true })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          if (typeof playBeep === 'function') playBeep('alert');
+          ids.forEach(id => {
+            const card = document.getElementById('ai-card-' + id);
+            if (card) {
+              card.style.transition = 'all 0.3s ease';
+              card.style.opacity = '0';
+              card.style.transform = 'scale(0.95)';
+              setTimeout(() => card.remove(), 300);
+            }
+          });
+          clearEntrySelection();
+          closePurgeModal();
+          showToast(`✓ Deleted ${data.deleted_count || count} selected entries from database.`, 'success');
+          if (window.DataSyncEngine) {
+            window.DataSyncEngine.forceRefresh('all');
+          } else if (typeof refreshStats === 'function') {
+            refreshStats();
+          }
+        } else {
+          alert(`Cleanup failed: ${data.detail || 'Unknown server error'}`);
+        }
+      } catch (err) {
+        alert(`Cleanup request error: ${err.message}`);
+      }
+    }
+
+    async function deleteSingleEntryCard(id, fromModal = false) {
+      const confirmed = confirm("Are you sure you want to permanently delete this intelligence entry from database?");
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/api/entries/${id}?hard_delete=true`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+          if (typeof playBeep === 'function') playBeep('alert');
+          selectedEntryIds.delete(id);
+          updateSelectionUI();
+          if (fromModal) closeInspectModal();
+          const card = document.getElementById('ai-card-' + id);
+          if (card) {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => card.remove(), 300);
+          }
+          showToast("✓ Entry permanently deleted.", 'success');
+          if (window.DataSyncEngine) {
+            window.DataSyncEngine.forceRefresh('all');
+          } else if (typeof refreshStats === 'function') {
+            refreshStats();
+          }
+        } else {
+          alert(`Delete failed: ${data.detail || 'Unknown server error'}`);
+        }
+      } catch (err) {
+        alert(`Delete request error: ${err.message}`);
+      }
+    }
+
+    async function vaultSelectedEntries() {
+      if (selectedEntryIds.size === 0) return;
+      const ids = Array.from(selectedEntryIds);
+      let successCount = 0;
+      for (const id of ids) {
+        try {
+          const res = await fetch(`/api/entries/${id}/toggle-vault?is_important=true&reason=Batch+Vaulted`, { method: 'POST' });
+          if (res.ok) successCount++;
+        } catch (e) {
+          console.warn("Vault toggle error for", id, e);
+        }
+      }
+      showToast(`⭐ Added ${successCount} entries to Permanent Vault.`, 'success');
+      clearEntrySelection();
+      if (typeof loadFeed === 'function') loadFeed(true);
+    }
+
+    function getSelectedPurgeCategories() {
+      return Array.from(document.querySelectorAll('.purge-cat-cb:checked')).map(cb => cb.value);
+    }
+
+    function toggleAllPurgeCategories() {
+      const cbs = document.querySelectorAll('.purge-cat-cb');
+      const anyChecked = Array.from(cbs).some(cb => cb.checked);
+      cbs.forEach(cb => cb.checked = !anyChecked);
+      const btn = document.getElementById('btn-toggle-all-cats');
+      if (btn) btn.innerText = !anyChecked ? 'Select All' : 'Clear All';
+      refreshRetentionTelemetry();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     // Manual Intelligence Retention & Cleanup Management
     // ══════════════════════════════════════════════════════════════════════════
     let selectedPurgeDays = 30;
@@ -2927,6 +3191,7 @@
       const modal = document.getElementById('purge-modal');
       if (modal) {
         modal.classList.remove('hidden');
+        updateSelectionUI();
         await refreshRetentionTelemetry();
       }
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -2979,7 +3244,10 @@
     async function refreshRetentionTelemetry() {
       try {
         const includeVault = document.getElementById('purge-include-vault')?.checked || false;
-        const res = await fetch(`/api/stats/retention?days=${selectedPurgeDays}&include_vaulted=${includeVault}`);
+        const cats = getSelectedPurgeCategories();
+        let catQuery = cats.map(c => `categories=${encodeURIComponent(c)}`).join('&');
+        if (catQuery) catQuery = '&' + catQuery;
+        const res = await fetch(`/api/stats/retention?days=${selectedPurgeDays}&include_vaulted=${includeVault}${catQuery}`);
         if (!res.ok) return;
         const data = await res.json();
         const activeEl = document.getElementById('purge-modal-active-count');
@@ -2994,7 +3262,8 @@
         if (purgedEl) purgedEl.innerText = (data.purged_count || 0).toLocaleString();
         if (candLabel) {
           const scopeText = selectedPurgeDays === 0 ? 'All active entries' : `Older than ${data.older_than_days ?? selectedPurgeDays} days`;
-          candLabel.innerText = includeVault ? `${scopeText} (incl. Vault)` : scopeText;
+          const catSuffix = cats.length > 0 ? ` (${cats.length} categories)` : '';
+          candLabel.innerText = includeVault ? `${scopeText}${catSuffix} (incl. Vault)` : `${scopeText}${catSuffix}`;
         }
       } catch (err) {
         console.warn("Failed to fetch retention telemetry:", err);
@@ -3004,10 +3273,12 @@
     async function executeManualPurge() {
       const includeVault = (selectedPurgeDays === 0) ? true : (document.getElementById('purge-include-vault')?.checked || false);
       const hardDelete = document.getElementById('purge-hard-delete')?.checked || false;
+      const cats = getSelectedPurgeCategories();
       const targetLabel = selectedPurgeDays === 0 ? "ALL ACTIVE DATA" : `entries older than ${selectedPurgeDays} days`;
+      const catLabel = cats.length > 0 ? ` [Categories: ${cats.join(', ')}]` : '';
 
       const confirmed = confirm(
-        `Are you sure you want to clean up ${targetLabel}?\n\n` +
+        `Are you sure you want to clean up ${targetLabel}${catLabel}?\n\n` +
         (hardDelete ? `⚠️ PERMANENT HARD-DELETE: Matching records will be erased immediately from SQLite disk.\n\n` : `• Soft-deleted items can be un-deleted later.\n`) +
         (includeVault ? `⚠️ VAULT OVERRIDE ENABLED: Vault-protected and landmark entries WILL be deleted.\n\n` : `• Vault-protected and starred entries are preserved.\n`) +
         `• This action executes only on your explicit request.`
@@ -3022,13 +3293,15 @@
       }
       if (statusBox) {
         statusBox.className = "p-3 rounded-xl text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center gap-2";
-        statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Processing manual cleanup for ${targetLabel}...`;
+        statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Processing manual cleanup for ${targetLabel}${catLabel}...`;
         statusBox.classList.remove('hidden');
       }
       if (typeof lucide !== 'undefined') lucide.createIcons();
 
       try {
-        const res = await fetch(`/api/stats/purge?days=${selectedPurgeDays}&hard_delete=${hardDelete}&include_vaulted=${includeVault}`, { method: 'POST' });
+        let catQuery = cats.map(c => `categories=${encodeURIComponent(c)}`).join('&');
+        if (catQuery) catQuery = '&' + catQuery;
+        const res = await fetch(`/api/stats/purge?days=${selectedPurgeDays}&hard_delete=${hardDelete}&include_vaulted=${includeVault}${catQuery}`, { method: 'POST' });
         const data = await res.json();
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
@@ -4712,6 +4985,24 @@
       <span>Feeds</span>
     </button>
   </nav>
+
+  <!-- Floating Live Selection Action Bar (Bottom-Center) -->
+  <div id="selection-action-bar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 items-center gap-3 px-5 py-3 rounded-2xl bg-slate-950/95 backdrop-blur-xl border border-rose-500/40 shadow-2xl shadow-rose-950/70 font-mono text-xs transition-all duration-300 transform">
+    <span class="font-bold text-rose-300 flex items-center gap-1.5 whitespace-nowrap">
+      <i data-lucide="check-square" class="w-4 h-4 text-rose-400"></i>
+      <span id="selected-count-badge">0</span> Selected
+    </span>
+    <div class="h-4 w-px bg-white/20"></div>
+    <button onclick="selectAllVisibleEntries()" class="px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white transition whitespace-nowrap">Select All</button>
+    <button onclick="clearEntrySelection()" class="px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-400 hover:text-white transition whitespace-nowrap">Clear</button>
+    <button onclick="vaultSelectedEntries()" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-300 transition flex items-center gap-1 whitespace-nowrap">
+      <i data-lucide="star" class="w-3.5 h-3.5"></i> Vault
+    </button>
+    <button onclick="executeSelectedCleanup()" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold transition flex items-center gap-1.5 shadow-lg shadow-rose-900/40 active:scale-95 whitespace-nowrap">
+      <i data-lucide="trash-2" class="w-4 h-4"></i>
+      <span>Cleanup Selected (<span id="selected-count-btn">0</span>)</span>
+    </button>
+  </div>
 
   <!-- Floating New Stories Available Notification (Bottom-Center, Non-Disruptive) -->
   <div id="new-stories-floating-pill" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 transform">

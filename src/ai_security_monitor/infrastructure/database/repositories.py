@@ -215,16 +215,66 @@ class SQLAlchemyEntryRepository(EntryRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
-    async def delete(self, entry_id: UUID) -> bool:
-        stmt = select(EntryModel).where(EntryModel.id == _uuid_to_str(entry_id))
+    async def delete(self, entry_id: UUID, hard_delete: bool = True) -> bool:
+        from sqlalchemy import delete as sa_delete
+        from sqlalchemy import update as sa_update
+
+        entry_id_str = _uuid_to_str(entry_id)
+        stmt = select(EntryModel).where(EntryModel.id == entry_id_str)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
 
         if not model:
             return False
 
-        await self._session.delete(model)
+        if hard_delete:
+            await self._session.execute(
+                sa_delete(AnalysisModelDB)
+                .where(AnalysisModelDB.entry_id == entry_id_str)
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.delete(model)
+        else:
+            await self._session.execute(
+                sa_update(EntryModel)
+                .where(EntryModel.id == entry_id_str)
+                .values(is_purged=True, purged_at=datetime.now(UTC))
+                .execution_options(synchronize_session=False)
+            )
+        self._session.expire_all()
         return True
+
+    async def delete_entries_by_ids(
+        self, entry_ids: list[UUID], hard_delete: bool = True
+    ) -> int:
+        if not entry_ids:
+            return 0
+        from sqlalchemy import delete as sa_delete
+        from sqlalchemy import update as sa_update
+
+        id_strs = [_uuid_to_str(eid) for eid in entry_ids]
+        if hard_delete:
+            await self._session.execute(
+                sa_delete(AnalysisModelDB)
+                .where(AnalysisModelDB.entry_id.in_(id_strs))
+                .execution_options(synchronize_session=False)
+            )
+            del_result = await self._session.execute(
+                sa_delete(EntryModel)
+                .where(EntryModel.id.in_(id_strs))
+                .execution_options(synchronize_session=False)
+            )
+            self._session.expire_all()
+            return del_result.rowcount or 0
+        else:
+            upd_result = await self._session.execute(
+                sa_update(EntryModel)
+                .where(EntryModel.id.in_(id_strs))
+                .values(is_purged=True, purged_at=datetime.now(UTC))
+                .execution_options(synchronize_session=False)
+            )
+            self._session.expire_all()
+            return upd_result.rowcount or 0
 
     async def get_unanalyzed(
         self,
@@ -252,6 +302,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         older_than_days: int = 7,
         hard_delete: bool = False,
         include_vaulted: bool = False,
+        categories: list[str] | None = None,
     ) -> int:
         """Purge entries older than retention window.
 
@@ -260,6 +311,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         - If include_vaulted == True: all entries matching the time window (including vault) are purged.
         - If hard_delete == True: records and their analyses are permanently deleted from database disk.
         - If hard_delete == False: records are marked soft-deleted (is_purged=True, purged_at=now).
+        - If categories is provided: only purges entries belonging to the specified categories.
 
         Returns the number of rows purged.
         """
@@ -275,14 +327,20 @@ class SQLAlchemyEntryRepository(EntryRepository):
             time_cond = True
         else:
             cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
+            cutoff_naive = cutoff.replace(tzinfo=None)
             time_cond = or_(
                 EntryModel.published_at < cutoff,
+                EntryModel.published_at < cutoff_naive,
                 EntryModel.fetched_at < cutoff,
+                EntryModel.fetched_at < cutoff_naive,
             )
 
         conds = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:
             conds.append(time_cond)
+
+        if categories:
+            conds.append(EntryModel.category.in_(categories))
 
         if not include_vaulted:
             not_vaulted_cond = or_(
@@ -369,17 +427,22 @@ class SQLAlchemyEntryRepository(EntryRepository):
         self,
         older_than_days: int = 7,
         include_vaulted: bool = False,
+        categories: list[str] | None = None,
     ) -> dict[str, int]:
         """Get counts of active entries, candidate entries older than X days, and soft-purged entries."""
         active_stmt = select(func.count(EntryModel.id)).where(
             EntryModel.is_purged.is_(False)
         )
+        if categories:
+            active_stmt = active_stmt.where(EntryModel.category.in_(categories))
         active_res = await self._session.execute(active_stmt)
         active_count = active_res.scalar() or 0
 
         purged_stmt = select(func.count(EntryModel.id)).where(
             EntryModel.is_purged.is_(True)
         )
+        if categories:
+            purged_stmt = purged_stmt.where(EntryModel.category.in_(categories))
         purged_res = await self._session.execute(purged_stmt)
         purged_count = purged_res.scalar() or 0
 
@@ -389,14 +452,20 @@ class SQLAlchemyEntryRepository(EntryRepository):
             time_cond = True
         else:
             cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
+            cutoff_naive = cutoff.replace(tzinfo=None)
             time_cond = or_(
                 EntryModel.published_at < cutoff,
+                EntryModel.published_at < cutoff_naive,
                 EntryModel.fetched_at < cutoff,
+                EntryModel.fetched_at < cutoff_naive,
             )
 
         conds = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:
             conds.append(time_cond)
+
+        if categories:
+            conds.append(EntryModel.category.in_(categories))
 
         if not include_vaulted:
             not_vaulted_cond = or_(

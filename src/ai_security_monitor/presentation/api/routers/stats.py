@@ -59,12 +59,17 @@ async def get_retention_status(
         default=False,
         description="Whether to include permanent vault / starred entries in purge candidates",
     ),
+    categories: list[str] | None = Query(
+        default=None,
+        description="Filter candidate purge entries by categories",
+    ),
     service: MonitorService = Depends(get_monitor_service),
 ):
     """Retrieve current retention policy, active vs soft-purged count, and candidate purge count."""
     return await service.get_retention_status(
         older_than_days=days,
         include_vaulted=include_vaulted,
+        categories=categories,
     )
 
 
@@ -84,6 +89,10 @@ async def purge_stale_entries(
         default=False,
         description="Whether to also purge vault-protected and landmark entries",
     ),
+    categories: list[str] | None = Query(
+        default=None,
+        description="Filter purged entries by categories",
+    ),
     service: MonitorService = Depends(get_monitor_service),
 ):
     """Manually trigger data hygiene: delete all entries older than `days` days."""
@@ -91,6 +100,7 @@ async def purge_stale_entries(
         older_than_days=days,
         hard_delete=hard_delete,
         include_vaulted=include_vaulted,
+        categories=categories,
     )
     return result
 
