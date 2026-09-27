@@ -304,8 +304,8 @@ class GitHubTrendingFetcher(BaseFetcher):
         Topic filter is expanded per filter_mode to avoid 0-result API responses.
         """
         now = datetime.now(UTC)
-        days_map = {"daily": 2, "weekly": 8, "monthly": 32}
-        days = days_map.get(self.frequency, 2)
+        days_map = {"daily": 2, "weekly": 7, "monthly": 14}
+        days = min(days_map.get(self.frequency, 2), 14)
         since_date = (now - timedelta(days=days)).strftime("%Y-%m-%d")
 
         # Build topic filter per mode
@@ -393,7 +393,9 @@ class GitHubTrendingFetcher(BaseFetcher):
                     try:
                         published_at = datetime.fromisoformat(
                             repo["pushed_at"].replace("Z", "+00:00")
-                        ).replace(tzinfo=None)
+                        )
+                        if published_at.tzinfo is None:
+                            published_at = published_at.replace(tzinfo=UTC)
                     except Exception:
                         pass
 

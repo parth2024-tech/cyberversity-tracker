@@ -748,6 +748,7 @@ footer{
     <div class="modal-actions">
       <button class="action-btn" onclick="speakCurrentModal()">📻 Read Aloud</button>
       <a href="#" target="_blank" id="modalSourceLink" class="action-btn primary">Open Original Wire ↗</a>
+      <button class="action-btn" style="background:#701a1a;color:#fff;border-color:#501010;" onclick="deleteCurrentModalEntry()">🗑️ Delete Dispatch</button>
       <button class="action-btn" onclick="closeDispatchModal()">Close Dispatch</button>
     </div>
   </div>
@@ -767,6 +768,10 @@ let currentSearch = '';
 let currentLeadEntry = null;
 let currentModalEntry = null;
 let isSpeaking = false;
+
+const SOVEREIGN_COUNTRIES = ['CN', 'HK', 'IN', 'IL', 'JP', 'KR', 'TW', 'AE', 'SG', 'DE', 'FR', 'NL', 'FI', 'SE', 'CH', 'CA', 'AU', 'GB', 'EU'];
+const SOVEREIGN_REGIONS = ['asia', 'europe', 'middle_east', 'china', 'apac', 'emea', 'latam', 'global'];
+const SOVEREIGN_TERMS = ['sovereign', 'national', 'falcon', 'mistral', 'qwen', 'kyutai', 'deepseek', 'china', 'sovereignty'];
 
 function escapeHtml(str) {
   return String(str == null ? '' : str)
@@ -798,10 +803,13 @@ function renderArticle(e) {
   return `
     <div class="article" onclick="openArticleModal('${escapeHtml(e.id)}')">
       <div class="score">${escapeHtml(score)}<small>${scoreLabel}</small></div>
-      <div>
-        <span class="tag ${scoreClass(score)}">${escapeHtml(category)}</span>
-        ${archetype ? `<span class="tag" style="background:#e8dfc7;">${escapeHtml(archetype)}</span>` : ''}
-        <span class="tag" style="background:#f4ecd8;color:#555;">${escapeHtml(source)}</span>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+          <span class="tag ${scoreClass(score)}">${escapeHtml(category)}</span>
+          ${archetype ? `<span class="tag" style="background:#e8dfc7;">${escapeHtml(archetype)}</span>` : ''}
+          <span class="tag" style="background:#f4ecd8;color:#555;">${escapeHtml(source)}</span>
+          <button class="action-btn" style="margin-left:auto;padding:2px 7px;font-size:10px;background:transparent;border:1px solid #c0b89d;color:#8b0000;cursor:pointer;" title="Delete this dispatch" onclick="event.stopPropagation(); deleteEntryById('${escapeHtml(e.id)}', '${escapeHtml(e.title || 'Dispatch')}')">🗑️</button>
+        </div>
         <h3>${escapeHtml(e.title || 'Untitled entry')}</h3>
         <p>${escapeHtml(snippet)}</p>
       </div>
@@ -838,9 +846,7 @@ function renderCurrentView() {
     } else if (currentCategory === 'china') {
       const region = (e.region || '').toLowerCase();
       const country = (e.country || '').toUpperCase();
-      const sovereignCountries = ['CN', 'HK', 'IN', 'IL', 'JP', 'KR', 'TW', 'AE', 'SG', 'DE', 'FR', 'NL', 'FI', 'SE', 'CH', 'CA', 'AU', 'GB', 'EU'];
-      const sovereignTerms = ['sovereign', 'national', 'falcon', 'mistral', 'qwen', 'kyutai', 'deepseek', 'china'];
-      if (!sovereignCountries.includes(country) && !sovereignRegions.includes(region) && !sovereignTerms.some(term => title.includes(term))) return false;
+      if (!SOVEREIGN_COUNTRIES.includes(country) && !SOVEREIGN_REGIONS.includes(region) && !SOVEREIGN_TERMS.some(term => title.includes(term))) return false;
     }
 
     // Search query match
@@ -910,8 +916,7 @@ function renderCurrentView() {
   _setCount('countAi', allEntries.filter(e => ['ai_models', 'ai_tech'].includes(e.category) || (e.title||'').toLowerCase().includes('model')).length);
   _setCount('countCrit', allEntries.filter(e => (e.severity ?? e.analysis?.severity_index ?? 0) >= 80).length);
   _setCount('countPoc', allEntries.filter(e => ((e.category||'') + (e.title||'')).toLowerCase().includes('exploit') || (e.title||'').toLowerCase().includes('poc')).length);
-  const _sovTerms = ['sovereign', 'national', 'falcon', 'mistral', 'qwen', 'kyutai', 'deepseek'];
-  _setCount('countChina', allEntries.filter(e => _sovCountries.includes((e.country||'').toUpperCase()) || _sovRegions.includes((e.region||'').toLowerCase()) || _sovTerms.some(term => (e.title||'').toLowerCase().includes(term))).length);
+  _setCount('countChina', allEntries.filter(e => SOVEREIGN_COUNTRIES.includes((e.country||'').toUpperCase()) || SOVEREIGN_REGIONS.includes((e.region||'').toLowerCase()) || SOVEREIGN_TERMS.some(term => (e.title||'').toLowerCase().includes(term))).length);
 
   // Update Statistics Box
   document.getElementById('statEntries').textContent = allEntries.length;
@@ -1104,6 +1109,32 @@ async function dispatchTelegramNewspaper(force = false) {
   }
 }
 
+async function deleteEntryById(id, title) {
+  if (!id) return;
+  if (!confirm(`Permanently remove this intelligence dispatch from the database?\n\n"${title || 'Selected Dispatch'}"`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/entries/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      allEntries = allEntries.filter(e => e.id !== id);
+      filteredEntries = filteredEntries.filter(e => e.id !== id);
+      renderCurrentView();
+    } else {
+      alert('Failed to delete dispatch from database.');
+    }
+  } catch (err) {
+    console.error('Delete dispatch error:', err);
+    alert('Network error while deleting dispatch.');
+  }
+}
+
+async function deleteCurrentModalEntry() {
+  if (!currentModalEntry) return;
+  const id = currentModalEntry.id;
+  const title = currentModalEntry.title || 'Dispatch';
+  await deleteEntryById(id, title);
+  closeDispatchModal();
+}
+
 function connectWS() {
   try {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -1112,7 +1143,15 @@ function connectWS() {
       try {
         const msg = JSON.parse(event.data);
         if (!msg || msg.type === 'pong' || msg.type === 'ping') return;
-        if (msg.type === 'new_entry' || msg.type === 'landmark_ai_breakthrough' || msg.type === 'scan_status' || msg.type === 'connected' || msg.type === 'feed_updated') {
+        if (
+          msg.type === 'new_entry' ||
+          msg.type === 'landmark_ai_breakthrough' ||
+          msg.type === 'scan_status' ||
+          msg.type === 'connected' ||
+          msg.type === 'feed_updated' ||
+          msg.type === 'sweep_completed' ||
+          msg.type === 'stats_updated'
+        ) {
           loadFeed();
         }
       } catch (err) {

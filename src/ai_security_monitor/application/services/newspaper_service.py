@@ -110,6 +110,7 @@ class NewspaperService:
         """Compile an authentic, 100% AI-focused 10-page intelligence broadsheet dossier."""
         now = datetime.now(UTC)
         cutoff = now - timedelta(hours=max(5, window_hours))
+        max_freshness_cutoff = now - timedelta(days=14)
         logger.info(
             f"Initiating 10-page AI intelligence newspaper compilation (window={window_hours}h)..."
         )
@@ -163,6 +164,17 @@ class NewspaperService:
             for pat in reject_patterns:
                 if re.search(pat, t_lower):
                     return False
+
+            # Strict 14-day freshness guard: NEVER surface articles older than 14 days
+            if e.published_at:
+                pub = (
+                    e.published_at
+                    if getattr(e.published_at, "tzinfo", None)
+                    else e.published_at.replace(tzinfo=UTC)
+                )
+                if pub < max_freshness_cutoff:
+                    return False
+
             return True
 
         async with self._uow_factory() as uow:
@@ -183,7 +195,11 @@ class NewspaperService:
                 Category.CYBER_TOOLS,
             ]
             for pillar_cat in core_pillars:
-                cat_filters = EntryFilters(category=pillar_cat, sort_by="velocity")
+                cat_filters = EntryFilters(
+                    category=pillar_cat,
+                    sort_by="velocity",
+                    since=max_freshness_cutoff,
+                )
                 cat_items = await uow.entries.list(
                     filters=cat_filters,
                     pagination=PaginationParams(limit=35, offset=0),
@@ -347,7 +363,9 @@ class NewspaperService:
                     Category.AI_TECH,
                 ):
                     fallback_filters = EntryFilters(
-                        category=pillar_cat, sort_by="velocity"
+                        category=pillar_cat,
+                        sort_by="velocity",
+                        since=max_freshness_cutoff,
                     )
                     fallback_items = await uow.entries.list(
                         filters=fallback_filters,

@@ -7,7 +7,7 @@ AWS Machine Learning Blog, and MarkTechPost.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import feedparser
@@ -26,6 +26,8 @@ class NewspaperLiveFetcher:
     async def fetch_live_intelligence(self) -> list[Entry]:
         """Autonomously fetch live cutting-edge AI entries from arXiv, Hugging Face, and leading AI feeds."""
         live_entries: list[Entry] = []
+        now = datetime.now(UTC)
+        cutoff_14d = now - timedelta(days=14)
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AIResearchBot/3.0"
         }
@@ -36,7 +38,7 @@ class NewspaperLiveFetcher:
             # 1. arXiv cs.AI & cs.LG API
             try:
                 r = await client.get(
-                    "http://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=30"
+                    "https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=30"
                 )
                 if r.status_code == 200:
                     feed = feedparser.parse(r.content)
@@ -122,11 +124,19 @@ class NewspaperLiveFetcher:
                 if r.status_code == 200:
                     feed = feedparser.parse(r.content)
                     for item in feed.entries[:15]:
+                        pub_dt = now
+                        if hasattr(item, "published_parsed") and item.published_parsed:
+                            try:
+                                pub_dt = datetime(*item.published_parsed[:6], tzinfo=UTC)
+                            except Exception:
+                                pub_dt = now
+                        if pub_dt < cutoff_14d:
+                            continue
+
                         t = getattr(item, "title", "").strip()
                         u = getattr(item, "link", "")
                         s = getattr(item, "summary", "").strip()
-                        now = datetime.now(UTC)
-                        ch = str(ContentHash.from_content(t, u, str(now)))
+                        ch = str(ContentHash.from_content(t, u, str(pub_dt)))
                         e_id = uuid4()
                         live_entries.append(
                             Entry(
@@ -137,7 +147,7 @@ class NewspaperLiveFetcher:
                                 summary=s,
                                 content_hash=ch,
                                 category=Category.AI_TECH,
-                                published_at=now,
+                                published_at=pub_dt,
                                 tags=["aws", "infrastructure", "enterprise-ai"],
                                 analysis=Analysis(
                                     id=uuid4(),
@@ -160,11 +170,19 @@ class NewspaperLiveFetcher:
                 if r.status_code == 200:
                     feed = feedparser.parse(r.content)
                     for item in feed.entries[:15]:
+                        pub_dt = now
+                        if hasattr(item, "published_parsed") and item.published_parsed:
+                            try:
+                                pub_dt = datetime(*item.published_parsed[:6], tzinfo=UTC)
+                            except Exception:
+                                pub_dt = now
+                        if pub_dt < cutoff_14d:
+                            continue
+
                         t = getattr(item, "title", "").strip()
                         u = getattr(item, "link", "")
                         s = getattr(item, "summary", "").strip()
-                        now = datetime.now(UTC)
-                        ch = str(ContentHash.from_content(t, u, str(now)))
+                        ch = str(ContentHash.from_content(t, u, str(pub_dt)))
                         e_id = uuid4()
                         live_entries.append(
                             Entry(
@@ -175,7 +193,7 @@ class NewspaperLiveFetcher:
                                 summary=s,
                                 content_hash=ch,
                                 category=Category.CYBER_TOOLS,
-                                published_at=now,
+                                published_at=pub_dt,
                                 tags=["engineering", "frameworks", "marktechpost"],
                                 analysis=Analysis(
                                     id=uuid4(),

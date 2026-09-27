@@ -62,7 +62,26 @@ def _clean_entry_title(title: str | None) -> str:
     )
     # Strip LaTeX math artifacts often found in arXiv titles
     t = re.sub(r"\$(.*?)\$", r"\1", t)
-    t = re.sub(r"\\(?:mathcal|mathbb|mathbf|text|mathrm)\{([^}]+)\}", r"\1", t)
+    t = re.sub(
+        r"\\(?:mathcal|mathbb|mathbf|text|mathrm|mathsf|mathit|emph|textbf|textit)\{([^}]+)\}",
+        r"\1",
+        t,
+    )
+    latex_symbols = (
+        (r"\\times\b", "×"),
+        (r"\\pm\b", "±"),
+        (r"\\ge(?:q)?\b", "≥"),
+        (r"\\le(?:q)?\b", "≤"),
+        (r"\\approx\b", "≈"),
+        (r"\\neq\b", "≠"),
+        (r"\\to\b|\\rightarrow\b", "→"),
+        (r"\\leftarrow\b", "←"),
+        (r"\\infty\b", "∞"),
+        (r"\\dots|\\cdots|\\ldots", "..."),
+        (r"\\sim\b", "~"),
+    )
+    for pat, rep in latex_symbols:
+        t = re.sub(pat, rep, t)
     t = re.sub(r"^(llama\.cpp[^:]*):\s*b(\d+)", r"\1 Build b\2", t, flags=re.I)
     t = re.sub(
         r"^(LangChain[^:]*):\s*([a-zA-Z0-9_\-]+)==([0-9\.]+)",

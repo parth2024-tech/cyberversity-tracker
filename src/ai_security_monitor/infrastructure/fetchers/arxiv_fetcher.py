@@ -30,13 +30,14 @@ from ai_security_monitor.infrastructure.fetchers.base import (
 
 logger = get_logger(__name__)
 
-# Maps query keywords to the best arXiv RSS category for fallback
 _RSS_CATEGORY_MAP = (
     ("cs.RO", "cs.RO"),
     ("cs.CV", "cs.CV"),
     ("cs.CL", "cs.CL"),
     ("cs.LG", "cs.LG"),
     ("stat.ML", "cs.LG"),
+    ("cs.NE", "cs.NE"),
+    ("cs.AI", "cs.AI"),
     ("cs.CR", "cs.AI"),
 )
 
@@ -180,6 +181,7 @@ class ArxivFetcher(BaseFetcher):
                 raw_title,
                 flags=re.I,
             ).strip()
+            clean_title = self._clean_arxiv_text(clean_title)
 
             entries.append(
                 {
@@ -217,9 +219,11 @@ class ArxivFetcher(BaseFetcher):
             metadata=raw.get("metadata", {}),
         )
 
-    def _clean_html(self, text: str) -> str:
+    def _clean_arxiv_text(self, text: str) -> str:
+        """Sanitize HTML tags, LaTeX formatting artifacts, math commands, and announcement boilerplate."""
         if not text:
             return ""
+        # Strip HTML tags
         text = re.sub(r"<script.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<style.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<[^>]+>", "", text)
@@ -228,9 +232,53 @@ class ArxivFetcher(BaseFetcher):
             .replace("&amp;", "&")
             .replace("&lt;", "<")
             .replace("&gt;", ">")
+            .replace("&quot;", '"')
+            .replace("&apos;", "'")
+            .replace("&#39;", "'")
         )
+        # Strip LaTeX font & text commands: \text{...}, \textbf{...}, \mathcal{...}, etc.
+        text = re.sub(
+            r"\\(?:text|textbf|textit|emph|mathrm|mathbf|mathit|mathcal|mathsf|mathbb)\{([^}]+)\}",
+            r"\1",
+            text,
+        )
+        # Common LaTeX math symbols to Unicode equivalents
+        latex_symbols = (
+            (r"\\times\b", "×"),
+            (r"\\pm\b", "±"),
+            (r"\\ge(?:q)?\b", "≥"),
+            (r"\\le(?:q)?\b", "≤"),
+            (r"\\approx\b", "≈"),
+            (r"\\neq\b", "≠"),
+            (r"\\to\b|\\rightarrow\b", "→"),
+            (r"\\leftarrow\b", "←"),
+            (r"\\leftrightarrow\b", "↔"),
+            (r"\\infty\b", "∞"),
+            (r"\\dots|\\cdots|\\ldots", "..."),
+            (r"\\sim\b", "~"),
+            (r"\\cdot\b", "·"),
+            (r"\\alpha\b", "α"),
+            (r"\\beta\b", "β"),
+            (r"\\gamma\b", "γ"),
+            (r"\\theta\b", "θ"),
+            (r"\\lambda\b", "λ"),
+            (r"\\sigma\b", "σ"),
+            (r"\\mu\b", "μ"),
+            (r"\\epsilon\b", "ε"),
+            (r"\\Delta\b", "Δ"),
+        )
+        for pat, rep in latex_symbols:
+            text = re.sub(pat, rep, text)
+        # Strip math delimiters $...$
+        text = re.sub(r"\$([^\$]+)\$", r"\1", text)
+        # Strip leading Abstract: or Context: if present
+        text = re.sub(r"^(?:Abstract|Context|Summary)\s*:\s*", "", text, flags=re.I)
+        # Normalize whitespace
         text = re.sub(r"\s+", " ", text).strip()
         return text
+
+    def _clean_html(self, text: str) -> str:
+        return self._clean_arxiv_text(text)
 
 
 fetcher_registry.register("arxiv", ArxivFetcher)

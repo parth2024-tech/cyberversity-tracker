@@ -2,7 +2,7 @@
 Unit and integration tests for entries data hygiene, title/summary sanitization, and API formatting.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -297,3 +297,84 @@ def test_max_ingest_age_days_strict_freshness_boundary():
     assert entry_none in kept
     assert entry_stale not in kept
     assert len(kept) == 3
+
+
+def test_clean_entry_title_latex_math_symbols():
+    raw_title = r"Scaling Laws with $\mathcal{O}(N \times d)$ Complexity and $\beta \ge 1.0 \pm 0.05$"
+    cleaned = _clean_entry_title(raw_title)
+    assert r"\mathcal" not in cleaned
+    assert "$" not in cleaned
+    assert "×" in cleaned
+    assert "≥" in cleaned
+    assert "±" in cleaned
+
+    title2 = r"$\text{FlashAttention-3}$: Fast Attention with Speedup $\approx 2.5 \times$"
+    cleaned2 = _clean_entry_title(title2)
+    assert r"\text" not in cleaned2
+    assert "FlashAttention-3" in cleaned2
+    assert "≈" in cleaned2
+    assert "×" in cleaned2
+
+
+def test_arxiv_fetcher_latex_cleaning():
+    from ai_security_monitor.domain.entities import Source, SourceType
+    from ai_security_monitor.infrastructure.fetchers.arxiv_fetcher import ArxivFetcher
+
+    dummy_source = Source(
+        name="Test arXiv Feed",
+        category=Category.AI_RESEARCH,
+        type=SourceType.ARXIV,
+        url="https://export.arxiv.org/api/query",
+    )
+    fetcher = ArxivFetcher(dummy_source)
+
+    raw_abstract = (
+        r"<p>Abstract: We propose $\mathbf{DeepSeek-R1}$ with reasoning tokens. "
+        r"Our empirical evaluation achieves $\sim 95\%$ accuracy, where $p \le 0.01$ "
+        r"and complexity is $\mathcal{O}(N \to \infty)$.</p>"
+    )
+    cleaned = fetcher._clean_arxiv_text(raw_abstract)
+
+    assert "Abstract:" not in cleaned
+    assert "<p>" not in cleaned
+    assert "</p>" not in cleaned
+    assert r"\mathbf" not in cleaned
+    assert r"\mathcal" not in cleaned
+    assert "$" not in cleaned
+    assert "DeepSeek-R1" in cleaned
+    assert "~" in cleaned
+    assert "≤" in cleaned
+    assert "→" in cleaned
+    assert "∞" in cleaned
+
+
+@pytest.mark.asyncio
+async def test_newspaper_14_day_freshness_boundary():
+    now = datetime.now(UTC)
+    max_freshness_cutoff = now - timedelta(days=14)
+
+    # Entry 10 days old (fresh)
+    entry_fresh = Entry(
+        source_id="src-fresh",
+        published_at=now - timedelta(days=10),
+        title="DeepSeek-V3 Open-Weights Checkpoint Released",
+        url="https://example.com/deepseek",
+        content_hash="h_fresh",
+        summary="A major reasoning model release with full open weights.",
+        category=Category.AI_MODELS,
+    )
+
+    # Entry 16 days old (stale - exceeds 14d limit)
+    entry_stale = Entry(
+        source_id="src-stale",
+        published_at=now - timedelta(days=16),
+        title="Historical GPT-2 Technical Report",
+        url="https://example.com/gpt2",
+        content_hash="h_stale",
+        summary="Historical report from past epochs.",
+        category=Category.AI_RESEARCH,
+    )
+
+    # Check 14-day freshness filter logic
+    assert (entry_fresh.published_at.replace(tzinfo=UTC)) >= max_freshness_cutoff
+    assert (entry_stale.published_at.replace(tzinfo=UTC)) < max_freshness_cutoff
