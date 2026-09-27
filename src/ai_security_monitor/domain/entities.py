@@ -92,6 +92,7 @@ class Entry(Entity):
     analysis: Analysis | None = None
     is_purged: bool = False
     purged_at: datetime | None = None
+    story_id: UUID | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -106,6 +107,43 @@ class Entry(Entity):
             and self.fetched_at.tzinfo is not None
         ):
             self.fetched_at = self.fetched_at.replace(tzinfo=None)
+
+
+@dataclass(kw_only=True)
+class Story(Entity):
+    """A synthesized cluster/story aggregate uniting 1+ corroborating cross-source entries."""
+
+    title: str
+    canonical_url: str
+    fingerprint: str
+    category: Category
+    summary: str = ""
+    source_count: int = 1
+    confidence_score: float = 0.60  # 0.60 single, 0.85 corroborated, 0.98+ consensus
+    entry_ids: list[UUID] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
+    first_seen_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_seen_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def add_entry(self, entry: Entry, source_name: str | None = None) -> None:
+        """Add corroborating entry to story and boost evidence confidence."""
+        if entry.id not in self.entry_ids:
+            self.entry_ids.append(entry.id)
+            if source_name and source_name not in self.sources:
+                self.sources.append(source_name)
+            self.source_count = len(self.sources) or len(self.entry_ids)
+            if self.source_count == 1:
+                self.confidence_score = 0.60
+            elif self.source_count == 2:
+                self.confidence_score = 0.85
+            else:
+                self.confidence_score = min(0.99, 0.85 + (self.source_count - 2) * 0.05)
+            self.last_seen_at = datetime.now(UTC)
+            for tag in entry.tags:
+                if tag not in self.tags:
+                    self.tags.append(tag)
 
 
 @dataclass(kw_only=True)

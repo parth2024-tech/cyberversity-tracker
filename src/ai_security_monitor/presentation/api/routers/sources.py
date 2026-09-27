@@ -59,6 +59,17 @@ async def list_sources(all_sources: bool = True):
     return JSONResponse(content=data, headers={"Cache-Control": "public, max-age=30"})
 
 
+@sources_router.get("/health")
+async def get_sources_health():
+    """Retrieve operational telemetry and diagnostic health for all configured intelligence sources."""
+    from ai_security_monitor.application.services.source_health_service import (
+        source_health_service,
+    )
+
+    report = source_health_service.get_health_report()
+    return JSONResponse(content=report)
+
+
 @sources_router.post("/{source_id}/toggle")
 async def toggle_source(source_id: str, req: SourceToggleRequest):
     """Enable or disable a specific intelligence source."""

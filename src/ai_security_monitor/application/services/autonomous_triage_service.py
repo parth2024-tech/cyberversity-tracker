@@ -303,22 +303,17 @@ class AutonomousTriageService:
 
     def calculate_priority(self, entry: Entry) -> int:
         """Compute priority level: 0 = Urgent/Frontier, 1 = High/Trending, 2 = Standard.
-        Ensures landmark foundation models and arXiv breakthroughs leapfrog generic items."""
-        title_lower = (entry.title or "").lower()
-        cat_val = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
+        Uses the pluggable ScoringPipeline with composable signals and explainability."""
+        from ai_security_monitor.application.services.triage_scoring_pipeline import (
+            scoring_pipeline,
+        )
 
-        # Priority 0: Frontier Models (DeepSeek, Qwen, Claude, OpenAI, Meta, weights releases) or Breakthrough arXiv
-        if cat_val == "ai_models" or any(k in title_lower for k in ("deepseek", "r1", "frontier", "qwen", "weights release", "open weights")):
-            return 0
-        if cat_val == "ai_research" and any(k in title_lower for k in ("reasoning", "breakthrough", "benchmark", "sota", "test-time")):
-            return 0
-
-        # Priority 1: High-impact developer tools, inference runtimes, trending repos
-        if cat_val in ("github_trending", "cyber_tools") or any(k in title_lower for k in ("vllm", "sglang", "llama.cpp", "ollama", "runtime", "engine")):
-            return 1
-
-        # Priority 2: General tech dispatches
-        return 2
+        res = scoring_pipeline.score(entry)
+        entry.metadata = dict(entry.metadata or {})
+        entry.metadata["triage_score"] = res.composite_score
+        entry.metadata["triage_explanation"] = res.explanation
+        entry.metadata["triage_breakdown"] = res.breakdown
+        return res.priority
 
     async def enqueue(self, entry_id: UUID, priority: int | None = None) -> bool:
         """Enqueue an entry for deep LLM triage with smart priority weighting (deduplicated)."""
@@ -480,15 +475,24 @@ class AutonomousTriageService:
                 f"🤖 Autonomous LLM Triage executing for: {entry.title[:60]}..."
             )
 
-            # Run LLM analysis with per-call timeout safety
+            # Run LLM analysis with per-call timeout safety and non-blocking fallback
             try:
                 analysis_result = await asyncio.wait_for(
                     analyzer.analyze(entry), timeout=35.0
                 )
-            except TimeoutError:
+            except Exception as exc:
                 logger.warning(
-                    f"LLM triage timed out after 35s for {entry.title[:50]}... skipping"
+                    f"LLM triage fallback (preserving heuristic) for {entry.title[:50]}... reason: {exc}"
                 )
+                entry.metadata = dict(entry.metadata or {})
+                entry.metadata["is_triaged"] = True
+                entry.metadata["triaged_at"] = datetime.now(UTC).isoformat()
+                entry.metadata["triaged_by"] = "heuristic_fallback"
+                if hasattr(uow.entries, "update"):
+                    res = uow.entries.update(entry)
+                    if hasattr(res, "__await__"):
+                        await res
+                await uow.commit()
                 return
 
             # Check if analysis record exists

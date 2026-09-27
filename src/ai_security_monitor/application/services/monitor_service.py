@@ -92,6 +92,11 @@ class MonitorService:
     def __init__(self, uow_factory: Callable[[], SqlAlchemyUnitOfWork] | None = None):
         self._uow_factory = uow_factory or (lambda: SqlAlchemyUnitOfWork())
         self._broadcast_callback: Callable[[dict], None] | None = None
+        self._ingest_queue: asyncio.Queue[tuple[Entry, Source]] = asyncio.Queue()
+
+    async def publish_raw_entry(self, entry: Entry, source: Source) -> None:
+        """Publish raw ingested entry into the internal event-driven ingestion bus."""
+        await self._ingest_queue.put((entry, source))
 
     def set_broadcast_callback(self, cb: Callable[[dict], None]) -> None:
         """Set WebSocket broadcast callback."""
@@ -246,6 +251,23 @@ class MonitorService:
                             continue
                     fresh_entries.append(e)
                 new_raw_entries = fresh_entries
+
+            # Cross-Source Deduplication & Story Clustering
+            from ai_security_monitor.application.services.deduplication_service import (
+                deduplication_service,
+            )
+
+            clustered_entries: list[Entry] = []
+            for candidate in new_raw_entries:
+                proc_entry, story, _ = deduplication_service.process_candidate(
+                    candidate, source_name=source.name
+                )
+                proc_entry.metadata = dict(proc_entry.metadata or {})
+                proc_entry.metadata["story_confidence"] = story.confidence_score
+                proc_entry.metadata["corroborating_sources"] = list(story.sources)
+                proc_entry.metadata["story_id"] = str(story.id)
+                clustered_entries.append(proc_entry)
+            new_raw_entries = clustered_entries
 
             # 2. In-Memory Enrichment & Analysis (OUTSIDE write transaction)
             prepared_items: list[tuple[Entry, Analysis, bool, str, bool]] = []
@@ -501,10 +523,24 @@ class MonitorService:
                             }
                         )
 
-                        # Auto-triage qualification
+                        # Auto-triage qualification using pluggable ScoringPipeline
                         if settings.analyzer.autonomous_triage_enabled:
+                            from ai_security_monitor.application.services.triage_scoring_pipeline import (
+                                scoring_pipeline,
+                            )
+
+                            score_res = scoring_pipeline.score(
+                                added_entry,
+                                context={"source_type": source.type.value},
+                            )
+                            added_entry.metadata = dict(added_entry.metadata or {})
+                            added_entry.metadata["triage_score"] = score_res.composite_score
+                            added_entry.metadata["triage_explanation"] = score_res.explanation
+                            added_entry.metadata["triage_breakdown"] = score_res.breakdown
+
                             should_auto_triage = (
                                 is_landmark
+                                or score_res.priority <= 1
                                 or cat_name in ("ai_models", "ai_research")
                                 or analysis.threat_velocity
                                 >= settings.analyzer.triage_velocity_threshold
@@ -598,8 +634,33 @@ class MonitorService:
             logger.error(f"Error fetching from {source.name}: {e}")
             status = FetchStatus.ERROR
             error_msg = str(e)
-
         duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
+        from ai_security_monitor.application.services.source_health_service import (
+            source_health_service,
+        )
+
+        if status == FetchStatus.SUCCESS:
+            source_health_service.record_success(
+                source_name=source.name,
+                duration_ms=duration_ms,
+                entries_new=new_entries_count,
+                source_type=source.type.value,
+                category=source.category.value
+                if hasattr(source.category, "value")
+                else str(source.category),
+                region=source.config.get("region", "global"),
+            )
+        else:
+            source_health_service.record_failure(
+                source_name=source.name,
+                duration_ms=duration_ms,
+                error_message=error_msg or "Unknown error",
+                source_type=source.type.value,
+                category=source.category.value
+                if hasattr(source.category, "value")
+                else str(source.category),
+                region=source.config.get("region", "global"),
+            )
 
         log = FetchLog(
             source_id=source.id,
