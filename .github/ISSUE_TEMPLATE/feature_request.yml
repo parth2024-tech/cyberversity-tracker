@@ -1,0 +1,28 @@
+name: Feature Request
+description: Propose an idea, new AI feed source, or platform improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to improve the Worldwide AI Ecosystem Tracker? We'd love to hear it!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a problem or a new AI development?
+      placeholder: I would like to monitor a new frontier inference engine or developer tool feed...
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution / Source
+      description: Describe your proposed solution or include URLs to the new AI ecosystem source.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Additional Context or Alternatives
+      description: Any other context, references, or alternative solutions you've considered.

@@ -33,8 +33,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
       - name: Run mypy
-        run: uv run mypy src/ai_security_monitor/ --ignore-missing-imports --no-error-summary
-        continue-on-error: true  # Non-blocking while type coverage is being improved
+        run: uv run mypy src/ai_security_monitor/ --ignore-missing-imports
 
   test:
     name: Test (pytest)

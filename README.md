@@ -1,9 +1,10 @@
 # AETHERGUARD // Worldwide AI Ecosystem Intelligence & Frontier Radar
 
-[![Live Radar](https://img.shields.io/badge/Live%20Radar-Online-00ffcc?style=for-the-badge&logo=render&logoColor=black)](https://ai-security-radar.onrender.com/)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![CI Status](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/Tests-210%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Coverage](https://img.shields.io/badge/Coverage-72%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests](https://img.shields.io/badge/Tests-193%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-black.svg?style=flat)](https://github.com/astral-sh/ruff)
 [![Type Checked: Mypy](https://img.shields.io/badge/Type%20Checked-Mypy-blue.svg?style=flat)](http://mypy-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](https://opensource.org/licenses/MIT)
@@ -96,7 +97,7 @@ ai-security-monitor/
 │   ├── index.html                         # Primary Command Center HUD
 │   ├── gazette.html                       # The AI Chronicle & Gazette reader
 │   └── js/                                # WebSocket receiver, palette, & interactive controls
-└── tests/                                 # Industrial automated test suite (193 tests)
+└── tests/                                 # Industrial automated test suite (210 tests)
     ├── unit/                              # Isolated entity, analyzer, and domain tests
     └── integration/                       # Brutal API stress, boundary contracts, and DB tests
 ```
@@ -106,22 +107,27 @@ ai-security-monitor/
 ## ⚡ Quick Start
 
 ### 1. Prerequisites
-- **Python 3.11+**
-- **pip** and **virtualenv**
+- **Python 3.12+**
+- **uv** (recommended) or **pip** & **virtualenv**
 - *(Optional)* **Ollama** installed locally for GPU-accelerated local LLM triage.
 
 ### 2. Installation
+
+Using `uv` (recommended):
 ```bash
 # Clone repository
 git clone https://github.com/parth2024-tech/cyberversity-tracker.git
 cd cyberversity-tracker
 
-# Create and activate virtual environment
+# Synchronize dependencies with uv
+uv sync --all-extras --dev
+```
+
+Or using standard `venv` and `pip`:
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+pip install -e ".[all]"
 ```
 
 ### 3. Run the Web Command Center
@@ -184,20 +190,20 @@ python3 cli.py retention purge --older-than 30
 
 ## 🧪 Testing & Quality Assurance
 
-The codebase is protected by **193 brutal, deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and heap priority invariants:
+The codebase is protected by **210 brutal, deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and heap priority invariants:
 
 ```bash
 # Run full test suite
-pytest -q
+uv run pytest tests/ -q
 
 # Run with coverage report
-pytest --cov=ai_security_monitor --cov-report=term-missing
+uv run pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=50
 
 # Run Ruff linter
-ruff check .
+uv run ruff check .
 
 # Run static type checker
-mypy src/ai_security_monitor tests
+uv run mypy src/ai_security_monitor/
 ```
 
 ### Brutal Test Guarantees:

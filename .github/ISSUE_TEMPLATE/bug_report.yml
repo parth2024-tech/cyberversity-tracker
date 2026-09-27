@@ -1,0 +1,39 @@
+name: Bug Report
+description: Create a report to help us improve the AI Ecosystem Tracker
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue!
+  - type: input
+    id: environment
+    attributes:
+      label: Python / Environment Version
+      description: What Python version and OS are you using?
+      placeholder: Python 3.12 on Linux Ubuntu 22.04
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps or commands to reproduce the issue.
+      placeholder: |
+        1. Run `python3 cli.py fetch`
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Stack Trace
+      description: Any relevant error messages or console logs.
+      render: shell

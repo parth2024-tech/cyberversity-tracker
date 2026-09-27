@@ -5,21 +5,29 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ai-security-monitor"
 version = "2.0.0"
-description = "Zero-cost autonomous monitoring for AI technology launches and cybersecurity threats"
+description = "Autonomous real-time intelligence, telemetry, and tracking for the worldwide AI ecosystem"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     {name = "Thor", email = "thor@example.com"}
 ]
-keywords = ["security", "ai", "monitoring", "threat-intelligence", "cybersecurity", "zero-cost"]
+keywords = [
+    "ai",
+    "ecosystem",
+    "frontier-models",
+    "open-source",
+    "research",
+    "deep-learning",
+    "autonomous-agents",
+    "developer-tools",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Information Technology",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Security",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
@@ -74,6 +82,13 @@ all = [
     "ai-security-monitor[dev,llm]",
 ]
 
+[project.urls]
+Homepage = "https://github.com/parth2024-tech/cyberversity-tracker"
+Repository = "https://github.com/parth2024-tech/cyberversity-tracker.git"
+Documentation = "https://github.com/parth2024-tech/cyberversity-tracker#readme"
+"Bug Tracker" = "https://github.com/parth2024-tech/cyberversity-tracker/issues"
+
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["ai_security_monitor*"]
@@ -91,7 +106,7 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 ignore_errors = true
 ignore_missing_imports = true
 exclude = ["^tests/"]
@@ -107,7 +122,7 @@ filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py312"]
 include = '\.pyi?$'
 exclude = '''/(\.venv|\.git|__pycache__|htmlcov|\.ruff_cache|\.mypy_cache)/'''
 

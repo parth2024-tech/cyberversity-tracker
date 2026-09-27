@@ -2,6 +2,7 @@
 .venv/
 venv/
 env/
+myenv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -17,16 +18,23 @@ data/newspapers/chronicle_*
 
 # Testing & Coverage
 .coverage
+coverage.xml
 htmlcov/
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+
+# Packaging & Build
+dist/
+build/
+*.egg-info/
 
 # IDE & OS
 .vscode/
 .idea/
 .DS_Store
 *.swp
-*.egg-info/
 .env
 .env.*
 data/backups/
+
