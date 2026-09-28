@@ -5,6 +5,7 @@ Plugin architecture for extensible feed fetching.
 
 import asyncio
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -21,6 +22,7 @@ from ai_security_monitor.domain.exceptions import (
     FetchRateLimitedError,
     FetchTimeoutError,
 )
+from ai_security_monitor.infrastructure.fetchers.robotstxt import robots_manager
 from ai_security_monitor.infrastructure.fetchers.throttle import (
     domain_throttle,
     parse_retry_after,
@@ -183,14 +185,62 @@ class BaseFetcher(ABC):
             duration_ms=duration_ms,
         )
 
-    _last_fetch_times_by_source: dict[str, datetime] = {}
+    async def fetch_stream(self) -> AsyncGenerator[Entry, None]:
+        """Streaming generator yielding parsed entries in real time as they arrive."""
+        await self._respect_rate_limit()
+        start_time = datetime.now(UTC)
 
-    async def _respect_rate_limit(self) -> None:
-        """Enforce rate limiting between fetches using per-domain AutoThrottle."""
+        raw_entries = await asyncio.wait_for(
+            self._fetch_raw(),
+            timeout=self.timeout,
+        )
+
         domain = domain_throttle.extract_domain(
             self.source.url if self.source else None
         )
-        await domain_throttle.wait_for_domain(domain, floor=self._rate_limit_seconds)
+        duration_ms = int(
+            (datetime.now(UTC) - start_time).total_seconds() * 1000
+        )
+        domain_throttle.record(
+            domain,
+            latency=duration_ms / 1000.0,
+            ok=True,
+            floor=self._rate_limit_seconds,
+        )
+
+        for raw in raw_entries:
+            try:
+                entry = self._parse_entry(raw)
+                entry.source_id = self.source.id
+                entry.category = self.source.category
+                yield entry
+            except Exception as e:
+                logger.warning(
+                    f"Failed to parse streaming entry from {self.source.name}: {e}"
+                )
+                continue
+
+    _last_fetch_times_by_source: dict[str, datetime] = {}
+
+    async def _respect_rate_limit(self) -> None:
+        """Enforce rate limiting between fetches using per-domain AutoThrottle and Robots.txt."""
+        domain = domain_throttle.extract_domain(
+            self.source.url if self.source else None
+        )
+        floor_delay = self._rate_limit_seconds
+
+        # Check robots.txt crawl-delay if enabled by source config
+        if (
+            self.source
+            and self.source.url
+            and self.source.config
+            and self.source.config.get("respect_robots_txt", False)
+        ):
+            crawl_delay = await robots_manager.get_crawl_delay(self.source.url)
+            if crawl_delay is not None:
+                floor_delay = max(floor_delay, crawl_delay)
+
+        await domain_throttle.wait_for_domain(domain, floor=floor_delay)
 
         source_key = (
             str(self.source.id)

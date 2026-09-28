@@ -27,6 +27,10 @@ from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
     fetcher_registry,
 )
+from ai_security_monitor.infrastructure.fetchers.throttle import (
+    domain_throttle,
+    parse_retry_after,
+)
 
 logger = get_logger(__name__)
 
@@ -106,6 +110,13 @@ class ArxivFetcher(BaseFetcher):
                         )
                         return self._parse_feed_items(feed.entries)
                 elif response.status_code == 429:
+                    retry_after = parse_retry_after(response.headers)
+                    domain_throttle.record(
+                        "export.arxiv.org",
+                        latency=3.0,
+                        ok=False,
+                        retry_after=retry_after,
+                    )
                     logger.warning(
                         f"arXiv API rate limit 429 for {self.source.name!r}. "
                         "Falling back to arXiv RSS."

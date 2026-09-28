@@ -50,9 +50,24 @@ class RSSFetcher(BaseFetcher):
         last_error: Exception | None = None
         response: httpx.Response | None = None
 
+        stealth_headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (X-UA-Compatible; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/atom+xml,application/rdf+xml,application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Ch-Ua": '"Chromium";v="133", "Google Chrome";v="133"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Linux"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "cross-site",
+        }
+
         async with httpx.AsyncClient(
             timeout=self.timeout,
-            headers={"User-Agent": settings.fetch.user_agent},
+            headers=stealth_headers,
             follow_redirects=True,
         ) as client:
             for target_url in urls:

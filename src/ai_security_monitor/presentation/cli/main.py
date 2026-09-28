@@ -173,9 +173,21 @@ def sources():
     asyncio.run(_run())
 
 
+@app.command()
+def mcp():
+    """Launch Model Context Protocol (MCP) server over stdio for AI coding assistants."""
+    from ai_security_monitor.presentation.mcp.server import run_stdio_server
+
+    try:
+        asyncio.run(run_stdio_server())
+    except KeyboardInterrupt:
+        pass
+
+
 def main():
     app()
 
 
 if __name__ == "__main__":
     main()
+
