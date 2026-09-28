@@ -43,8 +43,12 @@ def test_source_health_degradation_and_failure():
     assert data["consecutive_failures"] == 1
 
     # Record 2 more failures -> failing
-    svc.record_failure(source_name="Flaky RSS", duration_ms=2000, error_message="Timeout 2")
-    svc.record_failure(source_name="Flaky RSS", duration_ms=2000, error_message="Timeout 3")
+    svc.record_failure(
+        source_name="Flaky RSS", duration_ms=2000, error_message="Timeout 2"
+    )
+    svc.record_failure(
+        source_name="Flaky RSS", duration_ms=2000, error_message="Timeout 3"
+    )
     data = svc.get_source_health("Flaky RSS")
     assert data["status"] == "failing"
     assert data["consecutive_failures"] == 3

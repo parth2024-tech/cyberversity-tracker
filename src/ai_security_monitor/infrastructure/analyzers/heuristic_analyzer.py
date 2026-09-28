@@ -122,10 +122,32 @@ class HeuristicAnalyzer(BaseAnalyzer):
         "Weaviate": [r"\bweaviate\b"],
         "LiteLLM": [r"\blitellm\b"],
         "ComfyUI": [r"\bcomfyui\b"],
-        "BitNet 1-Bit LLM": [r"\bbitnet\b", r"\b1-bit\b", r"\bternary\b", r"\bbitnet-b1\.58\b"],
-        "Model Context Protocol": [r"\bmcp\b", r"\bmodel context protocol\b", r"\bmodelcontextprotocol\b"],
-        "Autonomous Coding Agents": [r"\bclaude code\b", r"\bdevin\b", r"\bswe-agent\b", r"\baider\b", r"\bcursor\b"],
-        "Video & World Models": [r"\bwan\s*2\.1\b", r"\bwan-2\.1\b", r"\bhunyuanvideo\b", r"\bhunyuan\b", r"\bsora\b", r"\bworld model\b"],
+        "BitNet 1-Bit LLM": [
+            r"\bbitnet\b",
+            r"\b1-bit\b",
+            r"\bternary\b",
+            r"\bbitnet-b1\.58\b",
+        ],
+        "Model Context Protocol": [
+            r"\bmcp\b",
+            r"\bmodel context protocol\b",
+            r"\bmodelcontextprotocol\b",
+        ],
+        "Autonomous Coding Agents": [
+            r"\bclaude code\b",
+            r"\bdevin\b",
+            r"\bswe-agent\b",
+            r"\baider\b",
+            r"\bcursor\b",
+        ],
+        "Video & World Models": [
+            r"\bwan\s*2\.1\b",
+            r"\bwan-2\.1\b",
+            r"\bhunyuanvideo\b",
+            r"\bhunyuan\b",
+            r"\bsora\b",
+            r"\bworld model\b",
+        ],
         "Compact Frontier Models": [r"\bminicpm\b", r"\bsmollm\b", r"\bk1\.5\b"],
     }
 
@@ -565,9 +587,23 @@ class HeuristicAnalyzer(BaseAnalyzer):
         if any(
             k in text_lower
             for k in (
-                "chip", "hardware", "semiconductor", "silicon", "blackwell",
-                "b200", "gb200", "h100", "h200", "npu", "asic", "tpu",
-                "amd mi", "nvidia h", "gaudi", "cerebras", "ascend",
+                "chip",
+                "hardware",
+                "semiconductor",
+                "silicon",
+                "blackwell",
+                "b200",
+                "gb200",
+                "h100",
+                "h200",
+                "npu",
+                "asic",
+                "tpu",
+                "amd mi",
+                "nvidia h",
+                "gaudi",
+                "cerebras",
+                "ascend",
             )
         ):
             return "Hardware: Next-Generation AI Accelerator & Silicon Architecture"
@@ -597,12 +633,28 @@ class HeuristicAnalyzer(BaseAnalyzer):
             return "Methodology: Post-Training Alignment & Efficient Fine-Tuning"
         if any(
             k in text_lower
-            for k in ("sovereign", "national ai", "regulation", "policy", "governance", "safety research", "alignment research")
+            for k in (
+                "sovereign",
+                "national ai",
+                "regulation",
+                "policy",
+                "governance",
+                "safety research",
+                "alignment research",
+            )
         ):
             return "Policy: AI Governance, Safety Research & Sovereign AI Ecosystem"
         if any(
             k in text_lower
-            for k in ("robot", "robotics", "embodied", "manipulation", "locomotion", "drone", "humanoid")
+            for k in (
+                "robot",
+                "robotics",
+                "embodied",
+                "manipulation",
+                "locomotion",
+                "drone",
+                "humanoid",
+            )
         ):
             return "Domain: Physical AI & Embodied Robotics Systems"
         if category == Category.GITHUB_TRENDING:
@@ -617,40 +669,102 @@ class HeuristicAnalyzer(BaseAnalyzer):
         text_lower = text.lower()
         if any(
             k in text_lower
-            for k in ("state-of-the-art", "sota", "outperform", "record", "surpass", "human-level", "beats")
+            for k in (
+                "state-of-the-art",
+                "sota",
+                "outperform",
+                "record",
+                "surpass",
+                "human-level",
+                "beats",
+            )
         ):
-            return "Breakthrough: Outperforms baselines on complex reasoning benchmarks."
+            return (
+                "Breakthrough: Outperforms baselines on complex reasoning benchmarks."
+            )
         if any(
             k in text_lower
-            for k in ("open weights", "open-weights", "weights released", "open-source",
-                      "hugging face", "checkpoint", "publicly available")
+            for k in (
+                "open weights",
+                "open-weights",
+                "weights released",
+                "open-source",
+                "hugging face",
+                "checkpoint",
+                "publicly available",
+            )
         ):
             return "Capability: Open weights checkpoint available for fine-tuning and inference."
         if any(
             k in text_lower
-            for k in ("reasoning", "chain of thought", "cot", "test-time compute", "extended thinking",
-                      "inference-time", "o1", "o3", "r1", "long thinking")
+            for k in (
+                "reasoning",
+                "chain of thought",
+                "cot",
+                "test-time compute",
+                "extended thinking",
+                "inference-time",
+                "o1",
+                "o3",
+                "r1",
+                "long thinking",
+            )
         ):
             return "Architecture: Advanced reasoning with multi-step chain-of-thought capabilities."
         if any(
             k in text_lower
-            for k in ("efficiency", "throughput", "low latency", "quant", "memory",
-                      "faster", "speed", "optimized", "tokens/s")
+            for k in (
+                "efficiency",
+                "throughput",
+                "low latency",
+                "quant",
+                "memory",
+                "faster",
+                "speed",
+                "optimized",
+                "tokens/s",
+            )
         ):
-            return "Efficiency: Significant latency reduction and compute optimizations."
+            return (
+                "Efficiency: Significant latency reduction and compute optimizations."
+            )
         if any(
             k in text_lower
-            for k in ("multimodal", "vision", "audio", "video", "vlm", "text-to-image", "speech")
+            for k in (
+                "multimodal",
+                "vision",
+                "audio",
+                "video",
+                "vlm",
+                "text-to-image",
+                "speech",
+            )
         ):
             return "Capability: Multimodal understanding across vision, audio, and text modalities."
         if any(
             k in text_lower
-            for k in ("agent", "autonomous", "tool use", "function calling", "workflow", "agentic")
+            for k in (
+                "agent",
+                "autonomous",
+                "tool use",
+                "function calling",
+                "workflow",
+                "agentic",
+            )
         ):
             return "Capability: Autonomous agent execution with tool-calling and multi-step planning."
         if any(
             k in text_lower
-            for k in ("fine-tun", "lora", "qlora", "sft", "rlhf", "dpo", "grpo", "alignment")
+            for k in (
+                "fine-tun",
+                "lora",
+                "qlora",
+                "sft",
+                "rlhf",
+                "dpo",
+                "grpo",
+                "alignment",
+            )
         ):
             return "Training: Post-training alignment and efficient fine-tuning methodology."
         if category == Category.GITHUB_TRENDING:
@@ -697,8 +811,15 @@ class HeuristicAnalyzer(BaseAnalyzer):
             if any(
                 k in text_lower
                 for k in (
-                    "deepseek", "openai", "anthropic", "google deepmind",
-                    "meta ai", "mistral ai", "xai", "grok", "cohere",
+                    "deepseek",
+                    "openai",
+                    "anthropic",
+                    "google deepmind",
+                    "meta ai",
+                    "mistral ai",
+                    "xai",
+                    "grok",
+                    "cohere",
                 )
             ):
                 velocity += 20
@@ -707,8 +828,16 @@ class HeuristicAnalyzer(BaseAnalyzer):
             if any(
                 k in text_lower
                 for k in (
-                    "vllm", "ollama", "sglang", "llama.cpp", "tensorrt-llm",
-                    "hugging face", "huggingface", "unsloth", "axolotl", "mlx",
+                    "vllm",
+                    "ollama",
+                    "sglang",
+                    "llama.cpp",
+                    "tensorrt-llm",
+                    "hugging face",
+                    "huggingface",
+                    "unsloth",
+                    "axolotl",
+                    "mlx",
                 )
             ):
                 velocity += 12
@@ -717,9 +846,16 @@ class HeuristicAnalyzer(BaseAnalyzer):
             if any(
                 k in text_lower
                 for k in (
-                    "state-of-the-art", "sota", "outperform", "benchmark record",
-                    "surpass", "human-level", "beats gpt", "beats claude",
-                    "new record", "achieves",
+                    "state-of-the-art",
+                    "sota",
+                    "outperform",
+                    "benchmark record",
+                    "surpass",
+                    "human-level",
+                    "beats gpt",
+                    "beats claude",
+                    "new record",
+                    "achieves",
                 )
             ):
                 velocity += 15
@@ -728,9 +864,16 @@ class HeuristicAnalyzer(BaseAnalyzer):
             if any(
                 k in text_lower
                 for k in (
-                    "reasoning", "chain of thought", "cot", "test-time compute",
-                    "extended thinking", "inference-time scaling", "long thinking",
-                    "r1", "o1", "o3",
+                    "reasoning",
+                    "chain of thought",
+                    "cot",
+                    "test-time compute",
+                    "extended thinking",
+                    "inference-time scaling",
+                    "long thinking",
+                    "r1",
+                    "o1",
+                    "o3",
                 )
             ):
                 velocity += 12
@@ -739,8 +882,12 @@ class HeuristicAnalyzer(BaseAnalyzer):
             if any(
                 k in text_lower
                 for k in (
-                    "open weights", "open-weights", "weights released",
-                    "publicly available", "checkpoints", "now available",
+                    "open weights",
+                    "open-weights",
+                    "weights released",
+                    "publicly available",
+                    "checkpoints",
+                    "now available",
                 )
             ):
                 velocity += 10
@@ -749,8 +896,14 @@ class HeuristicAnalyzer(BaseAnalyzer):
             if any(
                 k in text_lower
                 for k in (
-                    "multimodal", "vision-language", "vlm", "text-to-image",
-                    "text-to-video", "speech recognition", "robotics", "embodied",
+                    "multimodal",
+                    "vision-language",
+                    "vlm",
+                    "text-to-image",
+                    "text-to-video",
+                    "speech recognition",
+                    "robotics",
+                    "embodied",
                 )
             ):
                 velocity += 8

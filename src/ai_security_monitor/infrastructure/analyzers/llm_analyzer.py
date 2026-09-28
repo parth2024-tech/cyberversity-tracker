@@ -102,7 +102,7 @@ class LLMAnalyzer(BaseAnalyzer):
 
 Title: {safe_title}
 Summary: {safe_summary}
-Category: {entry.category.value if hasattr(entry.category, 'value') else str(entry.category)}
+Category: {entry.category.value if hasattr(entry.category, "value") else str(entry.category)}
 Tags: {", ".join(safe_tags)}
 URL: {entry.url}
 
@@ -302,7 +302,9 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
             blast_radius_score=blast,
             affected_ecosystem=raw_eco if isinstance(raw_eco, list) else [],
             is_pre_cve_warning=bool(result.get("is_pre_cve_warning", False)),
-            attack_archetype=str(result.get("attack_archetype", "Frontier Foundation Model")),
+            attack_archetype=str(
+                result.get("attack_archetype", "Frontier Foundation Model")
+            ),
             weaponization_potential=str(
                 result.get("weaponization_potential", "Production Ready")
             ),

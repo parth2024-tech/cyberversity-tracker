@@ -1,7 +1,6 @@
 """Unit tests for HTMLToMarkdownConverter."""
 
 from ai_security_monitor.core.markdown import (
-    HTMLToMarkdownConverter,
     markdown_converter,
 )
 

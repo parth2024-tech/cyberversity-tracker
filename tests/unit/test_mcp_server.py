@@ -1,7 +1,5 @@
 """Unit tests for Model Context Protocol (MCP) server."""
 
-import json
-
 import pytest
 
 from ai_security_monitor.presentation.mcp.server import MCPServer
@@ -56,7 +54,9 @@ async def test_mcp_call_convert_html_to_markdown():
         "method": "tools/call",
         "params": {
             "name": "convert_html_to_markdown",
-            "arguments": {"html_content": "<h1>DeepSeek V3</h1><p>MoE Architecture</p>"},
+            "arguments": {
+                "html_content": "<h1>DeepSeek V3</h1><p>MoE Architecture</p>"
+            },
         },
     }
     resp = await server.handle_request(req)

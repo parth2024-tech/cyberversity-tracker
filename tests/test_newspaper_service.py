@@ -2,7 +2,7 @@
 Unit and integration tests for the 5-Hour Autonomous Newspaper Document Service.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,7 +10,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
-from ai_security_monitor.domain.entities import Analysis, AnalysisModel, Category, Entry
+from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.presentation.api.main import app
 
 
@@ -95,7 +95,10 @@ async def test_newspaper_api_endpoints(temp_output_dir: Path):
 
     with (
         patch.object(service, "_render_pdf", side_effect=_quick_render_pdf),
-        patch("ai_security_monitor.presentation.api.routers.newspaper._newspaper_service", service),
+        patch(
+            "ai_security_monitor.presentation.api.routers.newspaper._newspaper_service",
+            service,
+        ),
     ):
         # Generate initial edition in temp directory
         await service.generate_edition(window_hours=5)
@@ -136,7 +139,9 @@ async def test_newspaper_api_endpoints(temp_output_dir: Path):
             assert "editions" in res_editions.json()
 
             # 7. POST manual trigger generation
-            res_gen = await client.post("/api/newspaper/generate", json={"window_hours": 5})
+            res_gen = await client.post(
+                "/api/newspaper/generate", json={"window_hours": 5}
+            )
             assert res_gen.status_code == 200
             assert res_gen.json()["status"] == "success"
 
@@ -192,4 +197,3 @@ async def test_newspaper_security_exclusion_and_quality(temp_output_dir: Path):
 
     directive_sec = service._generate_executive_directive(entry_sec)
     assert len(directive_sec) > 20
-

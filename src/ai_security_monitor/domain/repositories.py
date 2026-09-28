@@ -5,6 +5,7 @@ Define contracts for data access - implementations in infrastructure layer.
 
 from __future__ import annotations
 
+import builtins
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -100,7 +101,7 @@ class EntryRepository(ABC):
         ...
 
     async def delete_entries_by_ids(
-        self, entry_ids: list[UUID], hard_delete: bool = True
+        self, entry_ids: builtins.list[UUID], hard_delete: bool = True
     ) -> int:
         """Delete multiple entries by IDs. Returns count of deleted entries."""
         return 0
@@ -110,7 +111,7 @@ class EntryRepository(ABC):
         self,
         since: datetime | None = None,
         limit: int = 50,
-    ) -> list[Entry]:
+    ) -> builtins.list[Entry]:
         """Get entries that haven't been analyzed yet."""
         ...
 
@@ -120,7 +121,7 @@ class EntryRepository(ABC):
         category: Category,
         since: datetime | None = None,
         limit: int = 50,
-    ) -> list[Entry]:
+    ) -> builtins.list[Entry]:
         """Get entries by category."""
         ...
 
@@ -145,7 +146,7 @@ class EntryRepository(ABC):
         older_than_days: int = 7,
         hard_delete: bool = False,
         include_vaulted: bool = False,
-        categories: list[str] | None = None,
+        categories: builtins.list[str] | None = None,
     ) -> int:
         """Purge entries older than retention window. Returns count of purged rows."""
         ...
@@ -165,7 +166,7 @@ class EntryRepository(ABC):
         self,
         older_than_days: int = 7,
         include_vaulted: bool = False,
-        categories: list[str] | None = None,
+        categories: builtins.list[str] | None = None,
     ) -> dict[str, int]:
         """Get counts of active, purged, candidate, and vaulted entries."""
         ...

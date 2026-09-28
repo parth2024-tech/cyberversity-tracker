@@ -5,14 +5,10 @@ Unit tests for Pluggable Triage ScoringPipeline.
 from datetime import UTC, datetime
 from uuid import uuid4
 
-import pytest
-
 from ai_security_monitor.application.services.triage_scoring_pipeline import (
     ScoringPipeline,
     SourceAuthoritySignal,
     TopicRelevanceSignal,
-    VelocitySignal,
-    scoring_pipeline,
 )
 from ai_security_monitor.domain.entities import Analysis, Category, Entry
 

@@ -406,7 +406,10 @@ async def test_get_stats_excludes_soft_purged_entries(test_uow):
 
     stats_after_purge = await service.get_stats()
     # stats total MUST have dropped!
-    assert stats_after_purge["total_entries"] == stats_after_add["total_entries"] - purged_res["purged"]
+    assert (
+        stats_after_purge["total_entries"]
+        == stats_after_add["total_entries"] - purged_res["purged"]
+    )
 
     broadcast_events.clear()
     # Restore all soft-purged
@@ -414,6 +417,3 @@ async def test_get_stats_excludes_soft_purged_entries(test_uow):
     assert any(ev.get("type") == "feed_updated" for ev in broadcast_events)
     stats_after_restore = await service.get_stats()
     assert stats_after_restore["total_entries"] == stats_after_add["total_entries"]
-
-
-

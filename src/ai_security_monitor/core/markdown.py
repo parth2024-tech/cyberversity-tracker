@@ -187,9 +187,10 @@ class HTMLToMarkdownConverter:
 
         # Fallback: recurse into children
         for child in node.children:
-            cls._node_to_markdown(
-                child, output, base_url=base_url, list_prefix=list_prefix
-            )
+            if isinstance(child, Tag):
+                cls._node_to_markdown(
+                    child, output, base_url=base_url, list_prefix=list_prefix
+                )
 
     @classmethod
     def _get_inline_text(cls, tag: Tag, base_url: str = "") -> str:
@@ -208,7 +209,12 @@ class HTMLToMarkdownConverter:
                 elif c_name == "code":
                     parts.append(f"`{c_text.strip()}`" if c_text.strip() else "")
                 elif c_name == "a":
-                    href = child.get("href", "")
+                    href_val = child.get("href", "")
+                    href = (
+                        " ".join(href_val)
+                        if isinstance(href_val, list)
+                        else str(href_val)
+                    )
                     if href:
                         if base_url and not href.startswith(("http://", "https://")):
                             href = urljoin(base_url, href)
@@ -251,8 +257,8 @@ class HTMLToMarkdownConverter:
             f"| {' | '.join(header)} |",
             f"| {' | '.join(separator)} |",
         ]
-        for row in matrix[1:]:
-            lines.append(f"| {' | '.join(row)} |")
+        for m_row in matrix[1:]:
+            lines.append(f"| {' | '.join(m_row)} |")
 
         return "\n".join(lines)
 

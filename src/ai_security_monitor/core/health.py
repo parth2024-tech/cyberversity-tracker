@@ -60,9 +60,9 @@ async def metrics():
 
 @router.post("/metrics/update")
 async def update_metrics(
-    entries_by_category: dict[str, int] = None,
-    high_vel_count: int = None,
-    pre_cve_count: int = None,
+    entries_by_category: dict[str, int] | None = None,
+    high_vel_count: int | None = None,
+    pre_cve_count: int | None = None,
 ):
     """Update business metrics (called by background jobs)."""
     update_business_metrics(entries_by_category, high_vel_count, pre_cve_count)

@@ -103,7 +103,10 @@ def test_deep_analysis_service_silicon_hardware():
     )
 
     dossier = deep_analysis_service.generate_dossier(entry)
-    assert "accelerator hardware" in dossier["executive_summary"].lower() or "silicon" in dossier["executive_summary"].lower()
+    assert (
+        "accelerator hardware" in dossier["executive_summary"].lower()
+        or "silicon" in dossier["executive_summary"].lower()
+    )
     assert "Low-Precision Tensor Compute" in dossier["architectural_deep_dive"]
     assert "Interconnect & Memory Bandwidth" in dossier["architectural_deep_dive"]
     assert any("Memory Bandwidth" in b["benchmark"] for b in dossier["benchmarks"])
@@ -127,8 +130,14 @@ def test_deep_analysis_service_multi_agent_system():
     assert "agentic execution" in dossier["executive_summary"].lower()
     assert "Stateful Graph Execution" in dossier["architectural_deep_dive"]
     assert "Strict Tool-Calling Contracts" in dossier["architectural_deep_dive"]
-    assert any("GAIA" in b["benchmark"] or "ToolBench" in b["benchmark"] for b in dossier["benchmarks"])
-    assert any("mcp" in c.lower() or "schema" in c.lower() for c in dossier["actionable_checklist"])
+    assert any(
+        "GAIA" in b["benchmark"] or "ToolBench" in b["benchmark"]
+        for b in dossier["benchmarks"]
+    )
+    assert any(
+        "mcp" in c.lower() or "schema" in c.lower()
+        for c in dossier["actionable_checklist"]
+    )
     assert "Autonomous Multi-Agent" in dossier["importance_reason"]
 
 
@@ -145,7 +154,10 @@ def test_deep_analysis_service_embodied_robotics():
     )
 
     dossier = deep_analysis_service.generate_dossier(entry)
-    assert "physical artificial intelligence" in dossier["executive_summary"].lower() or "robotic" in dossier["executive_summary"].lower()
+    assert (
+        "physical artificial intelligence" in dossier["executive_summary"].lower()
+        or "robotic" in dossier["executive_summary"].lower()
+    )
     assert "Vision-Language-Action" in dossier["architectural_deep_dive"]
     assert "Real-Time Latency Envelopes" in dossier["architectural_deep_dive"]
     assert "Physical AI" in dossier["importance_reason"]
@@ -218,7 +230,9 @@ async def test_repository_permanent_vault_exemption_from_purge(test_uow):
     check_vaulted = await uow.entries.get(vaulted_old.id)
 
     assert check_normal is None, "Normal 12-day old entry should have been purged!"
-    assert check_vaulted is not None, "Vaulted entry MUST survive rolling purge permanently!"
+    assert check_vaulted is not None, (
+        "Vaulted entry MUST survive rolling purge permanently!"
+    )
     assert check_vaulted.metadata.get("is_important") is True
 
 
@@ -439,6 +453,3 @@ def test_deep_analysis_service_world_video_model():
     assert "Diffusion Transformer (DiT)" in dossier["architectural_deep_dive"]
     assert any("VBench" in b["benchmark"] for b in dossier["benchmarks"])
     assert any("3D VAE" in c for c in dossier["actionable_checklist"])
-
-
-

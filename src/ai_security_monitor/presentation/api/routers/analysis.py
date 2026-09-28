@@ -4,6 +4,7 @@ Analysis API router.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks
@@ -64,7 +65,7 @@ async def quick_analyze(req: QuickAnalyzeRequest):
         url="https://example.com/sandbox-triage",
         content_hash="sandbox_hash",
         summary=summary_text,
-        published_at=None,
+        published_at=datetime.now(UTC),
         category=cat,
         tags=req.tags,
     )

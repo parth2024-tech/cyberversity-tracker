@@ -38,7 +38,9 @@ async def test_blast_radius_ai_framework_compatibility_mode():
     assert res.blast_radius_score == 0
     assert res.is_pre_cve_warning is False
     assert res.attack_archetype == "Developer AI Tool"
-    assert "PyTorch" in res.affected_ecosystem or "HuggingFace" in res.affected_ecosystem
+    assert (
+        "PyTorch" in res.affected_ecosystem or "HuggingFace" in res.affected_ecosystem
+    )
     assert "Compatible Architecture" in res.attack_vector
     assert res.weaponization_potential == "Production Ready"
 

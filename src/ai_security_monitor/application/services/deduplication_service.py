@@ -13,7 +13,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from uuid import UUID
 
 from ai_security_monitor.core.logging import get_logger
-from ai_security_monitor.domain.entities import Category, Entry, Story
+from ai_security_monitor.domain.entities import Entry, Story
 
 logger = get_logger(__name__)
 
@@ -41,9 +41,34 @@ TITLE_PREFIX_REGEX = re.compile(
 
 # Common filler words to ignore in similarity matching
 STOP_WORDS = {
-    "a", "an", "the", "and", "or", "in", "on", "at", "for", "with", "by", "of",
-    "to", "from", "is", "are", "was", "were", "new", "released", "announces",
-    "announcing", "introduces", "introducing", "update", "v1", "v2", "v3",
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "in",
+    "on",
+    "at",
+    "for",
+    "with",
+    "by",
+    "of",
+    "to",
+    "from",
+    "is",
+    "are",
+    "was",
+    "were",
+    "new",
+    "released",
+    "announces",
+    "announcing",
+    "introduces",
+    "introducing",
+    "update",
+    "v1",
+    "v2",
+    "v3",
 }
 
 
@@ -90,14 +115,16 @@ def canonicalize_url(url: str) -> str:
 
         new_query = urlencode(filtered_query)
         # Reconstruct without anchor fragments or tracking query
-        canonical = urlunparse((
-            parsed.scheme.lower() or "https",
-            netloc,
-            path or "/",
-            "",
-            new_query,
-            "",
-        ))
+        canonical = urlunparse(
+            (
+                parsed.scheme.lower() or "https",
+                netloc,
+                path or "/",
+                "",
+                new_query,
+                "",
+            )
+        )
         return canonical
     except Exception as e:
         logger.debug(f"Error canonicalizing URL '{url}': {e}")
@@ -167,11 +194,7 @@ class DeduplicationService:
     def _evict_stale_stories(self) -> None:
         """Evict stories older than max_window_days (14-day freshness guard)."""
         cutoff = datetime.now(UTC) - timedelta(days=self.max_window_days)
-        stale_ids = [
-            sid
-            for sid, s in self._stories.items()
-            if s.last_seen_at < cutoff
-        ]
+        stale_ids = [sid for sid, s in self._stories.items() if s.last_seen_at < cutoff]
         for sid in stale_ids:
             story = self._stories.pop(sid, None)
             if story:
@@ -244,7 +267,11 @@ class DeduplicationService:
             entry_ids=[entry.id],
             sources=[source_name] if source_name else [],
             tags=list(entry.tags),
-            metadata={"initial_category": entry.category.value if hasattr(entry.category, "value") else str(entry.category)},
+            metadata={
+                "initial_category": entry.category.value
+                if hasattr(entry.category, "value")
+                else str(entry.category)
+            },
             first_seen_at=datetime.now(UTC),
             last_seen_at=datetime.now(UTC),
         )

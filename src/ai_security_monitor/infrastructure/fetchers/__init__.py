@@ -25,4 +25,12 @@ __all__ = [
     "FetchResult",
     "fetcher_registry",
     "FetcherRegistry",
+    "arxiv_fetcher",
+    "base",
+    "cisa_fetcher",
+    "github_fetcher",
+    "github_trending_fetcher",
+    "hackernews_fetcher",
+    "nvd_fetcher",
+    "rss_fetcher",
 ]

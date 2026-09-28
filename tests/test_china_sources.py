@@ -4,7 +4,7 @@ Heuristic bilingual analysis, and regional filtering.
 """
 
 import uuid
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient

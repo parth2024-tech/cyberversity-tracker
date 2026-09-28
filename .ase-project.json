@@ -34,11 +34,13 @@
   },
   "testing_strategy": {
     "framework": "pytest + pytest-asyncio + httpx",
-    "coverage_target": "50%",
+    "coverage_target": "75%",
     "patterns": [
       "Unit tests for heuristic and blast radius analyzers",
+      "Unit tests for delivery channels (email, telegram, slack, console)",
       "Integration tests for REST endpoints and live database sorting",
-      "Autonomous triage queue worker and deduplication tests"
+      "Autonomous triage queue worker and deduplication tests",
+      "Strict Mypy type verification with 0 errors across entire codebase"
     ]
   },
   "deployment": {

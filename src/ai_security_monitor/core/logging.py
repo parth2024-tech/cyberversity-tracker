@@ -1,6 +1,6 @@
-# Structured logging configuration.
-
+import logging
 import sys
+from typing import Any
 
 import structlog
 from structlog.dev import ConsoleRenderer
@@ -14,7 +14,7 @@ def setup_logging() -> None:
     log_level = settings.logging.level.upper()
 
     # Shared processors
-    shared_processors = [
+    shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
@@ -24,6 +24,7 @@ def setup_logging() -> None:
         structlog.processors.format_exc_info,
     ]
 
+    renderer: Any
     if settings.logging.format == "json":
         # Production JSON logging
         renderer = JSONRenderer()
@@ -43,17 +44,16 @@ def setup_logging() -> None:
     )
 
     # Configure stdlib logging
-    handler = structlog.stdlib.ProcessorFormatter(
+    formatter = structlog.stdlib.ProcessorFormatter(
         foreign_pre_chain=shared_processors,
         processor=renderer,
     )
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
 
-    root_logger = structlog.stdlib.get_logger()
-    root_logger.handlers = [handler]
-    root_logger.setLevel(log_level)
-
-    # Also configure stdlib root logger
-    import logging
+    stdlib_root = logging.getLogger()
+    stdlib_root.handlers = [handler]
+    stdlib_root.setLevel(log_level)
 
     logging.basicConfig(
         format="%(message)s",
@@ -62,6 +62,6 @@ def setup_logging() -> None:
     )
 
 
-def get_logger(name: str = None):
+def get_logger(name: str | None = None) -> Any:
     """Get a structured logger."""
     return structlog.get_logger(name)

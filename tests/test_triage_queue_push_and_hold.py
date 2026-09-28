@@ -184,4 +184,3 @@ async def test_api_fetch_sweep_includes_queued_pushed(monkeypatch):
         assert "results" in data
         assert "queued_pushed" in data
         assert isinstance(data["queued_pushed"], int)
-

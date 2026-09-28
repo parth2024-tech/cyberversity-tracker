@@ -822,7 +822,9 @@ async def delete_single_entry(
     service = MonitorService(lambda: SqlAlchemyUnitOfWork())
     deleted = await service.delete_entry(uid, hard_delete=hard_delete)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Entry not found or already deleted")
+        raise HTTPException(
+            status_code=404, detail="Entry not found or already deleted"
+        )
 
     return {
         "success": True,
@@ -864,4 +866,3 @@ async def batch_delete_entries(
         "hard_delete": payload.hard_delete,
         "message": f"Successfully deleted {count} selected entries",
     }
-

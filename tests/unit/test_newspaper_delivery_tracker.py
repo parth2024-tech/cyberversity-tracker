@@ -2,8 +2,6 @@
 Unit tests for NewspaperDeliveryTracker deduplication and cooldown logic.
 """
 
-import json
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest

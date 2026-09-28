@@ -5,7 +5,6 @@ All external HTTP calls (deep_translator, langdetect) are mocked out.
 
 from __future__ import annotations
 
-import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest

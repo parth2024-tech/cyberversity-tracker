@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import html
 import re
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 

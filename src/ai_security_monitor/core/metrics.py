@@ -124,10 +124,10 @@ async def metrics_middleware(request: Request, call_next):
 
 
 def update_business_metrics(
-    entries_by_category: dict[str, int] = None,
-    high_vel_count: int = None,
-    pre_cve_count: int = None,
-):
+    entries_by_category: dict[str, int] | None = None,
+    high_vel_count: int | None = None,
+    pre_cve_count: int | None = None,
+) -> None:
     """Update business metrics from database stats."""
     if entries_by_category:
         for category, count in entries_by_category.items():

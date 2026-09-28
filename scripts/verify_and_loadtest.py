@@ -13,7 +13,7 @@ import asyncio
 import os
 import sqlite3
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 

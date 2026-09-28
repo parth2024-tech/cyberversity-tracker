@@ -4,8 +4,7 @@ Unit tests for Autonomous LLM Triage Service and Queue Worker.
 
 from __future__ import annotations
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest

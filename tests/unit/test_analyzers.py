@@ -103,7 +103,9 @@ async def test_heuristic_analyzer_hardware_and_sovereign_signals(sample_entry):
 
     # Hardware AI Accelerator
     sample_entry.category = Category.CYBER_TOOLS
-    sample_entry.title = "NVIDIA Blackwell B200 and GB200 Silicon Architecture Deep Dive"
+    sample_entry.title = (
+        "NVIDIA Blackwell B200 and GB200 Silicon Architecture Deep Dive"
+    )
     sample_entry.summary = "Next-generation GPU accelerator delivering 20 petaflops of FP4 inference throughput."
     sample_entry.metadata = {}
     res_hw = await analyzer.analyze(sample_entry)
@@ -112,7 +114,9 @@ async def test_heuristic_analyzer_hardware_and_sovereign_signals(sample_entry):
 
     # Sovereign AI Governance
     sample_entry.category = Category.AI_TECH
-    sample_entry.title = "National AI Strategy and Sovereign AI Infrastructure Initiative"
+    sample_entry.title = (
+        "National AI Strategy and Sovereign AI Infrastructure Initiative"
+    )
     sample_entry.summary = "A comprehensive policy framework for domestic foundation model hosting and data residency."
     res_sov = await analyzer.analyze(sample_entry)
     assert "Policy" in res_sov.attack_vector or "Sovereign" in res_sov.attack_vector
@@ -141,7 +145,9 @@ async def test_heuristic_analyzer_modern_ecosystem_patterns(sample_entry):
 
     analyzer = HeuristicAnalyzer()
     sample_entry.category = Category.AI_MODELS
-    sample_entry.title = "BitNet 1-Bit LLM with Model Context Protocol (MCP) and Wan 2.1 Video Support"
+    sample_entry.title = (
+        "BitNet 1-Bit LLM with Model Context Protocol (MCP) and Wan 2.1 Video Support"
+    )
     sample_entry.summary = "Aider and Claude Code integration for 1-bit quantized inference alongside MiniCPM edge models."
     sample_entry.metadata = {}
 
@@ -152,5 +158,3 @@ async def test_heuristic_analyzer_modern_ecosystem_patterns(sample_entry):
     assert "Video & World Models" in ecos
     assert "Autonomous Coding Agents" in ecos
     assert "Compact Frontier Models" in ecos
-
-

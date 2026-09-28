@@ -57,8 +57,11 @@ async def clear_triage_queue():
 @triage_router.post("/prioritize-frontier")
 async def prioritize_frontier_models(
     limit: int = Query(
-        default=25, ge=1, le=100, description="Max frontier models & breakthrough research to enqueue"
-    )
+        default=25,
+        ge=1,
+        le=100,
+        description="Max frontier models & breakthrough research to enqueue",
+    ),
 ):
     """Clear stale queue items and prioritize frontier models and landmark arXiv research."""
     service = get_triage_service()
@@ -89,7 +92,7 @@ async def toggle_hold_mode(
     hold: bool = Query(
         default=True,
         description="True = hold queue until live sweep; False = continuous background worker",
-    )
+    ),
 ):
     """Toggle triage queue hold mode."""
     service = get_triage_service()
@@ -99,5 +102,3 @@ async def toggle_hold_mode(
         "hold_until_sweep": current,
         "message": f"Queue hold mode set to {current}.",
     }
-
-

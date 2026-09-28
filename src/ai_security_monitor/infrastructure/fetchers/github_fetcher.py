@@ -22,7 +22,7 @@ class GitHubAdvisoriesFetcher(BaseFetcher):
 
     async def _fetch_raw(self) -> list[dict]:
         url = "https://api.github.com/advisories"
-        params = {
+        params: dict[str, str | int] = {
             "per_page": 100,
             "direction": "desc",
             "sort": "published",

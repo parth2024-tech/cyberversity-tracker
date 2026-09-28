@@ -3,13 +3,12 @@ Unit and Integration Tests for Autonomous Intelligence Translation Service.
 """
 
 import uuid
-from datetime import UTC, datetime, timezone
-from unittest.mock import MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import patch
 
 import pytest
 
 from ai_security_monitor.application.services.translation_service import (
-    LANGUAGE_NAMES,
     TranslationService,
 )
 from ai_security_monitor.domain.entities import Category, Entry
@@ -130,7 +129,9 @@ async def test_translation_api_endpoints():
             assert data["detected_language"] in ("zh-cn", "zh")
 
             # 2. Backfill Endpoint
-            res_backfill = await client.post("/api/translate/backfill", json={"limit": 5})
+            res_backfill = await client.post(
+                "/api/translate/backfill", json={"limit": 5}
+            )
             assert res_backfill.status_code == 200
             assert "status" in res_backfill.json()
             assert res_backfill.json()["status"] == "success"

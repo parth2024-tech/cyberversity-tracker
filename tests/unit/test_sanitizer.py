@@ -1,6 +1,6 @@
 """Unit tests for AIPromptSanitizer."""
 
-from ai_security_monitor.core.sanitizer import AIPromptSanitizer, sanitizer
+from ai_security_monitor.core.sanitizer import AIPromptSanitizer
 
 
 def test_sanitize_text_strips_zero_width_chars():

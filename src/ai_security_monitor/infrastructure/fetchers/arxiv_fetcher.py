@@ -19,7 +19,6 @@ from datetime import UTC, datetime
 import feedparser
 import httpx
 
-from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry
 from ai_security_monitor.domain.value_objects import ContentHash
@@ -72,7 +71,7 @@ class ArxivFetcher(BaseFetcher):
 
         query = self.source.query or "cat:cs.AI OR cat:cs.LG OR cat:cs.CL OR cat:cs.CV"
         url = "https://export.arxiv.org/api/query"
-        params = {
+        params: dict[str, str | int] = {
             "search_query": query,
             "start": 0,
             "max_results": max_results,
@@ -173,12 +172,14 @@ class ArxivFetcher(BaseFetcher):
             published_at = datetime.now(UTC)
             if hasattr(item, "published_parsed") and item.published_parsed:
                 try:
-                    published_at = datetime(*item.published_parsed[:6], tzinfo=UTC)
+                    y, m, d, hh, mm, ss = item.published_parsed[:6]
+                    published_at = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
                 except Exception:
                     pass
             elif hasattr(item, "updated_parsed") and item.updated_parsed:
                 try:
-                    published_at = datetime(*item.updated_parsed[:6], tzinfo=UTC)
+                    y, m, d, hh, mm, ss = item.updated_parsed[:6]
+                    published_at = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
                 except Exception:
                     pass
 

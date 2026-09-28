@@ -5,8 +5,6 @@ Unit tests for DeduplicationService and Story aggregate.
 from datetime import UTC, datetime
 from uuid import uuid4
 
-import pytest
-
 from ai_security_monitor.application.services.deduplication_service import (
     DeduplicationService,
     canonicalize_url,
@@ -60,7 +58,9 @@ def test_deduplication_service_story_clustering():
         category=Category.AI_RESEARCH,
     )
 
-    proc_1, story_1, is_new_1 = dedup.process_candidate(entry_arxiv, source_name="arXiv AI")
+    proc_1, story_1, is_new_1 = dedup.process_candidate(
+        entry_arxiv, source_name="arXiv AI"
+    )
     assert is_new_1 is True
     assert story_1.source_count == 1
     assert story_1.confidence_score == 0.60
@@ -77,7 +77,9 @@ def test_deduplication_service_story_clustering():
         category=Category.AI_TECH,
     )
 
-    proc_2, story_2, is_new_2 = dedup.process_candidate(entry_hn, source_name="Hacker News")
+    proc_2, story_2, is_new_2 = dedup.process_candidate(
+        entry_hn, source_name="Hacker News"
+    )
     assert is_new_2 is False
     assert story_2.id == story_1.id
     assert story_2.source_count == 2

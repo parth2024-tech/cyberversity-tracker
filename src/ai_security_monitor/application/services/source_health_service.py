@@ -6,7 +6,7 @@ separated cleanly from content ingestion.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from ai_security_monitor.core.logging import get_logger
@@ -70,8 +70,12 @@ class SourceHealthMetrics:
             "last_latency_ms": self.last_latency_ms,
             "avg_latency_ms": self.avg_latency_ms,
             "last_run_at": self.last_run_at.isoformat() if self.last_run_at else None,
-            "last_success_at": self.last_success_at.isoformat() if self.last_success_at else None,
-            "last_error_at": self.last_error_at.isoformat() if self.last_error_at else None,
+            "last_success_at": self.last_success_at.isoformat()
+            if self.last_success_at
+            else None,
+            "last_error_at": self.last_error_at.isoformat()
+            if self.last_error_at
+            else None,
             "last_error_message": self.last_error_message,
             "last_entries_new": self.last_entries_new,
         }
@@ -188,7 +192,9 @@ class SourceHealthService:
 
         overall_status = "healthy"
         if failing_count > 0:
-            overall_status = "degraded" if failing_count < total_sources * 0.3 else "critical"
+            overall_status = (
+                "degraded" if failing_count < total_sources * 0.3 else "critical"
+            )
 
         from ai_security_monitor.infrastructure.fetchers.throttle import (
             domain_throttle,

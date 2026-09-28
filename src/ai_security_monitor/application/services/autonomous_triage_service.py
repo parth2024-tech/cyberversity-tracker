@@ -30,7 +30,9 @@ class AutonomousTriageService:
         self._uow_factory = uow_factory or (lambda: SqlAlchemyUnitOfWork())
         # PriorityQueue stores tuples: (priority_score: int, timestamp: float, entry_id: UUID)
         # Lower priority_score = higher precedence (P0: 0, P1: 1, P2: 2)
-        self._queue: asyncio.PriorityQueue[tuple[int, float, UUID]] = asyncio.PriorityQueue()
+        self._queue: asyncio.PriorityQueue[tuple[int, float, UUID]] = (
+            asyncio.PriorityQueue()
+        )
         self._queued_ids: set[UUID] = set()
         self._worker_task: asyncio.Task | None = None
         self._running = False
@@ -99,7 +101,9 @@ class AutonomousTriageService:
         logger.info(f"Triage queue flushed ({cleared_count} items purged)")
         if self._broadcast_callback:
             try:
-                self._broadcast_callback({"type": "triage_queue_updated", "data": self.get_status()})
+                self._broadcast_callback(
+                    {"type": "triage_queue_updated", "data": self.get_status()}
+                )
             except Exception as e:
                 logger.warning(f"Broadcast error on queue clear: {e}")
         return cleared_count
@@ -193,7 +197,7 @@ class AutonomousTriageService:
                             analysis_result.blast_radius_score
                         )
                         existing_analysis.affected_ecosystem = (
-                            analysis_result.affected_ecosystem
+                            analysis_result.affected_ecosystem or []
                         )
                         existing_analysis.is_pre_cve_warning = (
                             analysis_result.is_pre_cve_warning
@@ -217,7 +221,7 @@ class AutonomousTriageService:
                             threat_velocity=analysis_result.threat_velocity,
                             severity_index=analysis_result.severity_index,
                             blast_radius_score=analysis_result.blast_radius_score,
-                            affected_ecosystem=analysis_result.affected_ecosystem,
+                            affected_ecosystem=analysis_result.affected_ecosystem or [],
                             is_pre_cve_warning=analysis_result.is_pre_cve_warning,
                             attack_archetype=analysis_result.attack_archetype,
                             weaponization_potential=analysis_result.weaponization_potential
@@ -237,9 +241,7 @@ class AutonomousTriageService:
                     if analysis_result.risk_assessment:
                         entry.metadata["ai_highlight"] = analysis_result.risk_assessment
                     if analysis_result.mitigation:
-                        entry.metadata["developer_utility"] = (
-                            analysis_result.mitigation
-                        )
+                        entry.metadata["developer_utility"] = analysis_result.mitigation
 
                     if hasattr(uow.entries, "update"):
                         res = uow.entries.update(entry)
@@ -332,6 +334,7 @@ class AutonomousTriageService:
                 priority = 1
 
         import time
+
         self._queued_ids.add(entry_id)
         await self._queue.put((priority, time.time(), entry_id))
         self._total_enqueued += 1
@@ -508,7 +511,7 @@ class AutonomousTriageService:
                     analysis_result.blast_radius_score
                 )
                 existing_analysis.affected_ecosystem = (
-                    analysis_result.affected_ecosystem
+                    analysis_result.affected_ecosystem or []
                 )
                 existing_analysis.is_pre_cve_warning = (
                     analysis_result.is_pre_cve_warning
@@ -530,7 +533,7 @@ class AutonomousTriageService:
                     threat_velocity=analysis_result.threat_velocity,
                     severity_index=analysis_result.severity_index,
                     blast_radius_score=analysis_result.blast_radius_score,
-                    affected_ecosystem=analysis_result.affected_ecosystem,
+                    affected_ecosystem=analysis_result.affected_ecosystem or [],
                     is_pre_cve_warning=analysis_result.is_pre_cve_warning,
                     attack_archetype=analysis_result.attack_archetype,
                     weaponization_potential=analysis_result.weaponization_potential
@@ -561,15 +564,21 @@ class AutonomousTriageService:
             )
 
             # Record in recent telemetry
-            self._items_triaged_recent.append({
-                "entry_id": str(entry.id),
-                "title": entry.title,
-                "category": entry.category.value if hasattr(entry.category, "value") else str(entry.category),
-                "model": analysis.model.value if hasattr(analysis.model, "value") else str(analysis.model),
-                "velocity": analysis.threat_velocity,
-                "archetype": analysis.attack_archetype,
-                "triaged_at": datetime.now(UTC).isoformat(),
-            })
+            self._items_triaged_recent.append(
+                {
+                    "entry_id": str(entry.id),
+                    "title": entry.title,
+                    "category": entry.category.value
+                    if hasattr(entry.category, "value")
+                    else str(entry.category),
+                    "model": analysis.model.value
+                    if hasattr(analysis.model, "value")
+                    else str(analysis.model),
+                    "velocity": analysis.threat_velocity,
+                    "archetype": analysis.attack_archetype,
+                    "triaged_at": datetime.now(UTC).isoformat(),
+                }
+            )
             if len(self._items_triaged_recent) > 20:
                 self._items_triaged_recent = self._items_triaged_recent[-20:]
 
@@ -582,7 +591,9 @@ class AutonomousTriageService:
                             "data": {
                                 "entry_id": str(entry.id),
                                 "title": entry.title,
-                                "category": entry.category.value if hasattr(entry.category, "value") else str(entry.category),
+                                "category": entry.category.value
+                                if hasattr(entry.category, "value")
+                                else str(entry.category),
                                 "model": analysis.model.value,
                                 "threat_velocity": analysis.threat_velocity,
                                 "severity_index": analysis.severity_index,

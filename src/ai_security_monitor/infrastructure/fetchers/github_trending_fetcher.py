@@ -16,7 +16,6 @@ from datetime import UTC, datetime, timedelta
 import httpx
 from bs4 import BeautifulSoup
 
-from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry, Source
 from ai_security_monitor.domain.value_objects import ContentHash
@@ -30,40 +29,143 @@ logger = get_logger(__name__)
 _AI_KEYWORDS = frozenset(
     {
         # Core AI/ML
-        "ai", "llm", "agent", "agents", "machine-learning", "deep-learning",
-        "neural", "model", "models", "transformer", "transformers", "diffusion",
-        "rag", "vision", "multimodal", "reasoning", "benchmark", "embedding", "embeddings",
-        "inference", "fine-tuning", "lora", "rlhf",
+        "ai",
+        "llm",
+        "agent",
+        "agents",
+        "machine-learning",
+        "deep-learning",
+        "neural",
+        "model",
+        "models",
+        "transformer",
+        "transformers",
+        "diffusion",
+        "rag",
+        "vision",
+        "multimodal",
+        "reasoning",
+        "benchmark",
+        "embedding",
+        "embeddings",
+        "inference",
+        "fine-tuning",
+        "lora",
+        "rlhf",
         # Major labs / brands
-        "openai", "anthropic", "deepseek", "qwen", "claude", "llama", "mistral",
-        "gemini", "gemma", "grok", "kimi", "moonshot", "internlm", "phi", "falcon",
-        "huggingface", "pytorch",
+        "openai",
+        "anthropic",
+        "deepseek",
+        "qwen",
+        "claude",
+        "llama",
+        "mistral",
+        "gemini",
+        "gemma",
+        "grok",
+        "kimi",
+        "moonshot",
+        "internlm",
+        "phi",
+        "falcon",
+        "huggingface",
+        "pytorch",
         # Frontier model keywords
-        "o1", "o3", "gpt-4", "gpt-5", "llama3", "deepseek-r1", "deepseek-v3",
+        "o1",
+        "o3",
+        "gpt-4",
+        "gpt-5",
+        "llama3",
+        "deepseek-r1",
+        "deepseek-v3",
         # Inference runtimes
-        "vllm", "ollama", "sglang", "llamacpp", "llama.cpp", "tensorrt", "tensorrt-llm",
-        "nim", "triton", "flashattention", "flash-attn", "mlx", "rocm",
+        "vllm",
+        "ollama",
+        "sglang",
+        "llamacpp",
+        "llama.cpp",
+        "tensorrt",
+        "tensorrt-llm",
+        "nim",
+        "triton",
+        "flashattention",
+        "flash-attn",
+        "mlx",
+        "rocm",
         # Training / fine-tuning
-        "dpo", "grpo", "sft", "qlora", "peft", "alignment", "unsloth", "axolotl",
-        "finetuning", "pretraining",
+        "dpo",
+        "grpo",
+        "sft",
+        "qlora",
+        "peft",
+        "alignment",
+        "unsloth",
+        "axolotl",
+        "finetuning",
+        "pretraining",
         # Frameworks and libraries
-        "langchain", "llamaindex", "langgraph", "autogen", "crewai", "litellm",
-        "openrouter", "haystack", "dspy",
+        "langchain",
+        "llamaindex",
+        "langgraph",
+        "autogen",
+        "crewai",
+        "litellm",
+        "openrouter",
+        "haystack",
+        "dspy",
         # Vector stores / RAG infra
-        "chroma", "chromadb", "qdrant", "weaviate", "milvus", "pinecone", "faiss",
+        "chroma",
+        "chromadb",
+        "qdrant",
+        "weaviate",
+        "milvus",
+        "pinecone",
+        "faiss",
         # Media generation
-        "whisper", "stable-diffusion", "sdxl", "flux", "comfyui", "tts", "stt",
-        "text-to-image", "text-to-video", "vision-language",
+        "whisper",
+        "stable-diffusion",
+        "sdxl",
+        "flux",
+        "comfyui",
+        "tts",
+        "stt",
+        "text-to-image",
+        "text-to-video",
+        "vision-language",
         # Agentic / automation
-        "agentic", "tool-calling", "function-calling", "workflow", "autonomous",
-        "swarm", "orchestration",
+        "agentic",
+        "tool-calling",
+        "function-calling",
+        "workflow",
+        "autonomous",
+        "swarm",
+        "orchestration",
         # Hardware / acceleration
-        "cuda", "gpu", "npu", "accelerator", "quantization", "gguf", "ggml",
-        "awq", "gptq", "fp8", "fp4", "fp16", "int8", "int4",
+        "cuda",
+        "gpu",
+        "npu",
+        "accelerator",
+        "quantization",
+        "gguf",
+        "ggml",
+        "awq",
+        "gptq",
+        "fp8",
+        "fp4",
+        "fp16",
+        "int8",
+        "int4",
         # Modalities / domains
-        "robotics", "embodied", "humanoid", "speech",
+        "robotics",
+        "embodied",
+        "humanoid",
+        "speech",
         # Evaluation / research
-        "arxiv", "preprint", "dataset", "evaluate", "leaderboard",
+        "arxiv",
+        "preprint",
+        "dataset",
+        "evaluate",
+        "leaderboard",
     }
 )
 
@@ -277,7 +379,7 @@ class GitHubTrendingFetcher(BaseFetcher):
                     continue
 
                 repo_name = a_tag.get_text(strip=True).replace(" ", "").strip("/")
-                repo_url = "https://github.com/" + a_tag["href"].lstrip("/")
+                repo_url = "https://github.com/" + str(a_tag["href"]).lstrip("/")
 
                 desc_tag = repo.find("p", class_="col-9") or repo.find("p")
                 description = desc_tag.get_text(strip=True) if desc_tag else ""
@@ -376,7 +478,7 @@ class GitHubTrendingFetcher(BaseFetcher):
         }
 
         # Primary query: frequency-aligned recency + topic
-        params = {
+        params: dict[str, str | int] = {
             "q": f"{stars_floor} pushed:>={since_date} {topic_filter.split(' OR ')[0]}",
             "sort": "stars",
             "order": "desc",

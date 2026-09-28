@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import html
 import re
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -470,7 +470,7 @@ class NewspaperRenderer:
         )
 
         md = f"""# 📰 THE GLOBAL AI GAZETTE
-**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #{edition_num}**  
+**Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #{edition_num}**
 *{date_str} • Coverage Window: {window_hours}h • {len(entries)} verified AI stories analyzed*
 
 ---
@@ -502,7 +502,7 @@ class NewspaperRenderer:
 
 ## 👔 [PAGE 2] EXECUTIVE AI BRIEFING: STRATEGIC ROADMAP & DIRECTIVES
 
-> **Executive Macro Intelligence Synthesis:**  
+> **Executive Macro Intelligence Synthesis:**
 > Global enterprise AI adoption is pivoting decisively toward test-time reasoning architectures and private-cloud quantization. Technology leadership must actively balance proprietary frontier model APIs with sovereign, open-weight deployments (e.g. DeepSeek, Qwen) to reduce token expenditure while strictly sandboxing autonomous agent tool-calling boundaries.
 
 | Strategic Operational Vector | Priority Development | Source | Boardroom Action Directive |

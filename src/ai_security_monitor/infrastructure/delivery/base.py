@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from pathlib import Path
 from uuid import UUID
 
 from ai_security_monitor.domain.entities import Analysis, Digest, Entry
@@ -47,6 +48,35 @@ class BaseDelivery(ABC):
     async def send_alert(self, entry: Entry, analysis: Analysis) -> DeliveryResult:
         """Send an immediate alert for a high-priority entry."""
         ...
+
+    async def send_newspaper_pdf(
+        self,
+        pdf_path: str | Path,
+        edition_number: int,
+        to_email: str | None = None,
+        lead_story: str = "",
+        total_threats: int = 0,
+    ) -> DeliveryResult:
+        """Send a newspaper PDF issue."""
+        return DeliveryResult(
+            success=False,
+            channel=self.channel_name,
+            error=f"{self.channel_name} does not support send_newspaper_pdf",
+        )
+
+    async def send_newspaper_document(
+        self,
+        pdf_path: str | Path,
+        edition_number: int,
+        lead_story: str = "",
+        total_threats: int = 0,
+    ) -> DeliveryResult:
+        """Send a newspaper PDF document."""
+        return DeliveryResult(
+            success=False,
+            channel=self.channel_name,
+            error=f"{self.channel_name} does not support send_newspaper_document",
+        )
 
     async def _publish_delivery_event(
         self, digest_id: UUID, success: bool, error: str | None = None

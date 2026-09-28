@@ -13,7 +13,6 @@ from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry, FetchStatus, Source
 from ai_security_monitor.domain.events import (
-    EntryFetchedEvent,
     FetchFailedEvent,
     event_bus,
 )
@@ -25,7 +24,6 @@ from ai_security_monitor.domain.exceptions import (
 from ai_security_monitor.infrastructure.fetchers.robotstxt import robots_manager
 from ai_security_monitor.infrastructure.fetchers.throttle import (
     domain_throttle,
-    parse_retry_after,
 )
 
 logger = get_logger(__name__)
@@ -84,7 +82,7 @@ class BaseFetcher(ABC):
         await self._respect_rate_limit()
 
         # Retry logic
-        last_error = None
+        last_error: Exception | None = None
         for attempt in range(self.max_retries + 1):
             try:
                 raw_entries = await asyncio.wait_for(
@@ -198,9 +196,7 @@ class BaseFetcher(ABC):
         domain = domain_throttle.extract_domain(
             self.source.url if self.source else None
         )
-        duration_ms = int(
-            (datetime.now(UTC) - start_time).total_seconds() * 1000
-        )
+        duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
         domain_throttle.record(
             domain,
             latency=duration_ms / 1000.0,
@@ -227,7 +223,7 @@ class BaseFetcher(ABC):
         domain = domain_throttle.extract_domain(
             self.source.url if self.source else None
         )
-        floor_delay = self._rate_limit_seconds
+        floor_delay: float = float(self._rate_limit_seconds)
 
         # Check robots.txt crawl-delay if enabled by source config
         if (

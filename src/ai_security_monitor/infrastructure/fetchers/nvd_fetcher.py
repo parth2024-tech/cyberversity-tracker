@@ -27,7 +27,7 @@ class NVDFetcher(BaseFetcher):
             "%Y-%m-%dT%H:%M:%S.000"
         )
         url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
-        params = {
+        params: dict[str, str | int] = {
             "pubStartDate": pub_start,
             "resultsPerPage": 100,
         }

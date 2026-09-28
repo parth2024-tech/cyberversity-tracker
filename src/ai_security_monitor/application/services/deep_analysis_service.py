@@ -98,19 +98,79 @@ class DeepAnalysisService:
             else str(entry.category)
         )
 
-        if any(k in title_lower for k in ("blackwell", "b200", "gb200", "h100", "h200", "silicon", "hardware", "chip", "npu", "tpu", "cerebras", "groq", "mi300")):
+        if any(
+            k in title_lower
+            for k in (
+                "blackwell",
+                "b200",
+                "gb200",
+                "h100",
+                "h200",
+                "silicon",
+                "hardware",
+                "chip",
+                "npu",
+                "tpu",
+                "cerebras",
+                "groq",
+                "mi300",
+            )
+        ):
             return "Next-Generation AI Silicon & Hardware Accelerator Milestone"
-        if any(k in title_lower for k in ("agent", "swarm", "crewai", "autogen", "langgraph", "workflow", "mcp", "tool-calling")):
+        if any(
+            k in title_lower
+            for k in (
+                "agent",
+                "swarm",
+                "crewai",
+                "autogen",
+                "langgraph",
+                "workflow",
+                "mcp",
+                "tool-calling",
+            )
+        ):
             return "Autonomous Multi-Agent System & Execution Framework"
-        if any(k in title_lower for k in ("robot", "robotics", "embodied", "humanoid", "manipulation", "locomotion")):
+        if any(
+            k in title_lower
+            for k in (
+                "robot",
+                "robotics",
+                "embodied",
+                "humanoid",
+                "manipulation",
+                "locomotion",
+            )
+        ):
             return "Physical AI & Embodied Robotics Breakthrough"
-        if any(k in title_lower for k in ("sovereign", "national ai", "regulation", "governance", "sovereignty")):
+        if any(
+            k in title_lower
+            for k in (
+                "sovereign",
+                "national ai",
+                "regulation",
+                "governance",
+                "sovereignty",
+            )
+        ):
             return "Global Sovereign AI & Regional Infrastructure Initiative"
         if any(k in title_lower for k in ("bitnet", "1-bit", "ternary")):
             return "Extreme 1-Bit LLM & Multiplication-Free Quantization Architecture"
-        if any(k in title_lower for k in ("sora", "wan2.1", "hunyuanvideo", "video generation", "world model")):
+        if any(
+            k in title_lower
+            for k in (
+                "sora",
+                "wan2.1",
+                "hunyuanvideo",
+                "video generation",
+                "world model",
+            )
+        ):
             return "Multimodal World Simulator & Diffusion Video Architecture"
-        if any(k in title_lower for k in ("test-time", "prm", "mcts", "chain-of-thought", "rlvr")):
+        if any(
+            k in title_lower
+            for k in ("test-time", "prm", "mcts", "chain-of-thought", "rlvr")
+        ):
             return "Test-Time Compute Scaling & Autonomous Reasoning Architecture"
         if any(k in title_lower for k in ("deepseek", "r1", "reasoning", "reasoner")):
             return "Frontier Reasoning Architecture & Open-Weights Milestone"
@@ -139,8 +199,19 @@ class DeepAnalysisService:
         if any(
             k in title_lower
             for k in (
-                "blackwell", "b200", "gb200", "h100", "h200", "silicon",
-                "semiconductor", "chip", "npu", "tpu", "cerebras", "groq", "mi300"
+                "blackwell",
+                "b200",
+                "gb200",
+                "h100",
+                "h200",
+                "silicon",
+                "semiconductor",
+                "chip",
+                "npu",
+                "tpu",
+                "cerebras",
+                "groq",
+                "mi300",
             )
         ):
             exec_summary = (
@@ -154,7 +225,16 @@ class DeepAnalysisService:
             )
         elif any(
             k in title_lower
-            for k in ("agent", "swarm", "crewai", "autogen", "langgraph", "workflow", "mcp", "tool-calling")
+            for k in (
+                "agent",
+                "swarm",
+                "crewai",
+                "autogen",
+                "langgraph",
+                "workflow",
+                "mcp",
+                "tool-calling",
+            )
         ):
             exec_summary = (
                 f"{title} delivers advanced agentic execution primitives, enabling stateful multi-agent workflows, "
@@ -167,7 +247,14 @@ class DeepAnalysisService:
             )
         elif any(
             k in title_lower
-            for k in ("robot", "robotics", "embodied", "humanoid", "manipulation", "locomotion")
+            for k in (
+                "robot",
+                "robotics",
+                "embodied",
+                "humanoid",
+                "manipulation",
+                "locomotion",
+            )
         ):
             exec_summary = (
                 f"{title} demonstrates breakthrough capabilities in physical artificial intelligence, bridging foundation model "
@@ -180,7 +267,13 @@ class DeepAnalysisService:
             )
         elif any(
             k in title_lower
-            for k in ("sovereign", "national ai", "regulation", "governance", "sovereignty")
+            for k in (
+                "sovereign",
+                "national ai",
+                "regulation",
+                "governance",
+                "sovereignty",
+            )
         ):
             exec_summary = (
                 f"{title} highlights significant strategic progress in sovereign foundation model infrastructure, "
@@ -211,7 +304,10 @@ class DeepAnalysisService:
                 "2. **Extreme Memory Compression**: Shrinks model weight footprint by 8x compared to FP16, enabling large parameter models to run entirely within low-cost memory bandwidth constraints.\n"
                 "3. **Scaling Law Preservation**: Demonstrates Pareto-optimal scaling behavior matching or surpassing full-precision counterparts at equivalent parameter scales."
             )
-        elif any(k in title_lower for k in ("test-time", "prm", "mcts", "chain-of-thought", "rlvr")):
+        elif any(
+            k in title_lower
+            for k in ("test-time", "prm", "mcts", "chain-of-thought", "rlvr")
+        ):
             exec_summary = (
                 f"{title} formalizes test-time compute scaling mechanisms, trading inference latency and token deliberation "
                 f"budgets for verifiable mathematical, reasoning, and algorithmic precision."
@@ -221,7 +317,18 @@ class DeepAnalysisService:
                 "2. **Process Reward Model (PRM) & Tree Search**: Employs step-level verification and Monte Carlo Tree Search (MCTS) exploration to prune fallacious deduction branches.\n"
                 "3. **Reinforcement Learning with Rule-Based Verifiers (RLVR)**: Trains self-reflective reasoning policies on verifiable outcomes without relying on unstable neural reward models."
             )
-        elif any(k in title_lower for k in ("world model", "sora", "wan2.1", "hunyuanvideo", "video generation", "diffusion transformer", "dit")):
+        elif any(
+            k in title_lower
+            for k in (
+                "world model",
+                "sora",
+                "wan2.1",
+                "hunyuanvideo",
+                "video generation",
+                "diffusion transformer",
+                "dit",
+            )
+        ):
             exec_summary = (
                 f"{title} advances state-of-the-art physical world simulation and high-fidelity video synthesis utilizing "
                 f"scalable Diffusion Transformer (DiT) architectures."
@@ -327,8 +434,19 @@ class DeepAnalysisService:
         if any(
             k in title_lower
             for k in (
-                "blackwell", "b200", "gb200", "h100", "h200", "silicon",
-                "semiconductor", "chip", "npu", "tpu", "cerebras", "groq", "mi300"
+                "blackwell",
+                "b200",
+                "gb200",
+                "h100",
+                "h200",
+                "silicon",
+                "semiconductor",
+                "chip",
+                "npu",
+                "tpu",
+                "cerebras",
+                "groq",
+                "mi300",
             )
         ):
             return [
@@ -355,7 +473,15 @@ class DeepAnalysisService:
             ]
         elif any(
             k in title_lower
-            for k in ("agent", "swarm", "crewai", "autogen", "langgraph", "workflow", "mcp")
+            for k in (
+                "agent",
+                "swarm",
+                "crewai",
+                "autogen",
+                "langgraph",
+                "workflow",
+                "mcp",
+            )
         ):
             return [
                 {
@@ -402,7 +528,18 @@ class DeepAnalysisService:
                     "standing": "Full-Precision Parity",
                 },
             ]
-        elif any(k in title_lower for k in ("world model", "sora", "wan2.1", "hunyuanvideo", "video generation", "diffusion transformer", "dit")):
+        elif any(
+            k in title_lower
+            for k in (
+                "world model",
+                "sora",
+                "wan2.1",
+                "hunyuanvideo",
+                "video generation",
+                "diffusion transformer",
+                "dit",
+            )
+        ):
             return [
                 {
                     "benchmark": "VBench (Video Generation Quality)",
@@ -528,7 +665,17 @@ class DeepAnalysisService:
 
         if any(
             k in title_lower
-            for k in ("blackwell", "b200", "gb200", "h100", "silicon", "hardware", "chip", "npu", "tpu")
+            for k in (
+                "blackwell",
+                "b200",
+                "gb200",
+                "h100",
+                "silicon",
+                "hardware",
+                "chip",
+                "npu",
+                "tpu",
+            )
         ):
             checklist.extend(
                 [
@@ -556,7 +703,18 @@ class DeepAnalysisService:
                     "Evaluate perplexity curve and zero-shot reasoning degradation against comparable BF16 checkpoints.",
                 ]
             )
-        elif any(k in title_lower for k in ("world model", "sora", "wan2.1", "hunyuanvideo", "video generation", "diffusion transformer", "dit")):
+        elif any(
+            k in title_lower
+            for k in (
+                "world model",
+                "sora",
+                "wan2.1",
+                "hunyuanvideo",
+                "video generation",
+                "diffusion transformer",
+                "dit",
+            )
+        ):
             checklist.extend(
                 [
                     "Examine 3D VAE latent patchification resolution (e.g., 480p/720p/1080p) and frame temporal sampling rate.",
@@ -564,7 +722,10 @@ class DeepAnalysisService:
                     "Benchmark inference latency per second of generated video across target accelerator hardware.",
                 ]
             )
-        elif (cat in ("ai_models", "github_trending")) and any(k in title_lower for k in ("test-time", "prm", "mcts", "chain-of-thought", "rlvr")):
+        elif (cat in ("ai_models", "github_trending")) and any(
+            k in title_lower
+            for k in ("test-time", "prm", "mcts", "chain-of-thought", "rlvr")
+        ):
             checklist.extend(
                 [
                     "Configure dynamic thought token budget parameters and temperature/top-p sampling bounds.",

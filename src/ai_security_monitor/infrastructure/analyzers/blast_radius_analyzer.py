@@ -1,6 +1,7 @@
 # Blast Radius Engine - Feature 1: AI x CVE Correlation.
 
 import re
+from typing import Any
 
 from ai_security_monitor.domain.entities import AnalysisModel, Category, Entry
 from ai_security_monitor.domain.value_objects import (
@@ -137,7 +138,7 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
     }
 
     # CVE-to-AI mapping for known vulnerability patterns
-    CVE_AI_PATTERNS = {
+    CVE_AI_PATTERNS: dict[str, dict[str, Any]] = {
         "pickle": {
             "ecosystems": [
                 "PyTorch",
@@ -250,7 +251,7 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
     def _correlate_cve_with_ai(self, text: str) -> tuple[list[str], str, str]:
         """Correlate CVE patterns with AI ecosystems."""
         text_lower = text.lower()
-        ecosystems = set()
+        ecosystems: set[str] = set()
         archetype = AttackArchetype.STANDARD_VULN.value
         description = ""
 
@@ -421,9 +422,7 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
                 if all_ecosystems
                 else "Ecosystem Footprint: Universal integration across standard Python / GPU environments."
             )
-            compat_mitigation = (
-                "Integration Guide: Deployable via standard container runtimes, Hugging Face, or local inference engines (vLLM / Ollama)."
-            )
+            compat_mitigation = "Integration Guide: Deployable via standard container runtimes, Hugging Face, or local inference engines (vLLM / Ollama)."
             # Adoption velocity score proportional to ecosystem breadth
             velocity = min(95, 70 + len(all_ecosystems) * 4)
             severity = min(92, 65 + len(all_ecosystems) * 3)

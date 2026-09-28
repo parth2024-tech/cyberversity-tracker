@@ -112,7 +112,6 @@ class DatabaseManager:
         # For SQLite, ensure directory exists and use NullPool
         if self._url.startswith("sqlite"):
             import os
-            import shutil
 
             db_path = (
                 self._url.replace("sqlite+aiosqlite:///", "")
@@ -162,7 +161,7 @@ class DatabaseManager:
         return engine
 
     @asynccontextmanager
-    async def session(self) -> AsyncSession:
+    async def session(self) -> AsyncGenerator[AsyncSession, None]:
         """Get a database session with automatic transaction management."""
         async with self.session_factory() as session:
             try:
@@ -173,7 +172,7 @@ class DatabaseManager:
                 raise
 
     @asynccontextmanager
-    async def transaction(self) -> AsyncSession:
+    async def transaction(self) -> AsyncGenerator[AsyncSession, None]:
         """Explicit transaction context manager."""
         async with self.session() as session:
             async with session.begin():

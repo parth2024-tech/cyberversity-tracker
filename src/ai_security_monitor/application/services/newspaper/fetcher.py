@@ -127,7 +127,8 @@ class NewspaperLiveFetcher:
                         pub_dt = now
                         if hasattr(item, "published_parsed") and item.published_parsed:
                             try:
-                                pub_dt = datetime(*item.published_parsed[:6], tzinfo=UTC)
+                                y, m, d, hh, mm, ss = item.published_parsed[:6]
+                                pub_dt = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
                             except Exception:
                                 pub_dt = now
                         if pub_dt < cutoff_14d:
@@ -173,7 +174,8 @@ class NewspaperLiveFetcher:
                         pub_dt = now
                         if hasattr(item, "published_parsed") and item.published_parsed:
                             try:
-                                pub_dt = datetime(*item.published_parsed[:6], tzinfo=UTC)
+                                y, m, d, hh, mm, ss = item.published_parsed[:6]
+                                pub_dt = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
                             except Exception:
                                 pub_dt = now
                         if pub_dt < cutoff_14d:

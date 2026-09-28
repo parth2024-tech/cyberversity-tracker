@@ -61,9 +61,9 @@ class BaseAnalyzer(ABC):
 
     async def analyze_batch(
         self, entries: list[Entry]
-    ) -> list[tuple[UUID, AnalysisResult]]:
+    ) -> list[tuple[UUID, AnalysisResult | None]]:
         """Analyze multiple entries."""
-        results = []
+        results: list[tuple[UUID, AnalysisResult | None]] = []
         for entry in entries:
             try:
                 result = await self.analyze(entry)
@@ -79,7 +79,7 @@ class BaseAnalyzer(ABC):
                     threat_velocity=result.threat_velocity,
                     severity_index=result.severity_index,
                     blast_radius_score=result.blast_radius_score,
-                    affected_ecosystem=result.affected_ecosystem,
+                    affected_ecosystem=result.affected_ecosystem or [],
                     is_pre_cve_warning=result.is_pre_cve_warning,
                     attack_archetype=result.attack_archetype,
                     weaponization_potential=result.weaponization_potential,

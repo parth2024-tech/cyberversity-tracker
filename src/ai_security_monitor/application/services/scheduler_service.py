@@ -256,7 +256,6 @@ class SchedulerService:
 
     async def _backup_loop(self) -> None:
         """Automated SQLite database backup every 12 hours with 7-version retention."""
-        import shutil
         from pathlib import Path
 
         # Initial delay before first backup to let server start and database populate
@@ -281,6 +280,7 @@ class SchedulerService:
                     # Perform safe SQLite online backup capturing all WAL pages with zero page tearing
                     def _safe_sqlite_backup(src_p: Path, dst_p: Path) -> None:
                         import sqlite3
+
                         with sqlite3.connect(str(src_p)) as src_conn:
                             with sqlite3.connect(str(dst_p)) as dst_conn:
                                 src_conn.backup(dst_conn)

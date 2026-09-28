@@ -9,12 +9,11 @@ Expanded test suite for China intelligence pipeline hardening:
 """
 
 import uuid
-from datetime import datetime, timezone
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from ai_security_monitor.domain.entities import Category, Entry, Source, SourceType
+from ai_security_monitor.domain.entities import Category, Source, SourceType
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.rss_fetcher import RSSFetcher
 from ai_security_monitor.presentation.api.main import create_app

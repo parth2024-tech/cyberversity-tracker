@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import html
 import re
-from typing import Any
 
 from bs4 import BeautifulSoup, Comment
 
@@ -84,7 +83,9 @@ class AIPromptSanitizer:
             soup = BeautifulSoup(str(html_content), "html.parser")
 
             # 1. Remove noise tags completely
-            for tag in soup(["script", "style", "noscript", "svg", "iframe", "template"]):
+            for tag in soup(
+                ["script", "style", "noscript", "svg", "iframe", "template"]
+            ):
                 tag.decompose()
 
             # 2. Remove HTML comments
@@ -99,8 +100,13 @@ class AIPromptSanitizer:
                     continue
 
                 # Check inline style
-                style = tag.get("style", "")
-                if style and _HIDDEN_STYLE_PATTERN.search(style):
+                style_val = tag.get("style", "")
+                style_str = (
+                    " ".join(style_val)
+                    if isinstance(style_val, list)
+                    else str(style_val)
+                )
+                if style_str and _HIDDEN_STYLE_PATTERN.search(style_str):
                     tag.decompose()
                     continue
 

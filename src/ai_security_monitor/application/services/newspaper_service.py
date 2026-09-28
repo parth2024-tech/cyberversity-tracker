@@ -13,34 +13,14 @@ import shutil
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
-
-import feedparser
-import httpx
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.pdfgen import canvas
-from reportlab.platypus import (
-    HRFlowable,
-    PageBreak,
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
-)
 
 from ai_security_monitor.application.services.article_extractor import article_extractor
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import (
-    Analysis,
-    AnalysisModel,
     Category,
     Entry,
 )
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
-from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -53,7 +33,6 @@ from ai_security_monitor.application.services.newspaper.fetcher import (
 )
 from ai_security_monitor.application.services.newspaper.renderer import (
     NewspaperRenderer,
-    NumberedCanvas,
 )
 
 COUNTRY_FLAGS: dict[str, str] = {
@@ -436,6 +415,7 @@ class NewspaperService:
         latest_pdf = self._output_dir / "latest.pdf"
         meta_file = self._output_dir / f"{edition_id}.json"
         latest_meta = self._output_dir / "latest.json"
+
         # Non-blocking file I/O offloaded to worker thread
         def _write_edition_files():
             md_file.write_text(markdown_content, encoding="utf-8")
@@ -932,24 +912,68 @@ class NewspaperService:
                 k in t_lower
                 for k in (
                     # Frontier labs
-                    "deepseek", "openai", "anthropic", "qwen", "gemini", "claude",
-                    "meta ai", "xai", "mistral ai",
+                    "deepseek",
+                    "openai",
+                    "anthropic",
+                    "qwen",
+                    "gemini",
+                    "claude",
+                    "meta ai",
+                    "xai",
+                    "mistral ai",
                     # Flagship models
-                    "llama", "grok", "phi", "kimi", "moonshot", "internlm", "falcon",
-                    "o1", "o3", "gpt-4", "gpt-5", "r1", "deepseek-r1",
+                    "llama",
+                    "grok",
+                    "phi",
+                    "kimi",
+                    "moonshot",
+                    "internlm",
+                    "falcon",
+                    "o1",
+                    "o3",
+                    "gpt-4",
+                    "gpt-5",
+                    "r1",
+                    "deepseek-r1",
                     # Infra
-                    "vllm", "ollama", "sglang", "llama.cpp", "tensorrt", "mlx",
+                    "vllm",
+                    "ollama",
+                    "sglang",
+                    "llama.cpp",
+                    "tensorrt",
+                    "mlx",
                     # Breakthroughs
-                    "reasoning", "breakthrough", "sota", "state-of-the-art",
-                    "release", "launch", "open-source", "open source",
+                    "reasoning",
+                    "breakthrough",
+                    "sota",
+                    "state-of-the-art",
+                    "release",
+                    "launch",
+                    "open-source",
+                    "open source",
                     # Research
-                    "arxiv", "paper", "benchmark", "test-time compute",
+                    "arxiv",
+                    "paper",
+                    "benchmark",
+                    "test-time compute",
                     # Agentic
-                    "agent", "crewai", "autogen", "langgraph", "mcp",
+                    "agent",
+                    "crewai",
+                    "autogen",
+                    "langgraph",
+                    "mcp",
                     # Hardware
-                    "hardware", "nvidia", "chip", "blackwell", "h100", "h200",
+                    "hardware",
+                    "nvidia",
+                    "chip",
+                    "blackwell",
+                    "h100",
+                    "h200",
                     # Embodied
-                    "robot", "robotics", "embodied", "humanoid",
+                    "robot",
+                    "robotics",
+                    "embodied",
+                    "humanoid",
                 )
             ):
                 score += 200
@@ -960,15 +984,15 @@ class NewspaperService:
         secondary_anchor = sorted_entries[1] if len(sorted_entries) > 1 else None
         remaining = sorted_entries[2:] if len(sorted_entries) > 2 else []
 
-        front_page_briefs = []
-        ciso_briefs = []
-        trending_repos = []
-        ai_models_list = []
-        ai_research_list = []
-        ai_tools_list = []
-        sovereign_ai = []
-        ai_hardware = []
-        autonomous_agents = []
+        front_page_briefs: list[Entry] = []
+        ciso_briefs: list[Entry] = []
+        trending_repos: list[Entry] = []
+        ai_models_list: list[Entry] = []
+        ai_research_list: list[Entry] = []
+        ai_tools_list: list[Entry] = []
+        sovereign_ai: list[Entry] = []
+        ai_hardware: list[Entry] = []
+        autonomous_agents: list[Entry] = []
 
         for e in remaining:
             region = (e.metadata.get("region") if e.metadata else "") or ""

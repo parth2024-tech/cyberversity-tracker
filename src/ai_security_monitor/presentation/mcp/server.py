@@ -180,7 +180,11 @@ class MCPServer:
                         EntryModel,
                     )
 
-                    query = select(EntryModel).order_by(EntryModel.published_at.desc()).limit(limit)
+                    query = (
+                        select(EntryModel)
+                        .order_by(EntryModel.published_at.desc())
+                        .limit(limit)
+                    )
                     if category:
                         query = query.where(EntryModel.category == category)
 
@@ -192,7 +196,9 @@ class MCPServer:
                             "url": r.url,
                             "summary": r.summary,
                             "category": str(r.category),
-                            "published_at": r.published_at.isoformat() if r.published_at else None,
+                            "published_at": r.published_at.isoformat()
+                            if r.published_at
+                            else None,
                             "tags": r.tags,
                         }
                         for r in rows

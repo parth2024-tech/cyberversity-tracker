@@ -24,7 +24,6 @@ from ai_security_monitor.domain.entities import (
     SourceType,
 )
 from ai_security_monitor.domain.exceptions import DuplicateEntryError
-from ai_security_monitor.domain.repositories import EntryFilters
 from ai_security_monitor.infrastructure.analyzers.base import analyzer_registry
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -185,8 +184,9 @@ class MonitorService:
                         changed = True
                     # Fully synchronize config dictionary including frequency and filter_mode
                     new_cfg = dict(s_cfg.config or {})
-                    if getattr(s_cfg, "since", None):
-                        new_cfg["frequency"] = s_cfg.since
+                    since_val = getattr(s_cfg, "since", None)
+                    if since_val:
+                        new_cfg["frequency"] = str(since_val)
                     new_cfg["region"] = getattr(s_cfg, "region", "global")
                     new_cfg["country"] = getattr(s_cfg, "country", "GLOBAL")
                     if existing.config != new_cfg:
@@ -372,13 +372,12 @@ class MonitorService:
                     analysis = Analysis(
                         entry_id=entry.id,
                         attack_vector=analysis_res.attack_vector or "Standard vector",
-                        risk_assessment=analysis_res.risk_assessment
-                        or "Standard risk",
+                        risk_assessment=analysis_res.risk_assessment or "Standard risk",
                         mitigation=analysis_res.mitigation or "Standard patch",
                         threat_velocity=analysis_res.threat_velocity,
                         severity_index=analysis_res.severity_index,
                         blast_radius_score=blast_res.blast_radius_score,
-                        affected_ecosystem=blast_res.affected_ecosystem,
+                        affected_ecosystem=blast_res.affected_ecosystem or [],
                         is_pre_cve_warning=blast_res.is_pre_cve_warning,
                         attack_archetype=blast_res.attack_archetype,
                         weaponization_potential=analysis_res.weaponization_potential
@@ -399,33 +398,96 @@ class MonitorService:
                 # architectures, inference infra milestones, and open-source releases.
                 landmark_any_lower = (
                     # Frontier labs
-                    "deepseek", "anthropic", "openai", "google deepmind", "xai", "mistral ai",
+                    "deepseek",
+                    "anthropic",
+                    "openai",
+                    "google deepmind",
+                    "xai",
+                    "mistral ai",
                     # Flagship model series
-                    "gpt-5", "gpt-4", "o1", "o3", "claude", "gemini", "gemma", "grok",
-                    "llama", "llama-3", "llama3", "qwen", "r1", "deepseek-r1", "deepseek-v3",
-                    "kimi", "moonshot", "internlm", "phi-", "falcon",
+                    "gpt-5",
+                    "gpt-4",
+                    "o1",
+                    "o3",
+                    "claude",
+                    "gemini",
+                    "gemma",
+                    "grok",
+                    "llama",
+                    "llama-3",
+                    "llama3",
+                    "qwen",
+                    "r1",
+                    "deepseek-r1",
+                    "deepseek-v3",
+                    "kimi",
+                    "moonshot",
+                    "internlm",
+                    "phi-",
+                    "falcon",
                     # Inference infrastructure
-                    "vllm", "sglang", "llama.cpp", "ollama", "tensorrt-llm", "nvidia nim", "mlx",
+                    "vllm",
+                    "sglang",
+                    "llama.cpp",
+                    "ollama",
+                    "tensorrt-llm",
+                    "nvidia nim",
+                    "mlx",
                     # Reasoning / test-time compute
-                    "reasoning", "reasoner", "chain-of-thought", "test-time compute",
-                    "inference-time scaling", "extended thinking", "long thinking",
+                    "reasoning",
+                    "reasoner",
+                    "chain-of-thought",
+                    "test-time compute",
+                    "inference-time scaling",
+                    "extended thinking",
+                    "long thinking",
                     # Research milestones
-                    "breakthrough", "frontier", "sota", "state-of-the-art", "human-level",
+                    "breakthrough",
+                    "frontier",
+                    "sota",
+                    "state-of-the-art",
+                    "human-level",
                     # AI hardware
-                    "nvidia h100", "nvidia h200", "gb200", "blackwell", "amd mi300",
+                    "nvidia h100",
+                    "nvidia h200",
+                    "gb200",
+                    "blackwell",
+                    "amd mi300",
                     # Agentic frameworks
-                    "autogen", "crewai", "langgraph",
+                    "autogen",
+                    "crewai",
+                    "langgraph",
                     # Open-source milestones
-                    "open weights", "weights released", "open-source release",
+                    "open weights",
+                    "weights released",
+                    "open-source release",
                 )
                 landmark_ai_model_signals = (
-                    "release", "weights", "checkpoint", "model", "moe", "mixture",
-                    "parameters", "billion", "trillion", "preview", "launch", "announce",
-                    "available", "access", "download",
+                    "release",
+                    "weights",
+                    "checkpoint",
+                    "model",
+                    "moe",
+                    "mixture",
+                    "parameters",
+                    "billion",
+                    "trillion",
+                    "preview",
+                    "launch",
+                    "announce",
+                    "available",
+                    "access",
+                    "download",
                 )
                 landmark_github_signals = (
-                    "trending", "record", "milestone", "new release", "major release",
-                    "v1.0", "v2.0", "v3.0",
+                    "trending",
+                    "record",
+                    "milestone",
+                    "new release",
+                    "major release",
+                    "v1.0",
+                    "v2.0",
+                    "v3.0",
                 )
                 is_landmark = (
                     analysis.threat_velocity >= 82
@@ -438,19 +500,52 @@ class MonitorService:
                         cat_val == "github_trending"
                         and any(k in title_lower for k in landmark_github_signals)
                     )
-                    or (
-                        cat_val == "ai_research"
-                        and analysis.threat_velocity >= 72
-                    )
+                    or (cat_val == "ai_research" and analysis.threat_velocity >= 72)
                 )
                 if is_landmark:
                     entry.metadata["is_important"] = True
                     # Richer 7-category importance reason classification
-                    if any(k in title_lower for k in ("reasoning", "r1", "o1", "o3", "chain-of-thought", "test-time compute", "extended thinking")):
-                        importance_reason = "Frontier Reasoning Architecture & Test-Time Compute"
-                    elif any(k in title_lower for k in ("vllm", "sglang", "llama.cpp", "tensorrt", "nim", "serving", "runtime", "engine", "inference")):
-                        importance_reason = "Critical AI Inference Infrastructure Milestone"
-                    elif any(k in title_lower for k in ("open weights", "weights released", "open-source release", "checkpoint")):
+                    if any(
+                        k in title_lower
+                        for k in (
+                            "reasoning",
+                            "r1",
+                            "o1",
+                            "o3",
+                            "chain-of-thought",
+                            "test-time compute",
+                            "extended thinking",
+                        )
+                    ):
+                        importance_reason = (
+                            "Frontier Reasoning Architecture & Test-Time Compute"
+                        )
+                    elif any(
+                        k in title_lower
+                        for k in (
+                            "vllm",
+                            "sglang",
+                            "llama.cpp",
+                            "tensorrt",
+                            "nim",
+                            "serving",
+                            "runtime",
+                            "engine",
+                            "inference",
+                        )
+                    ):
+                        importance_reason = (
+                            "Critical AI Inference Infrastructure Milestone"
+                        )
+                    elif any(
+                        k in title_lower
+                        for k in (
+                            "open weights",
+                            "weights released",
+                            "open-source release",
+                            "checkpoint",
+                        )
+                    ):
                         importance_reason = "Major Open-Source Model Weights Release"
                     elif cat_val == "ai_models":
                         importance_reason = "Frontier Foundation Model Launch"
@@ -458,7 +553,18 @@ class MonitorService:
                         importance_reason = "High-Impact Academic Research Breakthrough"
                     elif cat_val == "github_trending":
                         importance_reason = "Rapidly Trending AI Developer Repository"
-                    elif any(k in title_lower for k in ("hardware", "chip", "silicon", "gpu", "npu", "blackwell", "mi300")):
+                    elif any(
+                        k in title_lower
+                        for k in (
+                            "hardware",
+                            "chip",
+                            "silicon",
+                            "gpu",
+                            "npu",
+                            "blackwell",
+                            "mi300",
+                        )
+                    ):
                         importance_reason = "AI Hardware & Accelerator Milestone"
                     else:
                         importance_reason = "High-Impact AI Ecosystem Development"
@@ -534,9 +640,15 @@ class MonitorService:
                                 context={"source_type": source.type.value},
                             )
                             added_entry.metadata = dict(added_entry.metadata or {})
-                            added_entry.metadata["triage_score"] = score_res.composite_score
-                            added_entry.metadata["triage_explanation"] = score_res.explanation
-                            added_entry.metadata["triage_breakdown"] = score_res.breakdown
+                            added_entry.metadata["triage_score"] = (
+                                score_res.composite_score
+                            )
+                            added_entry.metadata["triage_explanation"] = (
+                                score_res.explanation
+                            )
+                            added_entry.metadata["triage_breakdown"] = (
+                                score_res.breakdown
+                            )
 
                             should_auto_triage = (
                                 is_landmark
@@ -610,9 +722,9 @@ class MonitorService:
             # Telegram auto-alerts (post-commit)
             for alert_entry, alert_analysis in pending_telegram_alerts:
                 try:
-                    tg_token = getattr(settings, "telegram_bot_token", None) or os.getenv(
-                        "TELEGRAM_BOT_TOKEN"
-                    )
+                    tg_token = getattr(
+                        settings, "telegram_bot_token", None
+                    ) or os.getenv("TELEGRAM_BOT_TOKEN")
                     tg_chat = getattr(settings, "telegram_chat_id", None) or os.getenv(
                         "TELEGRAM_CHAT_ID"
                     )
@@ -710,7 +822,9 @@ class MonitorService:
                 if last:
                     if last.tzinfo is None:
                         last = last.replace(tzinfo=UTC)
-                    limit_sec = s.rate_limit_seconds or settings.fetch.rate_limit_default
+                    limit_sec = (
+                        s.rate_limit_seconds or settings.fetch.rate_limit_default
+                    )
                     if (now_utc - last).total_seconds() < limit_sec:
                         continue
                 eligible_sources.append(s)
@@ -867,7 +981,10 @@ class MonitorService:
         response_cache.clear()
 
         self._broadcast(
-            {"type": "feed_updated", "data": {"purged": purged, "hard_delete": hard_delete}}
+            {
+                "type": "feed_updated",
+                "data": {"purged": purged, "hard_delete": hard_delete},
+            }
         )
         self._broadcast({"type": "stats_updated", "data": {}})
 
@@ -897,9 +1014,7 @@ class MonitorService:
 
         response_cache.clear()
 
-        self._broadcast(
-            {"type": "feed_updated", "data": {"restored": restored}}
-        )
+        self._broadcast({"type": "feed_updated", "data": {"restored": restored}})
         self._broadcast({"type": "stats_updated", "data": {}})
 
         logger.info(
@@ -907,9 +1022,7 @@ class MonitorService:
         )
         return {"restored": restored, "success": True}
 
-    async def delete_entry(
-        self, entry_id: UUID, hard_delete: bool = True
-    ) -> bool:
+    async def delete_entry(self, entry_id: UUID, hard_delete: bool = True) -> bool:
         """Explicit manual deletion of a single intelligence entry."""
         async with self._uow_factory() as uow:
             deleted = await uow.entries.delete(entry_id, hard_delete=hard_delete)

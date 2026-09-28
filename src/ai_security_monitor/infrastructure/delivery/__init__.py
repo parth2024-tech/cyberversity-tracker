@@ -22,4 +22,9 @@ __all__ = [
     "DeliveryResult",
     "delivery_registry",
     "DeliveryRegistry",
+    "base",
+    "console_delivery",
+    "email_delivery",
+    "slack_delivery",
+    "telegram_delivery",
 ]

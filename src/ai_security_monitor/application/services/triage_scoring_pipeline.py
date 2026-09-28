@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from ai_security_monitor.application.services.deduplication_service import (
     deduplication_service,
@@ -17,7 +17,7 @@ from ai_security_monitor.application.services.vault_feedback_service import (
     vault_feedback_service,
 )
 from ai_security_monitor.core.logging import get_logger
-from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.entities import Entry
 
 logger = get_logger(__name__)
 
@@ -68,7 +68,16 @@ class SourceAuthoritySignal(ScoringSignal):
             return 0.85, "Direct open-source repository release (GitHub)"
         if "news.ycombinator.com" in url or source_type == "hackernews":
             return 0.75, "High-velocity developer consensus (Hacker News)"
-        if any(host in url for host in ("anthropic.com", "openai.com", "deepseek.com", "mistral.ai", "huggingface.co")):
+        if any(
+            host in url
+            for host in (
+                "anthropic.com",
+                "openai.com",
+                "deepseek.com",
+                "mistral.ai",
+                "huggingface.co",
+            )
+        ):
             return 0.95, "Official frontier AI lab release"
 
         return 0.50, "General technology publication"
@@ -158,7 +167,10 @@ class StoryCorroborationSignal(ScoringSignal):
 
         sources_count = story.source_count
         if sources_count >= 3:
-            return 1.0, f"Multi-source confirmed consensus ({sources_count} sources: {', '.join(story.sources[:3])})"
+            return (
+                1.0,
+                f"Multi-source confirmed consensus ({sources_count} sources: {', '.join(story.sources[:3])})",
+            )
         if sources_count == 2:
             return 0.80, f"Cross-source corroborated ({', '.join(story.sources)})"
 
@@ -173,9 +185,15 @@ class VaultAffinitySignal(ScoringSignal):
     def evaluate(self, entry: Entry, context: dict | None = None) -> tuple[float, str]:
         affinity = vault_feedback_service.calculate_affinity(entry)
         if affinity >= 0.70:
-            return affinity, f"High alignment with user Vault preferences ({affinity:.2f})"
+            return (
+                affinity,
+                f"High alignment with user Vault preferences ({affinity:.2f})",
+            )
         if affinity >= 0.30:
-            return affinity, f"Moderate alignment with user Vault preferences ({affinity:.2f})"
+            return (
+                affinity,
+                f"Moderate alignment with user Vault preferences ({affinity:.2f})",
+            )
         return affinity, "Standard preference baseline"
 
 
@@ -276,7 +294,9 @@ class ScoringPipeline:
             tier = "P2 (Standard)"
 
         # Construct concise human-readable explanation
-        key_reasons = " + ".join(reasons[:2]) if reasons else "Standard ecosystem telemetry"
+        key_reasons = (
+            " + ".join(reasons[:2]) if reasons else "Standard ecosystem telemetry"
+        )
         explanation = f"{tier} [Score: {composite}]: {key_reasons}"
 
         return ScoringResult(

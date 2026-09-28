@@ -16,21 +16,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import select
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.domain.entities import (
     Category,
     Entry,
-    FetchStatus,
     Source,
     SourceType,
 )
-from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.infrastructure.database.models import EntryModel
-from ai_security_monitor.infrastructure.database.unit_of_work import (
-    SqlAlchemyUnitOfWork,
-)
 
 
 @pytest.mark.asyncio
@@ -226,10 +220,6 @@ async def test_automated_sqlite_backup_loop():
     """Verify SQLite backup creates timestamped copy and limits retention."""
     import shutil
     from pathlib import Path
-
-    from ai_security_monitor.application.services.scheduler_service import (
-        SchedulerService,
-    )
 
     test_dir = Path("data/test_backup_suite")
     test_dir.mkdir(parents=True, exist_ok=True)

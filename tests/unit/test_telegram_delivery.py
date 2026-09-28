@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 
-from ai_security_monitor.domain.entities import Analysis, Category, Digest, Entry
+from ai_security_monitor.domain.entities import Analysis, Category, Entry
 from ai_security_monitor.domain.exceptions import DeliveryConfigError
 from ai_security_monitor.infrastructure.delivery.telegram_delivery import (
     TelegramDelivery,
@@ -129,3 +129,71 @@ def test_escape_html_special_chars(tg_delivery: TelegramDelivery):
     escaped = tg_delivery._escape_html(text)
     assert "<script>" not in escaped
     assert "&lt;" in escaped
+
+
+@pytest.mark.asyncio
+async def test_send_digest_success(
+    tg_delivery: TelegramDelivery, sample_entry: Entry, sample_analysis: Analysis
+):
+    """send_digest should format message and POST to Telegram API."""
+    from ai_security_monitor.domain.entities import Digest
+
+    digest = Digest(
+        id=uuid4(),
+        schedule="daily",
+        entries_by_category={"ai_models": [sample_entry]},
+        total_entries=1,
+        period_start=datetime.now(UTC),
+        period_end=datetime.now(UTC),
+        delivery_channels=["telegram"],
+    )
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = AsyncMock()
+    mock_client.post = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.delivery.telegram_delivery.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        result = await tg_delivery.send_digest(
+            digest, [(sample_entry, sample_analysis)]
+        )
+
+    assert result.success is True
+    assert result.channel == "telegram"
+    assert mock_client.post.called
+
+
+@pytest.mark.asyncio
+async def test_send_newspaper_document_success(tg_delivery: TelegramDelivery, tmp_path):
+    """send_newspaper_document should successfully post PDF bytes via Telegram Bot API."""
+    pdf_file = tmp_path / "test_gazette.pdf"
+    pdf_file.write_bytes(b"%PDF-1.4 mock pdf data")
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = AsyncMock()
+    mock_client.post = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.delivery.telegram_delivery.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        result = await tg_delivery.send_newspaper_document(
+            pdf_path=pdf_file,
+            edition_number=10,
+            lead_story="DeepSeek R1 Breakthrough",
+            total_threats=5,
+        )
+
+    assert result.success is True
+    assert result.channel == "telegram"
+    assert "Newspaper PDF Edition #10 delivered" in result.message

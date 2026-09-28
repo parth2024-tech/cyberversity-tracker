@@ -12,12 +12,10 @@ from typing import Any
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.platypus import (
     HRFlowable,
     KeepTogether,
-    PageBreak,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -390,10 +388,9 @@ class PdfExportService:
                     )
                 )
             elif entry.get("summary"):
+                summary_str = str(entry.get("summary") or "")
                 threat_elements.append(
-                    Paragraph(
-                        f"<b>📝 Summary:</b> {entry.get('summary')[:300]}", body_val
-                    )
+                    Paragraph(f"<b>📝 Summary:</b> {summary_str[:300]}", body_val)
                 )
 
             action_insight = analysis.get("actionable_insight") or analysis.get(

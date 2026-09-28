@@ -6,7 +6,6 @@ Tests live components directly against async database transactions and FastAPI a
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.infrastructure.analyzers.blast_radius_analyzer import (
     BlastRadiusAnalyzer,
 )

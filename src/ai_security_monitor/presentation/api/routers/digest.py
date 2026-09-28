@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ai_security_monitor.config.settings import settings
-from ai_security_monitor.domain.entities import Digest
+from ai_security_monitor.domain.entities import Digest, Entry
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -71,12 +71,12 @@ async def dispatch_telegram_digest(req: TelegramDigestRequest):
         recent_entries = await uow.entries.list()
 
     entries_with_analysis = [(e, e.analysis) for e in recent_entries]
-    entries_by_cat = {}
+    entries_by_cat: dict[str, list[Entry]] = {}
     for e in recent_entries:
         c = e.category.value
         if c not in entries_by_cat:
             entries_by_cat[c] = []
-        entries_by_cat[c].append(str(e.id))
+        entries_by_cat[c].append(e)
 
     digest = Digest(
         schedule=req.schedule,

@@ -308,7 +308,9 @@ def test_clean_entry_title_latex_math_symbols():
     assert "≥" in cleaned
     assert "±" in cleaned
 
-    title2 = r"$\text{FlashAttention-3}$: Fast Attention with Speedup $\approx 2.5 \times$"
+    title2 = (
+        r"$\text{FlashAttention-3}$: Fast Attention with Speedup $\approx 2.5 \times$"
+    )
     cleaned2 = _clean_entry_title(title2)
     assert r"\text" not in cleaned2
     assert "FlashAttention-3" in cleaned2

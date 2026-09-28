@@ -10,11 +10,11 @@ from __future__ import annotations
 import re
 from collections import Counter
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry
-from ai_security_monitor.domain.repositories import EntryFilters
+from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -23,9 +23,36 @@ logger = get_logger(__name__)
 
 # Common stop words to exclude from preference profile
 VAULT_STOP_WORDS = {
-    "a", "an", "the", "and", "or", "in", "on", "at", "for", "with", "by", "of",
-    "to", "from", "is", "are", "was", "were", "new", "released", "announces",
-    "announcing", "show", "hn", "ask", "github", "via", "using", "how", "what",
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "in",
+    "on",
+    "at",
+    "for",
+    "with",
+    "by",
+    "of",
+    "to",
+    "from",
+    "is",
+    "are",
+    "was",
+    "were",
+    "new",
+    "released",
+    "announces",
+    "announcing",
+    "show",
+    "hn",
+    "ask",
+    "github",
+    "via",
+    "using",
+    "how",
+    "what",
 }
 
 
@@ -51,15 +78,18 @@ class VaultFeedbackService:
         if (
             not force
             and self._last_profile_refresh
-            and (now - self._last_profile_refresh).total_seconds() < self._cache_ttl_seconds
+            and (now - self._last_profile_refresh).total_seconds()
+            < self._cache_ttl_seconds
         ):
             return
 
         try:
             async with self._uow_factory() as uow:
                 # Query vaulted/starred entries
-                filters = EntryFilters(important_only=True, limit=200)
-                vaulted_entries = await uow.entries.list(filters=filters)
+                filters = EntryFilters(important_only=True)
+                vaulted_entries = await uow.entries.list(
+                    filters=filters, pagination=PaginationParams(limit=200)
+                )
 
             keyword_counts: Counter[str] = Counter()
             ecosystem_counts: Counter[str] = Counter()
@@ -116,13 +146,18 @@ class VaultFeedbackService:
 
         if keyword_hits > 0:
             # Normalize keyword affinity by total vaulted items
-            keyword_score = min(0.6, (total_token_weight / max(1, self._total_vaulted)) * 0.15 + (keyword_hits * 0.08))
+            keyword_score = min(
+                0.6,
+                (total_token_weight / max(1, self._total_vaulted)) * 0.15
+                + (keyword_hits * 0.08),
+            )
             score += keyword_score
 
         # 2. Ecosystem alignment
         if entry.analysis and entry.analysis.affected_ecosystem:
             eco_hits = sum(
-                1 for eco in entry.analysis.affected_ecosystem
+                1
+                for eco in entry.analysis.affected_ecosystem
                 if eco.lower() in self._ecosystem_weights
             )
             if eco_hits > 0:

@@ -20,8 +20,13 @@ def test_parse_retry_after():
 
 
 def test_extract_domain():
-    assert DomainAutoThrottle.extract_domain("https://arxiv.org/rss/cs.AI") == "arxiv.org"
-    assert DomainAutoThrottle.extract_domain("http://github.com:443/trending") == "github.com"
+    assert (
+        DomainAutoThrottle.extract_domain("https://arxiv.org/rss/cs.AI") == "arxiv.org"
+    )
+    assert (
+        DomainAutoThrottle.extract_domain("http://github.com:443/trending")
+        == "github.com"
+    )
     assert DomainAutoThrottle.extract_domain("") == "default"
     assert DomainAutoThrottle.extract_domain(None) == "default"
 

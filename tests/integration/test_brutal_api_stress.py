@@ -24,19 +24,25 @@ async def test_strict_query_parameter_validation_contracts():
         invalid_limit_cases = [-999, -1, 0, 201, 9999, "not_an_int", "12.34"]
         for bad_limit in invalid_limit_cases:
             resp = await client.get("/api/entries", params={"limit": bad_limit})
-            assert resp.status_code == 422, f"Expected 422 for limit={bad_limit}, got {resp.status_code}"
+            assert resp.status_code == 422, (
+                f"Expected 422 for limit={bad_limit}, got {resp.status_code}"
+            )
 
         # Invalid offsets (valid range: offset >= 0)
         invalid_offset_cases = [-500, -1, "abc", "null"]
         for bad_offset in invalid_offset_cases:
             resp = await client.get("/api/entries", params={"offset": bad_offset})
-            assert resp.status_code == 422, f"Expected 422 for offset={bad_offset}, got {resp.status_code}"
+            assert resp.status_code == 422, (
+                f"Expected 422 for offset={bad_offset}, got {resp.status_code}"
+            )
 
         # Retention days validation (valid range: 0 <= days <= 1825)
         invalid_retention_days = [-1, -50, 1826, 99999, "seven"]
         for bad_days in invalid_retention_days:
             resp = await client.get("/api/stats/retention", params={"days": bad_days})
-            assert resp.status_code == 422, f"Expected 422 for retention days={bad_days}, got {resp.status_code}"
+            assert resp.status_code == 422, (
+                f"Expected 422 for retention days={bad_days}, got {resp.status_code}"
+            )
 
 
 @pytest.mark.asyncio
@@ -57,15 +63,21 @@ async def test_injection_and_fuzz_payload_safety():
             "A" * 500,  # Long query string
         ]
         for query in fuzz_search_cases:
-            resp = await client.get("/api/entries", params={"search": query, "limit": 5})
-            assert resp.status_code == 200, f"Expected 200 for fuzz query '{query[:20]}...', got {resp.status_code}"
+            resp = await client.get(
+                "/api/entries", params={"search": query, "limit": 5}
+            )
+            assert resp.status_code == 200, (
+                f"Expected 200 for fuzz query '{query[:20]}...', got {resp.status_code}"
+            )
             data = resp.json()
             assert "entries" in data
             assert "total" in data
             assert isinstance(data["entries"], list)
 
         # SQL injection in sort_by should fall back safely without executing SQL
-        resp_sort = await client.get("/api/entries", params={"sort_by": "published_at; DROP TABLE entries;--"})
+        resp_sort = await client.get(
+            "/api/entries", params={"sort_by": "published_at; DROP TABLE entries;--"}
+        )
         assert resp_sort.status_code == 200
         assert "entries" in resp_sort.json()
 
@@ -85,7 +97,9 @@ async def test_analysis_quick_strict_body_contracts():
         ]
         for body in invalid_bodies:
             resp = await client.post("/api/analysis/quick", json=body)
-            assert resp.status_code == 422, f"Expected 422 for missing fields body {body}, got {resp.status_code}"
+            assert resp.status_code == 422, (
+                f"Expected 422 for missing fields body {body}, got {resp.status_code}"
+            )
 
         # Invalid raw JSON stream
         resp_bad_json = await client.post(
@@ -137,8 +151,12 @@ async def test_high_concurrency_stress_hammer():
         responses = await asyncio.gather(*tasks, return_exceptions=True)
 
         for i, resp in enumerate(responses):
-            assert not isinstance(resp, Exception), f"Request {i} raised exception: {resp}"
-            assert resp.status_code == 200, f"Request {i} returned status {resp.status_code}"
+            assert not isinstance(resp, Exception), (
+                f"Request {i} raised exception: {resp}"
+            )
+            assert resp.status_code == 200, (
+                f"Request {i} returned status {resp.status_code}"
+            )
 
 
 @pytest.mark.asyncio
@@ -148,7 +166,9 @@ async def test_extreme_pagination_and_boundaries():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         # Boundary: offset far beyond total records
-        resp = await client.get("/api/entries", params={"limit": 10, "offset": 10_000_000})
+        resp = await client.get(
+            "/api/entries", params={"limit": 10, "offset": 10_000_000}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["entries"] == []
@@ -179,7 +199,9 @@ async def test_path_traversal_and_method_not_allowed():
         ]
         for path in traversals:
             resp = await client.get(path)
-            assert resp.status_code == 404, f"Expected 404 for {path}, got {resp.status_code}"
+            assert resp.status_code == 404, (
+                f"Expected 404 for {path}, got {resp.status_code}"
+            )
 
         # Disallowed method: POST on /api/entries (only GET supported)
         resp_method = await client.post("/api/entries", json={})

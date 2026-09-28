@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import os
 import time
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from ai_security_monitor.core.logging import get_logger

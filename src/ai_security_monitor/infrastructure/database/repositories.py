@@ -5,7 +5,9 @@ Implements the domain repository interfaces.
 
 from __future__ import annotations
 
+import builtins
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_, select
@@ -111,7 +113,9 @@ class SQLAlchemyEntryRepository(EntryRepository):
     async def get_existing_hashes(self, hashes: list[str]) -> set[str]:
         if not hashes:
             return set()
-        stmt = select(EntryModel.content_hash).where(EntryModel.content_hash.in_(hashes))
+        stmt = select(EntryModel.content_hash).where(
+            EntryModel.content_hash.in_(hashes)
+        )
         result = await self._session.execute(stmt)
         return set(result.scalars().all())
 
@@ -245,7 +249,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         return True
 
     async def delete_entries_by_ids(
-        self, entry_ids: list[UUID], hard_delete: bool = True
+        self, entry_ids: builtins.list[UUID], hard_delete: bool = True
     ) -> int:
         if not entry_ids:
             return 0
@@ -265,7 +269,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 .execution_options(synchronize_session=False)
             )
             self._session.expire_all()
-            return del_result.rowcount or 0
+            return getattr(del_result, "rowcount", 0) or 0
         else:
             upd_result = await self._session.execute(
                 sa_update(EntryModel)
@@ -274,13 +278,13 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 .execution_options(synchronize_session=False)
             )
             self._session.expire_all()
-            return upd_result.rowcount or 0
+            return getattr(upd_result, "rowcount", 0) or 0
 
     async def get_unanalyzed(
         self,
         since: datetime | None = None,
         limit: int = 50,
-    ) -> list[Entry]:
+    ) -> builtins.list[Entry]:
         stmt = (
             select(EntryModel)
             .outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
@@ -302,7 +306,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         older_than_days: int = 7,
         hard_delete: bool = False,
         include_vaulted: bool = False,
-        categories: list[str] | None = None,
+        categories: builtins.list[str] | None = None,
     ) -> int:
         """Purge entries older than retention window.
 
@@ -323,6 +327,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         # If older_than_days == 0: targets ALL active entries immediately.
         # Otherwise: an entry is matched if published_at < cutoff OR fetched_at < cutoff.
         # This guarantees that stale articles are always pruned, whether by publish date or ingest date.
+        time_cond: Any
         if older_than_days == 0:
             time_cond = True
         else:
@@ -335,7 +340,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 EntryModel.fetched_at < cutoff_naive,
             )
 
-        conds = [EntryModel.is_purged.is_(False)]
+        conds: list[Any] = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:
             conds.append(time_cond)
 
@@ -368,7 +373,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 .execution_options(synchronize_session=False)
             )
             self._session.expire_all()
-            return del_result.rowcount or 0
+            return getattr(del_result, "rowcount", 0) or 0
 
         soft_del_result = await self._session.execute(
             sa_update(EntryModel)
@@ -377,7 +382,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             .execution_options(synchronize_session=False)
         )
         self._session.expire_all()
-        return soft_del_result.rowcount or 0
+        return getattr(soft_del_result, "rowcount", 0) or 0
 
     async def hard_delete_purged(self, grace_days: int = 30) -> int:
         """Permanently remove entries that were soft-deleted beyond the grace window (default 30 days)."""
@@ -405,7 +410,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             .execution_options(synchronize_session=False)
         )
         self._session.expire_all()
-        return del_result.rowcount or 0
+        return getattr(del_result, "rowcount", 0) or 0
 
     async def restore_purged_entries(self) -> int:
         """Restore all soft-purged entries back to active visibility (mark is_purged=False).
@@ -421,13 +426,13 @@ class SQLAlchemyEntryRepository(EntryRepository):
             .execution_options(synchronize_session=False)
         )
         self._session.expire_all()
-        return result.rowcount or 0
+        return getattr(result, "rowcount", 0) or 0
 
     async def get_retention_counts(
         self,
         older_than_days: int = 7,
         include_vaulted: bool = False,
-        categories: list[str] | None = None,
+        categories: builtins.list[str] | None = None,
     ) -> dict[str, int]:
         """Get counts of active entries, candidate entries older than X days, and soft-purged entries."""
         active_stmt = select(func.count(EntryModel.id)).where(
@@ -448,6 +453,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         from sqlalchemy import not_
 
+        time_cond: Any
         if older_than_days == 0:
             time_cond = True
         else:
@@ -460,7 +466,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 EntryModel.fetched_at < cutoff_naive,
             )
 
-        conds = [EntryModel.is_purged.is_(False)]
+        conds: list[Any] = [EntryModel.is_purged.is_(False)]
         if time_cond is not True:
             conds.append(time_cond)
 
@@ -577,7 +583,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         category: Category,
         since: datetime | None = None,
         limit: int = 50,
-    ) -> list[Entry]:
+    ) -> builtins.list[Entry]:
         stmt = (
             select(EntryModel)
             .options(selectinload(EntryModel.analysis))
@@ -1033,7 +1039,7 @@ class SQLAlchemySourceRepository(SourceRepository):
             name=model.name,
             category=Category(model.category),
             type=SourceType(model.type),
-            url=model.url,
+            url=model.url or "",
             query=model.query,
             rate_limit_seconds=model.rate_limit_seconds,
             enabled=model.enabled,
@@ -1099,7 +1105,7 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
         del_res = await self._session.execute(
             sa_delete(FetchLogModel).where(FetchLogModel.fetched_at < cutoff)
         )
-        return del_res.rowcount or 0
+        return getattr(del_res, "rowcount", 0) or 0
 
     def _model_to_entity(self, model: FetchLogModel) -> FetchLog:
         return FetchLog(
@@ -1184,7 +1190,7 @@ class SQLAlchemyDigestRepository(DigestRepository):
         del_res = await self._session.execute(
             sa_delete(DigestModel).where(DigestModel.created_at < cutoff)
         )
-        return del_res.rowcount or 0
+        return getattr(del_res, "rowcount", 0) or 0
 
     def _model_to_entity(self, model: DigestModel) -> Digest:
         return Digest(
