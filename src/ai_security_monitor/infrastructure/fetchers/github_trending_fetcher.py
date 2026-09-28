@@ -10,6 +10,7 @@ Architecture notes:
   (vLLM, llama.cpp, inference runtimes) per project directive.
 """
 
+import re
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -205,7 +206,21 @@ class GitHubTrendingFetcher(BaseFetcher):
         since = self.frequency  # daily, weekly, monthly
         url = f"https://github.com/trending?since={since}"
         params = {"spoken_language_code": "en"}
-        headers = {"User-Agent": settings.fetch.user_agent}
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (X-UA-Compatible; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Ch-Ua": '"Chromium";v="133", "Google Chrome";v="133"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Linux"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Referer": "https://github.com/explore",
+        }
 
         async with httpx.AsyncClient(
             timeout=self.timeout, headers=headers, follow_redirects=True
@@ -214,40 +229,67 @@ class GitHubTrendingFetcher(BaseFetcher):
             response.raise_for_status()
 
         soup = BeautifulSoup(response.content, "html.parser")
+
+        # Multi-strategy adaptive element extraction (inspired by Scrapling)
         repos = soup.find_all("article", class_="Box-row")
+        if not repos:
+            repos = soup.find_all("article")
+        if not repos:
+            candidate_links = soup.find_all(
+                "a", href=re.compile(r"^/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$")
+            )
+            seen_containers: set[int] = set()
+            for link in candidate_links:
+                container = link.find_parent("article") or link.find_parent(
+                    "div", class_=re.compile(r"row|box", re.I)
+                )
+                if container and id(container) not in seen_containers:
+                    seen_containers.add(id(container))
+                    repos.append(container)
 
         if not repos:
             logger.warning(
                 f"GitHub Trending DOM health check failed for {self.source.name!r}: "
-                "no 'article.Box-row' elements matched. GitHub layout may have updated."
+                "no candidate repo elements matched across adaptive selectors. GitHub layout may have updated."
             )
         elif len(repos) < 5:
             logger.info(
                 f"GitHub Trending DOM health check: only {len(repos)} "
-                "'article.Box-row' elements parsed."
+                "elements parsed via adaptive selectors."
             )
 
         entries: list[dict] = []
 
         for repo in repos[:30]:
             try:
-                h2 = repo.find("h2", class_="h3")
-                if not h2:
-                    continue
-                a_tag = h2.find("a")
+                # Adaptive repo link extraction
+                a_tag = None
+                h_tag = repo.find(["h1", "h2", "h3"])
+                if h_tag:
+                    a_tag = h_tag.find(
+                        "a", href=re.compile(r"^/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$")
+                    )
+                if not a_tag:
+                    a_tag = repo.find(
+                        "a", href=re.compile(r"^/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$")
+                    )
                 if not a_tag:
                     continue
 
-                repo_name = a_tag.get_text(strip=True).replace(" ", "")
-                repo_url = "https://github.com" + a_tag["href"]
+                repo_name = a_tag.get_text(strip=True).replace(" ", "").strip("/")
+                repo_url = "https://github.com/" + a_tag["href"].lstrip("/")
 
-                desc_tag = repo.find("p", class_="col-9")
+                desc_tag = repo.find("p", class_="col-9") or repo.find("p")
                 description = desc_tag.get_text(strip=True) if desc_tag else ""
 
-                lang_tag = repo.find("span", itemprop="programmingLanguage")
+                lang_tag = repo.find(
+                    "span", itemprop="programmingLanguage"
+                ) or repo.find("span", class_=re.compile(r"language", re.I))
                 language = lang_tag.get_text(strip=True) if lang_tag else ""
 
-                stars_tag = repo.find("span", class_="d-inline-block float-sm-right")
+                stars_tag = repo.find(
+                    "span", class_="d-inline-block float-sm-right"
+                ) or repo.find("a", href=re.compile(r"/stargazers$"))
                 stars_text = stars_tag.get_text(strip=True) if stars_tag else ""
 
                 if not self._passes_filter(repo_name, description):

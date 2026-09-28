@@ -5,6 +5,7 @@ import os
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
+from ai_security_monitor.core.sanitizer import sanitizer
 from ai_security_monitor.domain.entities import AnalysisModel, Entry
 from ai_security_monitor.infrastructure.analyzers.base import (
     AnalysisResult,
@@ -93,12 +94,16 @@ class LLMAnalyzer(BaseAnalyzer):
 
     def _build_prompt(self, entry: Entry) -> str:
         """Build publication-grade worldwide AI analysis prompt for LLM."""
+        safe_title = sanitizer.sanitize_text(entry.title)
+        safe_summary = sanitizer.sanitize_text(entry.summary)
+        safe_tags = [sanitizer.sanitize_text(t) for t in (entry.tags or [])]
+
         return f"""Analyze this Artificial Intelligence / Machine Learning ecosystem release and provide structured JSON telemetry.
 
-Title: {entry.title}
-Summary: {entry.summary}
+Title: {safe_title}
+Summary: {safe_summary}
 Category: {entry.category.value if hasattr(entry.category, 'value') else str(entry.category)}
-Tags: {", ".join(entry.tags or [])}
+Tags: {", ".join(safe_tags)}
 URL: {entry.url}
 
 Strict JSON format required with these fields:

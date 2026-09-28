@@ -190,6 +190,10 @@ class SourceHealthService:
         if failing_count > 0:
             overall_status = "degraded" if failing_count < total_sources * 0.3 else "critical"
 
+        from ai_security_monitor.infrastructure.fetchers.throttle import (
+            domain_throttle,
+        )
+
         return {
             "overall_status": overall_status,
             "total_monitored_sources": total_sources,
@@ -197,7 +201,11 @@ class SourceHealthService:
             "degraded_count": degraded_count,
             "failing_count": failing_count,
             "regional_rollups": by_region,
-            "sources": sorted(sources_list, key=lambda x: (x["status"] != "failing", x["source_name"])),
+            "domain_throttle": domain_throttle.get_stats(),
+            "sources": sorted(
+                sources_list,
+                key=lambda x: (x["status"] != "failing", x["source_name"]),
+            ),
         }
 
 

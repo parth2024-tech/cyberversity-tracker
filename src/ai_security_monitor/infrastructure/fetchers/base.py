@@ -21,6 +21,10 @@ from ai_security_monitor.domain.exceptions import (
     FetchRateLimitedError,
     FetchTimeoutError,
 )
+from ai_security_monitor.infrastructure.fetchers.throttle import (
+    domain_throttle,
+    parse_retry_after,
+)
 
 logger = get_logger(__name__)
 
@@ -105,6 +109,16 @@ class BaseFetcher(ABC):
                     (datetime.now(UTC) - start_time).total_seconds() * 1000
                 )
 
+                domain = domain_throttle.extract_domain(
+                    self.source.url if self.source else None
+                )
+                domain_throttle.record(
+                    domain,
+                    latency=duration_ms / 1000.0,
+                    ok=True,
+                    floor=self._rate_limit_seconds,
+                )
+
                 return FetchResult(
                     entries=entries,
                     entries_new=len(
@@ -118,6 +132,15 @@ class BaseFetcher(ABC):
             except TimeoutError:
                 last_error = FetchTimeoutError(self.source.name, self.timeout)
             except FetchRateLimitedError:
+                domain = domain_throttle.extract_domain(
+                    self.source.url if self.source else None
+                )
+                domain_throttle.record(
+                    domain,
+                    latency=(datetime.now(UTC) - start_time).total_seconds(),
+                    ok=False,
+                    floor=self._rate_limit_seconds,
+                )
                 raise  # Don't retry rate limiting
             except Exception as e:
                 last_error = FetchError(str(e))
@@ -130,6 +153,16 @@ class BaseFetcher(ABC):
         # All retries exhausted
         duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
         error_msg = str(last_error) if last_error else "Unknown error"
+
+        domain = domain_throttle.extract_domain(
+            self.source.url if self.source else None
+        )
+        domain_throttle.record(
+            domain,
+            latency=duration_ms / 1000.0,
+            ok=False,
+            floor=self._rate_limit_seconds,
+        )
 
         await event_bus.publish(
             FetchFailedEvent(
@@ -153,17 +186,17 @@ class BaseFetcher(ABC):
     _last_fetch_times_by_source: dict[str, datetime] = {}
 
     async def _respect_rate_limit(self) -> None:
-        """Enforce rate limiting between fetches."""
-        source_key = str(self.source.id) if self.source and self.source.id else (self.source.name if self.source else "default")
-        last_time = BaseFetcher._last_fetch_times_by_source.get(source_key) or (self.source.last_fetched_at if self.source else None)
-        if last_time:
-            if last_time.tzinfo is None:
-                last_time = last_time.replace(tzinfo=UTC)
-            elapsed = (datetime.now(UTC) - last_time).total_seconds()
-            if elapsed < self._rate_limit_seconds:
-                wait_time = self._rate_limit_seconds - elapsed
-                await asyncio.sleep(wait_time)
+        """Enforce rate limiting between fetches using per-domain AutoThrottle."""
+        domain = domain_throttle.extract_domain(
+            self.source.url if self.source else None
+        )
+        await domain_throttle.wait_for_domain(domain, floor=self._rate_limit_seconds)
 
+        source_key = (
+            str(self.source.id)
+            if self.source and self.source.id
+            else (self.source.name if self.source else "default")
+        )
         now = datetime.now(UTC)
         BaseFetcher._last_fetch_times_by_source[source_key] = now
         self._last_fetch_time = now
