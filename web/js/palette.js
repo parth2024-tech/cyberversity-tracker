@@ -295,7 +295,10 @@ document.addEventListener('keydown', (e) => {
       const entry = getFocusedCardEntry();
       if (entry && entry.url) {
         e.preventDefault();
-        window.open(entry.url, '_blank');
+        const s = (typeof safeUrl === 'function') ? safeUrl(entry.url) : entry.url;
+        if (s && /^https?:\/\//i.test(s)) {
+          window.open(s, '_blank', 'noopener,noreferrer');
+        }
       }
     }
     return;

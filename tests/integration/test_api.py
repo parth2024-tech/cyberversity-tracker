@@ -189,3 +189,19 @@ async def test_openapi_schema_not_exposed_in_test_mode():
         resp = await client.get("/docs")
         # Either available (200) or not found (404) — never a server error
         assert resp.status_code in (200, 404)
+
+
+@pytest.mark.asyncio
+async def test_http_security_headers():
+    """Verify essential HTTP security headers are attached to responses."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/health")
+        assert resp.status_code == 200
+        assert resp.headers["X-Content-Type-Options"] == "nosniff"
+        assert resp.headers["X-Frame-Options"] == "SAMEORIGIN"
+        assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+        assert resp.headers["Permissions-Policy"] == "geolocation=(), camera=(), microphone=()"
+        assert resp.headers["X-XSS-Protection"] == "1; mode=block"
+

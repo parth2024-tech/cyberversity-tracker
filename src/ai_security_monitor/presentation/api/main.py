@@ -3,10 +3,11 @@ FastAPI application factory with lifespan management.
 """
 
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
+from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
@@ -230,6 +231,20 @@ def create_app() -> FastAPI:
 
     # Metrics middleware
     app.middleware("http")(metrics_middleware)
+
+    # HTTP Security Headers Middleware (Clickjacking, MIME sniffing, and Referrer leakage prevention)
+    @app.middleware("http")
+    async def security_headers_middleware(
+        request: Request,
+        call_next: Callable[[Request], Any],
+    ) -> Response:
+        response: Response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
 
     # Include routers
     app.include_router(health_router, prefix="/api", tags=["Health"])

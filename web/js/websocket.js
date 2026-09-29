@@ -233,7 +233,8 @@ function _escapeToast(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function showHUDToast({ title, message, badge = "SYSTEM", icon = "info", color = "text-sky-400", borderClass = "border-white/[0.08]", onClick = null }) {
@@ -332,8 +333,10 @@ function showToastNotification(entry) {
 
   toast.className = `glass-panel pointer-events-auto rounded-xl p-4 shadow-2xl transition-all duration-300 toast-animate-in flex gap-3 border ${borderClass}`;
 
-  const safeTitle = (entry.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const safeSummary = ((entry.analysis && entry.analysis.summary) || entry.summary || 'New intelligence advisory detected.').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const safeTitle = _escapeToast(entry.title || 'Untitled Advisory');
+  const safeSummary = _escapeToast(((entry.analysis && entry.analysis.summary) || entry.summary || 'New intelligence advisory detected.'));
+  const safeSource = _escapeToast(entry.source_name || 'Feed');
+  const safeLabel = _escapeToast(label);
 
   toast.innerHTML = `
     <div class="mt-0.5">
@@ -344,7 +347,7 @@ function showToastNotification(entry) {
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between gap-2">
         <span class="text-[10px] font-mono uppercase font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] ${color}">
-          ${label}
+          ${safeLabel}
         </span>
         <span class="text-[10px] font-mono text-slate-500">JUST NOW</span>
       </div>
@@ -355,7 +358,7 @@ function showToastNotification(entry) {
         ${safeSummary}
       </p>
       <div class="mt-2 flex items-center justify-between">
-        <span class="text-[10px] font-mono text-slate-400">${(entry.source_name || 'Feed').replace(/</g,'&lt;')}</span>
+        <span class="text-[10px] font-mono text-slate-400">${safeSource}</span>
         <button class="text-[11px] text-sky-400 hover:underline flex items-center gap-1 font-mono toast-inspect-btn" data-toast-id="${toastId}">
           Deep Inspect <i data-lucide="arrow-right" class="w-3 h-3"></i>
         </button>

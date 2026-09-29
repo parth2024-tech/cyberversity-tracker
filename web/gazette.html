@@ -597,10 +597,10 @@ footer{
       <button class="action-btn" onclick="window.print()">
         🖨️ <span>Print Broadsheet</span>
       </button>
-      <a href="/api/newspaper/download?format=pdf" class="action-btn secondary" target="_blank">
+      <a href="/api/newspaper/download?format=pdf" class="action-btn secondary" target="_blank" rel="noopener noreferrer">
         📥 <span>10-Page PDF Dossier</span>
       </a>
-      <a href="/api/newspaper/download?format=md" class="action-btn" target="_blank">
+      <a href="/api/newspaper/download?format=md" class="action-btn" target="_blank" rel="noopener noreferrer">
         📄 <span>Markdown</span>
       </a>
     </div>
@@ -753,7 +753,7 @@ footer{
     </div>
     <div class="modal-actions">
       <button class="action-btn" onclick="speakCurrentModal()">📻 Read Aloud</button>
-      <a href="#" target="_blank" id="modalSourceLink" class="action-btn primary">Open Original Wire ↗</a>
+      <a href="#" target="_blank" rel="noopener noreferrer" id="modalSourceLink" class="action-btn primary">Open Original Wire ↗</a>
       <button class="action-btn" style="background:#701a1a;color:#fff;border-color:#501010;" onclick="deleteCurrentModalEntry()">🗑️ Delete Dispatch</button>
       <button class="action-btn" onclick="closeDispatchModal()">Close Dispatch</button>
     </div>
@@ -812,6 +812,12 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function safeUrl(url) {
+  if (!url) return '';
+  const s = String(url).trim();
+  return /^https?:\/\//i.test(s) ? s : '';
+}
+
 function scoreClass(v) {
   if (v >= 80) return 'crit';
   if (v >= 50) return 'poc';
@@ -838,7 +844,7 @@ function renderArticle(e) {
           <span class="tag ${scoreClass(score)}">${escapeHtml(category)}</span>
           ${archetype ? `<span class="tag" style="background:#e8dfc7;">${escapeHtml(archetype)}</span>` : ''}
           <span class="tag" style="background:#f4ecd8;color:#555;">${escapeHtml(source)}</span>
-          <button class="action-btn" style="margin-left:auto;padding:2px 7px;font-size:10px;background:transparent;border:1px solid #c0b89d;color:#8b0000;cursor:pointer;" title="Delete this dispatch" onclick="event.stopPropagation(); deleteEntryById('${escapeHtml(e.id)}', '${escapeHtml(e.title || 'Dispatch')}')">🗑️</button>
+          <button class="action-btn" style="margin-left:auto;padding:2px 7px;font-size:10px;background:transparent;border:1px solid #c0b89d;color:#8b0000;cursor:pointer;" title="Delete this dispatch" onclick="event.stopPropagation(); deleteEntryById('${escapeHtml(e.id)}')">🗑️</button>
         </div>
         <h3>${escapeHtml(e.title || 'Untitled entry')}</h3>
         <p>${escapeHtml(snippet)}</p>
@@ -966,7 +972,7 @@ async function loadFeed(force = false) {
   } catch (err) {
     document.getElementById('connStatus').textContent = 'WIRE OFFLINE';
     document.getElementById('leadTitle').textContent = 'Unable to reach the telegraph wire.';
-    document.getElementById('leadBody').innerHTML = `<p>${err.message}</p>`;
+    document.getElementById('leadBody').innerHTML = `<p>${escapeHtml(err.message)}</p>`;
   }
 }
 
@@ -979,7 +985,7 @@ async function loadSources() {
     const activeSources = sources.filter(s => s.enabled !== false);
     document.getElementById('statSources').textContent = activeSources.length;
     document.getElementById('sourcesList').innerHTML =
-      sources.slice(0, 18).map(s => `${s.enabled === false ? '☒' : '☑'} ${s.name}`).join('<br>');
+      sources.slice(0, 18).map(s => `${s.enabled === false ? '☒' : '☑'} ${escapeHtml(s.name)}`).join('<br>');
   } catch (e) {}
 }
 
@@ -1025,8 +1031,9 @@ function openArticleModal(id) {
   document.getElementById('modalMitigation').textContent = 'Follow authoritative source link for full documentation and code access.';
   
   const linkEl = document.getElementById('modalSourceLink');
-  if (entry.url) {
-    linkEl.href = entry.url;
+  const safeSrc = safeUrl(entry.url);
+  if (safeSrc) {
+    linkEl.href = safeSrc;
     linkEl.style.display = 'inline-flex';
   } else {
     linkEl.style.display = 'none';
@@ -1141,9 +1148,11 @@ async function dispatchTelegramNewspaper(force = false) {
   }
 }
 
-async function deleteEntryById(id, title) {
+async function deleteEntryById(id, optionalTitle) {
   if (!id) return;
-  if (!confirm(`Permanently remove this intelligence dispatch from the database?\n\n"${title || 'Selected Dispatch'}"`)) return;
+  const match = (allEntries || []).find(e => e.id === id);
+  const title = optionalTitle || (match ? match.title : 'Selected Dispatch');
+  if (!confirm(`Permanently remove this intelligence dispatch from the database?\n\n"${title}"`)) return;
   try {
     const res = await fetch(`${API_BASE}/entries/${id}`, { method: 'DELETE' });
     if (res.ok) {

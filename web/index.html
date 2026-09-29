@@ -108,7 +108,7 @@
             <i data-lucide="file-down" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>Export MD</span>
           </button>
-          <a id="analysis-external-link" href="#" target="_blank" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Open original repository or whitepaper">
+          <a id="analysis-external-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Open original repository or whitepaper">
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
             <span>Source</span>
           </a>
@@ -258,11 +258,11 @@
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span class="hidden sm:inline">Compile Now</span>
           </button>
-          <button onclick="window.open('/api/newspaper/latest/html', '_blank')" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Open print-ready newspaper in fullscreen tab">
+          <button onclick="window.open('/api/newspaper/latest/html', '_blank', 'noopener,noreferrer')" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Open print-ready newspaper in fullscreen tab">
             <i data-lucide="printer" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>Print / Web View</span>
           </button>
-          <a href="/gazette" target="_blank" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-300 hover:text-white transition flex items-center gap-1.5" title="Open The Global AI Gazette in dedicated tab">
+          <a href="/gazette" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-amber-300 hover:text-white transition flex items-center gap-1.5" title="Open The Global AI Gazette in dedicated tab">
             <i data-lucide="newspaper" class="w-3.5 h-3.5 text-amber-400"></i>
             <span>Global AI Gazette</span>
           </a>
@@ -1269,11 +1269,28 @@
     let currentCategory = 'all';
     let currentRegion = 'all';
     let currentTimeHorizon = 0;
-        // Pinned storage key with automatic migration
+    function safeStorageGet(key, defaultVal = null) {
+      try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : defaultVal;
+      } catch (e) {
+        return defaultVal;
+      }
+    }
+    function safeStorageSet(key, val) {
+      try {
+        localStorage.setItem(key, String(val));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Pinned storage key with automatic migration
     const PINNED_STORAGE_KEY = 'aether_pinned_items';
     try {
-      if (!localStorage.getItem(PINNED_STORAGE_KEY) && localStorage.getItem('aether_pinned_threats')) {
-        localStorage.setItem(PINNED_STORAGE_KEY, localStorage.getItem('aether_pinned_threats'));
+      if (!safeStorageGet(PINNED_STORAGE_KEY) && safeStorageGet('aether_pinned_threats')) {
+        safeStorageSet(PINNED_STORAGE_KEY, safeStorageGet('aether_pinned_threats'));
       }
     } catch(e) {}
     let searchQuery = '';
@@ -1295,12 +1312,12 @@
     let allFeedItems = [];
     const REFRESH_TIMESTAMP_KEY = 'aether_last_refresh_timestamp';
     // Retrieve previous refresh baseline (or 2 hours ago on cold first start)
-    let previousSessionRefreshTime = parseInt(localStorage.getItem(REFRESH_TIMESTAMP_KEY) || '0', 10);
-    if (!previousSessionRefreshTime) {
+    let previousSessionRefreshTime = parseInt(safeStorageGet(REFRESH_TIMESTAMP_KEY, '0'), 10);
+    if (!previousSessionRefreshTime || isNaN(previousSessionRefreshTime)) {
       previousSessionRefreshTime = Date.now() - (2 * 3600 * 1000);
     }
     // Record current session timestamp for subsequent refresh comparison
-    localStorage.setItem(REFRESH_TIMESTAMP_KEY, Date.now().toString());
+    safeStorageSet(REFRESH_TIMESTAMP_KEY, Date.now().toString());
 
     let currentViewMode = 'grid'; // 'grid' | 'list'
     let activeTechChip = '';
@@ -1484,7 +1501,7 @@
       if (filters.length > 0) {
         tagsContainer.innerHTML = filters.map((f, i) => `
           <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px]">
-            <span>${f.label}</span>
+            <span>${escapeHtml(f.label)}</span>
             <button onclick="clearSpecificFilter(${i})" class="hover:text-white transition font-bold cursor-pointer">✕</button>
           </span>
         `).join('');
@@ -1836,10 +1853,10 @@
           const cfg = riskColors[fw.risk_level] || riskColors['MONITORED'];
           const pct = Math.min(100, Math.max(15, Math.round(fw.avg_blast || 50)));
           return `
-            <div onclick="quickFilterFramework('${fw.name}')" class="cursor-pointer hover:bg-white/[0.04] p-1.5 rounded-lg transition" title="Click to filter intelligence for ${fw.name}">
+            <div data-fw="${escapeHtml(fw.name)}" onclick="quickFilterFramework(this.dataset.fw)" class="cursor-pointer hover:bg-white/[0.04] p-1.5 rounded-lg transition" title="Click to filter intelligence for ${escapeHtml(fw.name)}">
               <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-slate-300 font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3 text-sky-400"></i>${fw.name} (${fw.count})</span>
-                <span class="${cfg.text} font-semibold text-[10px]">${fw.risk_level}</span>
+                <span class="text-slate-300 font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3 text-sky-400"></i>${escapeHtml(fw.name)} (${Number(fw.count) || 0})</span>
+                <span class="${cfg.text} font-semibold text-[10px]">${escapeHtml(fw.risk_level)}</span>
               </div>
               <div class="w-full bg-white/[0.06] rounded-full h-1 overflow-hidden">
                 <div class="bg-gradient-to-r ${cfg.bar} h-1 rounded-full" style="width: ${pct}%"></div>
@@ -1856,10 +1873,10 @@
           <div class="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
             <div class="flex items-center gap-2 truncate">
               <span class="w-1.5 h-1.5 rounded-full ${f.status === 'success' ? 'bg-emerald-400' : (f.status === 'error' ? 'bg-rose-400' : 'bg-amber-400')}"></span>
-              <span class="truncate text-slate-300 font-medium">${f.source_name}</span>
+              <span class="truncate text-slate-300 font-medium">${escapeHtml(f.source_name)}</span>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-[10px] text-sky-400 font-medium">+${f.entries_new} new</span>
+              <span class="text-[10px] text-sky-400 font-medium">+${Number(f.entries_new) || 0} new</span>
             </div>
           </div>
         `).join('');
@@ -2087,13 +2104,14 @@
           if (container) {
             container.classList.remove('feed-dimmed');
             if (loadingBar) loadingBar.classList.remove('opacity-100');
-            const catTitle = (currentCategory || 'selected').replace(/_/g, ' ');
+            const catTitle = escapeHtml((currentCategory || 'selected').replace(/_/g, ' '));
             const isSearching = Boolean(effectiveSearch);
+            const safeEffectiveSearch = escapeHtml(effectiveSearch);
             const emptyTitle = isSearching 
-              ? `No AI Signals Found for "${effectiveSearch}"` 
+              ? `No AI Signals Found for "${safeEffectiveSearch}"` 
               : `Category Ingesting / Awaiting Data`;
             const emptyMsg = isSearching
-              ? `No intelligence entries matched your query "${effectiveSearch}". Try one of the popular topics below or reset your search.`
+              ? `No intelligence entries matched your query "${safeEffectiveSearch}". Try one of the popular topics below or reset your search.`
               : currentCategory === 'pinned' 
               ? "No pinned items in your collection. Click the ⭐ icon on any card to pin and preserve it here!"
               : currentCategory === 'important'
@@ -2306,7 +2324,7 @@
         : '';
       const watchlistBadges = (entry.matched_watchlist_rules || []).map(w => `<span class="text-[9px] font-mono text-cyan-400 uppercase">◉ ${escapeHtml(w)}</span>`).join('');
       const ecoBadges = filteredEco.slice(0,2).map(e => `<span class="text-[9px] font-mono text-slate-500 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.5 rounded-sm">${escapeHtml(e)}</span>`).join('');
-      const tagBadges = (entry.tags || []).filter(t => t && t.length < 16).slice(0,2).map(t => `<span onclick="searchByTag('${escapeHtml(t)}', event)" class="text-[9px] font-mono text-slate-500 hover:text-cyan-300 cursor-pointer transition">#${escapeHtml(t)}</span>`).join('');
+      const tagBadges = (entry.tags || []).filter(t => t && t.length < 16).slice(0,2).map(t => `<span data-tag="${escapeHtml(t)}" onclick="searchByTag(this.dataset.tag, event)" class="text-[9px] font-mono text-slate-500 hover:text-cyan-300 cursor-pointer transition">#${escapeHtml(t)}</span>`).join('');
 
       let newBadge = '';
       if (entry.is_new_since_refresh) {
@@ -2465,8 +2483,8 @@
 
       const srcName = entry.source_name || (entry.source ? entry.source.name : '') || (entry.url ? (() => { try { return new URL(entry.url).hostname.replace('www.', ''); } catch(e) { return 'Intelligence Feed'; } })() : 'Intelligence Feed');
       const pubDate = entry.published_at ? entry.published_at.replace('T', ' ') : 'Unknown';
-      const tags = (entry.tags || []).map(t => `<span class="px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.08] text-xs font-mono">#${t}</span>`).join(' ');
-      const ecoBadges = ecosystem.map(e => `<span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/25 text-xs font-mono font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i>${e}</span>`).join(' ');
+      const tags = (entry.tags || []).map(t => `<span class="px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.08] text-xs font-mono">#${escapeHtml(t)}</span>`).join(' ');
+      const ecoBadges = ecosystem.map(e => `<span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/25 text-xs font-mono font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i>${escapeHtml(e)}</span>`).join(' ');
       const detectedPocs = (entry.summary || '').match(/https?:\/\/github\.com\/[a-zA-Z0-9_\-\.\/]+/g) || [];
 
       content.innerHTML = `
@@ -2475,14 +2493,14 @@
           <div class="flex items-center justify-between gap-3 flex-wrap">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="px-2.5 py-0.5 rounded-md text-[11px] font-mono uppercase font-semibold border ${categoryBadgeColors[entry.category] || 'text-slate-300 border-white/10 bg-white/[0.04]'}">
-                ${(entry.category || '').replace('_', ' ')}
+                ${escapeHtml((entry.category || '').replace('_', ' '))}
               </span>
               ${(analysis.model === 'ollama' || analysis.model === 'groq' || analysis.model === 'local') ? `
                 <span class="px-2.5 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/35 text-indigo-300 text-[11px] font-medium font-mono flex items-center gap-1">
                   <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i> AI SUMMARY
                 </span>
               ` : ''}
-              <span class="text-xs font-mono text-slate-400">${srcName} • ${pubDate}</span>
+              <span class="text-xs font-mono text-slate-400">${escapeHtml(srcName)} • ${escapeHtml(pubDate)}</span>
             </div>
 
             <!-- Quick Action Buttons -->
@@ -2512,7 +2530,7 @@
 
           <!-- Title -->
           <h2 class="text-xl sm:text-2xl font-bold text-white leading-snug">
-            ${entry.title}
+            ${escapeHtml(entry.title || 'Untitled')}
           </h2>
 
           <!-- Source Intelligence Briefing -->
@@ -2524,16 +2542,19 @@
               ${detectedPocs.length > 0 ? `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 text-sky-300">REPOSITORY DETECTED</span>` : ''}
             </div>
             <p class="text-sm text-slate-200 leading-relaxed whitespace-pre-line font-sans">
-              ${entry.summary || 'No additional source description provided.'}
+              ${escapeHtml(entry.summary || 'No additional source description provided.')}
             </p>
             ${detectedPocs.length > 0 ? `
               <div class="pt-2 border-t border-white/[0.05] flex items-center gap-2 flex-wrap">
                 <span class="text-[11px] font-mono text-slate-400">Developer Repositories:</span>
-                ${detectedPocs.map(p => `
-                  <a href="${p}" target="_blank" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/25 text-sky-300 hover:text-white text-xs font-mono transition">
-                    <i data-lucide="github" class="w-3 h-3 text-sky-400"></i> ${p.replace('https://github.com/', '')}
-                  </a>
-                `).join('')}
+                ${detectedPocs.map(p => {
+                  const safeP = safeUrl(p);
+                  return safeP ? `
+                    <a href="${escapeHtml(safeP)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/25 text-sky-300 hover:text-white text-xs font-mono transition">
+                      <i data-lucide="github" class="w-3 h-3 text-sky-400"></i> ${escapeHtml(p.replace('https://github.com/', ''))}
+                    </a>
+                  ` : '';
+                }).join('')}
               </div>
             ` : ''}
           </div>
@@ -2570,9 +2591,11 @@
               <button onclick="copySingleEntryMarkdown('${entry.id}')" id="modal-copy-btn" class="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white font-medium text-xs font-mono tracking-wider flex items-center gap-1.5 transition">
                 <i data-lucide="copy" class="w-3.5 h-3.5 text-sky-400"></i> Copy Markdown Brief
               </button>
-              <a href="${entry.url}" target="_blank" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs font-mono uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
-                Open Source <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-              </a>
+              ${safeUrl(entry.url) ? `
+                <a href="${escapeHtml(safeUrl(entry.url))}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs font-mono uppercase tracking-wider flex items-center gap-2 transition shadow-sm">
+                  Open Source <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </a>
+              ` : ''}
             </div>
             <button onclick="closeInspectModal()" class="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.16] text-xs font-mono text-slate-300 hover:text-white transition">
               Dismiss
@@ -2713,13 +2736,13 @@
           <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between gap-3 border border-white/[0.06]">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
-                <h4 class="text-xs font-semibold text-white font-mono truncate">${r.name}</h4>
+                <h4 class="text-xs font-semibold text-white font-mono truncate">${escapeHtml(r.name)}</h4>
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded-full ${r.enabled ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25' : 'bg-white/[0.04] text-slate-500 border border-white/[0.08]'} font-medium">
                   ${r.enabled ? 'ACTIVE' : 'PAUSED'}
                 </span>
               </div>
               <div class="flex flex-wrap gap-1.5 mt-2">
-                ${(r.keywords || []).map(kw => `<span class="px-2 py-0.5 rounded-md bg-white/[0.04] border border-sky-500/25 text-sky-300 text-[10px] font-mono">${kw}</span>`).join('')}
+                ${(r.keywords || []).map(kw => `<span class="px-2 py-0.5 rounded-md bg-white/[0.04] border border-sky-500/25 text-sky-300 text-[10px] font-mono">${escapeHtml(kw)}</span>`).join('')}
               </div>
             </div>
 
@@ -2846,29 +2869,35 @@
         
         resultsBox.classList.remove('hidden');
         const isPureAi = (data.blast_radius_score === 0) || (data.attack_archetype && !data.attack_archetype.includes('Vulnerability') && !data.attack_archetype.includes('Exploit'));
+        const safeModel = escapeHtml(data.model || 'AI Model');
+        const safeAttackVector = escapeHtml(data.attack_vector || '');
+        const safeRiskAssessment = escapeHtml(data.risk_assessment || '');
+        const safeMitigation = escapeHtml(data.mitigation || '');
+        const safeEcosystem = (data.affected_ecosystem || []).map(e => escapeHtml(e)).join(', ');
+
         resultsBox.innerHTML = `
           <div class="flex items-center justify-between border-b border-cyber-border pb-2 flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <span class="font-bold text-cyber-purple uppercase">Sandbox Analysis Result</span>
-              <span class="text-[10px] font-mono uppercase bg-purple-950/90 border border-cyber-purple text-purple-300 px-2 py-0.5 rounded font-bold">${data.model}</span>
+              <span class="text-[10px] font-mono uppercase bg-purple-950/90 border border-cyber-purple text-purple-300 px-2 py-0.5 rounded font-bold">${safeModel}</span>
             </div>
             ${!isPureAi ? `
             <div class="flex gap-2 font-mono text-[10px]">
-              <span class="px-2 py-0.5 rounded bg-black border border-cyber-cyan text-cyber-cyan font-bold">VELOCITY: ${data.threat_velocity}/100</span>
-              <span class="px-2 py-0.5 rounded bg-black border border-cyber-red text-cyber-red font-bold">SEVERITY: ${data.severity_index}/100</span>
-              <span class="px-2 py-0.5 rounded bg-black border border-cyber-purple text-cyber-purple font-bold">BLAST: ${data.blast_radius_score}/100</span>
+              <span class="px-2 py-0.5 rounded bg-black border border-cyber-cyan text-cyber-cyan font-bold">VELOCITY: ${Number(data.threat_velocity) || 0}/100</span>
+              <span class="px-2 py-0.5 rounded bg-black border border-cyber-red text-cyber-red font-bold">SEVERITY: ${Number(data.severity_index) || 0}/100</span>
+              <span class="px-2 py-0.5 rounded bg-black border border-cyber-purple text-cyber-purple font-bold">BLAST: ${Number(data.blast_radius_score) || 0}/100</span>
             </div>
             ` : ''}
           </div>
-          ${data.attack_vector && !isPureAi ? `<div><span class="text-cyber-cyan font-bold">ATTACK VECTOR:</span> ${data.attack_vector}</div>` : ''}
-          ${data.risk_assessment ? `<div><span class="text-slate-300 font-bold">${isPureAi ? 'HIGHLIGHT:' : 'ASSESSMENT:'}</span> ${data.risk_assessment}</div>` : ''}
-          ${data.mitigation ? `<div><span class="text-cyber-green font-bold">${isPureAi ? 'GUIDANCE:' : 'MITIGATION:'}</span> ${data.mitigation}</div>` : ''}
-          ${data.affected_ecosystem && data.affected_ecosystem.length ? `<div><span class="text-blue-400 font-bold">ECOSYSTEM:</span> ${data.affected_ecosystem.join(', ')}</div>` : ''}
+          ${safeAttackVector && !isPureAi ? `<div><span class="text-cyber-cyan font-bold">ATTACK VECTOR:</span> ${safeAttackVector}</div>` : ''}
+          ${safeRiskAssessment ? `<div><span class="text-slate-300 font-bold">${isPureAi ? 'HIGHLIGHT:' : 'ASSESSMENT:'}</span> ${safeRiskAssessment}</div>` : ''}
+          ${safeMitigation ? `<div><span class="text-cyber-green font-bold">${isPureAi ? 'GUIDANCE:' : 'MITIGATION:'}</span> ${safeMitigation}</div>` : ''}
+          ${safeEcosystem ? `<div><span class="text-blue-400 font-bold">ECOSYSTEM:</span> ${safeEcosystem}</div>` : ''}
         `;
         playBeep('alert');
       } catch (e) {
         resultsBox.classList.remove('hidden');
-        resultsBox.innerHTML = `<p class="text-cyber-red">Analysis failed: ${e.message}</p>`;
+        resultsBox.innerHTML = `<p class="text-cyber-red">Analysis failed: ${escapeHtml(e.message)}</p>`;
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4"></i> Run AI Triage Engine`;
@@ -2905,12 +2934,12 @@
             <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between border border-white/[0.06]">
               <div>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-semibold text-white">${s.name}</span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.04] border border-white/[0.08] text-slate-300">${flag} ${country}</span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-sky-500/10 border border-sky-500/25 text-sky-300 font-medium">${region.replace('_', ' ')}</span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/[0.04] border border-white/[0.08] text-slate-400">${s.type}</span>
+                  <span class="text-sm font-semibold text-white">${escapeHtml(s.name)}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.04] border border-white/[0.08] text-slate-300">${flag} ${escapeHtml(country)}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-sky-500/10 border border-sky-500/25 text-sky-300 font-medium">${escapeHtml(region.replace('_', ' '))}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/[0.04] border border-white/[0.08] text-slate-400">${escapeHtml(s.type)}</span>
                 </div>
-                <p class="text-xs text-slate-400 font-mono mt-1">Category: <span class="text-slate-300">${s.category}</span> • Rate: ${s.rate_limit_seconds}s ${s.url ? `• <a href="${s.url}" target="_blank" class="text-sky-400 hover:underline">Feed URL</a>` : ''}</p>
+                <p class="text-xs text-slate-400 font-mono mt-1">Category: <span class="text-slate-300">${escapeHtml(s.category)}</span> • Rate: ${Number(s.rate_limit_seconds) || 60}s ${safeUrl(s.url) ? `• <a href="${escapeHtml(safeUrl(s.url))}" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline">Feed URL</a>` : ''}</p>
               </div>
               <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
                 <input type="checkbox" onchange="toggleSource('${s.id}', this.checked)" class="sr-only peer" ${s.enabled ? 'checked' : ''}>
@@ -3467,11 +3496,11 @@
           <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
             <div class="flex items-center gap-2 truncate pr-2">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span class="truncate text-slate-200">${item.title}</span>
+              <span class="truncate text-slate-200">${escapeHtml(item.title)}</span>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${item.archetype || 'Frontier AI'}</span>
-              <span class="text-[10px] font-mono text-cyan-400 font-bold">${item.velocity}/100</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${escapeHtml(item.archetype || 'Frontier AI')}</span>
+              <span class="text-[10px] font-mono text-cyan-400 font-bold">${escapeHtml(item.velocity)}/100</span>
             </div>
           </div>
         `).join('');
@@ -3488,13 +3517,13 @@
       if (data.is_processing) {
         dotEl.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse";
         const entryName = data.current_entry ? (data.current_entry.slice(0, 22) + '...') : 'Model';
-        textEl.innerHTML = `<span class="text-amber-300 font-medium">TRIAGING: ${entryName}</span> (<span class="text-white">${data.queue_size}</span>)`;
+        textEl.innerHTML = `<span class="text-amber-300 font-medium">TRIAGING: ${escapeHtml(entryName)}</span> (<span class="text-white">${Number(data.queue_size) || 0}</span>)`;
       } else if (data.queue_size > 0) {
         dotEl.className = "w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse";
-        textEl.innerHTML = `<span class="text-sky-300 font-medium">QUEUED</span> (<span class="text-white">${data.queue_size}</span>)`;
+        textEl.innerHTML = `<span class="text-sky-300 font-medium">QUEUED</span> (<span class="text-white">${Number(data.queue_size) || 0}</span>)`;
       } else {
         dotEl.className = "w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse";
-        textEl.innerHTML = `AI QUEUE: READY (<span class="text-slate-400">${data.total_completed || 0} triaged</span>)`;
+        textEl.innerHTML = `AI QUEUE: READY (<span class="text-slate-400">${Number(data.total_completed) || 0} triaged</span>)`;
       }
       renderTriageModal(data);
     }
@@ -3723,7 +3752,7 @@
     // =========================================================================
     function getPinnedThreatIds() {
       try {
-        return JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) || '[]');
+        return JSON.parse(safeStorageGet(PINNED_STORAGE_KEY, '[]') || '[]');
       } catch (e) {
         return [];
       }
@@ -3744,7 +3773,7 @@
         pinned.push(id);
       }
 
-      localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(pinned));
+      safeStorageSet(PINNED_STORAGE_KEY, JSON.stringify(pinned));
       updatePinnedBadge();
 
       // If on pinned tab, refresh feed
@@ -3788,7 +3817,7 @@
 
     function getVaultedThreatIds() {
       try {
-        return JSON.parse(localStorage.getItem(VAULT_STORAGE_KEY) || '[]');
+        return JSON.parse(safeStorageGet(VAULT_STORAGE_KEY, '[]') || '[]');
       } catch (e) {
         return [];
       }
@@ -3814,7 +3843,7 @@
       } else {
         vaulted = vaulted.filter(item => item !== id);
       }
-      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(vaulted));
+      safeStorageSet(VAULT_STORAGE_KEY, JSON.stringify(vaulted));
 
       // In-memory update
       const entry = allFeedItems.find(e => e.id === id);
@@ -3850,7 +3879,7 @@
           }
           if (data.is_important && !vaulted.includes(id)) vaulted.push(id);
           else if (!data.is_important) vaulted = vaulted.filter(x => x !== id);
-          localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(vaulted));
+          safeStorageSet(VAULT_STORAGE_KEY, JSON.stringify(vaulted));
           updateVaultBadgesAndButtons(id, data.is_important);
           updateVaultCount();
         }
@@ -3963,8 +3992,9 @@
       }
 
       const cachedEntry = allFeedItems.find(e => e.id === id);
-      if (extLink && cachedEntry && cachedEntry.url) {
-        extLink.href = cachedEntry.url;
+      const safeCachedUrl = cachedEntry && cachedEntry.url ? safeUrl(cachedEntry.url) : '';
+      if (extLink && safeCachedUrl) {
+        extLink.href = safeCachedUrl;
         extLink.style.display = 'inline-flex';
       } else if (extLink) {
         extLink.style.display = 'none';
@@ -4022,8 +4052,13 @@
       if (titleEl) titleEl.innerText = dossier.title;
       if (subtitleEl) subtitleEl.innerText = `${(dossier.category || 'AI INTELLIGENCE').toUpperCase()} • ${dossier.region || 'GLOBAL'} • Published: ${dossier.published_at ? dossier.published_at.slice(0, 10) : 'Recent'}`;
       if (extLink && dossier.url) {
-        extLink.href = dossier.url;
-        extLink.style.display = 'inline-flex';
+        const safeDossierUrl = safeUrl(dossier.url);
+        if (safeDossierUrl) {
+          extLink.href = safeDossierUrl;
+          extLink.style.display = 'inline-flex';
+        } else {
+          extLink.style.display = 'none';
+        }
       }
 
       const isVaulted = isThreatVaulted(dossier.entry_id);
@@ -4046,7 +4081,7 @@
             </div>
             <div>
               <div class="text-xs font-mono font-bold text-amber-300 flex items-center gap-1.5">
-                <span>CLASSIFICATION: ${dossier.importance_reason || 'Critical AI Ecosystem Landmark'}</span>
+                <span>CLASSIFICATION: ${escapeHtml(dossier.importance_reason || 'Critical AI Ecosystem Landmark')}</span>
               </div>
               <div class="text-[11px] font-mono text-slate-400">
                 Permanently preserved in SQLite vault // Exempted from automated 7-day hygiene sweep
@@ -4066,7 +4101,7 @@
             <i data-lucide="sparkles" class="w-4 h-4"></i> 1. Executive Technical Summary & Strategic Impact
           </h3>
           <p class="text-sm text-slate-200 leading-relaxed font-sans pt-1">
-            ${dossier.executive_summary}
+            ${escapeHtml(dossier.executive_summary || '')}
           </p>
         </div>
 
@@ -4076,7 +4111,7 @@
             <i data-lucide="cpu" class="w-4 h-4"></i> 2. Architectural Deep Dive & Novel Mechanics
           </h3>
           <div class="text-xs text-slate-300 font-mono leading-relaxed whitespace-pre-line bg-white/[0.02] p-3.5 rounded-lg border border-white/[0.05]">
-            ${dossier.architectural_deep_dive}
+            ${escapeHtml(dossier.architectural_deep_dive || '')}
           </div>
         </div>
 
@@ -4088,28 +4123,28 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1 text-xs font-mono">
             <div class="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
               <span class="text-slate-500 block text-[10px] uppercase font-bold">Parameter Scale</span>
-              <span class="text-emerald-300 font-bold text-sm">${cp.parameter_scale || 'Dynamic'}</span>
+              <span class="text-emerald-300 font-bold text-sm">${escapeHtml(cp.parameter_scale || 'Dynamic')}</span>
             </div>
             <div class="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
               <span class="text-slate-500 block text-[10px] uppercase font-bold">Recommended VRAM</span>
-              <span class="text-slate-200 text-xs">${cp.recommended_vram || 'Standard'}</span>
+              <span class="text-slate-200 text-xs">${escapeHtml(cp.recommended_vram || 'Standard')}</span>
             </div>
             <div class="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
               <span class="text-slate-500 block text-[10px] uppercase font-bold">Distributed Architecture</span>
-              <span class="text-slate-300 text-xs">${cp.distributed_support || 'TP/PP Ready'}</span>
+              <span class="text-slate-300 text-xs">${escapeHtml(cp.distributed_support || 'TP/PP Ready')}</span>
             </div>
           </div>
           <div class="pt-2 flex flex-col sm:flex-row gap-3">
             <div class="flex-1 p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
               <span class="text-slate-500 block text-[10px] uppercase font-mono font-bold mb-1.5">Supported Precisions</span>
               <div class="flex flex-wrap gap-1.5">
-                ${(cp.supported_precision || []).map(p => `<span class="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/25 text-sky-300 text-[10px] font-mono">${p}</span>`).join('')}
+                ${(cp.supported_precision || []).map(p => `<span class="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/25 text-sky-300 text-[10px] font-mono">${escapeHtml(p)}</span>`).join('')}
               </div>
             </div>
             <div class="flex-1 p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
               <span class="text-slate-500 block text-[10px] uppercase font-mono font-bold mb-1.5">Optimized Inference Runtimes</span>
               <div class="flex flex-wrap gap-1.5">
-                ${(cp.optimal_runtimes || []).map(r => `<span class="px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/25 text-purple-300 text-[10px] font-mono">${r}</span>`).join('')}
+                ${(cp.optimal_runtimes || []).map(r => `<span class="px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/25 text-purple-300 text-[10px] font-mono">${escapeHtml(r)}</span>`).join('')}
               </div>
             </div>
           </div>
@@ -4132,9 +4167,9 @@
               <tbody>
                 ${benchmarks.map(b => `
                   <tr class="border-b border-white/[0.04] hover:bg-white/[0.02] transition">
-                    <td class="py-2.5 px-3 font-semibold text-white">${b.benchmark}</td>
-                    <td class="py-2.5 px-3 text-cyan-300 font-mono">${b.score}</td>
-                    <td class="py-2.5 px-3 text-slate-300 italic">${b.standing}</td>
+                    <td class="py-2.5 px-3 font-semibold text-white">${escapeHtml(b.benchmark)}</td>
+                    <td class="py-2.5 px-3 text-cyan-300 font-mono">${escapeHtml(b.score)}</td>
+                    <td class="py-2.5 px-3 text-slate-300 italic">${escapeHtml(b.standing)}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -4150,8 +4185,8 @@
           <div class="space-y-2 pt-1 font-mono text-xs">
             ${checklist.map((item, idx) => `
               <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:border-cyan-500/30 cursor-pointer transition">
-                <input type="checkbox" id="check-${dossier.entry_id}-${idx}" class="mt-0.5 rounded bg-black/50 border-white/20 text-cyan-500 focus:ring-0">
-                <span class="text-slate-300 leading-snug">${item}</span>
+                <input type="checkbox" id="check-${escapeHtml(dossier.entry_id)}-${idx}" class="mt-0.5 rounded bg-black/50 border-white/20 text-cyan-500 focus:ring-0">
+                <span class="text-slate-300 leading-snug">${escapeHtml(item)}</span>
               </label>
             `).join('')}
           </div>
@@ -4168,9 +4203,9 @@
           <p class="text-[11px] font-mono text-slate-400">
             Write down your local test observations, hardware benchmarks, code snippets, or architectural thoughts. Saved directly to SQLite database.
           </p>
-          <textarea id="analysis-notepad" class="w-full h-32 bg-black/60 border border-white/[0.1] rounded-xl p-3 text-xs font-mono text-slate-100 focus:border-amber-400 focus:outline-none transition resize-y" placeholder="Add technical observations, benchmark findings, local deployment notes, architectural insights...">${dossier.user_notes || ''}</textarea>
+          <textarea id="analysis-notepad" class="w-full h-32 bg-black/60 border border-white/[0.1] rounded-xl p-3 text-xs font-mono text-slate-100 focus:border-amber-400 focus:outline-none transition resize-y" placeholder="Add technical observations, benchmark findings, local deployment notes, architectural insights...">${escapeHtml(dossier.user_notes || '')}</textarea>
           <div class="flex items-center justify-between pt-1">
-            <button onclick="saveAnalysisNotes('${dossier.entry_id}')" id="save-notes-btn" class="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold flex items-center gap-2 transition cursor-pointer">
+            <button onclick="saveAnalysisNotes('${escapeHtml(dossier.entry_id)}')" id="save-notes-btn" class="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold flex items-center gap-2 transition cursor-pointer">
               <i data-lucide="save" class="w-4 h-4"></i>
               <span>Save Notes to Database</span>
             </button>
@@ -4343,7 +4378,7 @@
       .catch(err => {
         console.error("Single PDF export error:", err);
         showToast("Opening direct PDF stream...", "alert");
-        window.open('/api/entries/export/pdf?limit=1', '_blank');
+        window.open('/api/entries/export/pdf?limit=1', '_blank', 'noopener,noreferrer');
       });
     }
 
@@ -4386,7 +4421,7 @@
         .catch(err => {
           console.error("PDF export error:", err);
           showToast("Retrying via direct PDF stream...", "alert");
-          window.open('/api/entries/export/pdf?limit=30', '_blank');
+          window.open('/api/entries/export/pdf?limit=30', '_blank', 'noopener,noreferrer');
         });
       } else {
         const sortMode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'top';
@@ -4397,7 +4432,7 @@
         if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
 
         showToast("Generating Executive AI Intelligence PDF...", "info");
-        window.open(url, '_blank');
+        window.open(url, '_blank', 'noopener,noreferrer');
       }
     }
 
@@ -4529,9 +4564,9 @@
             parent.innerHTML = `
               <span class="flex items-center gap-1.5 font-bold">
                 <span class="px-1.5 py-0.2 bg-sky-500/20 text-sky-200 rounded text-[9px] uppercase tracking-wide">AUTO-TRANSLATED</span>
-                <span>${data.detected_language_flag || '🌐'} From ${data.detected_language_name || 'Foreign'}</span>
+                <span>${escapeHtml(data.detected_language_flag || '🌐')} From ${escapeHtml(data.detected_language_name || 'Foreign')}</span>
               </span>
-              <button onclick="event.stopPropagation(); toggleOriginalText('${entryId}')" id="trans-btn-${entryId}" class="text-[9.5px] text-cyan-400 hover:text-cyan-200 underline font-semibold transition cursor-pointer">Show Original</button>
+              <button onclick="event.stopPropagation(); toggleOriginalText('${escapeHtml(entryId)}')" id="trans-btn-${escapeHtml(entryId)}" class="text-[9.5px] text-cyan-400 hover:text-cyan-200 underline font-semibold transition cursor-pointer">Show Original</button>
             `;
           }
         }
