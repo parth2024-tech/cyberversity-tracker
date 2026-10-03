@@ -54,9 +54,9 @@
   },
   "sprint_focus": "Building the user onboarding flow with email verification and profile setup.",
   "sprint_skills": [
-    "lifecycle/security-and-hardening",
-    "lifecycle/api-and-interface-design",
-    "lifecycle/test-driven-development"
+    "security-and-hardening",
+    "api-and-interface-design",
+    "test-driven-development"
   ],
   "never_do": [
     "Never focus on cybersecurity, CVEs, or vulnerability telemetry unless the user explicitly requests it",
@@ -76,12 +76,12 @@
   "agent_skills": {
     "directory": "/home/thor/skiils",
     "default_skills": [
-      "lifecycle/using-agent-skills",
-      "lifecycle/context-engineering"
+      "using-agent-skills",
+      "context-engineering"
     ],
     "mandatory_skills": {
-      "api": "lifecycle/api-and-interface-design",
-      "auth": "lifecycle/security-and-hardening"
+      "api": "api-and-interface-design",
+      "auth": "security-and-hardening"
     },
     "session_reporting_preference": true
   }
