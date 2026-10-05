@@ -279,10 +279,9 @@ async def query_serialized_entries(
     else:
         entries, total = await asyncio.gather(_list_entries(), _count_entries())
 
-    # If watchlist mode: also need active_rules for matching (fetch if not yet loaded)
+    # If not watchlist mode: ensure active_rules are loaded for matching badges
     if not watchlist_only:
-        cached_rules = response_cache._CACHE.get("watchlist_rules_active")
-        active_rules = cached_rules[1] if cached_rules else []
+        active_rules = await _get_active_watchlist_rules()
 
     serialized_entries = []
     for e in entries:

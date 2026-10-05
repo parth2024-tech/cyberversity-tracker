@@ -91,14 +91,21 @@ class UnitOfWork:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        if exc_type is not None:
-            await self.rollback()
-        else:
-            await self.commit()
-
-        if self._owns_session and self._session:
-            await self._session.close()
-            self._session = None
+        try:
+            if exc_type is not None:
+                await self.rollback()
+            else:
+                await self.commit()
+        except Exception:
+            try:
+                await self.rollback()
+            except Exception:
+                pass
+            raise
+        finally:
+            if self._owns_session and self._session:
+                await self._session.close()
+                self._session = None
 
     async def commit(self) -> None:
         """Commit the transaction."""

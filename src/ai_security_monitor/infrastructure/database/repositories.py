@@ -11,6 +11,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -89,7 +90,10 @@ class SQLAlchemyEntryRepository(EntryRepository):
             purged_at=entry.purged_at,
         )
         self._session.add(model)
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError as exc:
+            raise DuplicateEntryError(entry.content_hash) from exc
         return self._model_to_entity(model)
 
     async def get(self, entry_id: UUID, include_purged: bool = False) -> Entry | None:

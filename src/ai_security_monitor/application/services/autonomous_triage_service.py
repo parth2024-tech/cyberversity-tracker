@@ -322,6 +322,9 @@ class AutonomousTriageService:
         if entry_id in self._queued_ids:
             return False
 
+        # Mark ID immediately to prevent race conditions during concurrent enqueue calls
+        self._queued_ids.add(entry_id)
+
         # If priority not explicitly passed, inspect entry to score priority
         if priority is None:
             priority = 1
@@ -335,7 +338,6 @@ class AutonomousTriageService:
 
         import time
 
-        self._queued_ids.add(entry_id)
         await self._queue.put((priority, time.time(), entry_id))
         self._total_enqueued += 1
         logger.info(

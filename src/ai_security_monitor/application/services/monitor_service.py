@@ -10,6 +10,8 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.config.sources import load_sources_from_yaml
 from ai_security_monitor.core.logging import get_logger
@@ -690,7 +692,7 @@ class MonitorService:
                             )
                             pending_telegram_alerts.append((added_entry, analysis))
 
-                    except DuplicateEntryError:
+                    except (DuplicateEntryError, IntegrityError):
                         continue
 
                 # Update source telemetry

@@ -253,3 +253,69 @@ async def test_automated_sqlite_backup_loop():
 
     # Cleanup test dir
     shutil.rmtree(test_dir)
+
+
+@pytest.mark.asyncio
+async def test_unit_of_work_session_cleanup_on_commit_failure():
+    """Verify UnitOfWork closes session in finally block even if commit fails."""
+    from ai_security_monitor.infrastructure.database.connection import db_manager
+    from ai_security_monitor.infrastructure.database.unit_of_work import UnitOfWork
+
+    mock_session = AsyncMock()
+    mock_session.commit.side_effect = RuntimeError("Simulated commit deadlock")
+    mock_session.rollback = AsyncMock()
+    mock_session.close = AsyncMock()
+
+    with patch.object(db_manager, "_session_factory", return_value=mock_session):
+        uow = UnitOfWork()
+        with pytest.raises(RuntimeError, match="Simulated commit deadlock"):
+            async with uow:
+                pass
+
+    mock_session.commit.assert_called_once()
+    mock_session.rollback.assert_called_once()
+    mock_session.close.assert_called_once()
+    assert uow._session is None
+
+
+@pytest.mark.asyncio
+async def test_repository_translates_integrity_error_to_duplicate_entry(test_uow):
+    """Verify SQLAlchemyEntryRepository.add translates flush IntegrityError to DuplicateEntryError."""
+    from sqlalchemy.exc import IntegrityError
+
+    from ai_security_monitor.domain.exceptions import DuplicateEntryError
+
+    entry = Entry(
+        source_id=uuid4(),
+        title="Test Concurrent Flush",
+        url="https://example.com/concurrent-flush",
+        content_hash=f"hash-{uuid4().hex[:60]}",
+        summary="Testing integrity error translation",
+        category=Category.AI_TECH,
+        published_at=datetime.now(UTC),
+    )
+
+    with patch.object(test_uow.entries._session, "flush", side_effect=IntegrityError("stmt", "params", Exception("UNIQUE constraint failed"))):
+        with pytest.raises(DuplicateEntryError):
+            await test_uow.entries.add(entry)
+
+
+@pytest.mark.asyncio
+async def test_autonomous_triage_enqueue_prevents_race_conditions():
+    """Verify AutonomousTriageService.enqueue locks entry_id immediately to prevent duplicate queuing."""
+    from ai_security_monitor.application.services.autonomous_triage_service import (
+        AutonomousTriageService,
+    )
+
+    service = AutonomousTriageService()
+    test_id = uuid4()
+
+    # First call enqueues successfully
+    first = await service.enqueue(test_id, priority=1)
+    assert first is True
+
+    # Immediate second call is rejected without re-queuing
+    second = await service.enqueue(test_id, priority=1)
+    assert second is False
+    assert service.queue_size == 1
+

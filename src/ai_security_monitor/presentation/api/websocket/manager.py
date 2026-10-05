@@ -111,7 +111,8 @@ async def websocket_endpoint(websocket: WebSocket):
             except Exception as _msg_err:
                 logger.debug(f"Ignoring malformed WebSocket message: {_msg_err}")
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        pass
     except Exception as e:
         logger.warning(f"WebSocket connection error: {e}")
+    finally:
         manager.disconnect(websocket)
