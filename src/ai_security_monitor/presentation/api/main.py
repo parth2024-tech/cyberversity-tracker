@@ -285,6 +285,47 @@ def create_app() -> FastAPI:
                 os.path.join(web_dir, "index.html"), media_type="text/html"
             )
 
+        @app.get("/privacy", include_in_schema=False)
+        @app.get("/privacy/", include_in_schema=False)
+        async def serve_privacy():
+            privacy_path = os.path.join(web_dir, "privacy.html")
+            if os.path.exists(privacy_path):
+                return FileResponse(privacy_path, media_type="text/html")
+            return FileResponse(
+                os.path.join(web_dir, "index.html"), media_type="text/html"
+            )
+
+        @app.get("/terms", include_in_schema=False)
+        @app.get("/terms/", include_in_schema=False)
+        async def serve_terms():
+            terms_path = os.path.join(web_dir, "terms.html")
+            if os.path.exists(terms_path):
+                return FileResponse(terms_path, media_type="text/html")
+            return FileResponse(
+                os.path.join(web_dir, "index.html"), media_type="text/html"
+            )
+
+        @app.get("/favicon.ico", include_in_schema=False)
+        async def serve_favicon():
+            fav_path = os.path.join(web_dir, "favicon.ico")
+            if os.path.exists(fav_path):
+                return FileResponse(fav_path, media_type="image/x-icon")
+            return Response(status_code=404)
+
+        @app.get("/icon.svg", include_in_schema=False)
+        async def serve_icon_svg():
+            svg_path = os.path.join(web_dir, "icon.svg")
+            if os.path.exists(svg_path):
+                return FileResponse(svg_path, media_type="image/svg+xml")
+            return Response(status_code=404)
+
+        @app.get("/apple-touch-icon.png", include_in_schema=False)
+        async def serve_apple_touch_icon():
+            png_path = os.path.join(web_dir, "apple-touch-icon.png")
+            if os.path.exists(png_path):
+                return FileResponse(png_path, media_type="image/png")
+            return Response(status_code=404)
+
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 
     return app

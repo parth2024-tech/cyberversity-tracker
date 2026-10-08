@@ -205,3 +205,36 @@ async def test_http_security_headers():
         assert resp.headers["Permissions-Policy"] == "geolocation=(), camera=(), microphone=()"
         assert resp.headers["X-XSS-Protection"] == "1; mode=block"
 
+
+@pytest.mark.asyncio
+async def test_production_essentials_and_legal_pages():
+    """Verify accessible /privacy and /terms pages and favicon suite are served."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Privacy policy
+        resp_privacy = await client.get("/privacy")
+        assert resp_privacy.status_code == 200
+        assert "Privacy Policy" in resp_privacy.text
+        assert resp_privacy.headers["content-type"].startswith("text/html")
+
+        # Terms and conditions
+        resp_terms = await client.get("/terms")
+        assert resp_terms.status_code == 200
+        assert "Terms & Conditions" in resp_terms.text
+        assert resp_terms.headers["content-type"].startswith("text/html")
+
+        # Favicon suite
+        resp_fav = await client.get("/favicon.ico")
+        assert resp_fav.status_code == 200
+        assert resp_fav.headers["content-type"] == "image/x-icon"
+
+        resp_icon = await client.get("/icon.svg")
+        assert resp_icon.status_code == 200
+        assert resp_icon.headers["content-type"] == "image/svg+xml"
+
+        resp_apple = await client.get("/apple-touch-icon.png")
+        assert resp_apple.status_code == 200
+        assert resp_apple.headers["content-type"] == "image/png"
+
+

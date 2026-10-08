@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AETHERGUARD // Global AI Intelligence & Frontier Research Radar</title>
+  <meta name="description" content="Autonomous real-time intelligence radar monitoring global AI ecosystem developments: trending codebases, foundation models, research preprints, and inference infrastructure.">
+  <meta name="theme-color" content="#030508">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:title" content="AETHERGUARD // Global AI Intelligence & Frontier Research Radar">
+  <meta property="og:description" content="Autonomous intelligence tracking global artificial intelligence advances, open weights, arXiv research, and developer infrastructure.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/icon.svg">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="AETHERGUARD // Global AI Intelligence Radar">
+  <meta name="twitter:description" content="Autonomous intelligence tracking global artificial intelligence advances, open weights, arXiv research, and developer infrastructure.">
   <!-- Preconnect External CDNs -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -5041,15 +5053,34 @@
 
   <!-- Floating New Stories Available Notification (Bottom-Center, Non-Disruptive) -->
   <div id="new-stories-floating-pill" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 transform">
-    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'}); loadFeed(true);" class="px-5 py-2.5 rounded-full bg-slate-900/95 backdrop-blur-md border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-mono font-medium shadow-2xl shadow-cyan-500/25 flex items-center gap-2.5 cursor-pointer hover:scale-105 transition">
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'}); loadFeed(true);" class="px-4 py-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 hover:text-white text-xs font-mono font-medium shadow-2xl shadow-cyan-500/20 flex items-center gap-2.5 cursor-pointer hover:scale-[1.02] active:scale-95 transition">
       <span class="relative flex h-2 w-2">
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
         <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
       </span>
-      <span>⚡ <strong id="new-stories-floating-count">0</strong> New Stories Available — Click to Refresh</span>
+      <i data-lucide="zap" class="w-3.5 h-3.5 text-cyan-400"></i>
+      <span><strong id="new-stories-floating-count">0</strong> New Stories Available · Click to Refresh</span>
       <i data-lucide="arrow-up" class="w-3.5 h-3.5 text-cyan-400"></i>
     </button>
   </div>
+
+  <!-- Production Site Footer -->
+  <footer class="relative z-10 border-t border-white/[0.06] bg-[#04060a]/90 backdrop-blur-md py-6 px-4 sm:px-8 mt-16 text-xs font-mono text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <img src="/icon.svg" alt="AetherGuard Icon" class="w-4 h-4 rounded">
+        <span>AetherGuard Autonomous AI Radar · Real-Time Ecosystem Intelligence</span>
+      </div>
+      <div class="flex items-center gap-5">
+        <a href="/gazette" class="hover:text-slate-300 transition">Gazette</a>
+        <a href="/privacy" class="hover:text-slate-300 transition">Privacy Policy</a>
+        <a href="/terms" class="hover:text-slate-300 transition">Terms of Service</a>
+        <a href="https://github.com/parth2024-tech/cyberversity-tracker" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition flex items-center gap-1">
+          <i data-lucide="github" class="w-3.5 h-3.5"></i> GitHub
+        </a>
+      </div>
+    </div>
+  </footer>
 
   <!-- MOBILE BOTTOM NAVIGATION DOCK (Screens < 1024px) -->
   <nav id="mobile-dock" class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-white/[0.08] px-2 py-2 flex items-center justify-around text-slate-400 font-mono text-[10px] shadow-2xl">

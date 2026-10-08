@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy · AetherGuard Global AI Radar</title>
+  <meta name="description" content="Privacy Policy for AetherGuard: local-first architecture, telemetry, open-source intelligence aggregation, and data handling standards.">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#030508] text-slate-200 font-sans min-h-screen flex flex-col selection:bg-sky-500/30 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-white/[0.08] bg-[#080b12]/90 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/icon.svg" alt="AetherGuard Radar Icon" class="w-8 h-8 rounded-lg group-hover:opacity-90 transition">
+        <span class="font-mono text-sm font-bold tracking-tight text-white group-hover:text-sky-300 transition">AETHERGUARD // RADAR</span>
+      </a>
+      <div class="flex items-center gap-4 text-xs font-mono">
+        <a href="/" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white transition">Dashboard</a>
+        <a href="/gazette" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white transition">Gazette</a>
+        <a href="/terms" class="text-slate-400 hover:text-slate-200 transition">Terms</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-12">
+    <div class="mb-10 pb-6 border-b border-white/[0.08]">
+      <div class="inline-block px-2.5 py-1 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-mono font-medium mb-3">DATA GOVERNANCE & PRIVACY</div>
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Privacy Policy</h1>
+      <p class="text-sm text-slate-400 font-mono mt-2">Effective Date: October 2026 · Version 2.0</p>
+    </div>
+
+    <div class="space-y-8 text-sm leading-relaxed text-slate-300">
+      <section class="space-y-3">
+        <h2 class="text-base font-semibold text-white font-mono uppercase tracking-wider text-sky-300">1. Architectural Privacy by Design</h2>
+        <p>AetherGuard operates on a <strong>local-first and transparent</strong> model. All telemetry, heuristic scoring, and autonomous triage processing are executed in-memory or persisted strictly within the host system's local SQLite database. We do not transmit user browsing patterns, queries, or telemetry to third-party tracking networks.</p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-base font-semibold text-white font-mono uppercase tracking-wider text-sky-300">2. Data Ingestion & Public Feeds</h2>
+        <p>The intelligence aggregated by AetherGuard consists exclusively of publicly accessible metadata harvested from open ecosystem sources, including:</p>
+        <ul class="list-disc list-inside space-y-1.5 pl-2 text-slate-400 font-mono text-xs">
+          <li>arXiv preprints and academic research repositories</li>
+          <li>Public GitHub trending repositories and open-source packages</li>
+          <li>Hacker News community technical discussions and public posts</li>
+          <li>Public RSS feeds from AI model vendors and infrastructure labs</li>
+        </ul>
+        <p>No confidential, private, or non-public data is collected or indexed by this platform.</p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-base font-semibold text-white font-mono uppercase tracking-wider text-sky-300">3. Local Storage & Client State</h2>
+        <p>Client preferences (such as audio volume, narration voice selections, dark theme preferences, and pinned article bookmarks) are stored entirely in your browser's local <code>localStorage</code> or session storage. They remain on your device and are never synchronized to external telemetry providers.</p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-base font-semibold text-white font-mono uppercase tracking-wider text-sky-300">4. Optional Integrations (Telegram & SMTP)</h2>
+        <p>If you configure optional delivery channels (e.g., Telegram bot tokens or custom SMTP credentials for automated newspaper PDF dispatch), those credentials are stored strictly in your local server environment (<code>.env</code>) and are utilized solely to dispatch notifications directly to your designated recipient addresses.</p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-base font-semibold text-white font-mono uppercase tracking-wider text-sky-300">5. Data Retention & Hygiene</h2>
+        <p>AetherGuard enforces automated and manual data retention controls. Ingested entries older than 14 days are discarded in accordance with our real-time freshness policy. Permanent retention only applies to items explicitly saved to the SQLite Permanent Vault by the user.</p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-base font-semibold text-white font-mono uppercase tracking-wider text-sky-300">6. Contact & Source Code</h2>
+        <p>AetherGuard is an open system. For verification or inquiries regarding data handling, inspect the source code directly on GitHub or contact the repository administrator.</p>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/[0.08] bg-[#04060a] py-8 text-xs font-mono text-slate-500">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>AetherGuard Intelligence Systems · Global AI Ecosystem Monitor</div>
+      <div class="flex items-center gap-4">
+        <a href="/" class="hover:text-slate-300 transition">Dashboard</a>
+        <a href="/gazette" class="hover:text-slate-300 transition">Gazette</a>
+        <a href="/terms" class="hover:text-slate-300 transition">Terms</a>
+        <a href="/privacy" class="text-sky-400 font-semibold">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
