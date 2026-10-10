@@ -725,6 +725,16 @@ async def toggle_entry_vault(
     response_cache.invalidate_prefix("entries_")
     response_cache.invalidate("total_unfiltered_count")
 
+    # Immediately refresh closed-loop Vault preference profile on user bookmark toggle
+    try:
+        from ai_security_monitor.application.services.vault_feedback_service import (
+            vault_feedback_service,
+        )
+
+        await vault_feedback_service.refresh_profile(force=True)
+    except Exception:
+        pass
+
     meta = updated.metadata or {}
     return {
         "status": "ok",
@@ -780,6 +790,9 @@ async def get_entry_deep_analysis(entry_id: str):
     from ai_security_monitor.application.services.deep_analysis_service import (
         deep_analysis_service,
     )
+    from ai_security_monitor.application.services.multi_agent_council import (
+        multi_agent_council,
+    )
 
     try:
         uid = UUID(entry_id)
@@ -792,6 +805,17 @@ async def get_entry_deep_analysis(entry_id: str):
             raise HTTPException(status_code=404, detail="Entry not found")
 
     dossier = deep_analysis_service.generate_dossier(entry)
+    cat_str = (
+        entry.category.value
+        if hasattr(entry.category, "value")
+        else str(entry.category)
+    )
+    council_res = await multi_agent_council.debate_and_critique(
+        title=entry.title,
+        summary=entry.summary or "",
+        category=cat_str,
+    )
+    dossier["council"] = council_res.to_dict()
     return JSONResponse(content=dossier)
 
 

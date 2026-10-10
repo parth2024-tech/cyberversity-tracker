@@ -55,6 +55,27 @@ class SourceHealthMetrics:
             return "degraded"
         return "healthy"
 
+    @property
+    def cooldown_remaining_seconds(self) -> int:
+        """Remaining exponential backoff cooldown seconds when consecutive_failures >= 3."""
+        if self.consecutive_failures < 3 or not self.last_error_at:
+            return 0
+        cooldown = min(3600, 60 * (2 ** (self.consecutive_failures - 3)))
+        last_err = (
+            self.last_error_at
+            if self.last_error_at.tzinfo
+            else self.last_error_at.replace(tzinfo=UTC)
+        )
+        elapsed = (datetime.now(UTC) - last_err).total_seconds()
+        return max(0, int(cooldown - elapsed))
+
+    @property
+    def circuit_state(self) -> str:
+        """Circuit breaker state: closed, open, or half_open."""
+        if self.consecutive_failures < 3:
+            return "closed"
+        return "open" if self.cooldown_remaining_seconds > 0 else "half_open"
+
     def to_dict(self) -> dict:
         return {
             "source_name": self.source_name,
@@ -62,6 +83,8 @@ class SourceHealthMetrics:
             "category": self.category,
             "region": self.region,
             "status": self.status,
+            "circuit_state": self.circuit_state,
+            "cooldown_remaining_seconds": self.cooldown_remaining_seconds,
             "success_rate": self.success_rate,
             "consecutive_failures": self.consecutive_failures,
             "total_runs": self.total_runs,
@@ -169,6 +192,11 @@ class SourceHealthService:
         """Get health data for a specific source."""
         m = self._sources.get(source_name)
         return m.to_dict() if m else None
+
+    def is_circuit_open(self, source_name: str) -> bool:
+        """Return True if the circuit breaker for this source is currently open (cooling down)."""
+        m = self._sources.get(source_name)
+        return m.circuit_state == "open" if m else False
 
     def get_health_report(self) -> dict:
         """Compile comprehensive system-wide source health report."""

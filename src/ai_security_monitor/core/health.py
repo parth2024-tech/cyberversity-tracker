@@ -48,14 +48,9 @@ async def liveness_check():
 @router.get("/health/metrics")
 async def metrics():
     """Prometheus metrics endpoint - delegates to core.metrics."""
-
     from ai_security_monitor.core.metrics import metrics_endpoint
 
-    # Create a mock request
-    class MockRequest:
-        pass
-
-    return await metrics_endpoint(MockRequest())
+    return await metrics_endpoint()
 
 
 @router.post("/metrics/update")

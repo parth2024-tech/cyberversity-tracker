@@ -319,3 +319,79 @@ async def test_autonomous_triage_enqueue_prevents_race_conditions():
     assert second is False
     assert service.queue_size == 1
 
+
+@pytest.mark.asyncio
+async def test_multi_agent_council_debate_and_critique():
+    """Verify MultiAgentDebateEngine scores technical breakthroughs vs hype without format errors."""
+    from ai_security_monitor.application.services.multi_agent_council import (
+        multi_agent_council,
+    )
+
+    # 1. High-signal technical AI breakthrough
+    res_good = await multi_agent_council.debate_and_critique(
+        title="DeepSeek-V3 Open-Weights MoE Reasoning Architecture Release",
+        summary="New state-of-the-art benchmark scaling and inference breakthrough on arXiv.",
+        category="ai_models",
+    )
+    assert res_good.approved is True
+    assert res_good.creator_score >= 70.0
+    assert res_good.critic_score == 90.0
+    assert "Approved for publication" in res_good.critique_summary
+    assert res_good.to_dict()["approved"] is True
+
+    # 2. Low-signal hype clickbait
+    res_hype = await multi_agent_council.debate_and_critique(
+        title="Shocking Miracle Secret Trick Revolutionary Game-Changing Unprecedented Tool",
+        summary="Miracle revolutionary unprecedented secret trick shocking results.",
+        category="other",
+    )
+    assert res_hype.critic_score < 50.0
+    assert res_hype.approved is False
+    assert "Filtered out as low-signal/hype." in res_hype.critique_summary
+
+
+def test_source_health_circuit_breaker_lifecycle():
+    """Verify SourceHealthService circuit breaker transitions closed -> open -> half_open -> closed."""
+    from ai_security_monitor.application.services.source_health_service import (
+        SourceHealthService,
+    )
+
+    svc = SourceHealthService()
+    src = "test_arxiv_feed"
+
+    # Initially closed
+    assert svc.is_circuit_open(src) is False
+
+    # 2 failures -> degraded, still closed
+    svc.record_failure(src, 120, "Timeout 1")
+    svc.record_failure(src, 130, "Timeout 2")
+    health = svc.get_source_health(src)
+    assert health is not None
+    assert health["status"] == "degraded"
+    assert health["circuit_state"] == "closed"
+    assert svc.is_circuit_open(src) is False
+
+    # 3rd consecutive failure -> failing, circuit opens with cooldown
+    svc.record_failure(src, 140, "Timeout 3")
+    health = svc.get_source_health(src)
+    assert health is not None
+    assert health["status"] == "failing"
+    assert health["circuit_state"] == "open"
+    assert health["cooldown_remaining_seconds"] > 0
+    assert svc.is_circuit_open(src) is True
+
+    # Simulate cooldown expiry -> transitions to half_open
+    svc._sources[src].last_error_at = datetime.now(UTC) - timedelta(seconds=120)
+    health_half = svc.get_source_health(src)
+    assert health_half is not None
+    assert health_half["circuit_state"] == "half_open"
+    assert svc.is_circuit_open(src) is False
+
+    # Successful probe -> resets circuit_state to closed & consecutive_failures to 0
+    svc.record_success(src, 95, entries_new=5)
+    health_recovered = svc.get_source_health(src)
+    assert health_recovered is not None
+    assert health_recovered["circuit_state"] == "closed"
+    assert health_recovered["consecutive_failures"] == 0
+
+

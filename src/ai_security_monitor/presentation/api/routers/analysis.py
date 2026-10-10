@@ -70,8 +70,17 @@ async def quick_analyze(req: QuickAnalyzeRequest):
         tags=req.tags,
     )
 
+    from ai_security_monitor.application.services.multi_agent_council import (
+        multi_agent_council,
+    )
+
     triage_res = await triage_analyzer.analyze(dummy_entry)
     blast_res = await blast_analyzer.analyze(dummy_entry)
+    council_res = await multi_agent_council.debate_and_critique(
+        title=effective_title,
+        summary=summary_text,
+        category=cat.value,
+    )
 
     return {
         "title": effective_title,
@@ -88,6 +97,7 @@ async def quick_analyze(req: QuickAnalyzeRequest):
         "model": triage_res.model or analyzer_name,
         "triage": triage_res,
         "blast_radius": blast_res,
+        "council": council_res.to_dict(),
     }
 
 

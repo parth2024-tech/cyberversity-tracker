@@ -9,7 +9,6 @@ from prometheus_client import (
     Histogram,
     generate_latest,
 )
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -62,38 +61,6 @@ delivery_operations = Counter(
 )
 
 
-class MetricsMiddleware(BaseHTTPMiddleware):
-    """Middleware for collecting HTTP metrics."""
-
-    async def dispatch(self, request: Request, call_next):
-        start_time = time.time()
-
-        # Get endpoint name from route
-        endpoint = request.url.path
-        if hasattr(request, "scope") and request.scope.get("route"):
-            endpoint = request.scope["route"].path
-
-        try:
-            response = await call_next(request)
-            status = response.status_code
-        except Exception:
-            status = 500
-            raise
-        finally:
-            duration = time.time() - start_time
-            http_requests_total.labels(
-                method=request.method,
-                endpoint=endpoint,
-                status=status,
-            ).inc()
-            http_request_duration.labels(
-                method=request.method,
-                endpoint=endpoint,
-            ).observe(duration)
-
-        return response
-
-
 async def metrics_middleware(request: Request, call_next):
     """Function-based middleware for metrics."""
     start_time = time.time()
@@ -140,7 +107,7 @@ def update_business_metrics(
         pre_cve_warnings.set(pre_cve_count)
 
 
-async def metrics_endpoint(request: Request) -> Response:
+async def metrics_endpoint(request: Request | None = None) -> Response:
     """Prometheus metrics endpoint."""
     return Response(
         content=generate_latest(),

@@ -581,6 +581,16 @@ class MonitorService:
             pending_triage_entries: list[tuple[UUID, Entry]] = []
             pending_telegram_alerts: list[tuple[Entry, Analysis]] = []
 
+            if prepared_items and settings.analyzer.autonomous_triage_enabled:
+                try:
+                    from ai_security_monitor.application.services.vault_feedback_service import (
+                        vault_feedback_service,
+                    )
+
+                    await vault_feedback_service.refresh_profile()
+                except Exception:
+                    pass
+
             async with self._uow_factory() as uow:
                 for (
                     entry,
@@ -1282,6 +1292,17 @@ class MonitorService:
                             "risk_level": risk_label,
                         }
                     )
+            except Exception:
+                pass
+
+            try:
+                from ai_security_monitor.core.metrics import update_business_metrics
+
+                update_business_metrics(
+                    entries_by_category=cats,
+                    high_vel_count=high_velocity,
+                    pre_cve_count=pre_cve_warnings,
+                )
             except Exception:
                 pass
 

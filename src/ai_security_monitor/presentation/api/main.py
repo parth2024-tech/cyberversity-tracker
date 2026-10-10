@@ -121,6 +121,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Cache warming on startup to prevent cold-start latency
         try:
+            from ai_security_monitor.application.services.vault_feedback_service import (
+                vault_feedback_service,
+            )
             from ai_security_monitor.infrastructure.cache import response_cache
 
             logger.info("Warming hot response caches on startup...")
@@ -130,8 +133,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await response_cache.get_or_set(
                 "sweep_status", 15.0, lambda: monitor_service.get_sweep_status()
             )
+            await vault_feedback_service.refresh_profile()
             logger.info(
-                "Hot response caches successfully warmed (stats_totals, sweep_status)"
+                "Hot response caches successfully warmed (stats_totals, sweep_status, vault_profile)"
             )
         except Exception as warm_err:
             logger.warning(f"Cache warming notice (non-fatal): {warm_err}")

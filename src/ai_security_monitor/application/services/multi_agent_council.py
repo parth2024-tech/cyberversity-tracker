@@ -21,6 +21,15 @@ class AgentCritiqueResult:
     critique_summary: str
     approved: bool
 
+    def to_dict(self) -> dict:
+        return {
+            "creator_score": self.creator_score,
+            "critic_score": self.critic_score,
+            "consensus_score": self.consensus_score,
+            "critique_summary": self.critique_summary,
+            "approved": self.approved,
+        }
+
 
 class MultiAgentDebateEngine:
     """Orchestrates multi-perspective autonomous critique for incoming AI intelligence."""
@@ -34,23 +43,40 @@ class MultiAgentDebateEngine:
         """Run an asynchronous multi-agent evaluation on a piece of intelligence."""
         logger.info(f"Initiating multi-agent debate council for: {title[:60]}...")
 
-        # 1. Analyst Agent (Creator / Impact Evaluation)
-        text_lower = (title + " " + summary).lower()
+        # 1. Analyst Agent (Creator / Technical Impact Evaluation)
+        text_lower = f"{title} {summary}".lower()
         impact_keywords = (
             "breakthrough",
             "state-of-the-art",
+            "sota",
             "release",
-            "vulnerability",
+            "open-source",
+            "open-weights",
             "agent",
             "scaling",
             "reasoning",
-            "safety",
+            "inference",
+            "architecture",
+            "benchmark",
+            "multimodal",
+            "arxiv",
         )
         impact_matches = sum(1 for kw in impact_keywords if kw in text_lower)
         creator_score = min(100.0, 50.0 + (impact_matches * 8.0))
 
-        # 2. Critic Agent (Rigor & Novelty Validation)
-        hype_words = ("revolutionary", "game-changing", "unprecedented", "miracle")
+        # Category bonus for core technical pillars
+        if category in ("ai_models", "ai_research", "github_trending"):
+            creator_score = min(100.0, creator_score + 6.0)
+
+        # 2. Critic Agent (Rigor & Signal-to-Noise Validation)
+        hype_words = (
+            "revolutionary",
+            "game-changing",
+            "unprecedented",
+            "miracle",
+            "secret trick",
+            "shocking",
+        )
         hype_count = sum(1 for hw in hype_words if hw in text_lower)
         critic_penalty = hype_count * 12.0
         critic_score = max(20.0, 90.0 - critic_penalty)
@@ -58,11 +84,16 @@ class MultiAgentDebateEngine:
         # 3. Consensus Synthesis
         consensus_score = round((creator_score * 0.6) + (critic_score * 0.4), 1)
         approved = consensus_score >= 55.0
+        verdict = (
+            "Approved for publication and high-priority triage queue."
+            if approved
+            else "Filtered out as low-signal/hype."
+        )
 
         summary_text = (
             f"Council Evaluation: Creator Impact Score {creator_score}/100, "
             f"Critic Rigor Score {critic_score}/100. Consensus: {consensus_score}/100. "
-            f"{'Approved for publication and high-priority triage queue.': approved else 'Filtered out as low-signal/hype.'}"
+            f"{verdict}"
         )
 
         return AgentCritiqueResult(
