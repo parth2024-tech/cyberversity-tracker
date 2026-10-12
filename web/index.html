@@ -3682,6 +3682,7 @@
           lucide.createIcons();
         }, 1200);
       }
+    }
     const triggerAutonomousBackfill = triggerTriageBackfill;
     window.triggerAutonomousBackfill = triggerTriageBackfill;
 
@@ -4680,10 +4681,10 @@
       // Channel config: maxAgeMs = how stale data can get before proactive refresh
       //                 minIntervalMs = minimum gap between two requests (dedup guard)
       const CHANNELS = {
-        stats:   { maxAgeMs: 5_000,   minIntervalMs: 3_000,  backoffMulti: 1 },  // 🚀 5s max staleness
-        sweep:   { maxAgeMs: 8_000,   minIntervalMs: 5_000,  backoffMulti: 1 },  // 🚀 8s max staleness
-        feed:    { maxAgeMs: 10_000,  minIntervalMs: 7_000,  backoffMulti: 1 },  // 🚀 10s max staleness
-        sources: { maxAgeMs: 60_000,  minIntervalMs: 30_000, backoffMulti: 1 },  // 1min (config changes rarely)
+        stats:   { maxAgeMs: 45_000,   minIntervalMs: 30_000,  backoffMulti: 1 },  // 45s max staleness
+        sweep:   { maxAgeMs: 60_000,   minIntervalMs: 45_000,  backoffMulti: 1 },  // 60s max staleness
+        feed:    { maxAgeMs: 90_000,   minIntervalMs: 60_000,  backoffMulti: 1 },  // 90s max staleness
+        sources: { maxAgeMs: 300_000,  minIntervalMs: 120_000, backoffMulti: 1 },  // 5min (config changes rarely)
       };
 
       const _state = {};
@@ -4700,8 +4701,7 @@
       let _enginePaused = false;
       let _tickHandle = null;
       let _started = false;
-      let _lastTickAt = 0;
-      const TICK_MS = 2000; // evaluate channels every 2s
+      const TICK_MS = 5000; // evaluate channels every 5s
 
       // ── Dispatch one channel fetch ──────────────────────────────────────
       async function _fetchChannel(ch, force = false) {
@@ -4733,13 +4733,9 @@
         }
       }
 
-      // ── rAF-driven tick loop ────────────────────────────────────────────
-      function _tick(timestamp) {
-        _tickHandle = requestAnimationFrame(_tick);
+      // ── Periodic tick loop ────────────────────────────────────────────
+      function _tick() {
         if (_enginePaused) return;
-
-        if ((timestamp - _lastTickAt) < TICK_MS) return;
-        _lastTickAt = timestamp;
 
         const now = performance.now();
         Object.keys(CHANNELS).forEach(ch => {
@@ -4755,11 +4751,12 @@
 
       // ── Public API ──────────────────────────────────────────────────────
 
-      /** Mark channel(s) dirty → refresh immediately. Pass 'all' to invalidate everything. */
+      /** Mark channel(s) dirty → the tick loop will refresh on next cycle. Pass 'all' to invalidate everything. */
       function invalidate(ch) {
         if (ch === 'all') Object.keys(CHANNELS).forEach(c => { _state[c].dirty = true; });
         else if (_state[ch]) _state[ch].dirty = true;
-        forceRefresh(ch);
+        // Let the tick loop pick up dirty channels — do NOT force-refresh here
+        // to prevent request storms from rapid WebSocket events.
       }
 
       /** Force-refresh a channel immediately, bypassing tick schedule and minInterval. */
@@ -4791,7 +4788,7 @@
         document.addEventListener('freeze',  _pause);
         document.addEventListener('resume',  _resume);
 
-        _tickHandle = requestAnimationFrame(_tick);
+        _tickHandle = setInterval(_tick, TICK_MS);
         console.log('[DataSyncEngine] ✓ Reactive data-sync engine online.');
       }
 

@@ -128,20 +128,17 @@ function handleWebSocketMessage(msg) {
     const entry = msg.data || msg.entry;
     if (!entry) return;
 
-    // 🚀 ROCKET MODE: Instantly inject new entry into live feed
     const entryId = entry.id || ('new-' + (entry.url || Date.now()));
     entry.id = entryId;
     entry.is_new_since_refresh = true;
 
-    const allItems = window.allFeedItems || [];
-    // Deduplicate: skip if card already in DOM or allFeedItems
-    if (!document.getElementById('ai-card-' + entryId) && !document.getElementById('threat-card-' + entryId) && !allItems.some(e => e.id === entryId)) {
-      allItems.unshift(entry);
-      if (allItems.length > 250) allItems.length = 250;
-      if (typeof prependFeedItem === 'function') prependFeedItem(entry);
-      
-      const lb = document.getElementById('feed-loading-bar');
-      if (lb) { lb.classList.add('opacity-100'); setTimeout(() => lb.classList.remove('opacity-100'), 600); }
+    // Queue new entries — do NOT auto-inject into DOM to prevent UI churn and lag.
+    // The user sees a "New Stories Available" banner and clicks to refresh.
+    const pending = window.pendingNewEntries || [];
+    if (!pending.some(e => e.id === entryId)) {
+      pending.push(entry);
+      window.pendingNewEntries = pending;
+      if (typeof updatePendingBanner === 'function') updatePendingBanner();
     }
 
     if (msg.type === 'landmark_ai_breakthrough') {
@@ -159,24 +156,7 @@ function handleWebSocketMessage(msg) {
       if (typeof playBeep === 'function') playBeep('alert');
     }
 
-    // Soft Real-Time Telemetry Counter Increment (Deduplicated to prevent dual-event counter surges)
-    window._seenCounterEntryIds = window._seenCounterEntryIds || new Set();
-    if (!window._seenCounterEntryIds.has(entryId)) {
-      window._seenCounterEntryIds.add(entryId);
-      if (window._seenCounterEntryIds.size > 2000) {
-        const arr = Array.from(window._seenCounterEntryIds);
-        window._seenCounterEntryIds = new Set(arr.slice(arr.length - 1000));
-      }
-      incrementKPICounter('total-entries');
-      const cat = entry.category || '';
-      if (cat === 'github_trending' || cat === 'trending_repos') incrementKPICounter('trending-repos-count');
-      else if (cat === 'ai_models' || cat === 'frontier_models') incrementKPICounter('frontier-models-count');
-      else if (cat === 'ai_research' || cat === 'research_papers') incrementKPICounter('ai-count');
-      else if (cat === 'cyber_tools' || cat === 'dev_tools') incrementKPICounter('developer-tools-count');
-      else if (cat === 'ai_tech') incrementKPICounter('global-tech-count');
-    }
-
-    // Mark stats dirty so engine proactively refreshes on next tick
+    // Mark stats dirty so engine refreshes counters on next tick
     if (window.DataSyncEngine) window.DataSyncEngine.invalidate('stats');
 
   } else if (msg.type === 'scan_status') {
