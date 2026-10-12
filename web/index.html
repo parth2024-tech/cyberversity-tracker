@@ -1335,6 +1335,10 @@
     let activeTechChip = '';
     let focusedCardIndex = -1;
 
+    if (typeof window.lucide === 'undefined') {
+      window.lucide = { createIcons: () => {} };
+    }
+
     function escapeHtml(str) {
       return String(str == null ? '' : str)
         .replace(/&/g, '&amp;')
@@ -1907,26 +1911,30 @@
 
     // Render Doughnut Chart
     function renderCategoryChart(cats) {
-      const chartCanvas = document.getElementById('categoryChart');
-      if (!chartCanvas) return;
-      const ctx = chartCanvas.getContext('2d');
-      const labels = ['Trending Repos', 'Frontier AI Models', 'arXiv AI Research', 'AI Developer Tools', 'Global Sovereign Tech'];
-      const dataValues = [
-        cats.github_trending || 0,
-        cats.ai_models || 0,
-        cats.ai_research || 0,
-        cats.cyber_tools || 0,
-        cats.ai_tech || 0
-      ];
-
-      if (categoryChart) {
-        categoryChart.data.datasets[0].data = dataValues;
-        categoryChart.data.labels = labels;
-        categoryChart.update();
+      if (typeof Chart === 'undefined') {
         return;
       }
+      const chartCanvas = document.getElementById('categoryChart');
+      if (!chartCanvas) return;
+      try {
+        const ctx = chartCanvas.getContext('2d');
+        const labels = ['Trending Repos', 'Frontier AI Models', 'arXiv AI Research', 'AI Developer Tools', 'Global Sovereign Tech'];
+        const dataValues = [
+          cats.github_trending || 0,
+          cats.ai_models || 0,
+          cats.ai_research || 0,
+          cats.cyber_tools || 0,
+          cats.ai_tech || 0
+        ];
 
-      categoryChart = new Chart(ctx, {
+        if (categoryChart) {
+          categoryChart.data.datasets[0].data = dataValues;
+          categoryChart.data.labels = labels;
+          categoryChart.update();
+          return;
+        }
+
+        categoryChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
           labels: labels,
@@ -1961,6 +1969,9 @@
           cutout: '75%'
         }
       });
+      } catch (err) {
+        console.warn('Category chart render error:', err);
+      }
     }
 
     // Geographic Worldwide Theatre Filter
@@ -3671,8 +3682,8 @@
           lucide.createIcons();
         }, 1200);
       }
-    }
     const triggerAutonomousBackfill = triggerTriageBackfill;
+    window.triggerAutonomousBackfill = triggerTriageBackfill;
 
     async function enqueueEntryForTriage(entryId) {
       playBeep('click');

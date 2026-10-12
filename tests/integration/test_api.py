@@ -204,6 +204,16 @@ async def test_http_security_headers():
         assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
         assert resp.headers["Permissions-Policy"] == "geolocation=(), camera=(), microphone=()"
         assert resp.headers["X-XSS-Protection"] == "1; mode=block"
+        csp = resp.headers["Content-Security-Policy"]
+        assert "https://cdn.jsdelivr.net" in csp
+        assert "media-src 'self' data: blob: https:;" in csp
+        assert "Strict-Transport-Security" not in resp.headers
+
+    # When request is over HTTPS on a production domain, HSTS should be present
+    async with AsyncClient(transport=transport, base_url="https://monitor.example.com") as https_client:
+        https_resp = await https_client.get("/api/health")
+        assert https_resp.status_code == 200
+        assert "Strict-Transport-Security" in https_resp.headers
 
 
 @pytest.mark.asyncio
