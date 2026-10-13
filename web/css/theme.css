@@ -253,9 +253,27 @@
       transform: translateX(4px) !important;
     }
 
+    .main-layout {
+      width: 100%;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (min-width: 1024px) {
+      .main-layout, footer {
+        margin-left: 56px !important;
+        width: calc(100% - 56px) !important;
+        max-width: none !important;
+      }
+    }
+
     @media (max-width: 1023px) {
       #sidebar-nav { display: none; }
-      .main-layout { margin-left: 0 !important; }
+      .main-layout, footer {
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
     }
 
     /* Grid vs List View Modes */
