@@ -1203,105 +1203,19 @@
 
       </div>
 
-      <!-- RIGHT PANEL: flat sections -->
+      <!-- RIGHT PANEL: Live Sweep Activity Log -->
       <div class="lg:col-span-4">
-        <div class="glass-panel p-5">
-
-          <!-- Observatory Telemetry & Health Status -->
-          <div class="panel-section">
-            <div class="panel-heading flex items-center justify-between">
-              <span>Observatory Telemetry</span>
-              <span class="text-[9px] text-cyan-400 font-mono flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>ONLINE
-              </span>
+        <div class="glass-panel p-5 space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div class="panel-heading !mb-0 flex items-center gap-2">
+              <i data-lucide="radio" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Live Sweep Activity</span>
             </div>
-            <div class="space-y-2 text-[10px] font-mono">
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="radio" class="w-3.5 h-3.5 text-cyan-400"></i> Active Sources</span>
-                <span class="text-cyan-300 font-semibold" id="telemetry-sources-count">164 Monitored</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> News Freshness</span>
-                <span class="text-emerald-300 font-semibold">&le; 14 Days Max</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="database" class="w-3.5 h-3.5 text-violet-400"></i> DB Retention</span>
-                <span class="text-violet-300 font-semibold">Persistent (Zero Auto-Wipes)</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> Sovereign Corridors</span>
-                <span class="text-sky-300 font-semibold">9 Theatres</span>
-              </div>
-            </div>
+            <span class="text-[9px] text-cyan-400 font-mono flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>ACTIVE
+            </span>
           </div>
-
-          <!-- AI Framework & Runtime Ecosystem -->
-          <div class="panel-section">
-            <div class="panel-heading">AI Frameworks & Runtimes</div>
-            <div id="framework-exposure-list" class="space-y-2.5 text-[10px] font-mono">
-              <div class="space-y-2 animate-pulse py-1">
-                <div class="flex justify-between items-center"><div class="h-2.5 bg-white/[0.05] rounded w-24"></div><div class="h-2 bg-white/[0.03] rounded w-10"></div></div>
-                <div class="h-1 bg-white/[0.03] rounded-full w-full"></div>
-                <div class="flex justify-between items-center pt-1"><div class="h-2.5 bg-white/[0.05] rounded w-20"></div><div class="h-2 bg-white/[0.03] rounded w-8"></div></div>
-                <div class="h-1 bg-white/[0.03] rounded-full w-full"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Autonomous Intelligence Engine -->
-          <div class="panel-section">
-            <div class="panel-heading">Autonomous AI Engine</div>
-            <div class="space-y-2.5 text-[10px] font-mono">
-              <div class="flex items-start gap-2"><i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i><span class="text-slate-400">Global AI Radar: Frontier models, inference runtimes, agent frameworks & breakthroughs</span></div>
-              <div class="flex items-start gap-2"><i data-lucide="network" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0 mt-0.5"></i><span class="text-slate-400">Ecosystem cross-correlation across vLLM, PyTorch, LangChain, Ollama, Transformers</span></div>
-              <div class="flex items-start gap-2"><i data-lucide="cpu" class="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5"></i><span class="text-slate-400">Autonomous GPU Triage for deep architectural analysis & technical insights</span></div>
-              <button onclick="triggerAutonomousBackfill()" id="btn-sidebar-backfill" class="w-full mt-2 py-2 px-3 rounded-md bg-violet-500/10 hover:bg-violet-500/18 border border-violet-500/20 text-violet-400 hover:text-violet-300 text-[9px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition">
-                <i data-lucide="sparkles" class="w-3 h-3"></i> Auto-Triage Top 25
-              </button>
-            </div>
-          </div>
-
-          <!-- Sweep Log -->
-          <div class="panel-section">
-            <div class="panel-heading">Sweep Log · 24h</div>
-            <div id="recent-fetches-list" class="space-y-1.5 max-h-60 overflow-y-auto text-[10px] font-mono"></div>
-          </div>
-
-          <!-- Self-Healing Operations Telemetry -->
-          <div class="panel-section" id="self-healing-panel">
-            <div class="flex items-center justify-between panel-heading">
-              <span>Self-Healing Engine</span>
-              <span class="text-[9px] text-emerald-400 font-mono flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>ACTIVE
-              </span>
-            </div>
-            <div id="self-healing-stats" class="space-y-1.5 text-[10px] font-mono">
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400">Scrape Fallbacks</span>
-                <span id="sh-scrape-fallbacks" class="text-sky-400 font-semibold">0</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400">WS Evictions (Slow)</span>
-                <span id="sh-ws-drops" class="text-sky-400 font-semibold">0</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400">Consecutive Fail Alerts</span>
-                <span id="sh-fail-alerts" class="text-sky-400 font-semibold">0</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
-                <span class="text-slate-400">Language Uncertainty</span>
-                <span id="sh-lang-uncertain" class="text-sky-400 font-semibold">0</span>
-              </div>
-              <div class="p-2 rounded-lg bg-black/40 border border-white/[0.05] space-y-0.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-slate-400">DB Backup (30d DR)</span>
-                  <span id="sh-backup-status" class="text-emerald-400 font-semibold">Ready</span>
-                </div>
-                <div id="sh-backup-detail" class="text-[9px] text-slate-500 truncate">60 snapshots @ 12h</div>
-              </div>
-            </div>
-          </div>
-
+          <div id="recent-fetches-list" class="space-y-2 max-h-[600px] overflow-y-auto text-[10px] font-mono pr-1"></div>
         </div>
       </div>
 
@@ -1888,57 +1802,26 @@
       _set('high-vel-count', (stats.high_velocity_entries || 0).toLocaleString());
       _set('active-sources-count', totalSrcs);
       _set('sidebar-sources-count', totalSrcs);
-      _set('telemetry-sources-count', totalSrcs + ' Monitored');
       if (document.getElementById('globe-beacons-count')) _set('globe-beacons-count', totalSrcs);
       if (typeof updateVaultCount === 'function') updateVaultCount();
 
-      // Render Dynamic AI Framework Exposure
-      const fwList = document.getElementById('framework-exposure-list');
-      if (fwList && stats.framework_exposure && stats.framework_exposure.length > 0) {
-        const riskColors = {
-          'HIGH ADOPTION': { text: 'text-emerald-400', bar: 'from-emerald-500/80 to-emerald-400' },
-          'ACTIVE': { text: 'text-cyan-400', bar: 'from-cyan-500/80 to-cyan-400' },
-          'HIGH RISK': { text: 'text-rose-400', bar: 'from-rose-500/80 to-rose-400' },
-          'ELEVATED': { text: 'text-amber-400', bar: 'from-amber-500/80 to-amber-400' },
-          'MODERATE': { text: 'text-sky-400', bar: 'from-sky-500/80 to-sky-400' },
-          'MONITORED': { text: 'text-indigo-400', bar: 'from-indigo-500/80 to-indigo-400' }
-        };
-
-        fwList.innerHTML = stats.framework_exposure.map(fw => {
-          const cfg = riskColors[fw.risk_level] || riskColors['MONITORED'];
-          const pct = Math.min(100, Math.max(15, Math.round(fw.avg_blast || 50)));
-          return `
-            <div data-fw="${escapeHtml(fw.name)}" onclick="quickFilterFramework(this.dataset.fw)" class="cursor-pointer hover:bg-white/[0.04] p-1.5 rounded-lg transition" title="Click to filter intelligence for ${escapeHtml(fw.name)}">
-              <div class="flex justify-between text-[11px] mb-1">
-                <span class="text-slate-300 font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3 h-3 text-sky-400"></i>${escapeHtml(fw.name)} (${Number(fw.count) || 0})</span>
-                <span class="${cfg.text} font-semibold text-[10px]">${escapeHtml(fw.risk_level)}</span>
-              </div>
-              <div class="w-full bg-white/[0.06] rounded-full h-1 overflow-hidden">
-                <div class="bg-gradient-to-r ${cfg.bar} h-1 rounded-full" style="width: ${pct}%"></div>
-              </div>
-            </div>
-          `;
-        }).join('');
-        if (typeof lucide !== 'undefined' && lucide.createIcons) {
-          lucide.createIcons({ root: fwList });
-        }
-      }
-
       const fetchList = document.getElementById('recent-fetches-list');
-      if (stats.recent_fetches && stats.recent_fetches.length > 0) {
-        fetchList.innerHTML = stats.recent_fetches.map(f => `
-          <div class="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
-            <div class="flex items-center gap-2 truncate">
-              <span class="w-1.5 h-1.5 rounded-full ${f.status === 'success' ? 'bg-emerald-400' : (f.status === 'error' ? 'bg-rose-400' : 'bg-amber-400')}"></span>
-              <span class="truncate text-slate-300 font-medium">${escapeHtml(f.source_name)}</span>
+      if (fetchList) {
+        if (stats.recent_fetches && stats.recent_fetches.length > 0) {
+          fetchList.innerHTML = stats.recent_fetches.map(f => `
+            <div class="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-white/[0.05] hover:border-cyan-500/20 transition">
+              <div class="flex items-center gap-2 truncate">
+                <span class="w-1.5 h-1.5 rounded-full ${f.status === 'success' ? 'bg-emerald-400' : (f.status === 'error' ? 'bg-rose-400' : 'bg-amber-400')}"></span>
+                <span class="truncate text-slate-300 font-medium">${escapeHtml(f.source_name)}</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] text-sky-400 font-medium">+${Number(f.entries_new) || 0} new</span>
+              </div>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-[10px] text-sky-400 font-medium">+${Number(f.entries_new) || 0} new</span>
-            </div>
-          </div>
-        `).join('');
-      } else {
-        fetchList.innerHTML = `<p class="text-slate-500 text-center py-4 text-xs">No recent sweep logs.</p>`;
+          `).join('');
+        } else {
+          fetchList.innerHTML = `<p class="text-slate-500 text-center py-6 text-xs font-mono">No recent sweep logs.</p>`;
+        }
       }
     }
 
