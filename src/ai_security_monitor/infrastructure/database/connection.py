@@ -19,43 +19,13 @@ from ai_security_monitor.config.settings import settings
 
 
 def _ensure_seed_database(db_path: str) -> None:
-    """Ensure SQLite database is seeded with curated global AI entries on fresh cloud boot."""
+    """Ensure SQLite database directory exists without auto-seeding dummy entries."""
     import os
-    import shutil
 
-    # Multi-path search for seed candidate database
-    base_dir = os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        )
-    )
-    candidates = [
-        os.path.join(base_dir, "data", "seed_monitor.db"),
-        os.path.join(os.getcwd(), "data", "seed_monitor.db"),
-        "data/seed_monitor.db",
-        "/app/data/seed_monitor.db",
-    ]
-    seed_file = None
-    for c in candidates:
-        if os.path.exists(c) and os.path.getsize(c) > 100_000:
-            seed_file = c
-            break
-
-    if not seed_file:
-        return
-
-    # Only seed if target db is completely missing
-    needs_seeding = not os.path.exists(db_path) or os.path.getsize(db_path) == 0
-
-    if needs_seeding:
-        try:
-            dir_name = os.path.dirname(db_path)
-            if dir_name:
-                os.makedirs(dir_name, exist_ok=True)
-            if os.path.abspath(seed_file) != os.path.abspath(db_path):
-                shutil.copy2(seed_file, db_path)
-        except Exception:
-            pass
+    dir_name = os.path.dirname(db_path)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
+    return
 
 
 class DatabaseManager:
