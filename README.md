@@ -1,7 +1,7 @@
 # AETHERGUARD // Worldwide AI Ecosystem Intelligence & Frontier Radar
 
 [![CI Status](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-222%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Tests](https://img.shields.io/badge/Tests-283%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
 [![Coverage](https://img.shields.io/badge/Coverage-72%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -97,7 +97,7 @@ ai-security-monitor/
 │   ├── index.html                         # Primary Command Center HUD
 │   ├── gazette.html                       # The AI Chronicle & Gazette reader
 │   └── js/                                # WebSocket receiver, palette, & interactive controls
-└── tests/                                 # Industrial automated test suite (222 tests)
+└── tests/                                 # Industrial automated test suite (283 tests)
     ├── unit/                              # Isolated entity, analyzer, and domain tests
     └── integration/                       # Brutal API stress, boundary contracts, and DB tests
 ```

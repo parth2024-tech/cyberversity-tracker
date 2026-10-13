@@ -21,6 +21,31 @@ def temp_output_dir(tmp_path: Path) -> Path:
     return newspaper_dir
 
 
+@pytest.fixture(autouse=True)
+def mock_newspaper_live_fetch():
+    """Mock external network calls from NewspaperLiveFetcher during tests."""
+    from datetime import UTC
+    from unittest.mock import AsyncMock, patch
+    from uuid import uuid4
+
+    sample_entry = Entry(
+        id=uuid4(),
+        source_id=uuid4(),
+        title="DeepSeek-R1 Architecture and Reasoning Scaling Breakthrough",
+        url="https://arxiv.org/abs/2501.12948",
+        content_hash="mock_r1_hash",
+        published_at=datetime.now(UTC),
+        category=Category.AI_RESEARCH,
+        summary="DeepSeek-R1 demonstrates open reasoning capabilities rivaling proprietary models.",
+    )
+    with patch(
+        "ai_security_monitor.application.services.newspaper.fetcher.NewspaperLiveFetcher.fetch_live_intelligence",
+        new_callable=AsyncMock,
+        return_value=[sample_entry],
+    ):
+        yield
+
+
 @pytest.mark.asyncio
 async def test_newspaper_generation_creates_files(temp_output_dir: Path):
     """Test that generate_edition produces .md, .html, and .json files."""

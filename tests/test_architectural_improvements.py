@@ -295,7 +295,13 @@ async def test_repository_translates_integrity_error_to_duplicate_entry(test_uow
         published_at=datetime.now(UTC),
     )
 
-    with patch.object(test_uow.entries._session, "flush", side_effect=IntegrityError("stmt", "params", Exception("UNIQUE constraint failed"))):
+    with patch.object(
+        test_uow.entries._session,
+        "flush",
+        side_effect=IntegrityError(
+            "stmt", "params", Exception("UNIQUE constraint failed")
+        ),
+    ):
         with pytest.raises(DuplicateEntryError):
             await test_uow.entries.add(entry)
 
@@ -393,5 +399,3 @@ def test_source_health_circuit_breaker_lifecycle():
     assert health_recovered is not None
     assert health_recovered["circuit_state"] == "closed"
     assert health_recovered["consecutive_failures"] == 0
-
-

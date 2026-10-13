@@ -202,7 +202,10 @@ async def test_http_security_headers():
         assert resp.headers["X-Content-Type-Options"] == "nosniff"
         assert resp.headers["X-Frame-Options"] == "SAMEORIGIN"
         assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
-        assert resp.headers["Permissions-Policy"] == "geolocation=(), camera=(), microphone=()"
+        assert (
+            resp.headers["Permissions-Policy"]
+            == "geolocation=(), camera=(), microphone=()"
+        )
         assert resp.headers["X-XSS-Protection"] == "1; mode=block"
         csp = resp.headers["Content-Security-Policy"]
         assert "https://cdn.jsdelivr.net" in csp
@@ -210,7 +213,9 @@ async def test_http_security_headers():
         assert "Strict-Transport-Security" not in resp.headers
 
     # When request is over HTTPS on a production domain, HSTS should be present
-    async with AsyncClient(transport=transport, base_url="https://monitor.example.com") as https_client:
+    async with AsyncClient(
+        transport=transport, base_url="https://monitor.example.com"
+    ) as https_client:
         https_resp = await https_client.get("/api/health")
         assert https_resp.status_code == 200
         assert "Strict-Transport-Security" in https_resp.headers
@@ -246,5 +251,3 @@ async def test_production_essentials_and_legal_pages():
         resp_apple = await client.get("/apple-touch-icon.png")
         assert resp_apple.status_code == 200
         assert resp_apple.headers["content-type"] == "image/png"
-
-

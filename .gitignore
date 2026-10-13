@@ -36,5 +36,7 @@ build/
 *.swp
 .env
 .env.*
+.antigravitycli/
 data/backups/
+data/*.db-journal
 
