@@ -66,6 +66,48 @@ async def test_chinese_bilingual_threat_heuristics():
 @pytest.mark.asyncio
 async def test_api_entries_china_theatre_filter():
     """Verify that querying /api/entries with region=china returns Chinese intelligence."""
+    from datetime import UTC, datetime
+    from uuid import uuid4
+
+    from ai_security_monitor.domain.entities import Category, Entry
+    from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        cn_items = await uow.entries.list(
+            filters=EntryFilters(region="china"), pagination=PaginationParams(limit=1)
+        )
+        if not cn_items:
+            all_srcs = await uow.sources.list(enabled_only=False)
+            cn_src = next(
+                (
+                    s
+                    for s in all_srcs
+                    if s.config
+                    and (
+                        s.config.get("country") in ("CN", "HK")
+                        or s.config.get("region") == "china"
+                    )
+                ),
+                all_srcs[0],
+            )
+            await uow.entries.add(
+                Entry(
+                    id=uuid4(),
+                    source_id=cn_src.id,
+                    title="Qwen 2.5 Open Model Weights Announced",
+                    url=f"https://test.cn/{uuid4()}",
+                    content_hash=f"cn_{uuid4().hex[:16]}",
+                    published_at=datetime.now(UTC),
+                    category=Category.AI_MODELS,
+                    metadata={"region": "china", "country": "CN"},
+                    summary="Alibaba Qwen releases open weights.",
+                )
+            )
+            await uow.commit()
+
     app = create_app()
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"

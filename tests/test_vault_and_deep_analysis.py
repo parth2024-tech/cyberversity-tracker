@@ -339,6 +339,33 @@ async def test_api_vault_and_deep_analysis_endpoints():
 
 @pytest.mark.asyncio
 async def test_manual_entry_deletion_and_batch_cleanup(test_uow):
+    from datetime import UTC, datetime
+    from uuid import uuid4
+
+    from ai_security_monitor.domain.entities import Category, Entry
+    from ai_security_monitor.domain.repositories import PaginationParams
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        existing = await uow.entries.list(pagination=PaginationParams(limit=2))
+        if len(existing) < 2:
+            for i in range(2 - len(existing)):
+                await uow.entries.add(
+                    Entry(
+                        id=uuid4(),
+                        source_id=uuid4(),
+                        title=f"Sample Test Entry for Deletion {i} {uuid4().hex[:6]}",
+                        url=f"https://test.delete.com/{uuid4()}",
+                        content_hash=f"del_{uuid4().hex[:16]}",
+                        published_at=datetime.now(UTC),
+                        category=Category.AI_TECH,
+                        summary="Test entry for deletion endpoint verification.",
+                    )
+                )
+            await uow.commit()
+
     app = create_app()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:

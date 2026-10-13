@@ -22,7 +22,6 @@ def _ensure_seed_database(db_path: str) -> None:
     """Ensure SQLite database is seeded with curated global AI entries on fresh cloud boot."""
     import os
     import shutil
-    import sqlite3
 
     # Multi-path search for seed candidate database
     base_dir = os.path.dirname(
@@ -45,30 +44,8 @@ def _ensure_seed_database(db_path: str) -> None:
     if not seed_file:
         return
 
-    # Check if target db is missing or has fewer than 50 entries
-    needs_seeding = False
-    if not os.path.exists(db_path) or os.path.getsize(db_path) < 100_000:
-        needs_seeding = True
-    else:
-        try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT count(*) FROM entries")
-            row = cursor.fetchone()
-            if not row or row[0] < 50:
-                needs_seeding = True
-            else:
-                # Re-seed if existing database contains legacy non-AI categories
-                cursor.execute(
-                    "SELECT count(*) FROM entries WHERE category IN ('vulnerabilities', 'cybersecurity', 'exploits_tricks')"
-                )
-                legacy_row = cursor.fetchone()
-                if legacy_row and legacy_row[0] > 0:
-                    needs_seeding = True
-            cursor.close()
-            conn.close()
-        except Exception:
-            needs_seeding = True
+    # Only seed if target db is completely missing
+    needs_seeding = not os.path.exists(db_path) or os.path.getsize(db_path) == 0
 
     if needs_seeding:
         try:
