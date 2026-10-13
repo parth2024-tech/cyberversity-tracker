@@ -504,6 +504,9 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  config:
+    mirrors:
+      - https://old.reddit.com/r/LocalLLaMA/.rss
 - name: Reddit r/BestGitHubRepos (Trending Open-Source Projects)
   category: github_trending
   type: rss
@@ -512,6 +515,9 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  config:
+    mirrors:
+      - https://old.reddit.com/r/BestGitHubRepos/.rss
 - name: Hugging Face Model Releases
   category: ai_models
   type: rss

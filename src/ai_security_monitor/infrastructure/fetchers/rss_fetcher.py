@@ -71,11 +71,13 @@ class RSSFetcher(BaseFetcher):
         ) as client:
             for target_url in urls:
                 try:
-                    response = await client.get(target_url)
-                    response.raise_for_status()
+                    resp = await client.get(target_url)
+                    resp.raise_for_status()
+                    response = resp
                     break
                 except Exception as req_err:
                     last_error = req_err
+                    response = None
                     continue
 
         if response is None:
@@ -84,6 +86,10 @@ class RSSFetcher(BaseFetcher):
             raise RuntimeError(f"Failed to retrieve feed from {self.source.url}")
 
         raw_bytes: bytes = response.content
+        if not raw_bytes or len(raw_bytes.strip()) == 0:
+            raise RuntimeError(
+                f"Source {self.source.name!r} returned an empty response body."
+            )
 
         # ── Content-type guard ──────────────────────────────────────────────
         # If the server returned an HTML page (SPA redirect, Cloudflare WAF,
