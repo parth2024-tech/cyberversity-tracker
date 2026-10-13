@@ -84,5 +84,11 @@
       "auth": "security-and-hardening"
     },
     "session_reporting_preference": true
-  }
+  },
+  "learned_lessons": [
+    "AutoThrottle floor_delay must check explicit `<= 0.0` to bypass delays for tests and zero-limit sources.",
+    "Domain Entry entities require source_id (UUID) and use summary/metadata for text storage rather than a content keyword.",
+    "Hacker News Algolia API hits should be enriched with top discussion comments from the item endpoint to capture developer sentiment.",
+    "Balanced digest quota selection prevents single-source flood (e.g. RSS bursts) from drowning out frontier models and papers."
+  ]
 }
