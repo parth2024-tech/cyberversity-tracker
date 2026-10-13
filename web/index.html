@@ -63,9 +63,8 @@
     }
   </script>
   
-  <!-- Lucide Icons, Chart.js & Three.js 3D Engine -->
+  <!-- Lucide Icons & Three.js 3D Engine -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   
   <link rel="stylesheet" href="css/theme.css">
@@ -959,33 +958,51 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       <!-- Total Intelligence -->
       <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('all')" title="View all combined worldwide AI intelligence">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="kpi-label">TOTAL AI INTEL</span>
+          <i data-lucide="layers" class="w-4 h-4 text-cyan-400 opacity-75"></i>
+        </div>
         <div class="kpi-number" id="total-entries">—</div>
-        <div class="kpi-label">★ Total AI Intel</div>
       </div>
       <!-- Trending Repositories -->
       <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('github_trending')" title="View trending open-source AI codebases & repositories">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="kpi-label">TRENDING REPOS</span>
+          <i data-lucide="git-branch" class="w-4 h-4 text-cyan-400 opacity-75"></i>
+        </div>
         <div class="kpi-number" id="trending-repos-count">—</div>
-        <div class="kpi-label">🚀 Trending Repos</div>
       </div>
       <!-- Frontier AI Models -->
       <div class="kpi-card kpi-violet cursor-pointer" onclick="setCategory('ai_models')" title="View frontier foundation models & reasoning weights">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="kpi-label">FRONTIER MODELS</span>
+          <i data-lucide="bot" class="w-4 h-4 text-violet-400 opacity-75"></i>
+        </div>
         <div class="kpi-number" id="frontier-models-count">—</div>
-        <div class="kpi-label">🤖 Frontier Models</div>
       </div>
       <!-- AI Research Papers -->
       <div class="kpi-card kpi-green cursor-pointer" onclick="setCategory('ai_research')" title="View seminal arXiv research & algorithmic breakthroughs">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="kpi-label">TOP RESEARCH</span>
+          <i data-lucide="book-open" class="w-4 h-4 text-emerald-400 opacity-75"></i>
+        </div>
         <div class="kpi-number" id="ai-count">—</div>
-        <div class="kpi-label">🔬 Top Research</div>
       </div>
       <!-- Developer Tools & Infrastructure -->
       <div class="kpi-card kpi-amber cursor-pointer" onclick="setCategory('cyber_tools')" title="View AI runtimes, inference engines & developer infrastructure">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="kpi-label">DEV TOOLS</span>
+          <i data-lucide="wrench" class="w-4 h-4 text-amber-400 opacity-75"></i>
+        </div>
         <div class="kpi-number" id="developer-tools-count">—</div>
-        <div class="kpi-label">🛠️ Developer Tools</div>
       </div>
       <!-- Global AI Tech & Sovereign Ecosystems -->
       <div class="kpi-card kpi-cyan cursor-pointer" onclick="setCategory('ai_tech')" title="View sovereign AI, national labs & global industry tech">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="kpi-label">GLOBAL TECH</span>
+          <i data-lucide="globe" class="w-4 h-4 text-sky-400 opacity-75"></i>
+        </div>
         <div class="kpi-number" id="global-tech-count">—</div>
-        <div class="kpi-label">🌐 Global AI Tech</div>
       </div>
     </div>
 
@@ -997,10 +1014,12 @@
       </span>
       <div class="marquee-track flex-1">
         <span class="marquee-inner text-[10px] font-mono text-slate-400">
-          GLOBAL AI OBSERVATORY ACTIVE &nbsp;·&nbsp; 🚀 Trending Open-Source Repositories & Tools &nbsp;·&nbsp; 🤖 Frontier Reasoning Models (DeepSeek, OpenAI, Anthropic, Qwen, Meta) &nbsp;·&nbsp; 🔬 arXiv Breakthrough Papers & Benchmarks &nbsp;·&nbsp; 🛠️ Developer Infrastructure & Runtimes &nbsp;·&nbsp; ⚡ Distributed Inference & Test-Time Compute Scaling &nbsp;·&nbsp; ⭐ Permanent Important Vault (Zero Expiry For Critical Breakthroughs) &nbsp;·&nbsp; 💾 7-Day Rolling Retention for Wire Stream &nbsp;·&nbsp; 24/7 Global Telemetry Across 50+ Verified Hubs &nbsp;·&nbsp;
+          GLOBAL AI OBSERVATORY ACTIVE &nbsp;·&nbsp; Trending Open-Source Repositories & Tools &nbsp;·&nbsp; Frontier Reasoning Models (DeepSeek, OpenAI, Anthropic, Qwen, Meta) &nbsp;·&nbsp; arXiv Breakthrough Papers & Benchmarks &nbsp;·&nbsp; Developer Infrastructure & Runtimes &nbsp;·&nbsp; Distributed Inference & Test-Time Compute Scaling &nbsp;·&nbsp; Permanent Important Vault (Zero Expiry For Critical Breakthroughs) &nbsp;·&nbsp; 14-Day Ingestion Freshness Guard &nbsp;·&nbsp; 24/7 Global Telemetry Across 164 Verified Hubs &nbsp;·&nbsp;
         </span>
       </div>
-      <button onclick="setCategory('all')" class="flex-shrink-0 text-[10px] font-mono font-bold text-cyan-400 hover:text-cyan-300 uppercase tracking-wider border border-cyan-500/25 px-3 py-1 rounded-sm transition">EXPLORE ALL →</button>
+      <button onclick="setCategory('all')" class="flex-shrink-0 text-[10px] font-mono font-bold text-cyan-400 hover:text-cyan-300 uppercase tracking-wider border border-cyan-500/25 px-3 py-1 rounded-md transition flex items-center gap-1">
+        EXPLORE ALL <i data-lucide="arrow-right" class="w-3 h-3"></i>
+      </button>
     </div>
 
     <!-- MAIN CONTENT GRID -->
@@ -1014,27 +1033,29 @@
           <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
             <!-- Category Navigation -->
             <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full pb-1 text-xs font-mono">
-              <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.12] text-white border border-white/20 font-medium transition whitespace-nowrap">★ ALL INTEL</button>
-              <button onclick="setCategory('important')" id="tab-important" class="cat-tab px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 font-medium transition whitespace-nowrap flex items-center gap-1.5" title="Permanent Intel Vault: Never deleted by rolling purges">
-                <i data-lucide="archive" class="w-3.5 h-3.5 text-amber-400"></i> ⭐ IMPORTANT VAULT (<span id="vault-count">0</span>)
+              <button onclick="setCategory('all')" id="tab-all" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.12] text-white border border-white/20 font-medium transition whitespace-nowrap flex items-center gap-1.5">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> ALL INTEL
+              </button>
+              <button onclick="setCategory('important')" id="tab-important" class="cat-tab px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 font-medium transition whitespace-nowrap flex items-center gap-1.5" title="Permanent Intel Vault: Protected against rolling purges">
+                <i data-lucide="archive" class="w-3.5 h-3.5 text-amber-400"></i> IMPORTANT VAULT (<span id="vault-count">0</span>)
               </button>
               <button onclick="setCategory('only_new')" id="tab-only_new" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> ⚡ ONLY NEW <span id="new-tab-count-badge" class="hidden px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded-full text-[10px] font-bold">0</span>
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> ONLY NEW <span id="new-tab-count-badge" class="hidden px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded-full text-[10px] font-bold">0</span>
               </button>
               <button onclick="setCategory('github_trending')" id="tab-github_trending" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-cyan-300 hover:text-cyan-200 border border-cyan-500/25 hover:border-cyan-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-cyan-400"></i> 🚀 TRENDING REPOS
+                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-cyan-400"></i> TRENDING REPOS
               </button>
               <button onclick="setCategory('cyber_tools')" id="tab-cyber_tools" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-emerald-300 hover:text-emerald-200 border border-emerald-500/25 hover:border-emerald-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i> 🛠️ AI TOOLS
+                <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i> AI TOOLS
               </button>
               <button onclick="setCategory('ai_research')" id="tab-ai_research" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-indigo-300 hover:text-indigo-200 border border-indigo-500/25 hover:border-indigo-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i> 🔬 AI RESEARCH
+                <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i> AI RESEARCH
               </button>
               <button onclick="setCategory('ai_models')" id="tab-ai_models" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-purple-300 hover:text-purple-200 border border-purple-500/25 hover:border-purple-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-400"></i> 🤖 FRONTIER MODELS
+                <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-400"></i> FRONTIER MODELS
               </button>
               <button onclick="setCategory('ai_tech')" id="tab-ai_tech" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-sky-300 hover:text-sky-200 border border-sky-500/25 hover:border-sky-500/40 font-medium transition whitespace-nowrap flex items-center gap-1.5">
-                <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> 🌐 GLOBAL TECH
+                <i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> GLOBAL TECH
               </button>
               <button onclick="setCategory('pinned')" id="tab-pinned" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-slate-400 hover:text-slate-200 border border-white/[0.06] hover:border-white/[0.14] font-medium transition whitespace-nowrap flex items-center gap-1.5">
                 <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i> PINNED (<span id="pinned-count">0</span>)
@@ -1126,16 +1147,16 @@
             <span class="text-[10px] font-mono uppercase text-slate-500 mr-1 flex items-center gap-1 flex-shrink-0">
               <i data-lucide="sparkles" class="w-3 h-3 text-cyan-400"></i> QUICK AI:
             </span>
-            <button onclick="setQuickChip('')" class="tech-chip active" id="chip-all">🔥 All</button>
-            <button onclick="setQuickChip('deepseek')" class="tech-chip" id="chip-deepseek">⚡ DeepSeek (V3/R1)</button>
-            <button onclick="setQuickChip('vllm')" class="tech-chip" id="chip-vllm">🛠️ vLLM / SGLang</button>
-            <button onclick="setQuickChip('claude')" class="tech-chip" id="chip-claude">🤖 Claude / Anthropic</button>
-            <button onclick="setQuickChip('openai')" class="tech-chip" id="chip-openai">🧠 OpenAI / GPT</button>
-            <button onclick="setQuickChip('ollama')" class="tech-chip" id="chip-ollama">🦙 Ollama / Local AI</button>
-            <button onclick="setQuickChip('agent')" class="tech-chip" id="chip-agent">📦 Agents & LangGraph</button>
-            <button onclick="setQuickChip('reasoning')" class="tech-chip" id="chip-reasoning">🔬 Reasoning & CoT</button>
-            <button onclick="setQuickChip('qwen')" class="tech-chip" id="chip-qwen">🇨🇳 Qwen / Alibaba</button>
-            <button onclick="setQuickChip('sovereign')" class="tech-chip" id="chip-sovereign">🌐 Sovereign AI</button>
+            <button onclick="setQuickChip('')" class="tech-chip active" id="chip-all">All</button>
+            <button onclick="setQuickChip('deepseek')" class="tech-chip" id="chip-deepseek">DeepSeek</button>
+            <button onclick="setQuickChip('vllm')" class="tech-chip" id="chip-vllm">vLLM / SGLang</button>
+            <button onclick="setQuickChip('claude')" class="tech-chip" id="chip-claude">Claude / Anthropic</button>
+            <button onclick="setQuickChip('openai')" class="tech-chip" id="chip-openai">OpenAI / GPT</button>
+            <button onclick="setQuickChip('ollama')" class="tech-chip" id="chip-ollama">Ollama / Local</button>
+            <button onclick="setQuickChip('agent')" class="tech-chip" id="chip-agent">Agents & Frameworks</button>
+            <button onclick="setQuickChip('reasoning')" class="tech-chip" id="chip-reasoning">Reasoning & CoT</button>
+            <button onclick="setQuickChip('qwen')" class="tech-chip" id="chip-qwen">Qwen / Alibaba</button>
+            <button onclick="setQuickChip('sovereign')" class="tech-chip" id="chip-sovereign">Sovereign AI</button>
           </div>
 
           <!-- Active Filter Status Bar -->
@@ -1186,11 +1207,31 @@
       <div class="lg:col-span-4">
         <div class="glass-panel p-5">
 
-          <!-- Intel Category Spectrum -->
+          <!-- Observatory Telemetry & Health Status -->
           <div class="panel-section">
-            <div class="panel-heading">Intel Spectrum</div>
-            <div class="relative h-52 flex items-center justify-center">
-              <canvas id="categoryChart"></canvas>
+            <div class="panel-heading flex items-center justify-between">
+              <span>Observatory Telemetry</span>
+              <span class="text-[9px] text-cyan-400 font-mono flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>ONLINE
+              </span>
+            </div>
+            <div class="space-y-2 text-[10px] font-mono">
+              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
+                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="radio" class="w-3.5 h-3.5 text-cyan-400"></i> Active Sources</span>
+                <span class="text-cyan-300 font-semibold" id="telemetry-sources-count">164 Monitored</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
+                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> News Freshness</span>
+                <span class="text-emerald-300 font-semibold">&le; 14 Days Max</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
+                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="database" class="w-3.5 h-3.5 text-violet-400"></i> DB Retention</span>
+                <span class="text-violet-300 font-semibold">Persistent (Zero Auto-Wipes)</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/[0.05]">
+                <span class="text-slate-400 flex items-center gap-1.5"><i data-lucide="globe" class="w-3.5 h-3.5 text-sky-400"></i> Sovereign Corridors</span>
+                <span class="text-sky-300 font-semibold">9 Theatres</span>
+              </div>
             </div>
           </div>
 
@@ -1211,10 +1252,10 @@
           <div class="panel-section">
             <div class="panel-heading">Autonomous AI Engine</div>
             <div class="space-y-2.5 text-[10px] font-mono">
-              <div class="flex items-start gap-2"><span class="text-amber-400 flex-shrink-0">⚡</span><span class="text-slate-400">Global AI Radar — Frontier models, inference runtimes, agent frameworks & breakthroughs</span></div>
-              <div class="flex items-start gap-2"><span class="text-cyan-400 flex-shrink-0">◎</span><span class="text-slate-400">Ecosystem cross-correlation across vLLM, PyTorch, LangChain, Ollama, Transformers</span></div>
-              <div class="flex items-start gap-2"><span class="text-violet-400 flex-shrink-0">✦</span><span class="text-slate-400">Autonomous GPU Triage for deep architectural analysis & technical insights</span></div>
-              <button onclick="triggerAutonomousBackfill()" id="btn-sidebar-backfill" class="w-full mt-2 py-2 px-3 rounded-sm bg-violet-500/10 hover:bg-violet-500/18 border border-violet-500/20 text-violet-400 hover:text-violet-300 text-[9px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition">
+              <div class="flex items-start gap-2"><i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i><span class="text-slate-400">Global AI Radar: Frontier models, inference runtimes, agent frameworks & breakthroughs</span></div>
+              <div class="flex items-start gap-2"><i data-lucide="network" class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0 mt-0.5"></i><span class="text-slate-400">Ecosystem cross-correlation across vLLM, PyTorch, LangChain, Ollama, Transformers</span></div>
+              <div class="flex items-start gap-2"><i data-lucide="cpu" class="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5"></i><span class="text-slate-400">Autonomous GPU Triage for deep architectural analysis & technical insights</span></div>
+              <button onclick="triggerAutonomousBackfill()" id="btn-sidebar-backfill" class="w-full mt-2 py-2 px-3 rounded-md bg-violet-500/10 hover:bg-violet-500/18 border border-violet-500/20 text-violet-400 hover:text-violet-300 text-[9px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition">
                 <i data-lucide="sparkles" class="w-3 h-3"></i> Auto-Triage Top 25
               </button>
             </div>
@@ -1320,7 +1361,6 @@
     const limit = 40;
     // Note: ws is declared and managed in /js/websocket.js
     let audioEnabled = true;
-    let categoryChart = null;
     let allFeedItems = [];
     const REFRESH_TIMESTAMP_KEY = 'aether_last_refresh_timestamp';
     // Retrieve previous refresh baseline (or 2 hours ago on cold first start)
@@ -1848,10 +1888,9 @@
       _set('high-vel-count', (stats.high_velocity_entries || 0).toLocaleString());
       _set('active-sources-count', totalSrcs);
       _set('sidebar-sources-count', totalSrcs);
+      _set('telemetry-sources-count', totalSrcs + ' Monitored');
       if (document.getElementById('globe-beacons-count')) _set('globe-beacons-count', totalSrcs);
       if (typeof updateVaultCount === 'function') updateVaultCount();
-
-      renderCategoryChart(cats);
 
       // Render Dynamic AI Framework Exposure
       const fwList = document.getElementById('framework-exposure-list');
@@ -1880,7 +1919,9 @@
             </div>
           `;
         }).join('');
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+          lucide.createIcons({ root: fwList });
+        }
       }
 
       const fetchList = document.getElementById('recent-fetches-list');
@@ -1909,69 +1950,9 @@
       loadFeed(true);
     }
 
-    // Render Doughnut Chart
+    // Intel Spectrum Chart stub (Removed in favor of Observatory Telemetry)
     function renderCategoryChart(cats) {
-      if (typeof Chart === 'undefined') {
-        return;
-      }
-      const chartCanvas = document.getElementById('categoryChart');
-      if (!chartCanvas) return;
-      try {
-        const ctx = chartCanvas.getContext('2d');
-        const labels = ['Trending Repos', 'Frontier AI Models', 'arXiv AI Research', 'AI Developer Tools', 'Global Sovereign Tech'];
-        const dataValues = [
-          cats.github_trending || 0,
-          cats.ai_models || 0,
-          cats.ai_research || 0,
-          cats.cyber_tools || 0,
-          cats.ai_tech || 0
-        ];
-
-        if (categoryChart) {
-          categoryChart.data.datasets[0].data = dataValues;
-          categoryChart.data.labels = labels;
-          categoryChart.update();
-          return;
-        }
-
-        categoryChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: dataValues,
-            backgroundColor: [
-              '#06B6D4', // Cyan (Trending Repos)
-              '#A855F7', // Purple (Frontier Models)
-              '#6366F1', // Indigo (arXiv Research)
-              '#10B981', // Emerald (Developer Tools)
-              '#38BDF8'  // Sky Blue (Global Sovereign Tech)
-            ],
-            borderColor: 'rgba(14, 18, 27, 0.95)',
-            borderWidth: 2,
-            hoverOffset: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                color: '#94a3b8',
-                font: { size: 10, family: 'Inter' },
-                boxWidth: 8,
-                padding: 12
-              }
-            }
-          },
-          cutout: '75%'
-        }
-      });
-      } catch (err) {
-        console.warn('Category chart render error:', err);
-      }
+      // Intel Spectrum Chart retired
     }
 
     // Geographic Worldwide Theatre Filter
@@ -2128,44 +2109,54 @@
             const safeEffectiveSearch = escapeHtml(effectiveSearch);
             const emptyTitle = isSearching 
               ? `No AI Signals Found for "${safeEffectiveSearch}"` 
-              : `Category Ingesting / Awaiting Data`;
+              : currentCategory === 'pinned'
+              ? 'No Pinned Stories in Collection'
+              : currentCategory === 'important'
+              ? 'Permanent Intel Vault Awaiting Entries'
+              : currentCategory === 'only_new'
+              ? 'All Caught Up — No New Stories Since Refresh'
+              : 'Observatory Standby · Awaiting Live Sweep';
             const emptyMsg = isSearching
               ? `No intelligence entries matched your query "${safeEffectiveSearch}". Try one of the popular topics below or reset your search.`
               : currentCategory === 'pinned' 
-              ? "No pinned items in your collection. Click the ⭐ icon on any card to pin and preserve it here!"
+              ? "No pinned items in your collection. Click the bookmark star icon on any card to pin and preserve it here."
               : currentCategory === 'important'
-              ? "Your Permanent Intel Vault is currently empty. Click [⭐ KEEP IN VAULT] on any landmark foundation model, arXiv paper, or open-source tool to preserve it indefinitely!"
+              ? "Your Permanent Intel Vault is currently empty. Click [KEEP IN VAULT] on any landmark foundation model, arXiv paper, or open-source tool to preserve it indefinitely."
               : currentCategory === 'only_new'
-              ? "All caught up! No new intelligence arrived since your last session refresh. Click [★ ALL INTEL] or Refresh to view all stories."
-              : `No intelligence items currently found in "${catTitle}". Click below to explore the entire global AI wire.`;
+              ? "All caught up. No new intelligence arrived since your last session refresh. Click [ALL INTEL] or Refresh to view all stories."
+              : `All systems are primed and connected. 164 verified global intelligence sources (GitHub Trending, arXiv AI research, vLLM/runtimes, frontier models) across 9 regional corridors are ready for a live sweep.`;
             container.innerHTML = `
-              <div class="glass-panel rounded-2xl p-10 text-center space-y-4 border border-cyan-500/20 col-span-full">
-                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
-                  <i data-lucide="${isSearching ? 'search-x' : currentCategory === 'pinned' ? 'star' : currentCategory === 'important' ? 'archive' : currentCategory === 'only_new' ? 'sparkles' : 'inbox'}" class="w-6 h-6"></i>
+              <div class="glass-panel rounded-xl p-8 sm:p-12 text-center space-y-4 border border-cyan-500/20 col-span-full">
+                <div class="w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400">
+                  <i data-lucide="${isSearching ? 'search-x' : currentCategory === 'pinned' ? 'star' : currentCategory === 'important' ? 'archive' : currentCategory === 'only_new' ? 'sparkles' : 'radio'}" class="w-7 h-7"></i>
                 </div>
-                <div class="space-y-1">
-                  <h3 class="text-sm font-semibold text-white font-mono uppercase tracking-wide">${emptyTitle}</h3>
-                  <p class="text-xs text-slate-400 font-mono max-w-md mx-auto leading-relaxed">${emptyMsg}</p>
+                <div class="space-y-1.5">
+                  <h3 class="text-sm sm:text-base font-semibold text-white font-mono uppercase tracking-wide">${emptyTitle}</h3>
+                  <p class="text-xs text-slate-400 font-mono max-w-lg mx-auto leading-relaxed">${emptyMsg}</p>
                 </div>
                 ${isSearching ? `
                   <div class="flex items-center justify-center gap-2 flex-wrap pt-2 max-w-md mx-auto">
                     <span class="text-[10px] font-mono text-slate-500 uppercase w-full">Quick Suggestions:</span>
-                    <button onclick="setQuickChip('deepseek')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-cyan-500/15 border border-white/[0.08] hover:border-cyan-400 text-xs font-mono text-cyan-300 transition">⚡ DeepSeek</button>
-                    <button onclick="setQuickChip('vllm')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.08] hover:border-emerald-400 text-xs font-mono text-emerald-300 transition">🛠️ vLLM</button>
-                    <button onclick="setQuickChip('claude')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-purple-500/15 border border-white/[0.08] hover:border-purple-400 text-xs font-mono text-purple-300 transition">🤖 Claude</button>
-                    <button onclick="setQuickChip('ollama')" class="px-2.5 py-1 rounded-full bg-white/[0.04] hover:bg-amber-500/15 border border-white/[0.08] hover:border-amber-400 text-xs font-mono text-amber-300 transition">🦙 Ollama</button>
-                    <button onclick="clearSearch()" class="px-3 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-xs font-mono text-rose-300 transition font-semibold">✕ Clear Search</button>
+                    <button onclick="setQuickChip('deepseek')" class="px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-cyan-500/15 border border-white/[0.08] hover:border-cyan-400 text-xs font-mono text-cyan-300 transition">DeepSeek</button>
+                    <button onclick="setQuickChip('vllm')" class="px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.08] hover:border-emerald-400 text-xs font-mono text-emerald-300 transition">vLLM</button>
+                    <button onclick="setQuickChip('claude')" class="px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-purple-500/15 border border-white/[0.08] hover:border-purple-400 text-xs font-mono text-purple-300 transition">Claude</button>
+                    <button onclick="setQuickChip('ollama')" class="px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-amber-500/15 border border-white/[0.08] hover:border-amber-400 text-xs font-mono text-amber-300 transition">Ollama</button>
+                    <button onclick="clearSearch()" class="px-3 py-1 rounded-md bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-xs font-mono text-rose-300 transition font-semibold">Clear Search</button>
                   </div>
                 ` : `
-                  <div class="flex items-center justify-center gap-3 pt-2">
-                    <button onclick="setCategory('all')" class="px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-medium transition cursor-pointer">★ View All AI Intel</button>
-                    <button onclick="triggerScan()" class="px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-slate-300 font-mono text-xs transition cursor-pointer">⚡ Sweep Global Feeds</button>
+                  <div class="flex items-center justify-center gap-3 pt-2 flex-wrap">
+                    <button onclick="triggerScan()" class="px-5 py-2.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-semibold flex items-center gap-2 transition hover:shadow-lg hover:shadow-cyan-500/10 cursor-pointer">
+                      <i data-lucide="radio" class="w-4 h-4 text-cyan-400"></i> Sweep Global Feeds (164 Sources)
+                    </button>
+                    <button onclick="setCategory('all')" class="px-4 py-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-slate-300 font-mono text-xs flex items-center gap-2 transition cursor-pointer">
+                      <i data-lucide="layers" class="w-4 h-4 text-slate-400"></i> All AI Intel
+                    </button>
                   </div>
                 `}
               </div>
             `;
             if (typeof lucide !== 'undefined' && lucide.createIcons) {
-              lucide.createIcons();
+              lucide.createIcons({ root: container });
             }
           }
           const loadMoreBtn = document.getElementById('load-more-btn');
