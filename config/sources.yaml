@@ -504,6 +504,14 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+- name: Reddit r/BestGitHubRepos (Trending Open-Source Projects)
+  category: github_trending
+  type: rss
+  url: https://www.reddit.com/r/BestGitHubRepos/.rss
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
 - name: Hugging Face Model Releases
   category: ai_models
   type: rss
