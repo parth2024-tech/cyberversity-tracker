@@ -1,6 +1,8 @@
 # HackerNews fetcher for AI/ML tagged stories.
 
+import asyncio
 from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 
@@ -119,7 +121,54 @@ class HackerNewsFetcher(BaseFetcher):
                     )
                     continue
 
+            # Fetch top discussion comments for highest-scored stories
+            if entries:
+                top_entries = sorted(
+                    entries,
+                    key=lambda e: e.get("metadata", {}).get("points", 0),
+                    reverse=True,
+                )[:6]
+                comment_tasks = [
+                    self._enrich_hn_comments(client, entry)
+                    for entry in top_entries
+                    if entry.get("metadata", {}).get("num_comments", 0) > 0
+                ]
+                await asyncio.gather(*comment_tasks, return_exceptions=True)
+
         return entries
+
+    async def _enrich_hn_comments(
+        self, client: httpx.AsyncClient, entry: dict[str, Any]
+    ) -> None:
+        """Fetch top discussion comments from Algolia item endpoint."""
+        oid = entry.get("metadata", {}).get("hn_id")
+        if not oid:
+            return
+        item_url = f"https://hn.algolia.com/api/v1/items/{oid}"
+        try:
+            resp = await client.get(item_url, timeout=5.0)
+            if resp.status_code == 200:
+                item_data = resp.json()
+                children = item_data.get("children", [])
+                comments = []
+                import re
+
+                for c in children:
+                    c_author = c.get("author", "anon")
+                    c_text = c.get("text", "")
+                    if c_text and len(c_text) > 10:
+                        clean_text = re.sub(r"<[^>]+>", " ", c_text).strip()
+                        if len(clean_text) > 300:
+                            clean_text = clean_text[:297] + "..."
+                        comments.append(f"[{c_author}]: {clean_text}")
+                    if len(comments) >= 3:
+                        break
+                if comments:
+                    entry["content"] += "\n\n--- Top Discussion ---\n" + "\n".join(
+                        f"• {c}" for c in comments
+                    )
+        except Exception:
+            pass
 
     def _parse_entry(self, raw: dict) -> Entry:
         content_hash = ContentHash.from_content(

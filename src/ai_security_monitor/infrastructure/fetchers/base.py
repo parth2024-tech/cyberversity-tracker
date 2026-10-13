@@ -54,7 +54,9 @@ class BaseFetcher(ABC):
         self.timeout = timeout or settings.fetch.timeout
         self.max_retries = max_retries or settings.fetch.max_retries
         self._rate_limit_seconds = (
-            source.rate_limit_seconds or settings.fetch.rate_limit_default
+            source.rate_limit_seconds
+            if source.rate_limit_seconds is not None
+            else settings.fetch.rate_limit_default
         )
         self._last_fetch_time: datetime | None = None
 
@@ -224,6 +226,8 @@ class BaseFetcher(ABC):
             self.source.url if self.source else None
         )
         floor_delay: float = float(self._rate_limit_seconds)
+        if floor_delay <= 0.0:
+            return
 
         # Check robots.txt crawl-delay if enabled by source config
         if (

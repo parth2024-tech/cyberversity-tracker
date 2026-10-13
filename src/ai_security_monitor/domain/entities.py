@@ -29,6 +29,9 @@ class SourceType(str, Enum):
     CISA_KEV_JSON = "cisa_kev_json"
     HACKERNEWS = "hackernews"
     GITHUB_TRENDING = "github_trending"
+    REDDIT = "reddit"
+    GOOGLE_NEWS = "google_news"
+    OSS_INSIGHT = "oss_insight"
 
 
 class FetchStatus(str, Enum):

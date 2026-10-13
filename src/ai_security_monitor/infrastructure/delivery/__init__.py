@@ -6,6 +6,7 @@ Delivery infrastructure package - plugin registration.
 from ai_security_monitor.infrastructure.delivery import (
     base,
     console_delivery,
+    discord_delivery,
     email_delivery,
     slack_delivery,
     telegram_delivery,
@@ -24,6 +25,7 @@ __all__ = [
     "DeliveryRegistry",
     "base",
     "console_delivery",
+    "discord_delivery",
     "email_delivery",
     "slack_delivery",
     "telegram_delivery",

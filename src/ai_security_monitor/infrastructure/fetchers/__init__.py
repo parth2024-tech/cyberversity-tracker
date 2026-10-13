@@ -9,8 +9,11 @@ from ai_security_monitor.infrastructure.fetchers import (
     cisa_fetcher,
     github_fetcher,
     github_trending_fetcher,
+    google_news_fetcher,
     hackernews_fetcher,
     nvd_fetcher,
+    ossinsight_fetcher,
+    reddit_fetcher,
     rss_fetcher,
 )
 from ai_security_monitor.infrastructure.fetchers.base import (
@@ -30,7 +33,10 @@ __all__ = [
     "cisa_fetcher",
     "github_fetcher",
     "github_trending_fetcher",
+    "google_news_fetcher",
     "hackernews_fetcher",
     "nvd_fetcher",
+    "ossinsight_fetcher",
+    "reddit_fetcher",
     "rss_fetcher",
 ]
