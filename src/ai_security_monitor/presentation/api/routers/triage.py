@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
 from ai_security_monitor.application.services.autonomous_triage_service import (
     get_triage_service,
 )
+from ai_security_monitor.core.auth import require_admin_auth
 
 triage_router = APIRouter(prefix="/triage")
 
@@ -42,7 +43,7 @@ async def enqueue_entry_for_triage(entry_id: UUID):
 
 
 @triage_router.post("/clear")
-async def clear_triage_queue():
+async def clear_triage_queue(_admin: bool = Depends(require_admin_auth)):
     """Flush the in-memory triage queue to eliminate backlogs."""
     service = get_triage_service()
     cleared = service.clear_queue()
@@ -62,6 +63,7 @@ async def prioritize_frontier_models(
         le=100,
         description="Max frontier models & breakthrough research to enqueue",
     ),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Clear stale queue items and prioritize frontier models and landmark arXiv research."""
     service = get_triage_service()
@@ -75,7 +77,7 @@ async def prioritize_frontier_models(
 
 
 @triage_router.post("/push-all")
-async def push_all_queued():
+async def push_all_queued(_admin: bool = Depends(require_admin_auth)):
     """Push and process all queued entries to the website immediately."""
     service = get_triage_service()
     pushed = await service.push_all_queued()
@@ -93,6 +95,7 @@ async def toggle_hold_mode(
         default=True,
         description="True = hold queue until live sweep; False = continuous background worker",
     ),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Toggle triage queue hold mode."""
     service = get_triage_service()

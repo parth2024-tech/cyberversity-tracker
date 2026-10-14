@@ -263,9 +263,7 @@ class AIPromptSanitizer:
             for img in soup.find_all("img"):
                 raw_src = img.get("src")
                 src = (
-                    str(raw_src[0])
-                    if isinstance(raw_src, list)
-                    else str(raw_src or "")
+                    str(raw_src[0]) if isinstance(raw_src, list) else str(raw_src or "")
                 ).lower()
                 width = str(img.get("width") or "")
                 height = str(img.get("height") or "")

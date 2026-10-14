@@ -72,6 +72,12 @@ class APISettings(BaseSettings):
     reload: bool = Field(default=False, description="Auto-reload on changes")
     workers: int = Field(default=1, description="Worker processes")
     cors_origins: list[str] = Field(default=["*"], description="CORS allowed origins")
+    admin_api_key: str | None = Field(
+        default_factory=lambda: (
+            os.environ.get("ADMIN_API_KEY") or os.environ.get("API_ADMIN_API_KEY")
+        ),
+        description="Secret API key required for mutating and administrative endpoints",
+    )
 
     model_config = SettingsConfigDict(env_prefix="API_")
 

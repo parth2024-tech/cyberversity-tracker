@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
 from ai_security_monitor.application.services.monitor_service import MonitorService
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -94,6 +95,7 @@ async def purge_stale_entries(
         description="Filter purged entries by categories",
     ),
     service: MonitorService = Depends(get_monitor_service),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Manually trigger data hygiene: delete all entries older than `days` days."""
     result = await service.purge_stale_entries(
@@ -108,6 +110,7 @@ async def purge_stale_entries(
 @stats_router.post("/restore-purged")
 async def restore_purged_entries(
     service: MonitorService = Depends(get_monitor_service),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Manually restore all soft-purged entries back to active visibility in the dashboard."""
     return await service.restore_purged_entries()

@@ -171,6 +171,27 @@ class Analysis(Entity):
     model: AnalysisModel = AnalysisModel.HEURISTIC
     confidence: float = 1.0
 
+    # Domain language aliases for Worldwide AI Ecosystem context
+    @property
+    def tech_focus(self) -> str:
+        """Ecosystem domain alias for attack_vector (e.g. Inference Optimization, Reasoning)."""
+        return self.attack_vector
+
+    @property
+    def capability_summary(self) -> str:
+        """Ecosystem domain alias for risk_assessment (e.g. Architectural breakthrough description)."""
+        return self.risk_assessment
+
+    @property
+    def velocity_score(self) -> int:
+        """Ecosystem domain alias for threat_velocity (e.g. Star/adoption velocity 1-100)."""
+        return self.threat_velocity
+
+    @property
+    def ecosystem_reach(self) -> int:
+        """Ecosystem domain alias for blast_radius_score (e.g. Ecosystem footprint 1-100)."""
+        return self.blast_radius_score
+
 
 @dataclass(kw_only=True)
 class FetchLog(Entity):

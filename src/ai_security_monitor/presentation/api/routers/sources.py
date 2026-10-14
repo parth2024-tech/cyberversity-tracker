@@ -6,10 +6,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -96,7 +97,10 @@ async def toggle_source(source_id: str, req: SourceToggleRequest):
 
 @sources_router.post("/fetch")
 @limiter.limit("5/minute")
-async def trigger_fetch_sweep(request: Request):
+async def trigger_fetch_sweep(
+    request: Request,
+    _admin: bool = Depends(require_admin_auth),
+):
     """Trigger an immediate radar sweep across all sources and push all queued entries."""
     from ai_security_monitor.application.services.autonomous_triage_service import (
         get_triage_service,

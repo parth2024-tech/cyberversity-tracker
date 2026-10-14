@@ -18,10 +18,11 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.domain.entities import Category
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
 from ai_security_monitor.infrastructure.cache import response_cache
@@ -831,6 +832,7 @@ async def delete_single_entry(
         default=True,
         description="Permanently delete from database (True) or soft-purge (False)",
     ),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Explicitly delete a single intelligence entry upon user command."""
     from uuid import UUID
@@ -860,6 +862,7 @@ async def delete_single_entry(
 @entries_router.post("/batch-delete")
 async def batch_delete_entries(
     payload: BatchDeleteRequest,
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Explicitly delete selected intelligence entries upon user command."""
     from uuid import UUID

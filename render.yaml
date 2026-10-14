@@ -9,3 +9,11 @@ services:
         value: "3.12.0"
       - key: ENVIRONMENT
         value: "production"
+      - key: DATA_DIR
+        value: "/data"
+      - key: ADMIN_API_KEY
+        generateValue: true
+    disk:
+      name: aetherguard-data
+      mountPath: /data
+      sizeGB: 1

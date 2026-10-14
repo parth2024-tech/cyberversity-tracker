@@ -79,3 +79,8 @@ def test_entry_and_analysis_relationship(sample_source, sample_entry):
     sample_entry.analysis = analysis
     assert sample_entry.analysis.is_pre_cve_warning is True
     assert sample_entry.analysis.threat_velocity == 85
+    # Verify domain language aliases for Worldwide AI Ecosystem
+    assert sample_entry.analysis.tech_focus == "Multimodal perturbation"
+    assert sample_entry.analysis.capability_summary == "System prompt extraction"
+    assert sample_entry.analysis.velocity_score == 85
+    assert sample_entry.analysis.ecosystem_reach == 70

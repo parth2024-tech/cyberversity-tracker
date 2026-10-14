@@ -11,9 +11,10 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, Field
 
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Category, Entry, Source, SourceType
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
@@ -106,7 +107,10 @@ async def export_system_backup() -> Response:
 
 
 @backup_router.post("/import")
-async def import_system_backup(payload: BackupImportPayload) -> dict[str, Any]:
+async def import_system_backup(
+    payload: BackupImportPayload,
+    _admin: bool = Depends(require_admin_auth),
+) -> dict[str, Any]:
     """Import vaulted entries and preferences from an external backup package."""
     imported_count = 0
     skipped_count = 0
