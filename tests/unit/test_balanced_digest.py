@@ -44,7 +44,9 @@ def test_balanced_digest_enforces_category_quotas():
     entries.append(make_entry("Model Omega", Category.AI_MODELS, score=95))
 
     # Sort descending by priority score
-    result = service.balance(entries, sort_key=lambda e: e.metadata.get("priority_score", 0))
+    result = service.balance(
+        entries, sort_key=lambda e: e.metadata.get("priority_score", 0)
+    )
 
     assert result.total_eligible == 12
     # Only 2 repos should be selected (quota=2), plus 1 model and 1 paper = 4 total

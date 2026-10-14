@@ -22,7 +22,11 @@ def reddit_source() -> Source:
         url="https://www.reddit.com/r/LocalLLaMA",
         rate_limit_seconds=0,
         enabled=True,
-        config={"subreddits": ["LocalLLaMA"], "fetch_limit": 5, "include_comments": True},
+        config={
+            "subreddits": ["LocalLLaMA"],
+            "fetch_limit": 5,
+            "include_comments": True,
+        },
     )
 
 

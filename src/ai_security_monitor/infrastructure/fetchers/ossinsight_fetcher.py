@@ -84,7 +84,10 @@ class OSSInsightFetcher(BaseFetcher):
 
         async with httpx.AsyncClient(
             timeout=self.timeout,
-            headers={"User-Agent": settings.fetch.user_agent, "Accept": "application/json"},
+            headers={
+                "User-Agent": settings.fetch.user_agent,
+                "Accept": "application/json",
+            },
             follow_redirects=True,
         ) as client:
             for lang in languages:
@@ -113,7 +116,9 @@ class OSSInsightFetcher(BaseFetcher):
                         # AI Relevance Filter
                         desc = (row.get("description") or "").lower()
                         name_low = repo_name.lower()
-                        is_ai = any(kw in desc or kw in name_low for kw in DEFAULT_AI_KEYWORDS)
+                        is_ai = any(
+                            kw in desc or kw in name_low for kw in DEFAULT_AI_KEYWORDS
+                        )
                         if not is_ai and lang != "Python":
                             continue
 

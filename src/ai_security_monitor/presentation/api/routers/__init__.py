@@ -4,9 +4,11 @@ API routers export.
 
 from ai_security_monitor.presentation.api.routers.analysis import analysis_router
 from ai_security_monitor.presentation.api.routers.audio import audio_router
+from ai_security_monitor.presentation.api.routers.backup import backup_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router
 from ai_security_monitor.presentation.api.routers.entries import entries_router
 from ai_security_monitor.presentation.api.routers.newspaper import newspaper_router
+from ai_security_monitor.presentation.api.routers.proxy import proxy_router
 from ai_security_monitor.presentation.api.routers.sources import sources_router
 from ai_security_monitor.presentation.api.routers.stats import stats_router
 from ai_security_monitor.presentation.api.routers.translation import translation_router
@@ -24,4 +26,6 @@ __all__ = [
     "newspaper_router",
     "audio_router",
     "translation_router",
+    "proxy_router",
+    "backup_router",
 ]

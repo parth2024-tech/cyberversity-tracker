@@ -283,6 +283,11 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
         else:
             vector_str = str(raw_vector or "Novel Architecture & Compute Mechanism")
 
+        # Strip conversational AI introductory slop
+        risk_str = sanitizer.strip_introductory_phrases(risk_str)
+        mit_str = sanitizer.strip_introductory_phrases(mit_str)
+        vector_str = sanitizer.strip_introductory_phrases(vector_str)
+
         raw_eco = result.get("affected_ecosystem", [])
         if isinstance(raw_eco, str):
             raw_eco = [raw_eco]

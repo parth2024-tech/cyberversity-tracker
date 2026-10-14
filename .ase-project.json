@@ -89,6 +89,9 @@
     "AutoThrottle floor_delay must check explicit `<= 0.0` to bypass delays for tests and zero-limit sources.",
     "Domain Entry entities require source_id (UUID) and use summary/metadata for text storage rather than a content keyword.",
     "Hacker News Algolia API hits should be enriched with top discussion comments from the item endpoint to capture developer sentiment.",
-    "Balanced digest quota selection prevents single-source flood (e.g. RSS bursts) from drowning out frontier models and papers."
+    "Balanced digest quota selection prevents single-source flood (e.g. RSS bursts) from drowning out frontier models and papers.",
+    "Anti-AI-slop cleaning requires multi-pass stripping to handle nested conversational preambles (e.g. 'Sure, here is the technical summary:').",
+    "SSRF defense for proxy endpoints requires both IP literal bounds checking and DNS resolution verification to block private and link-local ranges.",
+    "URL tracking parameter stripping on incoming feeds ensures canonical deduplication across disparate social/syndication channels."
   ]
 }

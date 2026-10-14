@@ -24,9 +24,11 @@ from ai_security_monitor.presentation.api.limiter import limiter
 from ai_security_monitor.presentation.api.routers import (
     analysis_router,
     audio_router,
+    backup_router,
     digest_router,
     entries_router,
     newspaper_router,
+    proxy_router,
     sources_router,
     stats_router,
     translation_router,
@@ -230,6 +232,8 @@ def create_app() -> FastAPI:
     app.include_router(newspaper_router, prefix="/api", tags=["Newspaper"])
     app.include_router(audio_router, prefix="/api", tags=["Audio"])
     app.include_router(translation_router, prefix="/api", tags=["Translation"])
+    app.include_router(proxy_router, prefix="/api", tags=["Proxy"])
+    app.include_router(backup_router, prefix="/api", tags=["Backup & Portability"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
     # Quick sweep route alias

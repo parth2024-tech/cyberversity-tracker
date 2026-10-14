@@ -1,7 +1,7 @@
 # AETHERGUARD // Worldwide AI Ecosystem Intelligence & Frontier Radar
 
 [![CI Status](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-291%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Tests](https://img.shields.io/badge/Tests-304%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
 [![Coverage](https://img.shields.io/badge/Coverage-74%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -96,7 +96,7 @@ ai-security-monitor/
 │   ├── index.html                         # Primary Command Center HUD & Three.js Radar
 │   ├── gazette.html                       # The AI Chronicle & Gazette reader
 │   └── js/                                # WebSocket receiver, palette, & interactive controls
-└── tests/                                 # Industrial automated test suite (291 tests)
+└── tests/                                 # Industrial automated test suite (304 tests)
     ├── unit/                              # Isolated entity, fetcher, delivery, and domain tests
     └── integration/                       # Boundary contracts, API stress, and DB tests
 ```
@@ -176,6 +176,9 @@ python3 cli.py mcp
 | `/api/newspaper/latest` | `GET` | Fetch latest AI Gazette edition in JSON |
 | `/api/newspaper/export/pdf` | `GET` | Download latest AI Gazette edition as a publication-ready PDF |
 | `/api/digest` | `POST` | Compile and dispatch an intelligence digest to configured delivery adapters |
+| `/api/proxy` | `GET` | SSRF-protected CORS proxy to safely preview external articles and feeds |
+| `/api/backup/export` | `GET` | Export portable system backup (vaulted items, sources, state) as JSON |
+| `/api/backup/import` | `POST` | Safely import and synchronize intelligence state from an external backup |
 | `/api/stats/retention` | `GET` | Inspect data age distribution and purge candidates |
 | `/api/stats/purge` | `POST` | Execute manual purge (`older_than_days`, `hard_delete`, `include_vaulted`) |
 | `/api/stats/restore-purged` | `POST` | Instantly restore soft-deleted items back to active status |
@@ -185,7 +188,7 @@ python3 cli.py mcp
 
 ## 🧪 Testing & Quality Assurance
 
-The codebase is protected by **291 deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and feed freshness invariants:
+The codebase is protected by **304 deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and feed freshness invariants:
 
 ```bash
 # Run full test suite

@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
+from ai_security_monitor.core.sanitizer import AIPromptSanitizer
 from ai_security_monitor.domain.entities import Entry, FetchStatus, Source
 from ai_security_monitor.domain.events import (
     FetchFailedEvent,
@@ -99,6 +100,8 @@ class BaseFetcher(ABC):
                         entry = self._parse_entry(raw)
                         entry.source_id = self.source.id
                         entry.category = self.source.category
+                        if entry.url:
+                            entry.url = AIPromptSanitizer.clean_url(entry.url)
                         entries.append(entry)
                     except Exception as e:
                         # Log parse error but continue

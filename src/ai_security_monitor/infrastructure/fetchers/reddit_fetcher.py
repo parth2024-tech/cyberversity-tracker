@@ -78,7 +78,10 @@ class RedditFetcher(BaseFetcher):
             for sub in subreddits:
                 try:
                     url = f"https://www.reddit.com/r/{sub}/hot.json"
-                    params: dict[str, str | int] = {"limit": fetch_limit, "raw_json": "1"}
+                    params: dict[str, str | int] = {
+                        "limit": fetch_limit,
+                        "raw_json": "1",
+                    }
                     resp = await client.get(url, params=params)
                     if resp.status_code != 200:
                         logger.warning(
@@ -138,15 +141,17 @@ class RedditFetcher(BaseFetcher):
             if resp.status_code == 200:
                 body = resp.json()
                 if isinstance(body, list) and len(body) > 1:
-                    comment_children = (
-                        body[1].get("data", {}).get("children", [])
-                    )
+                    comment_children = body[1].get("data", {}).get("children", [])
                     top_comments = []
                     for c in comment_children:
                         cdata = c.get("data", {})
                         author = cdata.get("author", "[deleted]")
                         body_text = cdata.get("body", "").strip()
-                        if body_text and body_text != "[deleted]" and len(body_text) > 10:
+                        if (
+                            body_text
+                            and body_text != "[deleted]"
+                            and len(body_text) > 10
+                        ):
                             # Truncate comment length
                             clean_text = (
                                 body_text[:350] + "..."
@@ -194,7 +199,9 @@ class RedditFetcher(BaseFetcher):
 
         # Assemble comprehensive summary with discussion snippets
         summary_parts = []
-        summary_parts.append(f"Community: r/{sub} | Score: {score} | Comments: {num_comments} | Author: u/{author}")
+        summary_parts.append(
+            f"Community: r/{sub} | Score: {score} | Comments: {num_comments} | Author: u/{author}"
+        )
         if selftext:
             summary_parts.append(selftext)
 

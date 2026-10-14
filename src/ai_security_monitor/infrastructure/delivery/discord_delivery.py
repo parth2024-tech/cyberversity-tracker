@@ -78,19 +78,23 @@ class DiscordDelivery(BaseDelivery):
                     {"name": "Category", "value": cat_val.upper(), "inline": True},
                 ]
                 if analysis:
-                    fields.append({
-                        "name": "Velocity",
-                        "value": f"{analysis.threat_velocity}/100",
-                        "inline": True,
-                    })
+                    fields.append(
+                        {
+                            "name": "Velocity",
+                            "value": f"{analysis.threat_velocity}/100",
+                            "inline": True,
+                        }
+                    )
 
-                embeds.append({
-                    "title": entry.title[:250],
-                    "url": entry.url,
-                    "description": (entry.summary or "")[:350],
-                    "color": self.DISCORD_ALERT_COLOR,
-                    "fields": fields,
-                })
+                embeds.append(
+                    {
+                        "title": entry.title[:250],
+                        "url": entry.url,
+                        "description": (entry.summary or "")[:350],
+                        "color": self.DISCORD_ALERT_COLOR,
+                        "fields": fields,
+                    }
+                )
 
             payload = {
                 "username": self.config.get("username", "AETHERGUARD Radar"),
@@ -103,7 +107,9 @@ class DiscordDelivery(BaseDelivery):
 
             await self._publish_delivery_event(digest.id, True)
             return DeliveryResult(
-                success=True, channel=self.channel_name, message="Discord digest delivered"
+                success=True,
+                channel=self.channel_name,
+                message="Discord digest delivered",
             )
 
         except Exception as e:
@@ -124,15 +130,25 @@ class DiscordDelivery(BaseDelivery):
 
             fields: list[dict[str, Any]] = [
                 {"name": "Category", "value": cat_val.upper(), "inline": True},
-                {"name": "Velocity", "value": f"{analysis.threat_velocity}/100", "inline": True},
-                {"name": "Severity / Impact", "value": f"{analysis.severity_index}/100", "inline": True},
+                {
+                    "name": "Velocity",
+                    "value": f"{analysis.threat_velocity}/100",
+                    "inline": True,
+                },
+                {
+                    "name": "Severity / Impact",
+                    "value": f"{analysis.severity_index}/100",
+                    "inline": True,
+                },
             ]
             if analysis.mitigation:
-                fields.append({
-                    "name": "Strategic Recommendation",
-                    "value": analysis.mitigation[:400],
-                    "inline": False,
-                })
+                fields.append(
+                    {
+                        "name": "Strategic Recommendation",
+                        "value": analysis.mitigation[:400],
+                        "inline": False,
+                    }
+                )
 
             embed = {
                 "title": f"🚨 High-Velocity AI Breakthrough: {entry.title[:200]}",

@@ -95,18 +95,14 @@ class BalancedDigestService:
         or accepts a custom sort key.
         """
         if not entries:
-            return BalancedDigestResult(
-                items=[], total_eligible=0, total_selected=0
-            )
+            return BalancedDigestResult(items=[], total_eligible=0, total_selected=0)
 
         sorted_items = list(entries)
         if sort_key:
             sorted_items.sort(key=sort_key, reverse=True)
 
         group_counts: dict[str, int] = defaultdict(int)
-        group_limits: dict[str, int] = {
-            q.name: q.limit for q in self.quotas
-        }
+        group_limits: dict[str, int] = {q.name: q.limit for q in self.quotas}
         group_limits["Other"] = self.default_limit
 
         selected: list[Entry] = []
@@ -123,7 +119,10 @@ class BalancedDigestService:
             group_name = quota.name if quota else "Other"
             limit = group_limits.get(group_name, self.default_limit)
 
-            if group_counts[group_name] < limit and len(selected) < self.max_total_items:
+            if (
+                group_counts[group_name] < limit
+                and len(selected) < self.max_total_items
+            ):
                 selected.append(item)
                 group_counts[group_name] += 1
             else:

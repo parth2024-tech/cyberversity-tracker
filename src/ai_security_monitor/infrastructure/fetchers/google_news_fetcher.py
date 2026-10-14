@@ -49,11 +49,7 @@ class GoogleNewsFetcher(BaseFetcher):
             else None
         )
         if not queries:
-            single_q = (
-                self.source.query
-                if self.source and self.source.query
-                else None
-            )
+            single_q = self.source.query if self.source and self.source.query else None
             queries = [single_q] if single_q else DEFAULT_AI_QUERIES
 
         max_age_days = getattr(settings.database, "max_ingest_age_days", 14)
@@ -116,18 +112,20 @@ class GoogleNewsFetcher(BaseFetcher):
                             continue
 
                         seen_links.add(link)
-                        raw_entries.append({
-                            "title": item.get("title", ""),
-                            "link": link,
-                            "summary": item.get("summary", ""),
-                            "published_at": pub_dt or datetime.now(UTC),
-                            "source_title": (
-                                item.get("source", {}).get("title")
-                                if isinstance(item.get("source"), dict)
-                                else ""
-                            ),
-                            "_query": q,
-                        })
+                        raw_entries.append(
+                            {
+                                "title": item.get("title", ""),
+                                "link": link,
+                                "summary": item.get("summary", ""),
+                                "published_at": pub_dt or datetime.now(UTC),
+                                "source_title": (
+                                    item.get("source", {}).get("title")
+                                    if isinstance(item.get("source"), dict)
+                                    else ""
+                                ),
+                                "_query": q,
+                            }
+                        )
                         count += 1
                         if count >= max_results_per_query:
                             break
@@ -170,7 +168,9 @@ class GoogleNewsFetcher(BaseFetcher):
 
         clean_summary = summary_raw.replace("<p>", "").replace("</p>", "").strip()
         if not clean_summary:
-            clean_summary = f"{clean_title} (Reported by {publisher or 'News Corridor'})"
+            clean_summary = (
+                f"{clean_title} (Reported by {publisher or 'News Corridor'})"
+            )
 
         metadata = {
             "source_name": f"Google News ({publisher or 'Global Wire'})",
@@ -182,11 +182,38 @@ class GoogleNewsFetcher(BaseFetcher):
         # Classify based on query/title
         category = Category.AI_TECH
         t_low = clean_title.lower()
-        if any(k in t_low for k in ("deepseek", "qwen", "llama", "mistral", "claude", "gpt", "model", "weights")):
+        if any(
+            k in t_low
+            for k in (
+                "deepseek",
+                "qwen",
+                "llama",
+                "mistral",
+                "claude",
+                "gpt",
+                "model",
+                "weights",
+            )
+        ):
             category = Category.AI_MODELS
-        elif any(k in t_low for k in ("vllm", "ollama", "sglang", "runtime", "infra", "gpu", "chip", "nvidia")):
+        elif any(
+            k in t_low
+            for k in (
+                "vllm",
+                "ollama",
+                "sglang",
+                "runtime",
+                "infra",
+                "gpu",
+                "chip",
+                "nvidia",
+            )
+        ):
             category = Category.CYBER_TOOLS
-        elif any(k in t_low for k in ("research", "paper", "arxiv", "reasoning", "benchmark", "compute")):
+        elif any(
+            k in t_low
+            for k in ("research", "paper", "arxiv", "reasoning", "benchmark", "compute")
+        ):
             category = Category.AI_RESEARCH
 
         return Entry(
