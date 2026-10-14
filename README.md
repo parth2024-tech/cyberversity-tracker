@@ -1,8 +1,8 @@
 # AETHERGUARD // Worldwide AI Ecosystem Intelligence & Frontier Radar
 
 [![CI Status](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-283%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
-[![Coverage](https://img.shields.io/badge/Coverage-72%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Tests](https://img.shields.io/badge/Tests-291%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Coverage](https://img.shields.io/badge/Coverage-74%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-black.svg?style=flat)](https://github.com/astral-sh/ruff)
@@ -11,7 +11,7 @@
 
 **AETHERGUARD** is a high-performance, autonomous intelligence radar that tracks, synthesizes, and broadcasts breakthroughs across the worldwide artificial intelligence ecosystem in real time.
 
-Built on Clean Domain-Driven Architecture (DDD), it continuously aggregates open-source repositories, frontier foundation models, inference runtimes, test-time compute scaling papers, and sovereign AI initiatives from every major global tech corridor.
+Built on Clean Domain-Driven Architecture (DDD), it continuously aggregates open-source repositories, developer infrastructure, inference runtimes, test-time compute scaling papers, community discussion sentiment, and sovereign AI initiatives from every major global tech corridor.
 
 🌐 **Production Deployment**: [https://ai-security-radar.onrender.com/](https://ai-security-radar.onrender.com/)
 
@@ -20,44 +20,43 @@ Built on Clean Domain-Driven Architecture (DDD), it continuously aggregates open
 ## 🌐 Core Intelligence Focus & Capabilities
 
 ### 1. Trending GitHub Repositories & Open Source
-- Autonomously tracks high-velocity AI repositories, agent runtimes, fine-tuning frameworks, and developer automation codebases.
-- Identifies breakthrough projects and surging stars before mainstream industry saturation.
+- **Velocity Tracking**: Tracks high-velocity open-source AI projects, autonomous agent runtimes, fine-tuning frameworks, and developer automation codebases.
+- **OSS Insight Integration**: Interfaces directly with `api.ossinsight.io` to capture breakout star-gain velocity across open-source AI repositories before mainstream saturation.
 
 ### 2. Developer Tooling & Inference Infrastructure
 - Dedicated monitoring of high-throughput inference engines and local serving runtimes:
   - **Inference Runtimes**: `vLLM`, `Ollama`, `SGLang`, `llama.cpp`, `TensorRT-LLM`.
-  - **Tooling Stacks**: Vector stores, evaluation harnesses, RAG frameworks, kernel accelerators, and desktop AI.
+  - **Tooling Stacks**: Vector databases, evaluation harnesses, RAG connectors, kernel accelerators, and desktop AI.
 
-### 3. Frontier AI Foundation Models & Reasoning Breakdowns
-- Real-time intelligence on next-generation model releases, architecture shifts, and benchmark breakthroughs:
+### 3. Frontier Foundation Models & Research Breakthroughs
+- Real-time intelligence on frontier foundation models and architecture shifts:
   - Open-weights vs. proprietary releases (**DeepSeek**, **Qwen**, **Llama**, **Claude**, **OpenAI**, **Mistral**).
-  - Test-time compute scaling, Mixture-of-Experts (MoE), Multi-Head Latent Attention (MLA), and reasoning models.
+  - Test-time compute scaling, Mixture-of-Experts (MoE), Multi-Head Latent Attention (MLA), and reasoning architectures.
+  - Curated arXiv telemetry across `cs.AI`, `cs.CL`, `cs.LG`, and `stat.ML`.
 
-### 4. Global Sovereign AI & Regional Corridors
+### 4. Community Sentiment & Discussion Intelligence
+- **Multi-Subreddit AI Intelligence** (`RedditFetcher`): Ingests community drops from `r/LocalLLaMA`, `r/MachineLearning`, `r/ArtificialIntelligence`, and `r/Singularity`, automatically extracting top discussion comments to capture practitioner reactions.
+- **Hacker News Algolia Hydration** (`HackerNewsFetcher`): Enriches top-ranked AI stories by concurrently hydrating top developer comments from Algolia item trees.
+- **Keyless Google News AI RSS** (`GoogleNewsFetcher`): Surfaces timely mainstream AI news and enterprise releases with publisher attribution.
+
+### 5. Fair-Share Balanced Digest Allocation
+- **Balanced Quota Engine** (`BalancedDigestService`): Dynamically balances digest composition across sources (arXiv, GitHub, Hugging Face, Reddit, Hacker News, Google News, OSS Insight), preventing single high-frequency feeds from dominating the front page.
+
+### 6. Global Sovereign AI & Regional Corridors
 - Geographic filtering and coverage across 6 worldwide regional corridors:
   - **North America** (US / CA frontier labs and hyperscalers)
-  - **Europe** (Mistral, Aleph Alpha, CERN, EU AI initiatives)
-  - **Asia-Pacific** (DeepSeek, Alibaba Qwen, Moonshot, Baidu, South Korea & Japan AI)
-  - **Latin America**, **Middle East**, and **Africa** (Regional models, infrastructure, sovereign compute)
+  - **Europe** (Mistral, Kyutai, Aleph Alpha, CERN, EU AI initiatives)
+  - **Asia-Pacific** (DeepSeek, Alibaba Qwen, Moonshot, Baidu, South Korea, Japan, India AI)
+  - **Latin America**, **Middle East**, and **Africa** (Regional models, compute infrastructure, sovereign labs)
 
-### 5. Autonomous Priority Triage & Queue Hold Engine
-- **Priority-Tiered Ingestion**:
-  - **P0**: Frontier foundation models and seminal reasoning papers.
-  - **P1**: Developer tooling, inference runtimes, and core infrastructure.
-  - **P2**: General ecosystem news and broader applications.
-- **Queue Hold Mode**: Discovered items accumulate cleanly in the background priority queue (`• QUEUED (N)`) until explicitly pushed via **Live Sweep** or the **Push All Queued** action, preventing notification fatigue and unreviewed feed churn.
+### 7. Ingestion Freshness Guard & Retention Control
+- **Strict 14-Day Freshness Guard**: Automatically blocks stale archive dumps and historical entries (`max_ingest_age_days = 14`), ensuring every intelligence entry reflects contemporary advancements.
+- **User-Controlled Data Retention**: Automatic background deletions are disabled by default. Data is only purged upon explicit user instruction, with instant soft-restore capabilities.
 
-### 6. The AI Chronicle & Gazette Publishing
-- **Web Edition**: Dedicated responsive reading hub at `/gazette` with editorial styling, executive summaries, and key architectural highlights.
-- **Multi-Format Export**: Generates synchronized editions in **JSON**, **Markdown**, **HTML**, and publication-grade vector **PDF** (powered by ReportLab).
-
-### 7. User-Controlled Data Retention & Hygiene
-- **Strict User Control**: Automatic background data deletion is disabled by default. Data is only modified upon explicit user command.
-- **Ingestion Freshness Guard**: Automatically prevents stale feed archive dumps (> 14 days / 2 weeks old) from polluting the active database.
-- **Flexible Cleanup**: Support for soft-purge with instant one-click restoration, or permanent raw disk wiping (`hard_delete=True`).
-
-### 8. Real-Time Glassmorphic Command Center
-- Obsidian-themed HUD with Three.js WebGL globe, reactive WebSockets for real-time dispatch alerts, synthetic Web Audio chimes, and instant Command Palette (`Ctrl+K` / `Cmd+K`).
+### 8. Multi-Channel Dispatch & Publishing
+- **Discord & Telegram Delivery**: Rich Discord embed dispatcher with severity styling alongside Telegram bot alerts and Slack webhooks.
+- **The AI Chronicle & Gazette**: Dedicated responsive reading hub at `/gazette` with synchronized exports in **JSON**, **Markdown**, **HTML**, and vector **PDF** (ReportLab).
+- **Glassmorphic Command Center**: Obsidian-themed WebGL HUD with Three.js globe, reactive WebSockets for real-time dispatch alerts, and Command Palette (`Ctrl+K` / `Cmd+K`).
 
 ---
 
@@ -81,25 +80,25 @@ ai-security-monitor/
 │       │   └── services/
 │       │       ├── monitor_service.py     # Main ingestion orchestrator & freshness guard
 │       │       ├── autonomous_triage_service.py # PriorityQueue worker & queue hold engine
+│       │       ├── balanced_digest.py     # Fair-share source-balancing digest allocator
 │       │       ├── newspaper_service.py   # AI Gazette publisher (PDF, HTML, MD, JSON)
 │       │       └── scheduler_service.py   # Scheduled recurring background sweep runner
-│       ├── infrastructure/                # External adapters, persistence, fetchers, & analyzers
+│       ├── infrastructure/                # External adapters, persistence, fetchers, & delivery
 │       │   ├── database/                  # SQLAlchemy 2.0 async engine, models, WAL SQLite
-│       │   ├── fetchers/                  # RSS, arXiv, GitHub API, HackerNews, Web scrapers
+│       │   ├── fetchers/                  # RSS, arXiv, GitHub, Reddit, HN, GNews, OSSInsight
 │       │   ├── analyzers/                 # Heuristic fast-path & Ollama/LLM neural analyzers
-│       │   └── delivery/                  # Telegram bot, Slack webhooks, HTML email dispatchers
+│       │   └── delivery/                  # Discord embeds, Telegram bot, Slack, HTML email
 │       └── presentation/                  # User interface & public contracts
-│           └── api/
-│               ├── main.py                # FastAPI application factory & middleware
-│               ├── limiter.py             # SlowAPI rate limiting configuration
-│               └── routers/               # REST routers (entries, triage, stats, newspaper, sources)
+│           ├── api/                       # FastAPI factory, limiter, routers (entries, triage, stats)
+│           ├── cli/                       # Typer CLI application (serve, fetch, stats, sources, mcp)
+│           └── mcp/                       # Model Context Protocol stdio server
 ├── web/                                   # Frontend Single Page Application
-│   ├── index.html                         # Primary Command Center HUD
+│   ├── index.html                         # Primary Command Center HUD & Three.js Radar
 │   ├── gazette.html                       # The AI Chronicle & Gazette reader
 │   └── js/                                # WebSocket receiver, palette, & interactive controls
-└── tests/                                 # Industrial automated test suite (283 tests)
-    ├── unit/                              # Isolated entity, analyzer, and domain tests
-    └── integration/                       # Brutal API stress, boundary contracts, and DB tests
+└── tests/                                 # Industrial automated test suite (291 tests)
+    ├── unit/                              # Isolated entity, fetcher, delivery, and domain tests
+    └── integration/                       # Boundary contracts, API stress, and DB tests
 ```
 
 ---
@@ -141,29 +140,24 @@ Open your browser at **`http://localhost:8000`** (or **`http://localhost:8000/ga
 
 ## 🛠️ CLI Reference
 
-The platform provides a comprehensive CLI for administration, sweeps, and exports:
+The platform provides a Typer-powered CLI for administration, sweeps, and agent integration:
 
 ```bash
-# Initialize SQLite database and load source feeds
-python3 cli.py init
+# Launch the real-time web command center and API server
+python3 cli.py server --port 8000 --host 0.0.0.0
 
 # Execute an immediate worldwide intelligence sweep
 python3 cli.py fetch
+python3 cli.py fetch --force
 
-# Display current intelligence statistics and source health
+# Display real-time database intelligence statistics and metrics
 python3 cli.py stats
 
-# Generate The AI Chronicle Gazette (HTML, JSON, Markdown, PDF)
-python3 cli.py newspaper --pdf
+# List all registered and configured intelligence sources
+python3 cli.py sources
 
-# Dispatch an intelligence digest to console or messaging channels
-python3 cli.py digest --method console
-python3 cli.py digest --method telegram --telegram-token <TOKEN> --telegram-chat <CHAT_ID>
-python3 cli.py digest --method slack --slack-webhook <WEBHOOK_URL>
-
-# Manage data retention and storage cleanup
-python3 cli.py retention status
-python3 cli.py retention purge --older-than 30
+# Launch Model Context Protocol (MCP) server over stdio for AI coding assistants
+python3 cli.py mcp
 ```
 
 ---
@@ -181,6 +175,7 @@ python3 cli.py retention purge --older-than 30
 | `/api/fetch` | `POST` | Trigger a Live Sweep: fetches fresh feeds and pushes queued items |
 | `/api/newspaper/latest` | `GET` | Fetch latest AI Gazette edition in JSON |
 | `/api/newspaper/export/pdf` | `GET` | Download latest AI Gazette edition as a publication-ready PDF |
+| `/api/digest` | `POST` | Compile and dispatch an intelligence digest to configured delivery adapters |
 | `/api/stats/retention` | `GET` | Inspect data age distribution and purge candidates |
 | `/api/stats/purge` | `POST` | Execute manual purge (`older_than_days`, `hard_delete`, `include_vaulted`) |
 | `/api/stats/restore-purged` | `POST` | Instantly restore soft-deleted items back to active status |
@@ -190,7 +185,7 @@ python3 cli.py retention purge --older-than 30
 
 ## 🧪 Testing & Quality Assurance
 
-The codebase is protected by **222 brutal, deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and heap priority invariants:
+The codebase is protected by **291 deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and feed freshness invariants:
 
 ```bash
 # Run full test suite
@@ -206,11 +201,12 @@ uv run ruff check .
 uv run mypy src/ai_security_monitor/
 ```
 
-### Brutal Test Guarantees:
+### Key Test Guarantees:
+- **Strict Ingestion Freshness**: Verifies that any feed item older than 14 days is strictly excluded at the ingestion boundary.
+- **Fair-Share Quota Invariants**: Confirms that balanced digest generation enforces proportional allocations across all configured source categories.
 - **Exact HTTP Status Contracts**: Strict `422 Unprocessable Entity` on invalid boundaries (`limit > 200`, negative offsets, empty schemas) and `405 Method Not Allowed`.
 - **Fuzzing & Injection Resilience**: Resists SQL injection payloads, XSS injections, script tags, control bytes, and Unicode edge cases with zero crashes.
 - **Adversarial Priority Heap Testing**: Verifies monotonic non-decreasing priority popping ($P0 \rightarrow P1 \rightarrow P2$) even when items are enqueued in adversarial reverse order.
-- **Physical Disk Wipe Verification**: Executes raw SQL checks against SQLite to prove complete removal of hard-deleted entries.
 
 ---
 
@@ -223,7 +219,7 @@ System parameters can be configured via environment variables or a `.env` file:
 PORT=8000
 ENVIRONMENT=production
 
-# Database
+# Database & Freshness Guard
 DATABASE__URL=sqlite+aiosqlite:///./data/monitor.db
 DATABASE__MAX_INGEST_AGE_DAYS=14
 DATABASE__AUTO_PURGE_ENABLED=false
@@ -236,6 +232,7 @@ ANALYZER__OLLAMA_BASE_URL=http://localhost:11434
 ANALYZER__OLLAMA_MODEL=llama3.1:8b
 
 # Dispatchers (Optional)
+DISCORD__WEBHOOK_URL=your_discord_webhook_url
 TELEGRAM__BOT_TOKEN=your_bot_token
 TELEGRAM__CHAT_ID=your_chat_id
 SLACK__WEBHOOK_URL=your_webhook_url
@@ -259,4 +256,3 @@ Render auto-builds from `requirements.txt` and starts via the start command spec
 ## 📄 License
 
 Distributed under the **MIT License**. Free and open-source for researchers, developers, and AI enthusiasts.
-
