@@ -58,6 +58,14 @@ Built on Clean Domain-Driven Architecture (DDD), it continuously aggregates open
 - **The AI Chronicle & Gazette**: Dedicated responsive reading hub at `/gazette` with synchronized exports in **JSON**, **Markdown**, **HTML**, and vector **PDF** (ReportLab).
 - **Glassmorphic Command Center**: Obsidian-themed WebGL HUD with Three.js globe, reactive WebSockets for real-time dispatch alerts, and Command Palette (`Ctrl+K` / `Cmd+K`).
 
+### 9. Privacy Hardening, Anti-Tracking & Anti-AI-Slop Architecture
+- **Anti-AI-Slop Cleaning Engine** (`AIPromptSanitizer`): Multi-pass regex engine that strips conversational AI preambles ("Here's a 20-word summary:", "This article discusses...", "Sure, here is the technical summary:") and quotation wraps from summaries and gazette dossiers.
+- **URL Telemetry Scrubber**: Automatically purges marketing tracking query parameters (`utm_*`, `fbclid`, `gclid`, `twclid`, `srsltid`, `si`, `ref`, `mkt_tok`) during feed ingestion, ensuring canonical cross-source deduplication.
+- **YouTube No-Cookie Privacy Rewriting**: Automatically converts multimedia announcement and conference links into `youtube-nocookie.com/embed/` format.
+- **Tracking Pixel & Beacon Scrubbing**: Identifies and removes 1x1 tracking pixels and analytics beacon images prior to HTML indexing.
+- **SSRF-Protected CORS Proxy (`/api/proxy`)**: Safely proxies external feeds and articles with strict RFC1918 private network and DNS rebinding protections.
+- **Intelligence Data Portability (`/api/backup`)**: Complete export and import of vaulted entries, sources, and system preferences as standardized JSON backups.
+
 ---
 
 ## 🏛️ Clean Architecture & Project Structure
@@ -72,6 +80,9 @@ ai-security-monitor/
 │   └── sources.yaml                       # Configured worldwide feed sources & regional tags
 ├── src/
 │   └── ai_security_monitor/
+│       ├── core/                          # Anti-injection, anti-slop, and privacy sanitizer
+│       │   ├── sanitizer.py               # Prompt injection defense, tracking scrubber, anti-slop
+│       │   └── logging.py                 # Structured JSON telemetry logger
 │       ├── domain/                        # Pure business entities, enums, & value objects
 │       │   ├── entities.py                # Entry, Analysis, Source, SourceType, Category
 │       │   ├── repositories.py            # Abstract repository & Unit-of-Work interfaces
@@ -89,7 +100,7 @@ ai-security-monitor/
 │       │   ├── analyzers/                 # Heuristic fast-path & Ollama/LLM neural analyzers
 │       │   └── delivery/                  # Discord embeds, Telegram bot, Slack, HTML email
 │       └── presentation/                  # User interface & public contracts
-│           ├── api/                       # FastAPI factory, limiter, routers (entries, triage, stats)
+│           ├── api/                       # FastAPI factory, limiter, routers (entries, proxy, backup, stats)
 │           ├── cli/                       # Typer CLI application (serve, fetch, stats, sources, mcp)
 │           └── mcp/                       # Model Context Protocol stdio server
 ├── web/                                   # Frontend Single Page Application
@@ -207,6 +218,9 @@ uv run mypy src/ai_security_monitor/
 ### Key Test Guarantees:
 - **Strict Ingestion Freshness**: Verifies that any feed item older than 14 days is strictly excluded at the ingestion boundary.
 - **Fair-Share Quota Invariants**: Confirms that balanced digest generation enforces proportional allocations across all configured source categories.
+- **Privacy & SSRF Defense Guarantees**: Proves that the CORS proxy strictly blocks private subnets (`127.0.0.0/8`, `10.0.0.0/8`, `192.168.0.0/16`, `172.16.0.0/12`), loopbacks, link-local addresses, and invalid protocols.
+- **Anti-AI-Slop & Tracking Purging**: Asserts that conversational AI preambles are removed from LLM summaries, and confirms that marketing tracking parameters (`utm_*`, `fbclid`, `gclid`) are stripped from entry URLs.
+- **Data Portability & State Restoration**: Verifies standardized export of Vault intelligence to JSON and validates safe schema-compliant re-importing into SQLite.
 - **Exact HTTP Status Contracts**: Strict `422 Unprocessable Entity` on invalid boundaries (`limit > 200`, negative offsets, empty schemas) and `405 Method Not Allowed`.
 - **Fuzzing & Injection Resilience**: Resists SQL injection payloads, XSS injections, script tags, control bytes, and Unicode edge cases with zero crashes.
 - **Adversarial Priority Heap Testing**: Verifies monotonic non-decreasing priority popping ($P0 \rightarrow P1 \rightarrow P2$) even when items are enqueued in adversarial reverse order.
