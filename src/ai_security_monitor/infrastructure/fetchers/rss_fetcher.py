@@ -7,7 +7,7 @@ import feedparser
 import httpx
 
 from ai_security_monitor.core.logging import get_logger
-from ai_security_monitor.domain.entities import Entry
+from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
@@ -269,22 +269,59 @@ class RSSFetcher(BaseFetcher):
                 elif not clean_title.lower().startswith(prefix.lower()):
                     clean_title = f"{prefix} Release {clean_title}"
 
+            # Direct Repository Extraction for Curation / Social Feeds (e.g. Reddit r/BestGitHubRepos)
+            item_url = getattr(item, "link", "")
+            is_curated_repo_feed = (
+                self.source.category == Category.GITHUB_TRENDING
+                or "github" in self.source.name.lower()
+                or "reddit.com/r/" in item_url.lower()
+            )
+            extracted_repo_url = None
+            if is_curated_repo_feed:
+                raw_full = f"{content} {getattr(item, 'summary', '')}"
+                gh_match = re.search(
+                    r"https?://(?:www\.)?github\.com/([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+)(?:[/?#\s]|$)",
+                    raw_full,
+                )
+                if gh_match:
+                    repo_path = gh_match.group(1).rstrip("/.")
+                    if not any(
+                        repo_path.startswith(p)
+                        for p in ("features", "pricing", "about", "site", "topics")
+                    ):
+                        extracted_repo_url = f"https://github.com/{repo_path}"
+                elif "reddit.com/r/" in item_url.lower() and self.source.category == Category.GITHUB_TRENDING:
+                    # Skip meta / newsletter announcements that don't contain any GitHub repository
+                    if any(
+                        spam_kw in clean_title.lower()
+                        for spam_kw in ("never miss", "newsletter", "weekly digest", "join our")
+                    ):
+                        continue
+
+            final_url = extracted_repo_url or item_url
+            entry_meta = {
+                "feed_title": feed.feed.get("title", ""),
+                "feed_link": feed.feed.get("link", ""),
+                "region": (self.source.config or {}).get("region", "global"),
+                "country": (self.source.config or {}).get("country", "GLOBAL"),
+                "provenance_type": "trending_repo"
+                if extracted_repo_url
+                else (self.source.config or {}).get("provenance_type", "rss_feed"),
+            }
+            if extracted_repo_url:
+                entry_meta["repo_url"] = extracted_repo_url
+                entry_meta["curated_via"] = self.source.name
+                if "reddit.com" in item_url:
+                    entry_meta["reddit_discussion_url"] = item_url
+
             entries.append(
                 {
                     "title": clean_title,
-                    "url": getattr(item, "link", ""),
+                    "url": final_url,
                     "content": content,
                     "published_at": published_at,
                     "tags": [tag.term for tag in getattr(item, "tags", [])],
-                    "metadata": {
-                        "feed_title": feed.feed.get("title", ""),
-                        "feed_link": feed.feed.get("link", ""),
-                        "region": (self.source.config or {}).get("region", "global"),
-                        "country": (self.source.config or {}).get("country", "GLOBAL"),
-                        "provenance_type": (self.source.config or {}).get(
-                            "provenance_type", "rss_feed"
-                        ),
-                    },
+                    "metadata": entry_meta,
                 }
             )
 

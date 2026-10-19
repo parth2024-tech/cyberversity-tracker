@@ -66,6 +66,11 @@ class SourceConfig(BaseModel):
             "cisa_kev_json",
             "hackernews",
             "github_trending",
+            "reddit",
+            "google_news",
+            "oss_insight",
+            "sitemap",
+            "huggingface_trending",
         }
         if v not in allowed:
             raise ValueError(f"Type must be one of {allowed}")

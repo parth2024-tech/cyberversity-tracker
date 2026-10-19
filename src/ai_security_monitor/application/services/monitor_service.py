@@ -879,11 +879,13 @@ class MonitorService:
             nonlocal total_new, success, error
             async with pool:
                 try:
-                    # arXiv sources queue behind a class-level 3s pacing lock.
-                    # With 14 regional arXiv fetchers, the last waits 39s+ before
-                    # its HTTP request even starts.  Give arXiv sources 90s so
-                    # all regional sources complete instead of timing out silently.
-                    source_timeout = 90.0 if src.type.value == "arxiv" else 25.0
+                    # arXiv and GitHub/HuggingFace trending sources require multi-step scraping
+                    # and search API fallbacks. Give them 90s so they complete cleanly.
+                    source_timeout = (
+                        90.0
+                        if src.type.value in ("arxiv", "github_trending", "huggingface_trending")
+                        else 30.0
+                    )
                     log = await asyncio.wait_for(
                         self.fetch_source(src), timeout=source_timeout
                     )

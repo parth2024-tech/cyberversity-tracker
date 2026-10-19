@@ -35,6 +35,10 @@
   "testing_strategy": {
     "framework": "pytest + pytest-asyncio + httpx",
     "coverage_target": "75%",
+    "test_paths": [
+      "tests/unit",
+      "tests/test_high_recall_architecture.py"
+    ],
     "patterns": [
       "Unit tests for heuristic and blast radius analyzers",
       "Unit tests for delivery channels (email, telegram, slack, console)",

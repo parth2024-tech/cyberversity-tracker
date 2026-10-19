@@ -243,6 +243,7 @@ class GitHubTrendingFetcher(BaseFetcher):
     ):
         super().__init__(source, timeout, max_retries)
         self.frequency: str = source.config.get("frequency", "daily")
+        self.language: str | None = source.config.get("language")
         # filter_mode: "ai" | "infra" | "security" | "any"
         self.filter_mode: str = source.config.get("filter_mode", "ai")
 
@@ -259,7 +260,7 @@ class GitHubTrendingFetcher(BaseFetcher):
             scrape_failed = True
 
         # Trigger API fallback if scraping returned too few results
-        if len(entries) < 5:
+        if len(entries) < 8:
             reason = (
                 "scraping exception"
                 if scrape_failed
@@ -306,8 +307,15 @@ class GitHubTrendingFetcher(BaseFetcher):
 
     async def _fetch_raw_scraping(self) -> list[dict]:
         since = self.frequency  # daily, weekly, monthly
-        url = f"https://github.com/trending?since={since}"
-        params = {"spoken_language_code": "en"}
+        target_urls: list[str] = []
+        if self.language:
+            target_urls.append(
+                f"https://github.com/trending/{self.language}?since={since}"
+            )
+        else:
+            target_urls.append(f"https://github.com/trending?since={since}")
+            target_urls.append(f"https://github.com/trending/python?since={since}")
+
         headers = {
             "User-Agent": (
                 "Mozilla/5.0 (X-UA-Compatible; Linux x86_64) AppleWebKit/537.36 "
@@ -324,14 +332,35 @@ class GitHubTrendingFetcher(BaseFetcher):
             "Referer": "https://github.com/explore",
         }
 
+        all_entries: list[dict] = []
+        seen_urls: set[str] = set()
+
         async with httpx.AsyncClient(
-            timeout=self.timeout, headers=headers, follow_redirects=True
+            timeout=self.timeout or 25.0, headers=headers, follow_redirects=True
         ) as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
+            for url in target_urls:
+                try:
+                    response = await client.get(
+                        url, params={"spoken_language_code": "en"}
+                    )
+                    if response.status_code != 200:
+                        continue
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    page_entries = self._parse_soup_repos(soup)
+                    for pe in page_entries:
+                        u = pe["url"].lower()
+                        if u not in seen_urls:
+                            seen_urls.add(u)
+                            all_entries.append(pe)
+                except Exception as page_err:
+                    logger.debug(
+                        f"GitHub Trending scraping notice on {url}: {page_err}"
+                    )
 
-        soup = BeautifulSoup(response.content, "html.parser")
+        return all_entries
 
+    def _parse_soup_repos(self, soup: BeautifulSoup) -> list[dict]:
+        """Parse repository cards from BeautifulSoup tree."""
         # Multi-strategy adaptive element extraction (inspired by Scrapling)
         repos = soup.find_all("article", class_="Box-row")
         if not repos:
@@ -348,17 +377,6 @@ class GitHubTrendingFetcher(BaseFetcher):
                 if container and id(container) not in seen_containers:
                     seen_containers.add(id(container))
                     repos.append(container)
-
-        if not repos:
-            logger.warning(
-                f"GitHub Trending DOM health check failed for {self.source.name!r}: "
-                "no candidate repo elements matched across adaptive selectors. GitHub layout may have updated."
-            )
-        elif len(repos) < 5:
-            logger.info(
-                f"GitHub Trending DOM health check: only {len(repos)} "
-                "elements parsed via adaptive selectors."
-            )
 
         entries: list[dict] = []
 
@@ -477,19 +495,20 @@ class GitHubTrendingFetcher(BaseFetcher):
             "Accept": "application/vnd.github.v3+json",
         }
 
-        # Primary query: frequency-aligned recency + topic
+        # Primary query: frequency-aligned recency + language + topic
+        lang_filter = f"language:{self.language} " if self.language else ""
         params: dict[str, str | int] = {
-            "q": f"{stars_floor} pushed:>={since_date} {topic_filter.split(' OR ')[0]}",
+            "q": f"{stars_floor} pushed:>={since_date} {lang_filter}{topic_filter.split(' OR ')[0]}",
             "sort": "stars",
             "order": "desc",
             "per_page": 30,
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
+        async with httpx.AsyncClient(timeout=self.timeout or 25.0, headers=headers) as client:
             response = await client.get(url, params=params)
             if response.status_code != 200:
-                # Fallback query: relax to just topic + high stars
-                params["q"] = f"stars:>500 {topic_filter}"
+                # Fallback query: relax to just topic + language + stars
+                params["q"] = f"stars:>200 {lang_filter}({topic_filter})"
                 params["sort"] = "updated"
                 response = await client.get(url, params=params)
                 if response.status_code != 200:

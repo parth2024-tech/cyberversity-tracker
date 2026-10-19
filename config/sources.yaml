@@ -437,6 +437,40 @@ sources:
   config:
     frequency: daily
     filter_mode: ai
+- name: GitHub Trending Python AI & LLMs
+  category: github_trending
+  type: github_trending
+  since: daily
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    frequency: daily
+    language: python
+    filter_mode: ai
+- name: GitHub Trending TypeScript AI Agents & Tools
+  category: github_trending
+  type: github_trending
+  since: daily
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    frequency: daily
+    language: typescript
+    filter_mode: ai
+- name: Hugging Face Trending AI Models & Repos
+  category: github_trending
+  type: huggingface_trending
+  url: https://huggingface.co/api/trending
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    limit: 20
 - name: GitHub Trending AI Repositories (Weekly)
   category: github_trending
   type: github_trending

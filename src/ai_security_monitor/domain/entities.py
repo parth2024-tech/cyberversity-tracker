@@ -33,6 +33,7 @@ class SourceType(str, Enum):
     GOOGLE_NEWS = "google_news"
     OSS_INSIGHT = "oss_insight"
     SITEMAP = "sitemap"
+    HUGGINGFACE_TRENDING = "huggingface_trending"
 
 
 class FetchStatus(str, Enum):
