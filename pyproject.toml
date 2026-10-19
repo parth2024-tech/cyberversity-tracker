@@ -58,6 +58,8 @@ dependencies = [
     "langdetect>=1.0.9",
     "defusedxml>=0.7.1",
     "slowapi>=0.1.9",
+    "trafilatura>=2.3.0",
+    "psutil>=7.0.0",
 ]
 
 [project.optional-dependencies]

@@ -63,7 +63,7 @@ def test_deduplication_service_story_clustering():
     )
     assert is_new_1 is True
     assert story_1.source_count == 1
-    assert story_1.confidence_score == 0.60
+    assert story_1.confidence_score == 0.50
     assert story_1.canonical_url == "https://arxiv.org/abs/2501.12948"
     assert proc_1.story_id == story_1.id
 
@@ -83,7 +83,7 @@ def test_deduplication_service_story_clustering():
     assert is_new_2 is False
     assert story_2.id == story_1.id
     assert story_2.source_count == 2
-    assert story_2.confidence_score == 0.85
+    assert story_2.confidence_score == 0.75
     assert "Hacker News" in story_2.sources
     assert proc_2.story_id == story_1.id
 
@@ -95,7 +95,7 @@ def test_story_confidence_scaling():
         fingerprint="dummy_fp",
         category=Category.AI_MODELS,
     )
-    assert story.confidence_score == 0.60
+    assert story.confidence_score == 0.50
 
     e1 = Entry(
         source_id=uuid4(),
@@ -117,7 +117,7 @@ def test_story_confidence_scaling():
     story.add_entry(e1, source_name="Source A")
     story.add_entry(e2, source_name="Source B")
     assert story.source_count == 2
-    assert story.confidence_score == 0.85
+    assert story.confidence_score == 0.75
 
     e3 = Entry(
         source_id=uuid4(),
@@ -129,4 +129,4 @@ def test_story_confidence_scaling():
     )
     story.add_entry(e3, source_name="Source C")
     assert story.source_count == 3
-    assert story.confidence_score >= 0.90
+    assert story.confidence_score >= 0.89

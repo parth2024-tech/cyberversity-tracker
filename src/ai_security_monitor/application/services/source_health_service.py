@@ -33,6 +33,35 @@ class SourceHealthMetrics:
     latencies: list[int] = field(default_factory=list)
     last_error_message: str | None = None
     last_entries_new: int = 0
+    recent_entry_counts: list[int] = field(default_factory=list)
+
+    @property
+    def entry_frequency(self) -> float:
+        """Average entries produced per run over the last 10 runs."""
+        if not self.recent_entry_counts:
+            return float(self.last_entries_new)
+        return round(sum(self.recent_entry_counts) / len(self.recent_entry_counts), 2)
+
+    @property
+    def adaptive_polling_interval_seconds(self) -> int:
+        """Adaptive dynamic polling interval (entry_frequency from Miniflux):
+        - High-velocity (> 5 entries/run): 180s - 300s (3-5 minutes)
+        - Medium-velocity (1-5 entries/run): 900s - 1800s (15-30 minutes)
+        - Low-velocity / dormant (0 entries across recent runs): 7200s - 43200s (2-12 hours)
+        """
+        freq = self.entry_frequency
+        if freq >= 5.0:
+            return 180  # 3 minutes
+        elif freq >= 2.0:
+            return 300  # 5 minutes
+        elif freq >= 0.5:
+            return 900  # 15 minutes
+        elif freq > 0.0:
+            return 1800  # 30 minutes
+        else:
+            # Low-frequency / dormant feed: scale out based on consecutive empty runs
+            empty_runs = max(1, self.total_runs - self.success_count)
+            return min(43200, 7200 + min(36000, empty_runs * 3600))
 
     @property
     def success_rate(self) -> float:
@@ -86,6 +115,8 @@ class SourceHealthMetrics:
             "circuit_state": self.circuit_state,
             "cooldown_remaining_seconds": self.cooldown_remaining_seconds,
             "success_rate": self.success_rate,
+            "entry_frequency": self.entry_frequency,
+            "adaptive_polling_interval_seconds": self.adaptive_polling_interval_seconds,
             "consecutive_failures": self.consecutive_failures,
             "total_runs": self.total_runs,
             "success_count": self.success_count,
@@ -105,7 +136,7 @@ class SourceHealthMetrics:
 
 
 class SourceHealthService:
-    """Manages source health telemetry and diagnostics."""
+    """Manages source health telemetry, adaptive scheduling, and diagnostics."""
 
     def __init__(self):
         self._sources: dict[str, SourceHealthMetrics] = {}
@@ -154,6 +185,11 @@ class SourceHealthService:
         metrics.last_entries_new = entries_new
         metrics.last_error_message = None
 
+        # Keep rolling window of last 10 entry counts for adaptive frequency
+        metrics.recent_entry_counts.append(entries_new)
+        if len(metrics.recent_entry_counts) > 10:
+            metrics.recent_entry_counts.pop(0)
+
         # Keep rolling window of last 20 latencies
         metrics.latencies.append(duration_ms)
         if len(metrics.latencies) > 20:
@@ -179,6 +215,11 @@ class SourceHealthService:
         metrics.last_latency_ms = duration_ms
         metrics.last_error_message = error_message[:500]
 
+        # Record 0 entries on failure to reflect dormant/failing frequency
+        metrics.recent_entry_counts.append(0)
+        if len(metrics.recent_entry_counts) > 10:
+            metrics.recent_entry_counts.pop(0)
+
         metrics.latencies.append(duration_ms)
         if len(metrics.latencies) > 20:
             metrics.latencies.pop(0)
@@ -192,6 +233,15 @@ class SourceHealthService:
         """Get health data for a specific source."""
         m = self._sources.get(source_name)
         return m.to_dict() if m else None
+
+    def get_adaptive_interval(
+        self, source_name: str, fallback_seconds: int = 3600
+    ) -> int:
+        """Retrieve dynamic polling interval based on historical entry_frequency."""
+        m = self._sources.get(source_name)
+        if m:
+            return m.adaptive_polling_interval_seconds
+        return fallback_seconds
 
     def is_circuit_open(self, source_name: str) -> bool:
         """Return True if the circuit breaker for this source is currently open (cooling down)."""

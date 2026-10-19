@@ -266,6 +266,17 @@ async def query_serialized_entries(
 
     async def _list_entries():
         async with SqlAlchemyUnitOfWork() as uow:
+            if (
+                search
+                and not cat_enum
+                and not pre_cve
+                and not high_velocity
+                and not watchlist_only
+                and not important_only
+            ):
+                fts_results = await uow.entries.search_fts(search, limit=limit)
+                if fts_results:
+                    return fts_results
             return await uow.entries.list(filters=filters, pagination=pagination)
 
     async def _count_entries():

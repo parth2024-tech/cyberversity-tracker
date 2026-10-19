@@ -24,10 +24,22 @@ TRACKING_PARAMS = {
     "utm_campaign",
     "utm_term",
     "utm_content",
+    "utm_id",
+    "utm_name",
     "ref",
+    "ref_src",
+    "ref_url",
     "source",
     "fbclid",
     "gclid",
+    "mc_eid",
+    "msclkid",
+    "twclid",
+    "igshid",
+    "yclid",
+    "spm",
+    "_ga",
+    "_gl",
     "feature",
     "s",
     "t",
@@ -75,10 +87,12 @@ STOP_WORDS = {
 def canonicalize_url(url: str) -> str:
     """Canonicalize a URL to collapse cross-source variations into a single canonical target.
 
-    Examples:
-    - https://arxiv.org/pdf/2401.12345.pdf -> https://arxiv.org/abs/2401.12345
-    - https://github.com/vllm-project/vllm/releases/tag/v0.6.0 -> https://github.com/vllm-project/vllm
-    - https://example.com/post?utm_source=twitter&id=1 -> https://example.com/post?id=1
+    Features:
+    - Strips marketing/tracking query parameters (utm_*, fbclid, gclid, mc_eid, spm, _ga, etc.)
+    - Removes default ports (:80, :443) and lowercases domain names
+    - Strips anchor fragments and redundant trailing slashes
+    - Normalizes arXiv URLs (pdf/abs) to standard abstract landing page
+    - Normalizes GitHub repository URLs to root project slug
     """
     if not url:
         return ""
@@ -86,6 +100,13 @@ def canonicalize_url(url: str) -> str:
     try:
         parsed = urlparse(url.strip())
         netloc = parsed.netloc.lower()
+
+        # Remove default HTTP/HTTPS ports
+        if netloc.endswith(":80") and parsed.scheme in ("http", ""):
+            netloc = netloc[:-3]
+        elif netloc.endswith(":443") and parsed.scheme in ("https", ""):
+            netloc = netloc[:-4]
+
         path = parsed.path.rstrip("/")
 
         # 1. Normalize arXiv URLs to standard abstract view
@@ -110,8 +131,12 @@ def canonicalize_url(url: str) -> str:
         if parsed.query:
             query_pairs = parse_qsl(parsed.query, keep_blank_values=False)
             filtered_query = [
-                (k, v) for k, v in query_pairs if k.lower() not in TRACKING_PARAMS
+                (k, v)
+                for k, v in query_pairs
+                if k.lower() not in TRACKING_PARAMS
+                and not k.lower().startswith("utm_")
             ]
+            filtered_query.sort()
 
         new_query = urlencode(filtered_query)
         # Reconstruct without anchor fragments or tracking query
@@ -176,31 +201,109 @@ def compute_fingerprint(canonical_url: str, title: str) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+# ── Dual-Tier Deduplication: SimHash (64-bit) & MinHash (64-Permutation) ─────────
+
+MERSENNE_PRIME = (1 << 61) - 1
+# Deterministic constants for 64 linear congruential hash permutations
+_MINHASH_A = [((i * 1000003 + 3) % (MERSENNE_PRIME - 1)) + 1 for i in range(64)]
+_MINHASH_B = [((i * 2000003 + 7) % (MERSENNE_PRIME - 1)) + 1 for i in range(64)]
+
+
+def compute_simhash64(text: str) -> int:
+    """Compute deterministic 64-bit SimHash for full-text / summary near-duplicate comparison.
+
+    Tokenizes text into words, computes MD5-based 64-bit hashes, accumulates sign weights,
+    and returns a 64-bit bitmask integer.
+    """
+    if not text:
+        return 0
+    words = re.findall(r"\b\w+\b", text.lower())
+    if not words:
+        return 0
+    v = [0] * 64
+    for w in words:
+        h = int.from_bytes(hashlib.md5(w.encode()).digest()[:8], "big")
+        for i in range(64):
+            if (h >> i) & 1:
+                v[i] += 1
+            else:
+                v[i] -= 1
+    fingerprint = 0
+    for i in range(64):
+        if v[i] > 0:
+            fingerprint |= 1 << i
+    return fingerprint
+
+
+def simhash_hamming_distance(h1: int, h2: int) -> int:
+    """Calculate bitwise Hamming distance between two 64-bit SimHash values."""
+    return bin(h1 ^ h2).count("1")
+
+
+def compute_minhash64(tokens: set[str]) -> list[int]:
+    """Compute 64-permutation MinHash signature for a token set using Carter-Wegman hashing."""
+    if not tokens:
+        return [0] * 64
+    token_hashes = [
+        int.from_bytes(hashlib.md5(t.encode()).digest()[:8], "big") for t in tokens
+    ]
+    signature: list[int] = []
+    for a, b in zip(_MINHASH_A, _MINHASH_B, strict=True):
+        min_val = min((a * th + b) % MERSENNE_PRIME for th in token_hashes)
+        signature.append(min_val)
+    return signature
+
+
+def minhash_jaccard_similarity(sig1: list[int], sig2: list[int]) -> float:
+    """Estimate Jaccard similarity between two 64-permutation MinHash signatures."""
+    if not sig1 or not sig2 or len(sig1) != len(sig2):
+        return 0.0
+    matches = sum(1 for x, y in zip(sig1, sig2, strict=True) if x == y)
+    return matches / len(sig1)
+
+
 class DeduplicationService:
     """Cross-source deduplication, fingerprinting, and Story clustering engine.
     Maintains a rolling window of recent stories (up to 14 days) to cluster
     corroborating entries arriving from different feeds.
+    Incorporates 64-bit SimHash and 64-permutation MinHash dual-tier indexing.
     """
 
-    def __init__(self, max_window_days: int = 14, similarity_threshold: float = 0.60):
+    def __init__(
+        self,
+        max_window_days: int = 14,
+        similarity_threshold: float = 0.60,
+        minhash_threshold: float = 0.35,
+        simhash_hamming_threshold: int = 4,
+    ):
         self.max_window_days = max_window_days
         self.similarity_threshold = similarity_threshold
+        self.minhash_threshold = minhash_threshold
+        self.simhash_hamming_threshold = simhash_hamming_threshold
+
         # In-memory index of active stories: story_id -> Story
         self._stories: dict[UUID, Story] = {}
         # Fast lookup indices
         self._fingerprint_to_story: dict[str, UUID] = {}
         self._canonical_url_to_story: dict[str, UUID] = {}
+        # Dual-tier signatures
+        self._story_simhashes: dict[UUID, int] = {}
+        self._story_minhashes: dict[UUID, list[int]] = {}
 
     def _evict_stale_stories(self) -> None:
         """Evict stories older than max_window_days (14-day freshness guard)."""
         cutoff = datetime.now(UTC) - timedelta(days=self.max_window_days)
-        stale_ids = [sid for sid, s in self._stories.items() if s.last_seen_at < cutoff]
+        stale_ids = [
+            sid for sid, s in self._stories.items() if s.last_seen_at < cutoff
+        ]
         for sid in stale_ids:
             story = self._stories.pop(sid, None)
             if story:
                 self._fingerprint_to_story.pop(story.fingerprint, None)
                 if story.canonical_url:
                     self._canonical_url_to_story.pop(story.canonical_url, None)
+                self._story_simhashes.pop(sid, None)
+                self._story_minhashes.pop(sid, None)
 
     def find_matching_story(self, entry: Entry) -> Story | None:
         """Find an existing Story matching the candidate entry within the active window."""
@@ -220,9 +323,32 @@ class DeduplicationService:
             if story_id in self._stories:
                 return self._stories[story_id]
 
-        # 3. Near-duplicate fuzzy title match within the same or complementary category
-        for story in self._stories.values():
-            # Only compare within 14-day window
+        # 3. Dual-Tier Deduplication:
+        # Tier 1: 64-bit SimHash Hamming distance on substantive full-text / summary
+        entry_text = f"{entry.title} {entry.summary}".strip()
+        entry_words = entry_text.split()
+        entry_simhash = compute_simhash64(entry_text) if len(entry_words) >= 8 else 0
+
+        # Tier 2: 64-Permutation MinHash on title tokens
+        entry_tokens = extract_title_tokens(entry.title)
+        entry_minhash = compute_minhash64(entry_tokens) if entry_tokens else []
+
+        for story_id, story in self._stories.items():
+            # Check SimHash Hamming distance (<= 4 bits indicates near-duplicate full-text)
+            if entry_simhash:
+                story_sh = self._story_simhashes.get(story_id, 0)
+                if story_sh and simhash_hamming_distance(entry_simhash, story_sh) <= self.simhash_hamming_threshold:
+                    return story
+
+            # Check 64-Permutation MinHash Jaccard (>= 0.35 flags syndicated wire rewrites)
+            if entry_minhash:
+                story_mh = self._story_minhashes.get(story_id)
+                if story_mh:
+                    est_jaccard = minhash_jaccard_similarity(entry_minhash, story_mh)
+                    if est_jaccard >= self.minhash_threshold:
+                        return story
+
+            # Baseline token Jaccard fallback
             similarity = compute_title_similarity(entry.title, story.title)
             if similarity >= self.similarity_threshold:
                 return story
@@ -263,7 +389,7 @@ class DeduplicationService:
             category=entry.category,
             summary=entry.summary,
             source_count=1,
-            confidence_score=0.60,
+            confidence_score=0.50,
             entry_ids=[entry.id],
             sources=[source_name] if source_name else [],
             tags=list(entry.tags),
@@ -282,6 +408,13 @@ class DeduplicationService:
         self._fingerprint_to_story[fp] = new_story.id
         if canon_url:
             self._canonical_url_to_story[canon_url] = new_story.id
+
+        # Register Dual-Tier Signatures
+        story_text = f"{new_story.title} {new_story.summary}".strip()
+        self._story_simhashes[new_story.id] = compute_simhash64(story_text)
+        self._story_minhashes[new_story.id] = compute_minhash64(
+            extract_title_tokens(new_story.title)
+        )
 
         return entry, new_story, True
 

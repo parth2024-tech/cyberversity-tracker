@@ -114,3 +114,26 @@ async def restore_purged_entries(
 ):
     """Manually restore all soft-purged entries back to active visibility in the dashboard."""
     return await service.restore_purged_entries()
+
+
+@stats_router.get("/recall-audit")
+async def get_recall_audit(
+    days: int = Query(
+        default=14,
+        ge=1,
+        le=30,
+        description="Rolling audit window in days",
+    ),
+    service: MonitorService = Depends(get_monitor_service),
+):
+    """Automated Lincoln-Petersen / Chapman capture-recapture recall audit across RSS and sitemap channels."""
+    from ai_security_monitor.application.services.recall_auditor import (
+        recall_auditor,
+    )
+    from ai_security_monitor.domain.repositories import PaginationParams
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        entries = await uow.entries.list(
+            pagination=PaginationParams(limit=1000, offset=0)
+        )
+    return recall_auditor.audit_entries(entries)

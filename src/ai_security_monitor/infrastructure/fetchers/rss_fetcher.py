@@ -64,6 +64,16 @@ class RSSFetcher(BaseFetcher):
             "Sec-Fetch-Site": "cross-site",
         }
 
+        # HTTP Conditional Request Handshake (ETag / If-Modified-Since)
+        source_cfg = self.source.config or {}
+        etag = source_cfg.get("etag")
+        last_modified = source_cfg.get("last_modified")
+
+        if etag:
+            stealth_headers["If-None-Match"] = str(etag)
+        if last_modified:
+            stealth_headers["If-Modified-Since"] = str(last_modified)
+
         async with httpx.AsyncClient(
             timeout=self.timeout,
             headers=stealth_headers,
@@ -72,6 +82,12 @@ class RSSFetcher(BaseFetcher):
             for target_url in urls:
                 try:
                     resp = await client.get(target_url)
+                    if resp.status_code == 304:
+                        logger.info(
+                            f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
+                            "Feed unchanged; skipping body payload."
+                        )
+                        return []
                     resp.raise_for_status()
                     response = resp
                     break
@@ -84,6 +100,16 @@ class RSSFetcher(BaseFetcher):
             if last_error:
                 raise last_error
             raise RuntimeError(f"Failed to retrieve feed from {self.source.url}")
+
+        # Persist ETag and Last-Modified for future conditional polls
+        if self.source.config is None:
+            self.source.config = {}
+        new_etag = response.headers.get("etag")
+        new_lm = response.headers.get("last-modified")
+        if new_etag:
+            self.source.config["etag"] = new_etag
+        if new_lm:
+            self.source.config["last_modified"] = new_lm
 
         raw_bytes: bytes = response.content
         if not raw_bytes or len(raw_bytes.strip()) == 0:

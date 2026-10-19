@@ -175,6 +175,51 @@ class DatabaseManager:
             except Exception:
                 pass
 
+            # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5("
+                            "title, summary, category, entry_id UNINDEXED"
+                            ")"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN "
+                            "INSERT INTO entries_fts(entry_id, title, summary, category) "
+                            "VALUES (new.id, new.title, new.summary, new.category); "
+                            "END;"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM entries_fts WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN "
+                            "DELETE FROM entries_fts WHERE entry_id = old.id; "
+                            "INSERT INTO entries_fts(entry_id, title, summary, category) "
+                            "VALUES (new.id, new.title, new.summary, new.category); "
+                            "END;"
+                        )
+                    )
+                    # Backfill existing entries into FTS5 index if table was newly created
+                    await conn.execute(
+                        text(
+                            "INSERT OR IGNORE INTO entries_fts(entry_id, title, summary, category) "
+                            "SELECT id, title, summary, category FROM entries "
+                            "WHERE is_purged = 0"
+                        )
+                    )
+            except Exception:
+                pass
+
 
 # Global database manager instance
 db_manager = DatabaseManager()

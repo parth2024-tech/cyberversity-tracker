@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy import and_, desc, func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -204,6 +204,53 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         result = await self._session.execute(stmt)
         return result.scalar() or 0
+
+    async def search_fts(self, query: str, limit: int = 50) -> builtins.list[Entry]:
+        """Sub-millisecond BM25 full-text search using SQLite FTS5 table."""
+        import re
+
+        clean_q = re.sub(r"[^\w\s\*\"]", " ", query).strip()
+        if not clean_q:
+            return []
+
+        try:
+            sql = text(
+                "SELECT entry_id, bm25(entries_fts) as rank "
+                "FROM entries_fts WHERE entries_fts MATCH :query "
+                "ORDER BY rank ASC LIMIT :limit"
+            )
+            result = await self._session.execute(
+                sql, {"query": clean_q, "limit": limit}
+            )
+            rows = result.fetchall()
+            if not rows:
+                return []
+
+            entry_ids = [r[0] for r in rows]
+            stmt = select(EntryModel).where(
+                EntryModel.id.in_(entry_ids),
+                EntryModel.is_purged.is_(False),
+            )
+            models_result = await self._session.execute(stmt)
+            models_by_id = {m.id: m for m in models_result.scalars().all()}
+            ordered = [models_by_id[eid] for eid in entry_ids if eid in models_by_id]
+            return [self._model_to_entity(m) for m in ordered]
+        except Exception:
+            # Fallback to ILIKE if FTS5 table is uninitialized
+            stmt = (
+                select(EntryModel)
+                .where(
+                    or_(
+                        EntryModel.title.ilike(f"%{clean_q}%"),
+                        EntryModel.summary.ilike(f"%{clean_q}%"),
+                    ),
+                    EntryModel.is_purged.is_(False),
+                )
+                .order_by(desc(EntryModel.published_at))
+                .limit(limit)
+            )
+            models_res = await self._session.execute(stmt)
+            return [self._model_to_entity(m) for m in models_res.scalars().all()]
 
     async def update(self, entry: Entry) -> Entry:
         stmt = select(EntryModel).where(EntryModel.id == _uuid_to_str(entry.id))

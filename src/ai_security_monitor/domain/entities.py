@@ -32,6 +32,7 @@ class SourceType(str, Enum):
     REDDIT = "reddit"
     GOOGLE_NEWS = "google_news"
     OSS_INSIGHT = "oss_insight"
+    SITEMAP = "sitemap"
 
 
 class FetchStatus(str, Enum):
@@ -122,7 +123,7 @@ class Story(Entity):
     category: Category
     summary: str = ""
     source_count: int = 1
-    confidence_score: float = 0.60  # 0.60 single, 0.85 corroborated, 0.98+ consensus
+    confidence_score: float = 0.50  # 0.50 single, 0.75 corroborated (2), 1.00 consensus (4+)
     entry_ids: list[UUID] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
@@ -131,18 +132,17 @@ class Story(Entity):
     last_seen_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def add_entry(self, entry: Entry, source_name: str | None = None) -> None:
-        """Add corroborating entry to story and boost evidence confidence."""
+        """Add corroborating entry to story and update decoupled factual confidence."""
+        import math
+
         if entry.id not in self.entry_ids:
             self.entry_ids.append(entry.id)
             if source_name and source_name not in self.sources:
                 self.sources.append(source_name)
             self.source_count = len(self.sources) or len(self.entry_ids)
-            if self.source_count == 1:
-                self.confidence_score = 0.60
-            elif self.source_count == 2:
-                self.confidence_score = 0.85
-            else:
-                self.confidence_score = min(0.99, 0.85 + (self.source_count - 2) * 0.05)
+            # Decoupled Factual Confidence: C = min(1.0, 0.50 + 0.25 * log2(N_sources))
+            n_src = max(1, self.source_count)
+            self.confidence_score = min(1.0, round(0.50 + 0.25 * math.log2(n_src), 2))
             self.last_seen_at = datetime.now(UTC)
             for tag in entry.tags:
                 if tag not in self.tags:

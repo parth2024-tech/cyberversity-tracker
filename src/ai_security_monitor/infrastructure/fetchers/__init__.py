@@ -15,6 +15,7 @@ from ai_security_monitor.infrastructure.fetchers import (
     ossinsight_fetcher,
     reddit_fetcher,
     rss_fetcher,
+    sitemap_fetcher,
 )
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
@@ -39,4 +40,5 @@ __all__ = [
     "ossinsight_fetcher",
     "reddit_fetcher",
     "rss_fetcher",
+    "sitemap_fetcher",
 ]

@@ -338,7 +338,7 @@ class ArticleExtractor:
         return None
 
     async def _extract_generic_web(self, url: str, domain: str) -> str | None:
-        """Scrape and parse substantive article body from general web editorial pages."""
+        """Scrape and parse substantive article body using Trafilatura recall cascade."""
         try:
             async with httpx.AsyncClient(
                 timeout=self.timeout, headers=self._headers, follow_redirects=True
@@ -347,6 +347,23 @@ class ArticleExtractor:
                 if res.status_code == 200 and "text/html" in res.headers.get(
                     "content-type", ""
                 ):
+                    # 1. Cascade Tier 1: Trafilatura decision-tree extraction (favor_recall=True)
+                    try:
+                        import trafilatura
+
+                        extracted_text = trafilatura.extract(
+                            res.text,
+                            favor_recall=True,
+                            include_comments=False,
+                            include_tables=False,
+                            output_format="txt",
+                        )
+                        if extracted_text and len(extracted_text.split()) >= 45:
+                            return self._clean_raw_text(extracted_text)
+                    except Exception as traf_err:
+                        logger.debug(f"Trafilatura cascade fallback: {traf_err}")
+
+                    # 2. Cascade Tier 2: Heuristic DOM parsing with BeautifulSoup
                     return self._parse_html_body(res.content, domain)
         except Exception as err:
             logger.debug(f"Direct scrape failed for {url} ({err})")

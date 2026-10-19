@@ -106,6 +106,10 @@ class EntryRepository(ABC):
         """Delete multiple entries by IDs. Returns count of deleted entries."""
         return 0
 
+    async def search_fts(self, query: str, limit: int = 50) -> builtins.list[Entry]:
+        """Perform full-text search with BM25 ranking."""
+        return []
+
     @abstractmethod
     async def get_unanalyzed(
         self,

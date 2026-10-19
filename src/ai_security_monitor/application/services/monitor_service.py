@@ -797,7 +797,15 @@ class MonitorService:
             fetched_at=datetime.now(UTC),
         )
 
+        source.last_fetched_at = log.fetched_at
+        source.last_status = log.status
+        source.last_entries_new = log.entries_new
+
         async with self._uow_factory() as uow:
+            try:
+                await uow.sources.update(source)
+            except Exception as update_err:
+                logger.debug(f"Failed to update source telemetry: {update_err}")
             await uow.fetch_logs.add(log)
             await uow.commit()
 
@@ -825,31 +833,43 @@ class MonitorService:
         }
         sources.sort(key=lambda s: (source_priority_order.get(s.category, 99), s.name))
 
-        # Respect source-level rate limits and cooldown unless force=True
+        # Respect source-level adaptive rate limits and cooldown unless force=True
         if not force:
             now_utc = datetime.now(UTC)
             eligible_sources = []
+            from ai_security_monitor.application.services.source_health_service import (
+                source_health_service,
+            )
+
             for s in sources:
                 last = s.last_fetched_at
                 if last:
                     if last.tzinfo is None:
                         last = last.replace(tzinfo=UTC)
-                    limit_sec = (
-                        s.rate_limit_seconds or settings.fetch.rate_limit_default
+                    # Adaptive dynamic scheduling (Technique 4)
+                    base_sec = s.rate_limit_seconds or settings.fetch.rate_limit_default
+                    adaptive_sec = source_health_service.get_adaptive_interval(
+                        s.name, fallback_seconds=base_sec
                     )
+                    limit_sec = min(base_sec, adaptive_sec) if s.rate_limit_seconds else adaptive_sec
                     if (now_utc - last).total_seconds() < limit_sec:
                         continue
                 eligible_sources.append(s)
             sources = eligible_sources
 
-        # Adaptive concurrency: scales with source count, capped at configurable max_concurrency
+        # Resource-governed concurrency scaling with AutoscaledPool (Technique 7)
+        from ai_security_monitor.infrastructure.fetchers.autoscaled_pool import (
+            AutoscaledPool,
+        )
+
         target_concurrency = (
             max_concurrency
             if max_concurrency is not None
             else settings.fetch.max_concurrency
         )
-        concurrency = max(1, min(len(sources), target_concurrency)) if sources else 4
-        sem = asyncio.Semaphore(concurrency)
+        pool = AutoscaledPool(
+            max_concurrency=max(1, min(len(sources), target_concurrency)) if sources else 4
+        )
         total_new = 0
         success = 0
         error = 0
@@ -857,7 +877,7 @@ class MonitorService:
 
         async def _worker(src: Source) -> None:
             nonlocal total_new, success, error
-            async with sem:
+            async with pool:
                 try:
                     # arXiv sources queue behind a class-level 3s pacing lock.
                     # With 14 regional arXiv fetchers, the last waits 39s+ before

@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from ai_security_monitor.application.services.deduplication_service import (
     deduplication_service,
@@ -149,11 +150,15 @@ class TopicRelevanceSignal(ScoringSignal):
 
 
 class StoryCorroborationSignal(ScoringSignal):
-    """Scores cross-source confirmation from multiple independent sources."""
+    """Scores cross-source confirmation from multiple independent sources.
+    Uses logarithmic factual confidence: C = min(1.0, 0.50 + 0.25 * log2(N_sources)).
+    """
 
     name = "corroboration"
 
     def evaluate(self, entry: Entry, context: dict | None = None) -> tuple[float, str]:
+        import math
+
         story_id = entry.story_id
         if not story_id and context and "story" in context:
             story = context["story"]
@@ -163,18 +168,93 @@ class StoryCorroborationSignal(ScoringSignal):
             story = None
 
         if not story:
-            return 0.50, "Single-source observation"
+            return 0.50, "Single-source observation (Confidence: 0.50)"
 
-        sources_count = story.source_count
-        if sources_count >= 3:
+        n_sources = max(1, story.source_count)
+        # Logarithmic factual confidence: C = min(1.0, 0.50 + 0.25 * log2(N_sources))
+        confidence = min(1.0, round(0.50 + 0.25 * math.log2(n_sources), 2))
+
+        if n_sources >= 3:
             return (
-                1.0,
-                f"Multi-source confirmed consensus ({sources_count} sources: {', '.join(story.sources[:3])})",
+                confidence,
+                f"Multi-source verified consensus ({n_sources} sources, Conf: {confidence:.2f})",
             )
-        if sources_count == 2:
-            return 0.80, f"Cross-source corroborated ({', '.join(story.sources)})"
+        if n_sources == 2:
+            return (
+                confidence,
+                f"Cross-source corroborated ({', '.join(story.sources)}, Conf: {confidence:.2f})",
+            )
 
-        return 0.50, "Single source reporting"
+        return confidence, f"Single-source reporting (Conf: {confidence:.2f})"
+
+
+def compute_decoupled_scores(entry: Entry) -> dict[str, float]:
+    """Calculate decoupled Factual Confidence vs. Importance Score.
+
+    - Factual confidence: scales logarithmically with independent reporting domains:
+      C = min(1.0, 0.50 + 0.25 * log2(N_sources))
+    - Importance: scales with technical significance (reasoning breakthroughs, open weights, infra)
+      decayed by publication age: I = I_base * exp(-lambda * t_hours)
+    """
+    import math
+
+    # 1. Factual confidence
+    story = (
+        deduplication_service.get_story(entry.story_id) if entry.story_id else None
+    )
+    n_sources = story.source_count if story else 1
+    confidence = min(1.0, round(0.50 + 0.25 * math.log2(max(1, n_sources)), 2))
+
+    # 2. Base technical importance
+    text = f"{entry.title} {entry.summary}".lower()
+    cat_val = (
+        entry.category.value
+        if hasattr(entry.category, "value")
+        else str(entry.category)
+    )
+
+    base_importance = 0.50
+    if any(
+        k in text
+        for k in (
+            "reasoning",
+            "deepseek-r1",
+            "r1",
+            "o1",
+            "o3",
+            "test-time compute",
+        )
+    ):
+        base_importance = 1.00
+    elif cat_val == "ai_models" or any(
+        k in text for k in ("deepseek", "qwen", "weights released", "open weights")
+    ):
+        base_importance = 0.90
+    elif any(
+        k in text for k in ("vllm", "sglang", "llama.cpp", "ollama", "tensorrt")
+    ):
+        base_importance = 0.85
+    elif cat_val in ("github_trending", "ai_research"):
+        base_importance = 0.75
+
+    # 3. Time decay: lambda = 0.005 (~50% retention after 6 days)
+    pub = entry.published_at
+    if pub:
+        if pub.tzinfo is None:
+            pub = pub.replace(tzinfo=UTC)
+        age_hours = max(0.0, (datetime.now(UTC) - pub).total_seconds() / 3600.0)
+    else:
+        age_hours = 0.0
+
+    decay = math.exp(-0.005 * age_hours)
+    decayed_importance = round(base_importance * decay, 3)
+
+    return {
+        "factual_confidence": confidence,
+        "importance_score": decayed_importance,
+        "base_importance": base_importance,
+        "age_hours": round(age_hours, 1),
+    }
 
 
 class VaultAffinitySignal(ScoringSignal):
@@ -298,6 +378,15 @@ class ScoringPipeline:
             " + ".join(reasons[:2]) if reasons else "Standard ecosystem telemetry"
         )
         explanation = f"{tier} [Score: {composite}]: {key_reasons}"
+
+        # Attach Decoupled Factual Confidence and Decayed Importance Score
+        decoupled = compute_decoupled_scores(entry)
+        breakdown["factual_confidence"] = decoupled["factual_confidence"]
+        breakdown["importance_score"] = decoupled["importance_score"]
+        if entry.metadata is None:
+            entry.metadata = {}
+        entry.metadata["factual_confidence"] = decoupled["factual_confidence"]
+        entry.metadata["importance_score"] = decoupled["importance_score"]
 
         return ScoringResult(
             priority=priority,
