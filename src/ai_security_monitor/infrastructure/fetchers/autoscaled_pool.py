@@ -40,15 +40,11 @@ def get_system_resource_metrics() -> dict[str, Any]:
                     for line in f:
                         parts = line.split(":")
                         if len(parts) == 2:
-                            meminfo[parts[0].strip()] = int(
-                                parts[1].strip().split()[0]
-                            )
+                            meminfo[parts[0].strip()] = int(parts[1].strip().split()[0])
                 total_kb = meminfo.get("MemTotal", 16000000)
                 avail_kb = meminfo.get("MemAvailable", total_kb // 2)
                 available_mb = avail_kb / 1024.0
-                ram_percent = max(
-                    0.0, min(100.0, (1.0 - avail_kb / total_kb) * 100.0)
-                )
+                ram_percent = max(0.0, min(100.0, (1.0 - avail_kb / total_kb) * 100.0))
 
             load1, _, _ = os.getloadavg()
             cpu_count = os.cpu_count() or 4

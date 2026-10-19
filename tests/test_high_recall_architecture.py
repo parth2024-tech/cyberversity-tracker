@@ -71,7 +71,10 @@ async def test_rss_fetcher_conditional_handshake(monkeypatch):
         category=Category.AI_MODELS,
         type=SourceType.RSS,
         url="https://example.com/feed.xml",
-        config={"etag": '"abc123xyz"', "last_modified": "Mon, 19 Oct 2026 12:00:00 GMT"},
+        config={
+            "etag": '"abc123xyz"',
+            "last_modified": "Mon, 19 Oct 2026 12:00:00 GMT",
+        },
     )
     fetcher = RSSFetcher(source)
 
@@ -86,6 +89,7 @@ async def test_rss_fetcher_conditional_handshake(monkeypatch):
         return Mock304Response()
 
     import httpx
+
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
     result = await fetcher._fetch_raw()
@@ -166,12 +170,15 @@ async def test_trafilatura_extraction_cascade(monkeypatch):
         content = sample_html.encode("utf-8")
 
     import httpx
+
     async def mock_get(self, url, **kwargs):
         return MockWebResponse()
 
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
-    result = await extractor._extract_generic_web("https://example.com/deepseek-r1", "example.com")
+    result = await extractor._extract_generic_web(
+        "https://example.com/deepseek-r1", "example.com"
+    )
     assert result is not None
     assert "DeepSeek-R1" in result or "reasoning" in result.lower()
     assert len(result.split()) >= 20
@@ -204,7 +211,9 @@ def test_adaptive_dynamic_scheduling():
     service = SourceHealthService()
     service._sources["High Velocity Lab"] = metrics
     assert service.get_adaptive_interval("High Velocity Lab") == 180
-    assert service.get_adaptive_interval("Unknown Source", fallback_seconds=3600) == 3600
+    assert (
+        service.get_adaptive_interval("Unknown Source", fallback_seconds=3600) == 3600
+    )
 
 
 # ── Technique 5: Canonical URL Normalization ────────────────────────────────
@@ -264,7 +273,7 @@ def test_simhash_and_minhash_deduplication():
     jaccard_ac = minhash_jaccard_similarity(sig_a, sig_c)
 
     assert jaccard_ab >= 0.35  # Syndicated wire variation
-    assert jaccard_ac < 0.15   # Unrelated
+    assert jaccard_ac < 0.15  # Unrelated
 
     # Verify integration with DeduplicationService
     dedup = DeduplicationService(similarity_threshold=0.60, minhash_threshold=0.35)
@@ -329,8 +338,8 @@ def test_decoupled_factual_confidence_and_importance():
 
     scores = compute_decoupled_scores(entry)
     assert scores["factual_confidence"] == 0.50  # Single source base
-    assert scores["base_importance"] == 1.00     # Reasoning breakthrough
-    assert scores["importance_score"] < 1.00     # Decayed after 24h
+    assert scores["base_importance"] == 1.00  # Reasoning breakthrough
+    assert scores["importance_score"] < 1.00  # Decayed after 24h
     assert scores["importance_score"] > 0.85
 
     # Multi-source corroboration confidence check
@@ -384,8 +393,12 @@ def test_sqlite_fts5_triggers_and_bm25_search():
     cur.execute("PRAGMA journal_mode=WAL")
     cur.execute("PRAGMA synchronous=NORMAL")
 
-    cur.execute("CREATE TABLE entries (id TEXT PRIMARY KEY, title TEXT, summary TEXT, category TEXT, is_purged INTEGER DEFAULT 0)")
-    cur.execute("CREATE VIRTUAL TABLE entries_fts USING fts5(title, summary, category, entry_id UNINDEXED)")
+    cur.execute(
+        "CREATE TABLE entries (id TEXT PRIMARY KEY, title TEXT, summary TEXT, category TEXT, is_purged INTEGER DEFAULT 0)"
+    )
+    cur.execute(
+        "CREATE VIRTUAL TABLE entries_fts USING fts5(title, summary, category, entry_id UNINDEXED)"
+    )
 
     cur.execute("""
     CREATE TRIGGER entries_ai AFTER INSERT ON entries BEGIN
@@ -405,8 +418,12 @@ def test_sqlite_fts5_triggers_and_bm25_search():
     """)
 
     # Insert items
-    cur.execute("INSERT INTO entries VALUES ('id1', 'DeepSeek-V3 Open Weights Release', 'Mixture of experts model architecture', 'ai_models', 0)")
-    cur.execute("INSERT INTO entries VALUES ('id2', 'vLLM Fast Inference Engine', 'High throughput paged attention serving', 'cyber_tools', 0)")
+    cur.execute(
+        "INSERT INTO entries VALUES ('id1', 'DeepSeek-V3 Open Weights Release', 'Mixture of experts model architecture', 'ai_models', 0)"
+    )
+    cur.execute(
+        "INSERT INTO entries VALUES ('id2', 'vLLM Fast Inference Engine', 'High throughput paged attention serving', 'cyber_tools', 0)"
+    )
 
     # BM25 Search
     results = cur.execute(
@@ -417,7 +434,9 @@ def test_sqlite_fts5_triggers_and_bm25_search():
 
     # Delete item and verify trigger synchronization
     cur.execute("DELETE FROM entries WHERE id = 'id1'")
-    after_del = cur.execute("SELECT entry_id FROM entries_fts WHERE entry_id = 'id1'").fetchall()
+    after_del = cur.execute(
+        "SELECT entry_id FROM entries_fts WHERE entry_id = 'id1'"
+    ).fetchall()
     assert len(after_del) == 0
 
 
@@ -439,10 +458,42 @@ def test_lincoln_petersen_chapman_recall_auditor():
     auditor = RecallAuditorService(window_days=14)
     now = datetime.now(UTC)
     entries = [
-        Entry(source_id=uuid4(), title="Art 1", url="https://example.com/art1", content_hash="h1", published_at=now, category=Category.AI_MODELS, metadata={"channel": "rss"}),
-        Entry(source_id=uuid4(), title="Art 2", url="https://example.com/art2", content_hash="h2", published_at=now, category=Category.AI_MODELS, metadata={"channel": "rss"}),
-        Entry(source_id=uuid4(), title="Art 2", url="https://example.com/art2", content_hash="h2_sm", published_at=now, category=Category.AI_MODELS, metadata={"channel": "sitemap"}),
-        Entry(source_id=uuid4(), title="Art 3", url="https://example.com/art3", content_hash="h3", published_at=now, category=Category.AI_MODELS, metadata={"channel": "sitemap"}),
+        Entry(
+            source_id=uuid4(),
+            title="Art 1",
+            url="https://example.com/art1",
+            content_hash="h1",
+            published_at=now,
+            category=Category.AI_MODELS,
+            metadata={"channel": "rss"},
+        ),
+        Entry(
+            source_id=uuid4(),
+            title="Art 2",
+            url="https://example.com/art2",
+            content_hash="h2",
+            published_at=now,
+            category=Category.AI_MODELS,
+            metadata={"channel": "rss"},
+        ),
+        Entry(
+            source_id=uuid4(),
+            title="Art 2",
+            url="https://example.com/art2",
+            content_hash="h2_sm",
+            published_at=now,
+            category=Category.AI_MODELS,
+            metadata={"channel": "sitemap"},
+        ),
+        Entry(
+            source_id=uuid4(),
+            title="Art 3",
+            url="https://example.com/art3",
+            content_hash="h3",
+            published_at=now,
+            category=Category.AI_MODELS,
+            metadata={"channel": "sitemap"},
+        ),
     ]
 
     audit = auditor.audit_entries(entries)

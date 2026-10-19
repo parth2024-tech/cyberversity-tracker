@@ -199,9 +199,7 @@ def compute_decoupled_scores(entry: Entry) -> dict[str, float]:
     import math
 
     # 1. Factual confidence
-    story = (
-        deduplication_service.get_story(entry.story_id) if entry.story_id else None
-    )
+    story = deduplication_service.get_story(entry.story_id) if entry.story_id else None
     n_sources = story.source_count if story else 1
     confidence = min(1.0, round(0.50 + 0.25 * math.log2(max(1, n_sources)), 2))
 
@@ -230,9 +228,7 @@ def compute_decoupled_scores(entry: Entry) -> dict[str, float]:
         k in text for k in ("deepseek", "qwen", "weights released", "open weights")
     ):
         base_importance = 0.90
-    elif any(
-        k in text for k in ("vllm", "sglang", "llama.cpp", "ollama", "tensorrt")
-    ):
+    elif any(k in text for k in ("vllm", "sglang", "llama.cpp", "ollama", "tensorrt")):
         base_importance = 0.85
     elif cat_val in ("github_trending", "ai_research"):
         base_importance = 0.75

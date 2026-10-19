@@ -34,6 +34,7 @@ class SourceType(str, Enum):
     OSS_INSIGHT = "oss_insight"
     SITEMAP = "sitemap"
     HUGGINGFACE_TRENDING = "huggingface_trending"
+    TWITTER_X = "twitter_x"
 
 
 class FetchStatus(str, Enum):
@@ -124,7 +125,9 @@ class Story(Entity):
     category: Category
     summary: str = ""
     source_count: int = 1
-    confidence_score: float = 0.50  # 0.50 single, 0.75 corroborated (2), 1.00 consensus (4+)
+    confidence_score: float = (
+        0.50  # 0.50 single, 0.75 corroborated (2), 1.00 consensus (4+)
+    )
     entry_ids: list[UUID] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)

@@ -290,11 +290,19 @@ class RSSFetcher(BaseFetcher):
                         for p in ("features", "pricing", "about", "site", "topics")
                     ):
                         extracted_repo_url = f"https://github.com/{repo_path}"
-                elif "reddit.com/r/" in item_url.lower() and self.source.category == Category.GITHUB_TRENDING:
+                elif (
+                    "reddit.com/r/" in item_url.lower()
+                    and self.source.category == Category.GITHUB_TRENDING
+                ):
                     # Skip meta / newsletter announcements that don't contain any GitHub repository
                     if any(
                         spam_kw in clean_title.lower()
-                        for spam_kw in ("never miss", "newsletter", "weekly digest", "join our")
+                        for spam_kw in (
+                            "never miss",
+                            "newsletter",
+                            "weekly digest",
+                            "join our",
+                        )
                     ):
                         continue
 

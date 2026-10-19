@@ -504,7 +504,9 @@ class GitHubTrendingFetcher(BaseFetcher):
             "per_page": 30,
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout or 25.0, headers=headers) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout or 25.0, headers=headers
+        ) as client:
             response = await client.get(url, params=params)
             if response.status_code != 200:
                 # Fallback query: relax to just topic + language + stars

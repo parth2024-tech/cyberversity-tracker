@@ -94,3 +94,42 @@ async def test_reddit_fetcher_parses_posts_and_comments(reddit_source: Source):
         assert "eval_expert" in entry.summary
         assert entry.metadata["score"] == 450
         assert entry.metadata["source_type"] == "reddit"
+
+
+@pytest.mark.asyncio
+async def test_reddit_fetcher_fallback_on_429(reddit_source: Source):
+    """When direct Reddit is throttled (429), fetcher should invoke search fallback."""
+    mock_resp_429 = MagicMock()
+    mock_resp_429.status_code = 429
+
+    mock_resp_rss = MagicMock()
+    mock_resp_rss.status_code = 200
+    mock_resp_rss.text = """<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Reddit Search</title>
+        <item>
+          <title>Llama 4 preview benchmarks on 8x H100 - Reddit</title>
+          <link>https://www.reddit.com/r/LocalLLaMA/comments/xyz123/llama_4/</link>
+          <description>Throughput tests on local clusters.</description>
+          <pubDate>Mon, 19 Oct 2026 12:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    async def fake_get(url, *args, **kwargs):
+        if "google.com" in url:
+            return mock_resp_rss
+        return mock_resp_429
+
+    with patch("httpx.AsyncClient.get", side_effect=fake_get):
+        fetcher = RedditFetcher(reddit_source)
+        result = await fetcher.fetch()
+
+        assert result.status.value == "success"
+        assert len(result.entries) >= 1
+        entry = result.entries[0]
+        assert "Llama 4" in entry.title
+        assert "Throughput tests" in entry.summary
+        assert entry.metadata["source_type"] == "reddit"

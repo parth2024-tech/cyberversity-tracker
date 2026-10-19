@@ -133,8 +133,7 @@ def canonicalize_url(url: str) -> str:
             filtered_query = [
                 (k, v)
                 for k, v in query_pairs
-                if k.lower() not in TRACKING_PARAMS
-                and not k.lower().startswith("utm_")
+                if k.lower() not in TRACKING_PARAMS and not k.lower().startswith("utm_")
             ]
             filtered_query.sort()
 
@@ -293,9 +292,7 @@ class DeduplicationService:
     def _evict_stale_stories(self) -> None:
         """Evict stories older than max_window_days (14-day freshness guard)."""
         cutoff = datetime.now(UTC) - timedelta(days=self.max_window_days)
-        stale_ids = [
-            sid for sid, s in self._stories.items() if s.last_seen_at < cutoff
-        ]
+        stale_ids = [sid for sid, s in self._stories.items() if s.last_seen_at < cutoff]
         for sid in stale_ids:
             story = self._stories.pop(sid, None)
             if story:
@@ -337,7 +334,11 @@ class DeduplicationService:
             # Check SimHash Hamming distance (<= 4 bits indicates near-duplicate full-text)
             if entry_simhash:
                 story_sh = self._story_simhashes.get(story_id, 0)
-                if story_sh and simhash_hamming_distance(entry_simhash, story_sh) <= self.simhash_hamming_threshold:
+                if (
+                    story_sh
+                    and simhash_hamming_distance(entry_simhash, story_sh)
+                    <= self.simhash_hamming_threshold
+                ):
                     return story
 
             # Check 64-Permutation MinHash Jaccard (>= 0.35 flags syndicated wire rewrites)

@@ -851,7 +851,11 @@ class MonitorService:
                     adaptive_sec = source_health_service.get_adaptive_interval(
                         s.name, fallback_seconds=base_sec
                     )
-                    limit_sec = min(base_sec, adaptive_sec) if s.rate_limit_seconds else adaptive_sec
+                    limit_sec = (
+                        min(base_sec, adaptive_sec)
+                        if s.rate_limit_seconds
+                        else adaptive_sec
+                    )
                     if (now_utc - last).total_seconds() < limit_sec:
                         continue
                 eligible_sources.append(s)
@@ -868,7 +872,9 @@ class MonitorService:
             else settings.fetch.max_concurrency
         )
         pool = AutoscaledPool(
-            max_concurrency=max(1, min(len(sources), target_concurrency)) if sources else 4
+            max_concurrency=max(1, min(len(sources), target_concurrency))
+            if sources
+            else 4
         )
         total_new = 0
         success = 0
@@ -883,7 +889,14 @@ class MonitorService:
                     # and search API fallbacks. Give them 90s so they complete cleanly.
                     source_timeout = (
                         90.0
-                        if src.type.value in ("arxiv", "github_trending", "huggingface_trending")
+                        if src.type.value
+                        in (
+                            "arxiv",
+                            "github_trending",
+                            "huggingface_trending",
+                            "twitter_x",
+                            "reddit",
+                        )
                         else 30.0
                     )
                     log = await asyncio.wait_for(

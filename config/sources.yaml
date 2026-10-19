@@ -530,28 +530,127 @@ sources:
   enabled: true
   region: apac
   country: CN
-- name: Reddit r/LocalLLaMA (Open Weights Drops)
+- name: Reddit r/LocalLLaMA (Open Weights & Local AI)
   category: ai_models
-  type: rss
-  url: https://www.reddit.com/r/LocalLLaMA/.rss
+  type: reddit
+  url: https://www.reddit.com/r/LocalLLaMA
   rate_limit_seconds: 1800
   enabled: true
   region: global
   country: GLOBAL
   config:
-    mirrors:
-      - https://old.reddit.com/r/LocalLLaMA/.rss
+    subreddits:
+      - LocalLLaMA
+    fetch_limit: 15
+
+- name: Reddit r/MachineLearning (Research & Breakthroughs)
+  category: ai_research
+  type: reddit
+  url: https://www.reddit.com/r/MachineLearning
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    subreddits:
+      - MachineLearning
+    fetch_limit: 15
+
+- name: Reddit r/Singularity (Frontier Models & AGI)
+  category: ai_models
+  type: reddit
+  url: https://www.reddit.com/r/Singularity
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    subreddits:
+      - Singularity
+    fetch_limit: 15
+
+- name: Reddit r/ArtificialIntelligence (Global AI Radar)
+  category: ai_tech
+  type: reddit
+  url: https://www.reddit.com/r/ArtificialIntelligence
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    subreddits:
+      - ArtificialIntelligence
+    fetch_limit: 15
+
+- name: Reddit r/OpenSource (Open-Source AI & Developer Tools)
+  category: cyber_tools
+  type: reddit
+  url: https://www.reddit.com/r/OpenSource
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    subreddits:
+      - OpenSource
+    fetch_limit: 15
+
 - name: Reddit r/BestGitHubRepos (Trending Open-Source Projects)
   category: github_trending
-  type: rss
-  url: https://www.reddit.com/r/BestGitHubRepos/.rss
+  type: reddit
+  url: https://www.reddit.com/r/BestGitHubRepos
   rate_limit_seconds: 1800
   enabled: true
   region: global
   country: GLOBAL
   config:
-    mirrors:
-      - https://old.reddit.com/r/BestGitHubRepos/.rss
+    subreddits:
+      - BestGitHubRepos
+    fetch_limit: 15
+
+- name: "X / Twitter: Frontier AI Models & Releases"
+  category: ai_models
+  type: twitter_x
+  url: https://x.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    queries:
+      - 'site:x.com ("DeepSeek" OR "Claude" OR "OpenAI" OR "Qwen" OR "Llama") model when:14d'
+    fetch_limit: 20
+
+- name: "X / Twitter: AI Research & Preprint Breakthroughs"
+  category: ai_research
+  type: twitter_x
+  url: https://x.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    queries:
+      - 'site:x.com ("arXiv" OR "benchmark" OR "reasoning model") AI when:14d'
+      - 'site:x.com/_akhaliq when:14d'
+      - 'site:x.com/karpathy when:14d'
+      - 'site:x.com/sama when:14d'
+    fetch_limit: 20
+
+- name: "X / Twitter: AI Developer Tools & Inference Runtimes"
+  category: cyber_tools
+  type: twitter_x
+  url: https://x.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    queries:
+      - 'site:x.com ("vLLM" OR "Ollama" OR "SGLang" OR "llama.cpp" OR "ComfyUI") when:14d'
+      - 'site:x.com ("agent" OR "coding agent" OR "AI agent") framework when:14d'
+    fetch_limit: 20
+
 - name: Hugging Face Model Releases
   category: ai_models
   type: rss

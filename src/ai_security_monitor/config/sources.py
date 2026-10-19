@@ -71,6 +71,7 @@ class SourceConfig(BaseModel):
             "oss_insight",
             "sitemap",
             "huggingface_trending",
+            "twitter_x",
         }
         if v not in allowed:
             raise ValueError(f"Type must be one of {allowed}")

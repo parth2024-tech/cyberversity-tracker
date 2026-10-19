@@ -17,6 +17,7 @@ from ai_security_monitor.infrastructure.fetchers import (
     reddit_fetcher,
     rss_fetcher,
     sitemap_fetcher,
+    twitter_x_fetcher,
 )
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
@@ -43,4 +44,5 @@ __all__ = [
     "reddit_fetcher",
     "rss_fetcher",
     "sitemap_fetcher",
+    "twitter_x_fetcher",
 ]
