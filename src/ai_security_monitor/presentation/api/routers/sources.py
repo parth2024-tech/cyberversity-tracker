@@ -11,6 +11,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ai_security_monitor.core.auth import require_admin_auth
+from ai_security_monitor.domain.entities import Category, Source, SourceType
+from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -23,7 +25,16 @@ class SourceToggleRequest(BaseModel):
     enabled: bool
 
 
-from ai_security_monitor.infrastructure.cache import response_cache
+class SourceCreateRequest(BaseModel):
+    name: str
+    url: str
+    category: str = "github_trending"
+    type: str = "rss"
+    rate_limit_seconds: int = 300
+    enabled: bool = True
+    query: str | None = None
+    config: dict = {}
+
 
 
 @sources_router.get("")
@@ -119,3 +130,84 @@ async def trigger_fetch_sweep(
         "results": results,
         "queued_pushed": queued_pushed,
     }
+
+
+@sources_router.post("")
+@sources_router.post("/")
+async def create_source(
+    req: SourceCreateRequest,
+    _admin: bool = Depends(require_admin_auth),
+):
+    """Add a new intelligence source to the registry."""
+    try:
+        cat_enum = Category(req.category)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid category '{req.category}'. Allowed: {[c.value for c in Category]}",
+        )
+
+    try:
+        type_enum = SourceType(req.type)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid source type '{req.type}'. Allowed: {[t.value for t in SourceType]}",
+        )
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        existing = await uow.sources.get_by_name(req.name)
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"A source with name '{req.name}' already exists",
+            )
+
+        new_source = Source(
+            name=req.name,
+            url=req.url,
+            category=cat_enum,
+            type=type_enum,
+            rate_limit_seconds=req.rate_limit_seconds,
+            enabled=req.enabled,
+            query=req.query,
+            config=req.config,
+        )
+        created = await uow.sources.add(new_source)
+        await uow.commit()
+
+    response_cache.invalidate_prefix("sources_")
+    return {
+        "status": "success",
+        "id": str(created.id),
+        "name": created.name,
+        "category": created.category.value,
+        "type": created.type.value,
+        "enabled": created.enabled,
+    }
+
+
+@sources_router.delete("/{source_id}")
+async def delete_source(
+    source_id: str,
+    _admin: bool = Depends(require_admin_auth),
+):
+    """Delete an intelligence source from the registry."""
+    try:
+        s_uuid = UUID(source_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid source UUID")
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        deleted = await uow.sources.delete(s_uuid)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Source not found")
+        await uow.commit()
+
+    response_cache.invalidate_prefix("sources_")
+    return {
+        "status": "success",
+        "deleted_id": source_id,
+        "message": "Source successfully deleted",
+    }
+

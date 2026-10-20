@@ -90,6 +90,11 @@ Repository = "https://github.com/parth2024-tech/cyberversity-tracker.git"
 Documentation = "https://github.com/parth2024-tech/cyberversity-tracker#readme"
 "Bug Tracker" = "https://github.com/parth2024-tech/cyberversity-tracker/issues"
 
+[project.scripts]
+aetherguard = "ai_security_monitor.presentation.cli.main:main"
+ai-security-monitor = "ai_security_monitor.presentation.cli.main:main"
+
+
 
 [tool.setuptools.packages.find]
 where = ["src"]

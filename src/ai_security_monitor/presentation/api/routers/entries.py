@@ -713,11 +713,12 @@ async def get_entry_by_id(entry_id: str):
 
 
 @entries_router.post("/{entry_id}/toggle-vault")
+@entries_router.post("/{entry_id}/vault")
 async def toggle_entry_vault(
     entry_id: str,
     reason: str | None = Query(None),
 ):
-    """Toggle entry in the Permanent Important Vault with SQLite persistence."""
+    """Toggle or pin entry in the Permanent Important Vault with persistence."""
     from uuid import UUID
 
     from ai_security_monitor.domain.exceptions import EntityNotFoundError

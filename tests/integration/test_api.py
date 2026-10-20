@@ -251,3 +251,86 @@ async def test_production_essentials_and_legal_pages():
         resp_apple = await client.get("/apple-touch-icon.png")
         assert resp_apple.status_code == 200
         assert resp_apple.headers["content-type"] == "image/png"
+
+
+@pytest.mark.asyncio
+async def test_api_v1_versioning_and_vault_endpoints():
+    """Verify /api/v1 versioning and dedicated Vault endpoints."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # /api/v1/health
+        resp_v1_health = await client.get("/api/v1/health")
+        assert resp_v1_health.status_code == 200
+        assert resp_v1_health.json()["status"] in ("healthy", "ok")
+
+        # /api/v1/entries
+        resp_v1_entries = await client.get("/api/v1/entries?limit=5")
+        assert resp_v1_entries.status_code == 200
+        assert "entries" in resp_v1_entries.json()
+
+        # Dedicated /api/vault and /api/v1/vault
+        resp_vault = await client.get("/api/vault")
+        assert resp_vault.status_code == 200
+        assert "entries" in resp_vault.json()
+
+        resp_v1_vault = await client.get("/api/v1/vault")
+        assert resp_v1_vault.status_code == 200
+        assert "entries" in resp_v1_vault.json()
+
+        # Pin and unpin an entry via dedicated vault routes
+        entries = resp_v1_entries.json()["entries"]
+        if entries:
+            target_id = entries[0]["id"]
+            pin_resp = await client.post(
+                f"/api/vault/{target_id}",
+                json={"reason": "Test research bookmark"},
+            )
+            assert pin_resp.status_code == 200
+            assert pin_resp.json()["is_vaulted"] is True
+
+            unpin_resp = await client.delete(f"/api/vault/{target_id}")
+            assert unpin_resp.status_code == 200
+            assert unpin_resp.json()["is_vaulted"] is False
+
+
+
+@pytest.mark.asyncio
+async def test_sources_management_endpoints():
+    """Verify creating, listing, and deleting sources with admin auth."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    headers = {"X-Admin-Key": "dev-admin-key"}
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # List sources
+        resp_list = await client.get("/api/sources")
+        assert resp_list.status_code == 200
+        assert "sources" in resp_list.json()
+
+        # Create a new source
+        new_source_payload = {
+            "name": "Integration Test AI Feed",
+            "url": "https://example.com/test-ai-feed.xml",
+            "category": "github_trending",
+            "type": "rss",
+            "rate_limit_seconds": 600,
+            "enabled": True,
+        }
+        resp_create = await client.post(
+            "/api/sources",
+            json=new_source_payload,
+            headers=headers,
+        )
+        assert resp_create.status_code == 200
+        created_data = resp_create.json()
+        assert created_data["status"] == "success"
+        source_id = created_data["id"]
+
+        # Delete the created source
+        resp_delete = await client.delete(
+            f"/api/sources/{source_id}",
+            headers=headers,
+        )
+        assert resp_delete.status_code == 200
+        assert resp_delete.json()["status"] == "success"
+

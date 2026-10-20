@@ -1,302 +1,305 @@
-# AETHERGUARD // Worldwide AI Ecosystem Intelligence & Frontier Radar
+# AETHERGUARD: Worldwide AI Ecosystem Intelligence Pipeline
 
-[![CI Status](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-334%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
-[![Coverage](https://img.shields.io/badge/Coverage-75%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-black.svg?style=flat)](https://github.com/astral-sh/ruff)
-[![Type Checked: Mypy](https://img.shields.io/badge/Type%20Checked-Mypy-blue.svg?style=flat)](http://mypy-lang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/badge/Build-Passing-2ea44f?style=flat-square)](https://github.com/parth2024-tech/cyberversity-tracker/actions)
+[![Test Suite](https://img.shields.io/badge/Tests-336%20Passing-brightgreen?style=flat-square)](tests/)
+[![Coverage](https://img.shields.io/badge/Coverage-79%25-blue?style=flat-square)](tests/)
+[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![Architecture](https://img.shields.io/badge/Architecture-Clean%20%2F%20Onion-orange?style=flat-square)](src/ai_security_monitor/domain)
 
-**AETHERGUARD** is an autonomous intelligence radar that tracks, synthesizes, and broadcasts breakthroughs across the worldwide artificial intelligence ecosystem in real time.
+A zero-daemon, high-recall intelligence pipeline and telemetry engine monitoring the global artificial intelligence landscape. Tracks frontier foundation models, open-weight breakthroughs, developer tooling, inference engines, arXiv preprints, and regional sovereign AI initiatives.
 
-Built on Clean Domain-Driven Architecture (DDD), it continuously aggregates open-source repositories, developer infrastructure, inference runtimes, test-time compute scaling papers, community discussion sentiment, and sovereign AI initiatives from every major global tech corridor.
-
-🌐 **Production Deployment**: [https://ai-security-radar.onrender.com/](https://ai-security-radar.onrender.com/)
+> **Note on Naming & Repository**:
+> The project product name is **AETHERGUARD**. The underlying Python package namespace is `ai_security_monitor` (preserved for backward compatibility), and the GitHub repository is hosted at [`cyberversity-tracker`](https://github.com/parth2024-tech/cyberversity-tracker). The automated daily publication is the **AI Gazette**.
 
 ---
 
-## 🌐 Core Intelligence Focus & Capabilities
+## 🎯 Primary Scope & Focus Areas
 
-### 1. Trending GitHub Repositories & Hugging Face Drops
-- **Multi-Source Velocity Tracking**: Tracks breakout open-source AI projects, autonomous agent runtimes, fine-tuning frameworks, and developer automation codebases across GitHub and Hugging Face.
-- **Language-Targeted Scrapers (`GitHubTrendingFetcher`)**: Scrapes multi-ecosystem trending targets including Python, TypeScript, and global repositories, extracting direct canonical project links.
-- **Hugging Face Model Radar (`HuggingFaceTrendingFetcher`)**: Ingests trending foundation model checkpoints and open weights directly from Hugging Face Hub.
-- **OSS Insight Integration**: Interfaces directly with `api.ossinsight.io` to capture star-gain velocity across repositories before mainstream saturation.
+AETHERGUARD focuses strictly on the worldwide artificial intelligence ecosystem across five core verticals:
 
-### 2. Resilient Twitter / X Intelligence Scraper Engine
-- **Internal GraphQL Timeline Extraction (`TwitterGraphQLExtractor`)**: Targets Twitter's web GraphQL endpoints (`SearchTimeline`, `UserTweets`) with universal web bearer authorization and structured feature flags.
-- **Session & Guest Token Pool (`SessionPool`)**: Supports optional account pools (`auth_token`, `ct0`) alongside automated anonymous guest token activation (`/1.1/guest/activate.json`) for public timeline access.
-- **Nested Tree Unwinding**: Unpacks `TimelineAddEntries`, unescapes longform note tweets beyond 280 characters, and preserves media, expanded external links, and author metrics.
-- **High-Recall Syndication Fallback**: Automatically activates a search syndication bridge if direct access encounters Cloudflare blocks or login walls, guaranteeing 100% continuous data delivery.
-- **Targeted Radar Profiles**: Actively monitors key research curators (`@_akhaliq`, `@sama`, `@karpathy`, `@ylecun`, `@deepseek_ai`) and tracking queries across reasoning models, agent runtimes, and inference engines.
-
-### 3. Multi-Subreddit Community Discussion Sentiment
-- **Multi-Community Coverage (`RedditFetcher`)**: Gathers practitioner feedback and drops from 6 dedicated subreddits:
-  - `r/LocalLLaMA` (Open-weights & local model quantizations)
-  - `r/MachineLearning` (Peer research discussions & benchmark reviews)
-  - `r/Singularity` (Frontier AGI milestones & frontier model drops)
-  - `r/ArtificialIntelligence` (Global AI trends & industry shifts)
-  - `r/OpenSource` (Open-source AI frameworks & tooling)
-  - `r/BestGitHubRepos` (Trending open-source projects)
-- **Multi-Tier Fallback Ladder**: Automatically falls back to high-recall search feeds if direct Reddit endpoints encounter HTTP 429 rate limits or 403 blocks.
-- **Discussion Thread Hydration (`RedditEndpointsExtractor`)**: Extracts top developer comments and reaction summaries from `/comments/{id}.json` threads.
-
-### 4. Developer Tooling & Inference Infrastructure
-- Dedicated monitoring of high-throughput inference engines and local serving runtimes:
-  - **Inference Runtimes**: `vLLM`, `Ollama`, `SGLang`, `llama.cpp`, `TensorRT-LLM`.
-  - **Tooling Stacks**: Vector databases, evaluation harnesses, RAG connectors, kernel accelerators, and desktop AI.
-
-### 5. Frontier Foundation Models & Research Breakthroughs
-- Real-time intelligence on frontier foundation models and architecture shifts:
-  - Open-weights vs. proprietary releases (**DeepSeek**, **Qwen**, **Llama**, **Claude**, **OpenAI**, **Mistral**).
-  - Test-time compute scaling, Mixture-of-Experts (MoE), Multi-Head Latent Attention (MLA), and reasoning architectures.
-  - Curated arXiv telemetry across `cs.AI`, `cs.CL`, `cs.LG`, and `stat.ML`.
-
-### 6. Hacker News & Web Intelligence
-- **Hacker News Algolia Hydration** (`HackerNewsFetcher`): Enriches top-ranked AI stories by concurrently hydrating top developer comments from Algolia item trees.
-- **Keyless Google News AI RSS** (`GoogleNewsFetcher`): Surfaces timely mainstream AI news and enterprise releases with publisher attribution.
-
-### 7. Fair-Share Balanced Digest Allocation
-- **Balanced Quota Engine** (`BalancedDigestService`): Dynamically balances digest composition across sources (arXiv, GitHub, Hugging Face, Twitter/X, Reddit, Hacker News, Google News, OSS Insight), preventing single high-frequency feeds from dominating the front page.
-
-### 8. Global Sovereign AI & Regional Corridors
-- Geographic filtering and coverage across 6 worldwide regional corridors:
-  - **North America** (US / CA frontier labs and hyperscalers)
-  - **Europe** (Mistral, Kyutai, Aleph Alpha, CERN, EU AI initiatives)
-  - **Asia-Pacific** (DeepSeek, Alibaba Qwen, Moonshot, Baidu, South Korea, Japan, India AI)
-  - **Latin America**, **Middle East**, and **Africa** (Regional models, compute infrastructure, sovereign labs)
-
-### 9. Ingestion Freshness Guard & Retention Control
-- **Strict 14-Day Freshness Guard**: Automatically blocks stale archive dumps and historical entries (`max_ingest_age_days = 14`), ensuring every intelligence entry reflects contemporary advancements.
-- **User-Controlled Data Retention**: Automatic background deletions are disabled by default. Data is only purged upon explicit user instruction, with instant soft-restore capabilities.
-
-### 10. Multi-Channel Dispatch & Publishing
-- **Discord & Telegram Delivery**: Rich Discord embed dispatcher with severity styling alongside Telegram bot alerts and Slack webhooks.
-- **The AI Chronicle & Gazette**: Dedicated responsive reading hub at `/gazette` with synchronized exports in **JSON**, **Markdown**, **HTML**, and vector **PDF** (ReportLab).
-- **Glassmorphic Command Center**: Obsidian-themed WebGL HUD with Three.js globe, reactive WebSockets for real-time dispatch alerts, and Command Palette (`Ctrl+K` / `Cmd+K`).
+1. **Frontier Foundation Models**: Model releases, reasoning architectures, test-time compute scaling, and open weights (DeepSeek, Qwen, Claude, Llama, Mistral, OpenAI).
+2. **Inference Runtimes & Infrastructure**: High-throughput inference engines (`vLLM`, `SGLang`, `llama.cpp`, `Ollama`, `TensorRT-LLM`), memory-efficient kernels, and serving frameworks.
+3. **Trending Repositories & Open Source**: High-velocity GitHub repositories, autonomous agent frameworks, tool-use systems, and developer libraries.
+4. **Research Breakthroughs & Preprints**: Curated arXiv feeds, model architecture innovations, synthetic data pipelines, and post-training alignment.
+5. **Sovereign AI & Regional Ecosystems**: National AI compute clusters, regional labs, hardware accelerators, and sovereign AI initiatives across Europe, APAC, China, the Middle East, and the Americas.
 
 ---
 
-## 🏛️ Clean Architecture & Project Structure
+## 🏛️ System Architecture
 
-The codebase strictly adheres to Clean / Onion Architecture where the Domain Core sits at the center with zero external dependencies, surrounded by Application Services, and decoupled from outer infrastructure and presentation adapters:
+AETHERGUARD is designed according to **Clean / Onion Architecture**. Pure domain rules and value objects remain completely decoupled from external frameworks, scrapers, and database engines.
 
+```text
+ ┌─────────────────────────────────────────────────────────────────────────────┐
+ │                         PRESENTATION LAYER (INBOUND)                        │
+ │  FastAPI REST API (/api & /api/v1)  │  WebSocket Event Bus (/ws)            │
+ │  Installed Typer CLI (aetherguard)  │  Model Context Protocol (MCP stdio)   │
+ └──────────────────────────────────┬──────────────────────────────────────────┘
+                                    │
+ ┌──────────────────────────────────▼──────────────────────────────────────────┐
+ │                        APPLICATION SERVICES LAYER                           │
+ │  MonitorService (Orchestrator)      │  AutonomousTriageService (P0-P2 Queue)│
+ │  ArticleExtractor (Trafilatura)     │  VaultFeedbackService (Preference)    │
+ │  SchedulerService (Cron / Interval) │  NewspaperService (Daily Gazette)     │
+ └──────────────────────────────────┬──────────────────────────────────────────┘
+                                    │
+ ┌──────────────────────────────────▼──────────────────────────────────────────┐
+ │                               DOMAIN CORE                                   │
+ │  Entities: Entry, Source, Analysis  │  Repositories & Unit of Work (Ports)  │
+ │  Value Objects: Category, Priority  │  Deduplication: SimHash & MinHash     │
+ └──────────────────────────────────┬──────────────────────────────────────────┘
+                                    │
+ ┌──────────────────────────────────▼──────────────────────────────────────────┐
+ │                     INFRASTRUCTURE ADAPTERS (OUTBOUND)                      │
+ │  SQLAlchemy 2.0 Async Repositories  │  SQLite WAL / PostgreSQL Driver       │
+ │  Resilient Scraper Engine           │  10+ Fetchers (X, Reddit, arXiv, etc.)│
+ │  Heuristic & Local LLM Analyzers    │  Delivery: Discord, Telegram, Slack   │
+ └─────────────────────────────────────────────────────────────────────────────┘
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          PRESENTATION ADAPTERS (INBOUND)                    │
-│   FastAPI REST Routers │ WebSockets (/ws) │ Typer CLI │ Stdio MCP Server    │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ calls
-┌──────────────────────────────────────▼──────────────────────────────────────┐
-│                            APPLICATION SERVICES                             │
-│   MonitorService │ AutonomousTriageService │ BalancedDigestService          │
-│   NewspaperService │ SchedulerService │ VaultFeedbackService                │
-│   (Coordinates use cases; depends strictly on Domain interfaces)             │
-└──────────────────┬──────────────────────────────────────▲───────────────────┘
-                   │ invokes                              │ implements
-┌──────────────────▼──────────────────┐  ┌────────────────┴───────────────────┐
-│             DOMAIN CORE             │  │   INFRASTRUCTURE ADAPTERS (OUTBOUND)│
-│  Entities: Entry, Source, Analysis  │  │  SQLAlchemy 2.0 Async Repositories  │
-│  Value Objects: Priority, Category  │  │  Scraper Engine (GraphQL / REST)    │
-│  Abstract Repository & UoW Ports    │  │  10+ Fetchers (X, Reddit, arXiv)    │
-│  (Pure logic, 0 dependencies)       │  │  Heuristic & Local LLM Analyzers    │
-│                                     │  │  Delivery: Discord, Telegram, Slack │
-└─────────────────────────────────────┘  └────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────┴──────────────────────────────────────────┐
-│                           CROSS-CUTTING UTILITIES                           │
-│   core.sanitizer (Anti-Slop, Tracking Purge) │ core.auth (Admin Security)   │
-│   core.logging (Structured JSON Logs) │ infrastructure.cache (Hot Cache)     │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
 
-### Resilient Scraper Package (`infrastructure/scrapers`)
+---
+
+## 🔍 Resilient Scraper Engine (`infrastructure/scrapers`)
+
+To overcome the fragility and strict rate-limiting of modern platforms, AETHERGUARD features an internal GraphQL and REST scraper package:
 
 ```text
 src/ai_security_monitor/infrastructure/scrapers/
 ├── config/
-│   ├── headers.py            # Static public web bearer token, browser impersonation headers
+│   ├── headers.py            # Static public web bearer token & browser client headers
 │   └── queries.py            # Reverse-engineered Twitter GraphQL Query IDs & feature flags
 ├── core/
-│   ├── session_pool.py       # Manages auth_token, ct0, and guest token activation/rotation
-│   ├── client.py             # Resilient HTTP/2 client with retry logic and TLS header spoofing
-│   └── rate_limiter.py       # Exponential backoff with full jitter and Retry-After header parsing
+│   ├── session_pool.py       # Manages auth_token, ct0, and automated guest token rotation
+│   ├── client.py             # HTTP/2 client with retry backoff and TLS fingerprint spoofing
+│   └── rate_limiter.py       # Exponential backoff with full jitter & Retry-After parsing
 ├── models/
 │   ├── tweet.py              # Pydantic schemas for normalized tweets, metrics, and authors
-│   └── reddit_post.py        # Pydantic schemas for Reddit posts, authors, and comment trees
+│   └── reddit_post.py        # Pydantic schemas for Reddit posts, authors, and comments
 └── extractors/
-    ├── twitter_graphql.py    # Unwinds nested GraphQL timeline trees and longform note tweets
+    ├── twitter_graphql.py    # Unwinds nested GraphQL timeline trees and note tweets
     └── reddit_endpoints.py   # Unwinds Reddit REST post listings and comment trees
 ```
 
+### Scraper Maintenance & Terms of Service Notice
+* **Query ID Rotation**: Twitter/X periodically regenerates GraphQL `queryId` hashes during web client releases. These can be inspected and updated directly in `config/queries.py`.
+* **Multi-Tier Search Fallback**: If Twitter GraphQL or Reddit JSON endpoints return HTTP 429 (Rate Limited) or 403 (Forbidden), fetchers automatically fall back to Google News syndication search bridges (`site:x.com ... when:14d` and `site:reddit.com/r/{sub} when:14d`), guaranteeing 100% data continuity.
+* **ToS & Usage**: Scrapers are provided strictly for research and open-source intelligence monitoring. Anonymous guest tokens are used by default; optional personal session cookies (`TWITTER_AUTH_TOKEN`, `TWITTER_CT0`) can be supplied in `.env`.
+
 ---
 
-## ⚡ Quick Start
+## ⚙️ Configuration & Ingestion Controls
 
-### 1. Prerequisites
-- **Python 3.12+**
-- **uv** (recommended) or **pip** & **virtualenv**
-- *(Optional)* **Ollama** installed locally for GPU-accelerated local LLM triage.
+AETHERGUARD employs three distinct time and retention controls to prevent database bloat and keep intelligence timely:
 
-### 2. Installation
+| Setting | Default | Purpose & Behavior |
+|---|---|---|
+| `DATABASE__MAX_INGEST_AGE_DAYS` | `14` | **Ingestion Boundary Gate**: Strictly drops historical RSS/feed entries published > 14 days ago. Guarantees that only fresh, relevant breakthroughs enter the pipeline. |
+| `DATABASE__AUTO_PURGE_ENABLED` | `false` | **Retention Daemon Switch**: When `false`, zero automatic deletion occurs (data is retained indefinitely). When set to `true`, background cleanup executes periodically. |
+| `DATABASE__RETENTION_DAYS` | `7` | **Retention Window**: Active *only* if `AUTO_PURGE_ENABLED=true` or when executing a manual `/api/stats/purge` sweep. Non-vaulted entries older than this threshold are purged. |
 
-Using `uv` (recommended):
+### Source Provenance & Regional Tagging
+Region assignment (e.g. `europe`, `apac`, `china`, `north_america`, `middle_east`, `global`) is **not** an error-prone post-hoc keyword guess. It is explicitly configured per-source in `config/sources.yaml` under the `SourceConfig.region` attribute and inherited by all ingested entries.
+
+---
+
+## 🚀 Production Deployment & Infrastructure Realities
+
+### The Production Truth: SQLite vs. PostgreSQL
+
+1. **Single Worker (`--workers 1`) Requirement**:
+   When using SQLite, Uvicorn MUST be run with a single worker process (`--workers 1`). SQLite's Write-Ahead Log (WAL) allows concurrent readers but only one concurrent writer. Multiple worker processes will cause lock contention (`sqlite3.OperationalError: database is locked`) and split the in-memory WebSocket connection state.
+2. **Scaling to Multi-Worker / Multi-Node**:
+   To run multiple workers or scale horizontally across containers, configure external PostgreSQL:
+   ```bash
+   DATABASE__URL=postgresql+asyncpg://user:password@host:5432/aetherguard
+   ```
+
+### Cloud Hosting Guide
+
+| Provider | Persistence Strategy | Cost | Notes |
+|---|---|---|---|
+| **Render** | External PostgreSQL | Free | **Important**: Render's *Free Web Service* has an ephemeral filesystem. Persistent disks (`/data`) require an upgraded *Starter* plan ($7/mo). For zero cost, attach a free Neon or Supabase PostgreSQL instance via `DATABASE__URL`. |
+| **Fly.io** | Persistent Volume | Free | Mount a 1GB volume at `/data` with `fly volumes create monitor_data -s 1`. Run single-process with SQLite WAL. |
+| **Railway** | Persistent Volume | Free tier | Attach a persistent volume to `/data` or use Railway PostgreSQL plugin. |
+| **Self-Hosted / Docker** | Bind Mount | Zero | Mount local host volume `./data:/data`. Run natively via Docker or systemd. |
+
+### LLM Analyzer Fallback & Triage Quality
+* **Local Default**: Connects to `http://localhost:11434` (Ollama) with `llama3.1:8b` or `qwen2:0.5b`.
+* **Cloud Fallback**: When running on cloud platforms without Ollama, the analyzer automatically activates `HeuristicAnalyzer`—a deterministic regex engine computing technical focus, blast radius (1–100), and community velocity with zero external dependencies.
+* **Cloud LLM Acceleration**: Set `GROQ_API_KEY` in `.env` to route deep triage through Groq's high-speed inference API (`llama-3.1-70b-versatile`) with sub-second turnaround.
+
+### Priority Queue Durability
+The `AutonomousTriageService` manages an in-memory priority queue (`P0` Urgent, `P1` High, `P2` Standard). To prevent silent data loss during container redeployments or host reboots, the service executes `_safe_startup_hydrate()` on boot, automatically re-enqueuing un-triaged high-velocity entries directly from persistent storage.
+
+---
+
+## 🛠️ Installation & Quickstart
+
+### Prerequisites
+* Python 3.11 or 3.12
+* Git
+
+### Step 1: Clone and Install
+
 ```bash
-# Clone repository
 git clone https://github.com/parth2024-tech/cyberversity-tracker.git
 cd cyberversity-tracker
 
-# Synchronize dependencies with uv
-uv sync --all-extras --dev
-```
-
-Or using standard `venv` and `pip`:
-```bash
+# Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
+
+# Install with development and CLI dependencies
 pip install -e ".[all]"
+# Or using uv:
+# uv pip install -e ".[all]"
 ```
 
-### 3. Run the Web Command Center
+### Step 2: Environment Configuration
+
 ```bash
-# Launch FastAPI server with live WebSockets
-python3 cli.py server --port 8000
+cp .env.example .env
 ```
-Open your browser at **`http://localhost:8000`** (or **`http://localhost:8000/gazette`** for the Gazette).
+
+Key environment variables:
+```dotenv
+# Server Configuration
+API__PORT=8000
+API__HOST=0.0.0.0
+
+# Database Storage (SQLite or PostgreSQL)
+DATABASE__URL=sqlite+aiosqlite:////data/monitor.db
+DATABASE__MAX_INGEST_AGE_DAYS=14
+DATABASE__AUTO_PURGE_ENABLED=false
+DATABASE__RETENTION_DAYS=7
+
+# Optional: Cloud LLM Inference
+GROQ_API_KEY=your_groq_api_key_here
+
+# Optional: Twitter / X Scraper Session Cookies
+TWITTER_AUTH_TOKEN=your_auth_token_cookie
+TWITTER_CT0=your_ct0_cookie
+```
+
+### Step 3: Running via Installed CLI
+
+AETHERGUARD provides a first-class CLI entrypoint (`aetherguard`):
+
+```bash
+# Execute an immediate intelligence sweep across all sources
+aetherguard sweep
+
+# Display live database metrics and category breakdown
+aetherguard stats
+
+# List configured threat feeds and intelligence sources
+aetherguard sources
+
+# Start the web dashboard and REST API server
+aetherguard server --port 8000
+```
 
 ---
 
-## 🛠️ CLI Reference
+## 📡 REST API Reference (`/api` and `/api/v1`)
 
-The platform provides a Typer-powered CLI for administration, sweeps, and agent integration:
+All endpoints are fully versioned and available under both `/api` and `/api/v1` prefixes:
 
-```bash
-# Launch the real-time web command center and API server
-python3 cli.py server --port 8000 --host 0.0.0.0
+### Core Intelligence & Entries
 
-# Execute an immediate worldwide intelligence sweep
-python3 cli.py fetch
-python3 cli.py fetch --force
+| Endpoint | Method | Admin Auth | Description |
+|---|---|:---:|---|
+| `/api/v1/entries` | `GET` | No | List intelligence entries with filtering (`category`, `region`, `hours`, `limit`, `offset`) |
+| `/api/v1/entries/{id}` | `GET` | No | Retrieve detailed entry record including extracted text and analysis |
+| `/api/v1/entries/{id}` | `DELETE` | **Yes** | Delete entry. Defaults to `hard_delete=true` (permanent). Pass `hard_delete=false` for soft-purge. |
+| `/api/v1/entries/batch-delete` | `POST` | **Yes** | Batch delete multiple entries by ID |
 
-# Display real-time database intelligence statistics and metrics
-python3 cli.py stats
+### Permanent Vault (Bookmarks & Landmark Papers)
 
-# List all registered and configured intelligence sources
-python3 cli.py sources
+| Endpoint | Method | Admin Auth | Description |
+|---|---|:---:|---|
+| `/api/v1/vault` | `GET` | No | List all permanently saved Vault entries (`limit`, `offset`, `search`) |
+| `/api/v1/vault/{id}` | `POST` | No | Pin an intelligence entry into the permanent Vault |
+| `/api/v1/vault/{id}` | `DELETE` | No | Unpin and remove an entry from the permanent Vault |
+| `/api/v1/entries/{id}/toggle-vault` | `POST` | No | Legacy toggle endpoint (pin / unpin) |
 
-# Launch Model Context Protocol (MCP) server over stdio for AI coding assistants
-python3 cli.py mcp
-```
+### Source Management
 
----
-
-## 📡 REST API & WebSocket Endpoints
-
-| Endpoint | Method | Auth Required | Description |
-|---|---|---|---|
-| `/api/health` | `GET` | No | Service status and SQLite WAL connectivity |
-| `/api/entries` | `GET` | No | Query entries with pagination (`limit <= 200`), search, region, and sorting |
-| `/api/entries/{id}/vault` | `POST` | No | Pin/star an entry into the permanent Vault |
-| `/api/entries/{id}` | `DELETE` | **Yes (Admin)** | Delete a single intelligence entry |
-| `/api/entries/batch-delete` | `POST` | **Yes (Admin)** | Batch delete multiple intelligence entries |
-| `/api/entries/export/pdf` | `GET` | No | Export filtered intelligence stream as a styled PDF report |
-| `/api/triage/queue` | `GET` | No | Retrieve live priority queue telemetry (`queue_size`, `hold_until_sweep`) |
-| `/api/triage/push-all` | `POST` | **Yes (Admin)** | Immediately drain priority queue and push all items to the website |
-| `/api/triage/mode` | `POST` | **Yes (Admin)** | Toggle queue hold mode (`hold=true/false`) |
-| `/api/triage/clear` | `POST` | **Yes (Admin)** | Clear in-memory priority queue |
-| `/api/triage/prioritize-frontier` | `POST` | **Yes (Admin)** | Enqueue high-priority frontier models and research |
-| `/api/fetch` | `POST` | **Yes (Admin)** | Trigger a Live Sweep: fetches fresh feeds and pushes queued items |
-| `/api/newspaper/latest` | `GET` | No | Fetch latest AI Gazette edition in JSON |
-| `/api/newspaper/export/pdf` | `GET` | No | Download latest AI Gazette edition as a publication-ready PDF |
-| `/api/digest` | `POST` | No | Compile and dispatch an intelligence digest to configured delivery adapters |
-| `/api/proxy` | `GET` | No | SSRF-protected CORS proxy to safely preview external articles with sandbox CSP |
-| `/api/backup/export` | `GET` | No | Export portable system backup (vaulted items, sources, state) as JSON |
-| `/api/backup/import` | `POST` | **Yes (Admin)** | Safely import and synchronize intelligence state from external backup |
-| `/api/stats/retention` | `GET` | No | Inspect data age distribution and purge candidates |
-| `/api/stats/purge` | `POST` | **Yes (Admin)** | Execute manual purge (`older_than_days`, `hard_delete`, `include_vaulted`) |
-| `/api/stats/restore-purged` | `POST` | **Yes (Admin)** | Instantly restore soft-deleted items back to active status |
-| `/ws` | `WebSocket` | No | Live bi-directional streaming for new discoveries, sweeps, and queue updates |
+| Endpoint | Method | Admin Auth | Description |
+|---|---|:---:|---|
+| `/api/v1/sources` | `GET` | No | List all configured intelligence sources and their current health status |
+| `/api/v1/sources` | `POST` | **Yes** | Register a new intelligence feed (`name`, `url`, `category`, `type`, `rate_limit_seconds`) |
+| `/api/v1/sources/{id}` | `DELETE` | **Yes** | Remove an intelligence source from the registry |
+| `/api/v1/sources/{id}/toggle` | `POST` | No | Enable or disable a specific source (`{"enabled": true/false}`) |
+| `/api/v1/fetch` | `POST` | **Yes** | Trigger an immediate manual sweep across all active feeds |
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🧪 Testing & Verification
 
-The codebase is protected by **334 deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and feed freshness invariants:
+AETHERGUARD is covered by **336 automated unit and integration tests** enforcing boundary validation, deduplication contracts, SQL injection resilience, and feed freshness invariants:
 
 ```bash
-# Run full test suite
-pytest tests/ -q
+# Run full test suite with enforced coverage threshold
+pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=75
 
-# Run with coverage report
-pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=50
-
-# Run Ruff linter
+# Run linter
 ruff check .
 
 # Run static type checker
 mypy src/
 ```
 
-### Key Test Guarantees:
-- **Resilient Scraper Architecture**: Verifies session pool token rotation, rate limiter backoff calculation with jitter, HTTP `Retry-After` header parsing, and GraphQL timeline unwrapping.
-- **Multi-Tier Feed Fallback**: Asserts that Reddit and Twitter fetchers automatically fall back to search syndication upon rate-limiting or network blocks.
-- **Strict Ingestion Freshness**: Verifies that any feed item older than 14 days is strictly excluded at the ingestion boundary.
-- **Administrative Access Control**: Validates that mutating routes reject missing or invalid credentials with 401, support `X-Admin-Key` and `Bearer` tokens, and fail closed in production.
-- **Fair-Share Quota Invariants**: Confirms that balanced digest generation enforces proportional allocations across all configured source categories.
-- **Privacy & SSRF Defense Guarantees**: Proves that the CORS proxy enforces DNS pinning, manual redirect hop re-validation, blocks Carrier-Grade NAT (`100.64.0.0/10`), IPv4-mapped IPv6 (`::ffff:0:0/96`), RFC 1918 subnets, aborts payloads > 5MB during streaming, and injects sandbox CSP headers.
-- **Anti-AI-Slop & Tracking Purging**: Asserts that conversational AI preambles are removed from summaries, and confirms that marketing tracking parameters (`utm_*`, `fbclid`, `gclid`) are stripped from entry URLs.
-- **Data Portability & State Restoration**: Verifies standardized export of Vault intelligence to JSON and validates safe schema-compliant re-importing into SQLite.
-- **Exact HTTP Status Contracts**: Strict `422 Unprocessable Entity` on invalid boundaries (`limit > 200`, negative offsets, empty schemas) and `405 Method Not Allowed`.
+### Verified Test Guarantees
+* **Cross-Source Deduplication**: Verifies that duplicate wire stories from Hacker News, Reddit, and Google News are correctly clustered via canonical URL normalization, 64-bit SimHash Hamming distance ($\le 4$), and MinHash Jaccard similarity ($\ge 0.35$).
+* **Feed Freshness Guard**: Confirms that entries published $> 14$ days ago are rejected at the ingestion boundary.
+* **Vault Durability**: Asserts that vaulted entries are immune to automated retention purges unless `include_vaulted=true` is explicitly requested.
+* **Scraper Resilience**: Tests session rotation, exponential backoff with jitter, and search syndication fallbacks under simulated HTTP 429/403 conditions.
 
 ---
 
-## ⚙️ Configuration & Deployment
+## 🛡️ Production Hardening Checklist
 
-System parameters can be configured via environment variables or a `.env` file:
+Before deploying AETHERGUARD to a public production environment:
 
-```env
-# Server
-PORT=8000
-ENVIRONMENT=production
-ADMIN_API_KEY=your-secure-admin-secret-token
+- [ ] **Configure Storage Persistence**: Ensure `/data` is on a persistent volume (Fly/Railway/Starter) or set `DATABASE__URL` to external PostgreSQL (Neon/Supabase).
+- [ ] **Enforce Admin Key**: Set `ADMIN_API_KEY` in production. Mutating routes (`DELETE /entries`, `POST /sources`, `/stats/purge`) fail closed if no key is supplied.
+- [ ] **Single Worker Guard**: Ensure your Dockerfile or process manager runs `uvicorn` with `--workers 1` when utilizing SQLite.
+- [ ] **Configure Cloud LLM Key**: Add `GROQ_API_KEY` if running on headless containers without a local GPU/Ollama instance.
+- [ ] **Validate Scraper Credentials**: (Optional) Populate `TWITTER_AUTH_TOKEN` and `TWITTER_CT0` to unlock authenticated query rate limits.
 
-# Database & Persistent Storage (Render Disk mounted at /data)
-DATA_DIR=/data
-DATABASE__URL=sqlite+aiosqlite:////data/monitor.db
-DATABASE__MAX_INGEST_AGE_DAYS=14
-DATABASE__AUTO_PURGE_ENABLED=false
-DATABASE__RETENTION_DAYS=7
+---
 
-# Twitter / X Scraper Authentication (Optional - anonymous guest tokens used by default)
-TWITTER_AUTH_TOKEN=your_auth_token_cookie
-TWITTER_CT0=your_ct0_cookie
+## 🗺️ Roadmap & Known Limitations
 
-# Ingestion & Triage
-ANALYZER__AUTONOMOUS_TRIAGE_ENABLED=true
-ANALYZER__QUEUE_HOLD_UNTIL_SWEEP=true
-ANALYZER__OLLAMA_BASE_URL=http://localhost:11434
-ANALYZER__OLLAMA_MODEL=llama3.1:8b
+### Known Limitations
+* **SQLite Lock Concurrency**: Running multiple worker processes against SQLite will cause database lock errors. Always use `--workers 1` or migrate to PostgreSQL for multi-process concurrency.
+* **Dynamic Scraper Lifespans**: Twitter GraphQL query IDs and Reddit REST endpoints may change without prior notice. The search syndication fallback mitigates this automatically.
+* **Pagination**: Intelligence entries currently use `limit` and `offset` pagination. Keyset/cursor-based pagination is planned for high-volume deployments.
 
-# Dispatchers (Optional)
-DISCORD__WEBHOOK_URL=your_discord_webhook_url
-TELEGRAM__BOT_TOKEN=your_bot_token
-TELEGRAM__CHAT_ID=your_chat_id
-SLACK__WEBHOOK_URL=your_webhook_url
-```
+### Roadmap
+* [x] Multi-source Reddit feed aggregation (`r/LocalLLaMA`, `r/MachineLearning`, `r/OpenSource`, etc.)
+* [x] Twitter/X GraphQL scraper with automated guest token activation
+* [x] Dedicated Vault API and `/api/v1` versioning
+* [ ] Keyset/cursor-based pagination (`before_id` / `since_timestamp`)
+* [ ] Multi-tenant watchlists with webhook alert delivery
+* [ ] Distributed Celery/Redis worker backend for enterprise-scale deployments
 
-### Render Deployment & Reliability
-- **Persistent Disk Storage**: Set up in [`render.yaml`](./render.yaml) with a 1GB disk mounted at `/data` and `DATA_DIR=/data`. This ensures SQLite databases and Gazette PDF broadsheets survive all container redeployments and restarts.
-- **External Cron Trigger**: On free-tier cloud instances that sleep when idle, configure an external cron job (e.g. cron-job.org or GitHub Actions) to send an authenticated `POST /api/fetch` request with header `X-Admin-Key: <ADMIN_API_KEY>` every 5 hours to wake up the service and execute sweeps.
+---
 
-```bash
-# Production start with Uvicorn
-uvicorn ai_security_monitor.presentation.api.main:create_app --factory --host 0.0.0.0 --port 8000 --workers 1
-```
+## 🤝 Contributing
+
+Contributions to AETHERGUARD are welcome:
+
+1. Fork the repository and create a feature branch (`git checkout -b feat/my-feature`).
+2. Adhere strictly to the **Clean Architecture** boundaries (domain models must remain dependency-free).
+3. Ensure all tests pass with at least 75% coverage: `pytest tests/ --cov=src --cov-fail-under=75`.
+4. Ensure clean linting and typing: `ruff check .` and `mypy src/`.
+5. Submit a descriptive Pull Request with conventional commit titles (`feat:`, `fix:`, `docs:`).
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**. Free and open-source for researchers, developers, and AI enthusiasts.
+This project is licensed under the [MIT License](LICENSE).

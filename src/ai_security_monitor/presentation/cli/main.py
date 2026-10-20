@@ -104,6 +104,11 @@ def fetch(
     asyncio.run(_run())
 
 
+# Register alias for sweep
+app.command(name="sweep")(fetch)
+
+
+
 @app.command()
 def stats():
     """Display real-time database intelligence statistics and metrics."""
