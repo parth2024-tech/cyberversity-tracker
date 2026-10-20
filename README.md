@@ -1,8 +1,8 @@
 # AETHERGUARD // Worldwide AI Ecosystem Intelligence & Frontier Radar
 
 [![CI Status](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/parth2024-tech/cyberversity-tracker/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-314%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
-[![Coverage](https://img.shields.io/badge/Coverage-74%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Tests](https://img.shields.io/badge/Tests-334%20Passing-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
+[![Coverage](https://img.shields.io/badge/Coverage-75%25-brightgreen.svg?style=flat&logo=pytest&logoColor=white)](https://github.com/parth2024-tech/cyberversity-tracker)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-black.svg?style=flat)](https://github.com/astral-sh/ruff)
@@ -19,52 +19,63 @@ Built on Clean Domain-Driven Architecture (DDD), it continuously aggregates open
 
 ## 🌐 Core Intelligence Focus & Capabilities
 
-### 1. Trending GitHub Repositories & Open Source
-- **Velocity Tracking**: Tracks high-velocity open-source AI projects, autonomous agent runtimes, fine-tuning frameworks, and developer automation codebases.
-- **OSS Insight Integration**: Interfaces directly with `api.ossinsight.io` to capture breakout star-gain velocity across open-source AI repositories before mainstream saturation.
+### 1. Trending GitHub Repositories & Hugging Face Drops
+- **Multi-Source Velocity Tracking**: Tracks breakout open-source AI projects, autonomous agent runtimes, fine-tuning frameworks, and developer automation codebases across GitHub and Hugging Face.
+- **Language-Targeted Scrapers (`GitHubTrendingFetcher`)**: Scrapes multi-ecosystem trending targets including Python, TypeScript, and global repositories, extracting direct canonical project links.
+- **Hugging Face Model Radar (`HuggingFaceTrendingFetcher`)**: Ingests trending foundation model checkpoints and open weights directly from Hugging Face Hub.
+- **OSS Insight Integration**: Interfaces directly with `api.ossinsight.io` to capture star-gain velocity across repositories before mainstream saturation.
 
-### 2. Developer Tooling & Inference Infrastructure
+### 2. Resilient Twitter / X Intelligence Scraper Engine
+- **Internal GraphQL Timeline Extraction (`TwitterGraphQLExtractor`)**: Targets Twitter's web GraphQL endpoints (`SearchTimeline`, `UserTweets`) with universal web bearer authorization and structured feature flags.
+- **Session & Guest Token Pool (`SessionPool`)**: Supports optional account pools (`auth_token`, `ct0`) alongside automated anonymous guest token activation (`/1.1/guest/activate.json`) for public timeline access.
+- **Nested Tree Unwinding**: Unpacks `TimelineAddEntries`, unescapes longform note tweets beyond 280 characters, and preserves media, expanded external links, and author metrics.
+- **High-Recall Syndication Fallback**: Automatically activates a search syndication bridge if direct access encounters Cloudflare blocks or login walls, guaranteeing 100% continuous data delivery.
+- **Targeted Radar Profiles**: Actively monitors key research curators (`@_akhaliq`, `@sama`, `@karpathy`, `@ylecun`, `@deepseek_ai`) and tracking queries across reasoning models, agent runtimes, and inference engines.
+
+### 3. Multi-Subreddit Community Discussion Sentiment
+- **Multi-Community Coverage (`RedditFetcher`)**: Gathers practitioner feedback and drops from 6 dedicated subreddits:
+  - `r/LocalLLaMA` (Open-weights & local model quantizations)
+  - `r/MachineLearning` (Peer research discussions & benchmark reviews)
+  - `r/Singularity` (Frontier AGI milestones & frontier model drops)
+  - `r/ArtificialIntelligence` (Global AI trends & industry shifts)
+  - `r/OpenSource` (Open-source AI frameworks & tooling)
+  - `r/BestGitHubRepos` (Trending open-source projects)
+- **Multi-Tier Fallback Ladder**: Automatically falls back to high-recall search feeds if direct Reddit endpoints encounter HTTP 429 rate limits or 403 blocks.
+- **Discussion Thread Hydration (`RedditEndpointsExtractor`)**: Extracts top developer comments and reaction summaries from `/comments/{id}.json` threads.
+
+### 4. Developer Tooling & Inference Infrastructure
 - Dedicated monitoring of high-throughput inference engines and local serving runtimes:
   - **Inference Runtimes**: `vLLM`, `Ollama`, `SGLang`, `llama.cpp`, `TensorRT-LLM`.
   - **Tooling Stacks**: Vector databases, evaluation harnesses, RAG connectors, kernel accelerators, and desktop AI.
 
-### 3. Frontier Foundation Models & Research Breakthroughs
+### 5. Frontier Foundation Models & Research Breakthroughs
 - Real-time intelligence on frontier foundation models and architecture shifts:
   - Open-weights vs. proprietary releases (**DeepSeek**, **Qwen**, **Llama**, **Claude**, **OpenAI**, **Mistral**).
   - Test-time compute scaling, Mixture-of-Experts (MoE), Multi-Head Latent Attention (MLA), and reasoning architectures.
   - Curated arXiv telemetry across `cs.AI`, `cs.CL`, `cs.LG`, and `stat.ML`.
 
-### 4. Community Sentiment & Discussion Intelligence
-- **Multi-Subreddit AI Intelligence** (`RedditFetcher`): Ingests community drops from `r/LocalLLaMA`, `r/MachineLearning`, `r/ArtificialIntelligence`, and `r/Singularity`, automatically extracting top discussion comments to capture practitioner reactions.
+### 6. Hacker News & Web Intelligence
 - **Hacker News Algolia Hydration** (`HackerNewsFetcher`): Enriches top-ranked AI stories by concurrently hydrating top developer comments from Algolia item trees.
 - **Keyless Google News AI RSS** (`GoogleNewsFetcher`): Surfaces timely mainstream AI news and enterprise releases with publisher attribution.
 
-### 5. Fair-Share Balanced Digest Allocation
-- **Balanced Quota Engine** (`BalancedDigestService`): Dynamically balances digest composition across sources (arXiv, GitHub, Hugging Face, Reddit, Hacker News, Google News, OSS Insight), preventing single high-frequency feeds from dominating the front page.
+### 7. Fair-Share Balanced Digest Allocation
+- **Balanced Quota Engine** (`BalancedDigestService`): Dynamically balances digest composition across sources (arXiv, GitHub, Hugging Face, Twitter/X, Reddit, Hacker News, Google News, OSS Insight), preventing single high-frequency feeds from dominating the front page.
 
-### 6. Global Sovereign AI & Regional Corridors
+### 8. Global Sovereign AI & Regional Corridors
 - Geographic filtering and coverage across 6 worldwide regional corridors:
   - **North America** (US / CA frontier labs and hyperscalers)
   - **Europe** (Mistral, Kyutai, Aleph Alpha, CERN, EU AI initiatives)
   - **Asia-Pacific** (DeepSeek, Alibaba Qwen, Moonshot, Baidu, South Korea, Japan, India AI)
   - **Latin America**, **Middle East**, and **Africa** (Regional models, compute infrastructure, sovereign labs)
 
-### 7. Ingestion Freshness Guard & Retention Control
+### 9. Ingestion Freshness Guard & Retention Control
 - **Strict 14-Day Freshness Guard**: Automatically blocks stale archive dumps and historical entries (`max_ingest_age_days = 14`), ensuring every intelligence entry reflects contemporary advancements.
 - **User-Controlled Data Retention**: Automatic background deletions are disabled by default. Data is only purged upon explicit user instruction, with instant soft-restore capabilities.
 
-### 8. Multi-Channel Dispatch & Publishing
+### 10. Multi-Channel Dispatch & Publishing
 - **Discord & Telegram Delivery**: Rich Discord embed dispatcher with severity styling alongside Telegram bot alerts and Slack webhooks.
 - **The AI Chronicle & Gazette**: Dedicated responsive reading hub at `/gazette` with synchronized exports in **JSON**, **Markdown**, **HTML**, and vector **PDF** (ReportLab).
 - **Glassmorphic Command Center**: Obsidian-themed WebGL HUD with Three.js globe, reactive WebSockets for real-time dispatch alerts, and Command Palette (`Ctrl+K` / `Cmd+K`).
-
-### 9. Privacy Hardening, Administrative Auth & Hardened SSRF Defense
-- **Administrative Access Control (`require_admin_auth`)**: Enforces API key verification via `X-Admin-Key` or `Authorization: Bearer <token>` on all mutating endpoints (`/api/stats/purge`, `/api/triage/mode`, `/api/triage/push-all`, `/api/backup/import`, `/api/fetch`). Fails closed in production if unconfigured.
-- **SSRF-Protected CORS Proxy (`/api/proxy`)**: Socket-level DNS pinning (`SSRFProtectedTransport`) to eliminate DNS rebinding, manual redirect hop validation (max 5 hops), blocked network filtering (RFC 1918, CGNAT `100.64.0.0/10`, IPv4-mapped IPv6 `::ffff:0:0/96`, `0.0.0.0/8`), 5MB stream cutoff, and sandbox CSP headers (`Content-Security-Policy: ... sandbox`) to prevent stored XSS.
-- **Anti-AI-Slop Cleaning Engine** (`AIPromptSanitizer`): Multi-pass regex engine that strips conversational AI preambles ("Here's a 20-word summary:", "This article discusses...", "Sure, here is the technical summary:") and quotation wraps from summaries and gazette dossiers.
-- **URL Telemetry Scrubber**: Automatically purges marketing tracking query parameters (`utm_*`, `fbclid`, `gclid`, `twclid`, `srsltid`, `si`, `ref`, `mkt_tok`) during feed ingestion, ensuring canonical cross-source deduplication.
-- **YouTube No-Cookie Privacy Rewriting**: Automatically converts multimedia announcement and conference links into `youtube-nocookie.com/embed/` format.
-- **Tracking Pixel & Beacon Scrubbing**: Identifies and removes 1x1 tracking pixels and analytics beacon images prior to HTML indexing.
 
 ---
 
@@ -88,9 +99,10 @@ The codebase strictly adheres to Clean / Onion Architecture where the Domain Cor
 ┌──────────────────▼──────────────────┐  ┌────────────────┴───────────────────┐
 │             DOMAIN CORE             │  │   INFRASTRUCTURE ADAPTERS (OUTBOUND)│
 │  Entities: Entry, Source, Analysis  │  │  SQLAlchemy 2.0 Async Repositories  │
-│  Value Objects: Priority, Category  │  │  8+ External Fetchers (arXiv, etc.) │
-│  Abstract Repository & UoW Ports    │  │  Heuristic & Local LLM Analyzers    │
-│  (Pure logic, 0 dependencies)       │  │  Delivery: Discord, Telegram, Slack│
+│  Value Objects: Priority, Category  │  │  Scraper Engine (GraphQL / REST)    │
+│  Abstract Repository & UoW Ports    │  │  10+ Fetchers (X, Reddit, arXiv)    │
+│  (Pure logic, 0 dependencies)       │  │  Heuristic & Local LLM Analyzers    │
+│                                     │  │  Delivery: Discord, Telegram, Slack │
 └─────────────────────────────────────┘  └────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────┴──────────────────────────────────────────┐
@@ -100,24 +112,24 @@ The codebase strictly adheres to Clean / Onion Architecture where the Domain Cor
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Domain Language & Model Semantics
+### Resilient Scraper Package (`infrastructure/scrapers`)
 
-To align domain models with the Worldwide AI Ecosystem, the `Analysis` entity provides clean property aliases alongside canonical attributes:
-
-| Entity Attribute | Ecosystem Alias | Description |
-|---|---|---|
-| `attack_vector` | `tech_focus` | Core discipline (e.g. Inference Optimization, Reasoning, Agents) |
-| `risk_assessment` | `capability_summary` | Summary of technical advancement or capability breakthrough |
-| `threat_velocity` | `velocity_score` | Community adoption / GitHub star velocity (1–100) |
-| `blast_radius_score` | `ecosystem_reach` | Estimated ecosystem footprint and dependency depth (0–100) |
-| `severity_index` | `severity_index` | Impact score (1–100). Heuristic mode uses deterministic keyword weights; LLM mode produces uncalibrated estimates. |
-
-### Corroboration & Confidence Scoring
-- **`Story.confidence_score`**: Calculated deterministically based on independent multi-source corroboration:
-  - 1 source: $0.60$ base confidence (single-source claim).
-  - 2 sources: $0.85$ corroborated confidence (verified across distinct platforms).
-  - 3+ sources: $\min(0.99, 0.85 + (N - 2) \times 0.05)$ consensus score.
-- **`Entry` State Mutability**: Uses `@dataclass(kw_only=True)`. While `Entry` has an immutable identity (`id` and SHA-256 `content_hash`), lifecycle state flags (`is_purged`, `purged_at`, `story_id`) are modified via repository methods or `dataclasses.replace()`.
+```text
+src/ai_security_monitor/infrastructure/scrapers/
+├── config/
+│   ├── headers.py            # Static public web bearer token, browser impersonation headers
+│   └── queries.py            # Reverse-engineered Twitter GraphQL Query IDs & feature flags
+├── core/
+│   ├── session_pool.py       # Manages auth_token, ct0, and guest token activation/rotation
+│   ├── client.py             # Resilient HTTP/2 client with retry logic and TLS header spoofing
+│   └── rate_limiter.py       # Exponential backoff with full jitter and Retry-After header parsing
+├── models/
+│   ├── tweet.py              # Pydantic schemas for normalized tweets, metrics, and authors
+│   └── reddit_post.py        # Pydantic schemas for Reddit posts, authors, and comment trees
+└── extractors/
+    ├── twitter_graphql.py    # Unwinds nested GraphQL timeline trees and longform note tweets
+    └── reddit_endpoints.py   # Unwinds Reddit REST post listings and comment trees
+```
 
 ---
 
@@ -211,32 +223,32 @@ python3 cli.py mcp
 
 ## 🧪 Testing & Quality Assurance
 
-The codebase is protected by **314 deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and feed freshness invariants:
+The codebase is protected by **334 deterministic automated tests** enforcing strict contracts, SQL injection / XSS fuzzing resilience, boundary enforcement, and feed freshness invariants:
 
 ```bash
 # Run full test suite
-uv run pytest tests/ -q
+pytest tests/ -q
 
 # Run with coverage report
-uv run pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=50
+pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=50
 
 # Run Ruff linter
-uv run ruff check .
+ruff check .
 
 # Run static type checker
-uv run mypy src/
+mypy src/
 ```
 
 ### Key Test Guarantees:
-- **Administrative Access Control**: Validates that mutating routes reject missing or invalid credentials with 401, support `X-Admin-Key` and `Bearer` tokens, and fail closed in production.
+- **Resilient Scraper Architecture**: Verifies session pool token rotation, rate limiter backoff calculation with jitter, HTTP `Retry-After` header parsing, and GraphQL timeline unwrapping.
+- **Multi-Tier Feed Fallback**: Asserts that Reddit and Twitter fetchers automatically fall back to search syndication upon rate-limiting or network blocks.
 - **Strict Ingestion Freshness**: Verifies that any feed item older than 14 days is strictly excluded at the ingestion boundary.
+- **Administrative Access Control**: Validates that mutating routes reject missing or invalid credentials with 401, support `X-Admin-Key` and `Bearer` tokens, and fail closed in production.
 - **Fair-Share Quota Invariants**: Confirms that balanced digest generation enforces proportional allocations across all configured source categories.
 - **Privacy & SSRF Defense Guarantees**: Proves that the CORS proxy enforces DNS pinning, manual redirect hop re-validation, blocks Carrier-Grade NAT (`100.64.0.0/10`), IPv4-mapped IPv6 (`::ffff:0:0/96`), RFC 1918 subnets, aborts payloads > 5MB during streaming, and injects sandbox CSP headers.
-- **Anti-AI-Slop & Tracking Purging**: Asserts that conversational AI preambles are removed from LLM summaries, and confirms that marketing tracking parameters (`utm_*`, `fbclid`, `gclid`) are stripped from entry URLs.
+- **Anti-AI-Slop & Tracking Purging**: Asserts that conversational AI preambles are removed from summaries, and confirms that marketing tracking parameters (`utm_*`, `fbclid`, `gclid`) are stripped from entry URLs.
 - **Data Portability & State Restoration**: Verifies standardized export of Vault intelligence to JSON and validates safe schema-compliant re-importing into SQLite.
 - **Exact HTTP Status Contracts**: Strict `422 Unprocessable Entity` on invalid boundaries (`limit > 200`, negative offsets, empty schemas) and `405 Method Not Allowed`.
-- **Fuzzing & Injection Resilience**: Resists SQL injection payloads, XSS injections, script tags, control bytes, and Unicode edge cases with zero crashes.
-- **Adversarial Priority Heap Testing**: Verifies monotonic non-decreasing priority popping ($P0 \rightarrow P1 \rightarrow P2$) even when items are enqueued in adversarial reverse order.
 
 ---
 
@@ -257,8 +269,9 @@ DATABASE__MAX_INGEST_AGE_DAYS=14
 DATABASE__AUTO_PURGE_ENABLED=false
 DATABASE__RETENTION_DAYS=7
 
-# Optional: PostgreSQL Database
-# DATABASE__URL=postgresql+asyncpg://user:pass@host:5432/dbname
+# Twitter / X Scraper Authentication (Optional - anonymous guest tokens used by default)
+TWITTER_AUTH_TOKEN=your_auth_token_cookie
+TWITTER_CT0=your_ct0_cookie
 
 # Ingestion & Triage
 ANALYZER__AUTONOMOUS_TRIAGE_ENABLED=true
