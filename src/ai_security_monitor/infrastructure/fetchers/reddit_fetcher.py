@@ -24,6 +24,9 @@ from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
     fetcher_registry,
 )
+from ai_security_monitor.infrastructure.scrapers.extractors.reddit_endpoints import (
+    RedditEndpointsExtractor,
+)
 
 logger = get_logger(__name__)
 
@@ -100,20 +103,16 @@ class RedditFetcher(BaseFetcher):
                     resp = await client.get(url, params=params)
                     if resp.status_code == 200:
                         data = resp.json()
-                        children = data.get("data", {}).get("children", [])
-                        for child in children:
-                            post_data = child.get("data", {})
-                            if not post_data or post_data.get("stickied"):
+                        extracted_posts = (
+                            RedditEndpointsExtractor.extract_posts_from_listing(data)
+                        )
+                        for post in extracted_posts:
+                            if post.created_datetime < cutoff:
                                 continue
-
-                            created_utc = post_data.get("created_utc")
-                            if created_utc:
-                                dt = datetime.fromtimestamp(created_utc, tz=UTC)
-                                if dt < cutoff:
-                                    continue
-
-                            post_data["_subreddit"] = sub
-                            sub_posts.append(post_data)
+                            p_data = dict(post.raw_data)
+                            p_data["_subreddit"] = sub
+                            p_data["_reddit_post"] = post
+                            sub_posts.append(p_data)
                     else:
                         logger.info(
                             f"Reddit /r/{sub} direct returned HTTP {resp.status_code}, activating fallback"
@@ -242,28 +241,13 @@ class RedditFetcher(BaseFetcher):
             resp = await client.get(url, params=params)
             if resp.status_code == 200:
                 body = resp.json()
-                if isinstance(body, list) and len(body) > 1:
-                    comment_children = body[1].get("data", {}).get("children", [])
-                    top_comments = []
-                    for c in comment_children:
-                        cdata = c.get("data", {})
-                        author = cdata.get("author", "[deleted]")
-                        body_text = cdata.get("body", "").strip()
-                        if (
-                            body_text
-                            and body_text != "[deleted]"
-                            and len(body_text) > 10
-                        ):
-                            clean_text = (
-                                body_text[:350] + "..."
-                                if len(body_text) > 350
-                                else body_text
-                            )
-                            top_comments.append(f"[{author}]: {clean_text}")
-                        if len(top_comments) >= 3:
-                            break
-                    if top_comments:
-                        post["_top_comments"] = top_comments
+                comments = RedditEndpointsExtractor.extract_comments_from_thread(
+                    body, max_comments=3
+                )
+                if comments:
+                    post["_top_comments"] = [
+                        f"[{c.author}]: {c.body}" for c in comments
+                    ]
         except Exception as e:
             logger.debug(f"Failed to fetch Reddit comments for {post_id}: {e}")
 
