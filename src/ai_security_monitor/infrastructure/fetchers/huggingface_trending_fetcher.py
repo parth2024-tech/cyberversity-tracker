@@ -143,7 +143,7 @@ class HuggingFaceTrendingFetcher(BaseFetcher):
             "source_platform": "Hugging Face",
         }
 
-        category = self.source.category or Category.GITHUB_TRENDING
+        category = self.source.category or Category.AI_MODELS
 
         return Entry(
             source_id=self.source.id,

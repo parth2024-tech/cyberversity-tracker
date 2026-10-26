@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import feedparser
 import httpx
+from dateutil import parser as dt_parser
 
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Analysis, Category, Entry
@@ -125,12 +126,26 @@ class NewspaperLiveFetcher:
                     feed = feedparser.parse(r.content)
                     for item in feed.entries[:15]:
                         pub_dt = now
+                        parsed_dt = False
                         if hasattr(item, "published_parsed") and item.published_parsed:
                             try:
                                 y, m, d, hh, mm, ss = item.published_parsed[:6]
                                 pub_dt = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
+                                parsed_dt = True
                             except Exception:
-                                pub_dt = now
+                                pass
+                        if not parsed_dt:
+                            raw_date = getattr(item, "published", None) or getattr(
+                                item, "updated", None
+                            )
+                            if raw_date and isinstance(raw_date, str):
+                                try:
+                                    p = dt_parser.parse(raw_date, fuzzy=True)
+                                    if p.tzinfo is None:
+                                        p = p.replace(tzinfo=UTC)
+                                    pub_dt = p.astimezone(UTC)
+                                except Exception:
+                                    pass
                         if pub_dt < cutoff_14d:
                             continue
 
@@ -172,12 +187,26 @@ class NewspaperLiveFetcher:
                     feed = feedparser.parse(r.content)
                     for item in feed.entries[:15]:
                         pub_dt = now
+                        parsed_dt = False
                         if hasattr(item, "published_parsed") and item.published_parsed:
                             try:
                                 y, m, d, hh, mm, ss = item.published_parsed[:6]
                                 pub_dt = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
+                                parsed_dt = True
                             except Exception:
-                                pub_dt = now
+                                pass
+                        if not parsed_dt:
+                            raw_date = getattr(item, "published", None) or getattr(
+                                item, "updated", None
+                            )
+                            if raw_date and isinstance(raw_date, str):
+                                try:
+                                    p = dt_parser.parse(raw_date, fuzzy=True)
+                                    if p.tzinfo is None:
+                                        p = p.replace(tzinfo=UTC)
+                                    pub_dt = p.astimezone(UTC)
+                                except Exception:
+                                    pass
                         if pub_dt < cutoff_14d:
                             continue
 

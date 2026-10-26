@@ -5,7 +5,9 @@ from datetime import UTC, datetime
 
 import feedparser
 import httpx
+from dateutil import parser as dt_parser
 
+from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.domain.value_objects import ContentHash
@@ -18,6 +20,12 @@ logger = get_logger(__name__)
 
 # Chinese national standard encodings for legacy PRC/TW feeds
 _CHINESE_ENCODINGS = ("gb18030", "gbk", "gb2312", "big5")
+
+# Core AI keywords regex for strict filtering when require_ai is enabled
+_AI_RELEVANCE_RE = re.compile(
+    r"\b(ai|artificial intelligence|llm|llms|agent|agents|model|models|gpt|claude|gemini|deepseek|qwen|llama|mistral|transformer|transformers|diffusion|rag|vllm|sglang|ollama|deep learning|machine learning|neural|multimodal|inference|reasoning|benchmark|evals?)\b",
+    re.IGNORECASE,
+)
 
 
 class RSSFetcher(BaseFetcher):
@@ -201,10 +209,27 @@ class RSSFetcher(BaseFetcher):
             self.source.url
             and ("releases.atom" in self.source.url or "/releases" in self.source.url)
         )
+        source_cfg = self.source.config or {}
+        limit_val = source_cfg.get("limit")
+        try:
+            max_feed_entries = (
+                int(limit_val)
+                if limit_val is not None
+                else getattr(settings.fetch, "max_entries_per_feed", 25)
+            )
+        except (ValueError, TypeError):
+            max_feed_entries = getattr(settings.fetch, "max_entries_per_feed", 25)
+
+        require_ai = bool(
+            source_cfg.get("require_ai") or source_cfg.get("filter_mode") == "ai"
+        )
 
         entries: list[dict] = []
 
         for item in feed.entries:
+            if len(entries) >= max_feed_entries:
+                break
+
             # ── Content extraction ──────────────────────────────────────────
             content = ""
             if hasattr(item, "content") and item.content:
@@ -217,21 +242,47 @@ class RSSFetcher(BaseFetcher):
 
             # ── Published date ──────────────────────────────────────────────
             published_at = datetime.now(UTC)
+            parsed_date = False
             if hasattr(item, "published_parsed") and item.published_parsed:
                 try:
                     y, m, d, hh, mm, ss = item.published_parsed[:6]
                     published_at = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
+                    parsed_date = True
                 except Exception:
                     pass
             elif hasattr(item, "updated_parsed") and item.updated_parsed:
                 try:
                     y, m, d, hh, mm, ss = item.updated_parsed[:6]
                     published_at = datetime(y, m, d, hh, mm, ss, tzinfo=UTC)
+                    parsed_date = True
                 except Exception:
                     pass
 
+            # Fallback to dateutil fuzzy parser for non-standard RFC timestamps (e.g., VTT, European portals)
+            if not parsed_date:
+                raw_date_str = (
+                    getattr(item, "published", None)
+                    or getattr(item, "updated", None)
+                    or (item.get("pubDate") if hasattr(item, "get") else None)
+                )
+                if raw_date_str and isinstance(raw_date_str, str):
+                    try:
+                        parsed_dt = dt_parser.parse(raw_date_str, fuzzy=True)
+                        if parsed_dt.tzinfo is None:
+                            parsed_dt = parsed_dt.replace(tzinfo=UTC)
+                        published_at = parsed_dt.astimezone(UTC)
+                        parsed_date = True
+                    except Exception:
+                        pass
+
             raw_title = getattr(item, "title", "Untitled")
             clean_title = self._clean_html(raw_title)
+
+            # ── Optional Strict AI Relevance Gate ───────────────────────────
+            if require_ai:
+                combined_check = f"{clean_title} {content}"
+                if not _AI_RELEVANCE_RE.search(combined_check):
+                    continue
 
             # ── GitHub releases enrichment ──────────────────────────────────
             if is_releases:

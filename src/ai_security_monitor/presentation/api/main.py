@@ -236,7 +236,9 @@ def create_app() -> FastAPI:
         app.include_router(audio_router, prefix=api_prefix, tags=["Audio"])
         app.include_router(translation_router, prefix=api_prefix, tags=["Translation"])
         app.include_router(proxy_router, prefix=api_prefix, tags=["Proxy"])
-        app.include_router(backup_router, prefix=api_prefix, tags=["Backup & Portability"])
+        app.include_router(
+            backup_router, prefix=api_prefix, tags=["Backup & Portability"]
+        )
 
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
@@ -245,7 +247,6 @@ def create_app() -> FastAPI:
 
     app.post("/api/fetch", tags=["Sources"])(trigger_fetch_sweep)
     app.post("/api/v1/fetch", tags=["Sources"])(trigger_fetch_sweep)
-
 
     # Serve static web UI & dedicated gazette page
     import os

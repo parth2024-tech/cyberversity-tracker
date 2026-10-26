@@ -178,6 +178,48 @@ async def _get_active_watchlist_rules() -> list:
 
 
 # ---------------------------------------------------------------------------
+# Feed Impartiality & Source Diversity Interleaver
+# ---------------------------------------------------------------------------
+
+
+def interleave_impartial(items: list[dict], max_consecutive: int = 2) -> list[dict]:
+    """Interleave entries to prevent any single source from dominating the feed.
+
+    Ensures that no single source appears more than `max_consecutive` times in succession,
+    promoting source diversity, unbiased coverage, and complete impartiality across all publishers.
+    """
+    if len(items) <= max_consecutive:
+        return items
+
+    result: list[dict] = []
+    remaining = list(items)
+    last_source: str | None = None
+    consecutive_count = 0
+
+    while remaining:
+        selected_idx = -1
+        for i, item in enumerate(remaining):
+            src = str(item.get("source_id") or item.get("source_name") or "")
+            if src != last_source or consecutive_count < max_consecutive:
+                selected_idx = i
+                break
+
+        if selected_idx == -1:
+            selected_idx = 0
+
+        chosen = remaining.pop(selected_idx)
+        chosen_src = str(chosen.get("source_id") or chosen.get("source_name") or "")
+        if chosen_src == last_source:
+            consecutive_count += 1
+        else:
+            last_source = chosen_src
+            consecutive_count = 1
+        result.append(chosen)
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Core Query Helper
 # ---------------------------------------------------------------------------
 
@@ -458,6 +500,9 @@ async def query_serialized_entries(
                 else None,
             }
         )
+
+    # Enforce source diversity and impartiality across entries
+    serialized_entries = interleave_impartial(serialized_entries, max_consecutive=2)
 
     return serialized_entries, total
 

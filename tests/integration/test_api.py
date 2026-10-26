@@ -294,7 +294,6 @@ async def test_api_v1_versioning_and_vault_endpoints():
             assert unpin_resp.json()["is_vaulted"] is False
 
 
-
 @pytest.mark.asyncio
 async def test_sources_management_endpoints():
     """Verify creating, listing, and deleting sources with admin auth."""
@@ -333,4 +332,3 @@ async def test_sources_management_endpoints():
         )
         assert resp_delete.status_code == 200
         assert resp_delete.json()["status"] == "success"
-

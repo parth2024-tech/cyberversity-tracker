@@ -142,3 +142,88 @@ def test_clean_html_empty_string(rss_source: Source):
     fetcher = RSSFetcher(rss_source)
     assert fetcher._clean_html("") == ""
     assert fetcher._clean_html(None) == ""
+
+
+@pytest.mark.asyncio
+async def test_rss_fetcher_fuzzy_date_parsing(rss_source: Source):
+    """Non-standard date formats (e.g. VTT 'Wed, 21.10.2026 - 08:30') should be parsed correctly using dateutil fuzzy parser."""
+    nonstandard_xml = b"""<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>Nonstandard Date Feed</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Autonomous AI Agent Infrastructure Tested</title>
+      <link>https://example.com/ai-tested</link>
+      <description>Research test on agent reasoning pipelines.</description>
+      <pubDate>Wed, 21.10.2026 - 08:30</pubDate>
+    </item>
+  </channel>
+</rss>"""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = nonstandard_xml
+    mock_response.encoding = "utf-8"
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        fetcher = RSSFetcher(rss_source)
+        raw = await fetcher._fetch_raw()
+
+    assert len(raw) == 1
+    # Verify it parsed the nonstandard date to 2026-10-21
+    pub = raw[0]["published_at"]
+    assert pub.year == 2026
+    assert pub.month == 10
+    assert pub.day == 21
+
+
+@pytest.mark.asyncio
+async def test_rss_fetcher_require_ai_filtering(rss_source: Source):
+    """When require_ai=True, generic non-AI topics should be dropped."""
+    rss_source.config = {"require_ai": True}
+    mixed_xml = b"""<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>Mixed Research Feed</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Clean Water Filtration Breakthrough in Bio-membranes</title>
+      <link>https://example.com/water</link>
+      <description>Purification of municipal groundwater reservoirs using osmosis.</description>
+    </item>
+    <item>
+      <title>DeepSeek R3: New Reasoning LLM Architecture Released</title>
+      <link>https://example.com/deepseek-r3</link>
+      <description>A new open-weights model with chain-of-thought inference.</description>
+    </item>
+  </channel>
+</rss>"""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = mixed_xml
+    mock_response.encoding = "utf-8"
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        fetcher = RSSFetcher(rss_source)
+        raw = await fetcher._fetch_raw()
+
+    assert len(raw) == 1
+    assert "DeepSeek" in raw[0]["title"]

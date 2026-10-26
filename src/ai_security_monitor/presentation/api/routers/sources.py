@@ -36,7 +36,6 @@ class SourceCreateRequest(BaseModel):
     config: dict = {}
 
 
-
 @sources_router.get("")
 @sources_router.get("/")
 async def list_sources(all_sources: bool = True):
@@ -210,4 +209,3 @@ async def delete_source(
         "deleted_id": source_id,
         "message": "Source successfully deleted",
     }
-

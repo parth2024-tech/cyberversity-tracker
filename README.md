@@ -1,7 +1,7 @@
 # AETHERGUARD: Worldwide AI Ecosystem Intelligence Pipeline
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-2ea44f?style=flat-square)](https://github.com/parth2024-tech/cyberversity-tracker/actions)
-[![Test Suite](https://img.shields.io/badge/Tests-336%20Passing-brightgreen?style=flat-square)](tests/)
+[![Test Suite](https://img.shields.io/badge/Tests-341%20Passing-brightgreen?style=flat-square)](tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-79%25-blue?style=flat-square)](tests/)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -238,7 +238,7 @@ All endpoints are fully versioned and available under both `/api` and `/api/v1` 
 
 ## 🧪 Testing & Verification
 
-AETHERGUARD is covered by **336 automated unit and integration tests** enforcing boundary validation, deduplication contracts, SQL injection resilience, and feed freshness invariants:
+AETHERGUARD is covered by **341 automated unit and integration tests** enforcing boundary validation, deduplication contracts, SQL injection resilience, and feed freshness invariants:
 
 ```bash
 # Run full test suite with enforced coverage threshold

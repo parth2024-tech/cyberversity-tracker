@@ -462,7 +462,7 @@ sources:
     language: typescript
     filter_mode: ai
 - name: Hugging Face Trending AI Models & Repos
-  category: github_trending
+  category: ai_models
   type: huggingface_trending
   url: https://huggingface.co/api/trending
   rate_limit_seconds: 1800
@@ -470,6 +470,16 @@ sources:
   region: global
   country: GLOBAL
   config:
+    limit: 20
+- name: OSS Insight Trending AI Repositories
+  category: github_trending
+  type: oss_insight
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    period: past_24_hours
     limit: 20
 - name: GitHub Trending AI Repositories (Weekly)
   category: github_trending
@@ -1259,7 +1269,7 @@ sources:
   type: rss
   url: https://www.vttresearch.com/en/rss.xml
   rate_limit_seconds: 1800
-  enabled: true
+  enabled: false
   region: nordic
   country: FI
 - name: CERT-SE (Swedish Civil Contingencies Agency MSB)

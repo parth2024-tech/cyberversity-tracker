@@ -108,7 +108,6 @@ def fetch(
 app.command(name="sweep")(fetch)
 
 
-
 @app.command()
 def stats():
     """Display real-time database intelligence statistics and metrics."""

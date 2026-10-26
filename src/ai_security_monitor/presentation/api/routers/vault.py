@@ -47,17 +47,23 @@ async def list_vault_entries(
             items = []
             for e in entries:
                 meta = e.metadata or {}
-                items.append({
-                    "id": str(e.id),
-                    "title": e.title,
-                    "url": e.url,
-                    "category": e.category.value if hasattr(e.category, "value") else str(e.category),
-                    "is_important": True,
-                    "published_at": e.published_at.isoformat() if e.published_at else None,
-                    "saved_at": meta.get("saved_at") or meta.get("vaulted_at"),
-                    "importance_reason": meta.get("importance_reason"),
-                    "metadata": meta,
-                })
+                items.append(
+                    {
+                        "id": str(e.id),
+                        "title": e.title,
+                        "url": e.url,
+                        "category": e.category.value
+                        if hasattr(e.category, "value")
+                        else str(e.category),
+                        "is_important": True,
+                        "published_at": e.published_at.isoformat()
+                        if e.published_at
+                        else None,
+                        "saved_at": meta.get("saved_at") or meta.get("vaulted_at"),
+                        "importance_reason": meta.get("importance_reason"),
+                        "metadata": meta,
+                    }
+                )
 
             return {
                 "total": total,

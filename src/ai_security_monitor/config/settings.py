@@ -125,6 +125,10 @@ class FetchSettings(BaseSettings):
     langdetect_confidence_threshold: float = Field(
         default=0.7, description="Minimum confidence for language detection"
     )
+    max_entries_per_feed: int = Field(
+        default=25,
+        description="Maximum entries to ingest from a single feed per sweep to ensure source diversity and prevent feed domination",
+    )
 
     model_config = SettingsConfigDict(env_prefix="FETCH_")
 
