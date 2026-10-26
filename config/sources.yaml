@@ -497,6 +497,28 @@ sources:
   enabled: true
   region: china
   country: CN
+- name: ModelScope Hub Open Source Foundation Models
+  category: ai_models
+  type: modelscope
+  url: https://modelscope.cn/openapi/v1/models
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  config:
+    search: ""
+    limit: 15
+    sort: last_modified
+- name: Hugging Face Chinese Frontier AI Labs
+  category: ai_models
+  type: huggingface_china
+  url: https://huggingface.co/api/models
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  config:
+    limit_per_author: 5
 - name: Kimi / Moonshot AI Open Codebases
   category: github_trending
   type: rss

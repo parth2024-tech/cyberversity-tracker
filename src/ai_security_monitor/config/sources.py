@@ -72,6 +72,8 @@ class SourceConfig(BaseModel):
             "sitemap",
             "huggingface_trending",
             "twitter_x",
+            "modelscope",
+            "huggingface_china",
         }
         if v not in allowed:
             raise ValueError(f"Type must be one of {allowed}")

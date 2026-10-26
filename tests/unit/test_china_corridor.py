@@ -80,3 +80,34 @@ async def test_entries_query_with_china_category_and_region():
         data_reg = resp_reg.json()
         assert "entries" in data_reg
         assert "total" in data_reg
+
+
+@pytest.mark.asyncio
+async def test_china_export_endpoint():
+    """GET /api/china/export should return static JSON snapshot with cache headers."""
+    app = create_app()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get("/api/china/export")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "corridor" in data
+        assert "total_entries" in data
+        assert "key_laboratories" in data
+        assert "Cache-Control" in resp.headers
+
+
+@pytest.mark.asyncio
+async def test_china_threat_signals_endpoint():
+    """GET /api/china/threat-signals should return threat signals with CISA KEV and EPSS signals."""
+    app = create_app()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get("/api/china/threat-signals")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "threat_signals" in data
+        assert "count" in data
+

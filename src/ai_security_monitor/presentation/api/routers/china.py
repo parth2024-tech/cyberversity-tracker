@@ -229,3 +229,107 @@ async def get_china_glossary():
         },
     ]
     return JSONResponse(content={"glossary": glossary, "count": len(glossary)})
+
+
+@china_router.get("/threat-signals")
+@limiter.limit("60/minute")
+async def get_china_threat_signals(request: Request):
+    """Retrieve enriched China cybersecurity advisories with CISA KEV and EPSS scores."""
+    import re
+
+    from ai_security_monitor.application.services.cisa_epss_service import (
+        cisa_epss_service,
+    )
+
+    async def _fetch_signals():
+        await cisa_epss_service.sync_cisa_kev()
+        async with SqlAlchemyUnitOfWork() as uow:
+            session = uow.session
+            cve_regex = r"CVE-\d{4}-\d{4,}"
+
+            stmt = (
+                select(EntryModel)
+                .join(SourceModel, EntryModel.source_id == SourceModel.id)
+                .where(EntryModel.is_purged.is_(False))
+                .where(
+                    or_(
+                        SourceModel.config.like('%"region": "china"%'),
+                        SourceModel.config.like('%"country": "CN"%'),
+                        SourceModel.config.like('%"country": "HK"%'),
+                        EntryModel.extra_metadata.like('%"region": "china"%'),
+                        EntryModel.extra_metadata.like('%"country": "CN"%'),
+                        EntryModel.extra_metadata.like('%"country": "HK"%'),
+                    )
+                )
+                .order_by(EntryModel.published_at.desc())
+                .limit(50)
+            )
+            result = await session.execute(stmt)
+            entries = result.scalars().all()
+
+            enriched: list[dict[str, Any]] = []
+            for e in entries:
+                text_to_search = f"{e.title} {e.summary or ''} {e.extra_metadata or ''}"
+                cves = list(set(re.findall(cve_regex, text_to_search, re.IGNORECASE)))
+                if not cves:
+                    continue
+
+                cve_enrichments = []
+                for cve in cves[:3]:
+                    enrichment = await cisa_epss_service.enrich_cve(cve)
+                    cve_enrichments.append(enrichment)
+
+                enriched.append({
+                    "id": e.id,
+                    "title": e.title,
+                    "url": e.url,
+                    "published_at": e.published_at.isoformat() if e.published_at else None,
+                    "cve_signals": cve_enrichments,
+                    "has_kev": any(sig["is_kev"] for sig in cve_enrichments),
+                })
+
+            return {"threat_signals": enriched, "count": len(enriched)}
+
+    data = await response_cache.get_or_set("china_threat_signals", 60.0, _fetch_signals)
+    return JSONResponse(content=data)
+
+
+@china_router.get("/export")
+@limiter.limit("30/minute")
+async def export_china_static_snapshot(request: Request):
+    """
+    Generate and export static JSON snapshot (data/china_radar.json).
+    Enables zero-compute client delivery on Cloudflare Pages or GitHub Pages CDN.
+    """
+    import json
+    from pathlib import Path
+
+    overview = await get_china_corridor_overview(request)
+    overview_data = json.loads(overview.body.decode("utf-8")) if hasattr(overview, "body") else {}
+
+    glossary_resp = await get_china_glossary()
+    glossary_data = json.loads(glossary_resp.body.decode("utf-8")) if hasattr(glossary_resp, "body") else {}
+
+    snapshot = {
+        "generated_at": overview_data.get("snapshot_time"),
+        "corridor": overview_data.get("corridor"),
+        "total_entries": overview_data.get("total_entries"),
+        "by_category": overview_data.get("by_category"),
+        "key_laboratories": overview_data.get("key_laboratories"),
+        "recent_dispatches": overview_data.get("recent_dispatches"),
+        "glossary": glossary_data.get("glossary"),
+    }
+
+    # Save to disk for static hosting
+    try:
+        out_dir = Path("data")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "china_radar.json").write_text(json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
+    return JSONResponse(
+        content=snapshot,
+        headers={"Cache-Control": "public, max-age=60", "Access-Control-Allow-Origin": "*"},
+    )
+

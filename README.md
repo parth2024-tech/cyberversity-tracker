@@ -1,7 +1,7 @@
 # AETHERGUARD: Worldwide AI Ecosystem Intelligence Pipeline
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-2ea44f?style=flat-square)](https://github.com/parth2024-tech/cyberversity-tracker/actions)
-[![Test Suite](https://img.shields.io/badge/Tests-345%20Passing-brightgreen?style=flat-square)](tests/)
+[![Test Suite](https://img.shields.io/badge/Tests-360%20Passing-brightgreen?style=flat-square)](tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-79%25-blue?style=flat-square)](tests/)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -247,13 +247,15 @@ All endpoints are fully versioned and available under both `/api` and `/api/v1` 
 |---|---|:---:|---|
 | `/api/v1/china/overview` | `GET` | No | Aggregated China intelligence telemetry: total signals, category breakdown, monitored frontier labs, and recent highlights |
 | `/api/v1/china/glossary` | `GET` | No | Bilingual researcher-grade vocabulary mapping Chinese AI and cybersecurity terms to global standards |
+| `/api/v1/china/threat-signals` | `GET` | No | Enriched China cybersecurity advisories with CISA KEV active exploitation flags and EPSS percentiles |
+| `/api/v1/china/export` | `GET` | No | Static JSON snapshot export (`data/china_radar.json`) for zero-compute Cloudflare Pages / CDN delivery |
 | `/api/v1/entries?category=china` | `GET` | No | Corridor intelligence feed uniting Chinese foundation models, repos, arXiv papers, and cyber threat intelligence |
 
 ---
 
 ## 🧪 Testing & Verification
 
-AETHERGUARD is covered by **345 automated unit and integration tests** enforcing boundary validation, deduplication contracts, SQL injection resilience, and feed freshness invariants:
+AETHERGUARD is covered by **360 automated unit and integration tests** enforcing boundary validation, deduplication contracts, SQL injection resilience, and feed freshness invariants:
 
 ```bash
 # Run full test suite with enforced coverage threshold
