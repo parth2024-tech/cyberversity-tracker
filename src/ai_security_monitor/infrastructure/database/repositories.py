@@ -753,6 +753,9 @@ class SQLAlchemyEntryRepository(EntryRepository):
                         SourceModel.config.like('%"region": "china"%'),
                         SourceModel.config.like('%"country": "CN"%'),
                         SourceModel.config.like('%"country": "HK"%'),
+                        EntryModel.extra_metadata.like('%"region": "china"%'),
+                        EntryModel.extra_metadata.like('%"country": "CN"%'),
+                        EntryModel.extra_metadata.like('%"country": "HK"%'),
                     )
                 )
             elif reg in ("india", "south_asia", "in"):

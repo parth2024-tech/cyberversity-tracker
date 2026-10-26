@@ -481,6 +481,50 @@ sources:
   config:
     period: past_24_hours
     limit: 20
+- name: LMDeploy High-Performance LLM Serving (Shanghai AI Lab)
+  category: github_trending
+  type: rss
+  url: https://github.com/InternLM/lmdeploy/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+- name: ModelScope Open Source AI Hub (Alibaba)
+  category: github_trending
+  type: rss
+  url: https://github.com/modelscope/modelscope/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+- name: Kimi / Moonshot AI Open Codebases
+  category: github_trending
+  type: rss
+  url: https://github.com/MoonshotAI/Kimi-k1.5/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+- name: QbitAI (量子位) AI Research & Repos
+  category: ai_tech
+  type: rss
+  url: https://www.qbitai.com/feed
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  config:
+    require_ai: true
+- name: Synced / 机器之心 AI Frontier
+  category: ai_research
+  type: rss
+  url: https://www.jiqizhixin.com/rss
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  config:
+    require_ai: true
 - name: GitHub Trending AI Repositories (Weekly)
   category: github_trending
   type: github_trending
@@ -858,7 +902,7 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: CN
 - name: GovCERT China / Hong Kong Alerts
@@ -866,7 +910,7 @@ sources:
   type: rss
   url: https://www.govcert.gov.hk/en/rss_security_alerts.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: HK
 - name: Qihoo 360 Threat Intelligence (360威胁情报中心)
@@ -874,7 +918,7 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/920f171e3dae0c8eeb4c97b366b229ba19807732.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: CN
 - name: Qi-AnXin Threat Research (奇安信技术研究院)
@@ -882,7 +926,7 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/77a8d89f12dcb0aa75a19731e474a63427089081.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: CN
 - name: Qi-AnXin XLab (奇安信XLab)
@@ -890,7 +934,7 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/5c7b6eec254fbb0afac7abf4eae95573fc374555.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: CN
 - name: Cyber Kunlun CERT (赛博昆仑CERT)
@@ -898,7 +942,7 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/fb14ec6353e6ebbeb470d35d633471d0bca583a0.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: CN
 - name: Antiy AVL Threat Intel (安天AVL威胁情报)
@@ -906,7 +950,7 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/c17498223ad8f92e5434100b16f4894a3107a90b.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: CN
 - name: DarkNavy Security Research
@@ -914,7 +958,7 @@ sources:
   type: rss
   url: https://wechat2rss.xlab.app/feed/0d4ffa4a2127cb603c2da49daa678b0e780fd66b.xml
   rate_limit_seconds: 1800
-  enabled: false
+  enabled: true
   region: china
   country: CN
 - name: Tsinghua NISL Lab (清华大学网络与信息安全实验室)

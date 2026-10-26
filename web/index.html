@@ -191,6 +191,30 @@
     </div>
   </div>
 
+  <!-- MODAL: China AI & Cyber Researcher Glossary -->
+  <div id="china-glossary-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-red-500/30 bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 flex items-center justify-center text-lg">
+            🇨🇳
+          </div>
+          <div>
+            <h2 class="text-base font-bold tracking-tight text-white font-mono">China AI & Cyber Researcher Glossary</h2>
+            <p class="text-xs text-slate-400 font-sans">Curated bilingual terminology mapping Chinese ML & Cyber research jargon to global standards</p>
+          </div>
+        </div>
+        <button onclick="closeChinaGlossaryModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="china-glossary-content" class="overflow-y-auto space-y-2 pr-1 text-xs font-mono max-h-[60vh]">
+        <!-- Populated dynamically via fetch('/api/china/glossary') -->
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Custom Framework Watchlist Manager -->
   <div id="watchlist-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-white/[0.1] shadow-2xl space-y-5">
@@ -771,6 +795,12 @@
       <span class="sidebar-tooltip">3D Radar Globe</span>
     </button>
 
+    <!-- China AI & Cyber Corridor -->
+    <button class="sidebar-btn" id="sidebar-china-btn" onclick="setCategory('china')" title="">
+      <span class="text-xs font-bold font-mono">🇨🇳</span>
+      <span class="sidebar-tooltip">China Radar (中国前沿)</span>
+    </button>
+
     <!-- Watchlist -->
     <button class="sidebar-btn" onclick="openWatchlistModal()" title="">
       <i data-lucide="target" class="w-4 h-4"></i>
@@ -1039,6 +1069,9 @@
               <button onclick="setCategory('important')" id="tab-important" class="cat-tab px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 font-medium transition whitespace-nowrap flex items-center gap-1.5" title="Permanent Intel Vault: Protected against rolling purges">
                 <i data-lucide="archive" class="w-3.5 h-3.5 text-amber-400"></i> IMPORTANT VAULT (<span id="vault-count">0</span>)
               </button>
+              <button onclick="setCategory('china')" id="tab-china" class="cat-tab px-3 py-1.5 rounded-lg bg-red-950/30 text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-500/50 font-medium transition whitespace-nowrap flex items-center gap-1.5" title="China Intelligence Corridor: Frontier AI Models & Cyber Threat Intel">
+                <span class="text-xs">🇨🇳</span> <span>CHINA RADAR</span>
+              </button>
               <button onclick="setCategory('only_new')" id="tab-only_new" class="cat-tab px-3 py-1.5 rounded-lg bg-white/[0.03] text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 font-medium transition whitespace-nowrap flex items-center gap-1.5">
                 <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> ONLY NEW <span id="new-tab-count-badge" class="hidden px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded-full text-[10px] font-bold">0</span>
               </button>
@@ -1182,6 +1215,48 @@
             <span>⚡ <strong id="new-stories-count">0</strong> New Intelligence Reports Available — Click to Refresh Feed</span>
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500"></i>
           </button>
+        </div>
+
+        <!-- China Intelligence Corridor Researcher Hub Banner -->
+        <div id="china-corridor-hub" class="hidden mb-4 glass-panel p-4 sm:p-5 rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-950/40 via-slate-900/80 to-amber-950/30 space-y-3.5 shadow-xl">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-red-500/20 pb-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🇨🇳</span>
+                <h2 class="text-sm sm:text-base font-bold text-red-200 font-mono tracking-wide uppercase">China AI & Cyber Intelligence Corridor</h2>
+                <span class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-semibold">中国前沿科技与网络安全</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">
+                Researcher-grade surveillance tracking Chinese foundation models (DeepSeek, Qwen, GLM, Kimi), open-weights repos, academic breakthroughs (Tsinghua, SJTU, CAS), and cybersecurity threat intelligence (Qi-AnXin, Qihoo 360, DarkNavy).
+              </p>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <span id="china-total-badge" class="px-3 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 font-bold">456 Signals</span>
+            </div>
+          </div>
+
+          <!-- China Corridor Sub-Filters -->
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs font-mono pt-0.5">
+            <span class="text-slate-500 text-[10px] uppercase font-bold flex-shrink-0">Corridor Scope:</span>
+            <button onclick="setChinaSubFilter('all')" id="china-sub-all" class="china-sub-btn px-2.5 py-1 rounded-md bg-red-500/20 text-red-200 border border-red-500/40 text-[11px] font-medium transition whitespace-nowrap">
+              All China Intel (全部)
+            </button>
+            <button onclick="setChinaSubFilter('ai_models')" id="china-sub-models" class="china-sub-btn px-2.5 py-1 rounded-md bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.08] text-[11px] font-medium transition whitespace-nowrap">
+              🤖 Foundation Models (大模型)
+            </button>
+            <button onclick="setChinaSubFilter('github_trending')" id="china-sub-repos" class="china-sub-btn px-2.5 py-1 rounded-md bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.08] text-[11px] font-medium transition whitespace-nowrap">
+              🚀 Repos & Inference (开源项目)
+            </button>
+            <button onclick="setChinaSubFilter('ai_research')" id="china-sub-research" class="china-sub-btn px-2.5 py-1 rounded-md bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.08] text-[11px] font-medium transition whitespace-nowrap">
+              🔬 Academic Papers (前沿论文)
+            </button>
+            <button onclick="setChinaSubFilter('cybersecurity')" id="china-sub-cyber" class="china-sub-btn px-2.5 py-1 rounded-md bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.08] text-[11px] font-medium transition whitespace-nowrap">
+              🛡️ Cyber & Threat Intel (安全情报)
+            </button>
+            <button onclick="openChinaGlossaryModal()" class="ml-auto px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 hover:text-amber-200 border border-amber-500/30 text-[11px] font-medium transition whitespace-nowrap flex items-center gap-1">
+              📖 Researcher Glossary (专业词典)
+            </button>
+          </div>
         </div>
 
         <!-- Micro Feed Loading Indicator Bar (smooth in-place transition) -->
@@ -1918,6 +1993,11 @@
           url += `&high_velocity=true`;
         } else if (currentCategory === 'important' || currentCategory === 'vault') {
           url += `&important_only=true`;
+        } else if (currentCategory === 'china') {
+          url += `&region=china`;
+          if (typeof chinaSubCategory !== 'undefined' && chinaSubCategory && chinaSubCategory !== 'all') {
+            url += `&category=${chinaSubCategory}`;
+          }
         } else if (currentCategory === 'pinned') {
           url = `/api/entries?limit=150&offset=0&sort_by=${sortMode}`;
         } else if (currentCategory === 'only_new') {
@@ -2508,6 +2588,8 @@
     }
 
     // Category Tabs Switching
+    let chinaSubCategory = 'all';
+
     function setCategory(cat) {
       currentCategory = cat;
       document.querySelectorAll('.cat-tab').forEach(b => {
@@ -2519,9 +2601,51 @@
         activeBtn.classList.add('active-tab', 'bg-white/[0.12]', 'text-white', 'border-white/20');
         activeBtn.classList.remove('bg-white/[0.03]');
       }
+      const chinaHub = document.getElementById('china-corridor-hub');
+      if (chinaHub) {
+        if (cat === 'china') {
+          chinaHub.classList.remove('hidden');
+          fetchChinaOverview();
+        } else {
+          chinaHub.classList.add('hidden');
+        }
+      }
       playBeep('click');
       updateActiveFiltersBar();
       loadFeed(true);
+    }
+
+    function setChinaSubFilter(sub) {
+      chinaSubCategory = sub;
+      document.querySelectorAll('.china-sub-btn').forEach(b => {
+        b.classList.remove('bg-red-500/20', 'text-red-200', 'border-red-500/40');
+        b.classList.add('bg-white/[0.04]', 'text-slate-300', 'border-white/[0.08]');
+      });
+      const targetId = sub === 'ai_models' ? 'china-sub-models' :
+                       sub === 'github_trending' ? 'china-sub-repos' :
+                       sub === 'ai_research' ? 'china-sub-research' :
+                       sub === 'cybersecurity' ? 'china-sub-cyber' : 'china-sub-all';
+      const targetBtn = document.getElementById(targetId);
+      if (targetBtn) {
+        targetBtn.classList.add('bg-red-500/20', 'text-red-200', 'border-red-500/40');
+        targetBtn.classList.remove('bg-white/[0.04]', 'text-slate-300', 'border-white/[0.08]');
+      }
+      playBeep('click');
+      loadFeed(true);
+    }
+
+    async function fetchChinaOverview() {
+      try {
+        const res = await fetch('/api/china/overview');
+        if (!res.ok) return;
+        const data = await res.json();
+        const badge = document.getElementById('china-total-badge');
+        if (badge && typeof data.total_entries === 'number') {
+          badge.textContent = `${data.total_entries} China Signals`;
+        }
+      } catch (e) {
+        console.debug('Failed to fetch China overview:', e);
+      }
     }
 
     // Debounced Search (Forward to handleSearchInput)
@@ -2594,6 +2718,46 @@
             lucide.createIcons();
           }
         }, 1200);
+      }
+    }
+
+    // China Corridor Researcher Glossary Modal
+    function openChinaGlossaryModal() {
+      const modal = document.getElementById('china-glossary-modal');
+      if (modal) modal.classList.remove('hidden');
+      playBeep('click');
+      loadChinaGlossary();
+    }
+
+    function closeChinaGlossaryModal() {
+      const modal = document.getElementById('china-glossary-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function loadChinaGlossary() {
+      const container = document.getElementById('china-glossary-content');
+      if (!container) return;
+      container.innerHTML = '<p class="text-center text-slate-500 py-6 font-mono text-xs">Loading researcher glossary...</p>';
+      try {
+        const res = await fetch('/api/china/glossary');
+        const data = await res.json();
+        if (!data.glossary || !data.glossary.length) {
+          container.innerHTML = '<p class="text-center text-slate-500 py-6 font-mono text-xs">No glossary terms loaded.</p>';
+          return;
+        }
+        container.innerHTML = data.glossary.map(item => `
+          <div class="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between gap-3">
+            <div class="flex-1">
+              <div class="text-red-300 font-bold text-xs font-mono">${escapeHtml(item.zh)}</div>
+              <div class="text-slate-200 text-xs mt-0.5 font-sans">${escapeHtml(item.en)}</div>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-red-950/40 text-red-300 border border-red-500/30 flex-shrink-0">
+              ${escapeHtml(item.category)}
+            </span>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<p class="text-center text-rose-400 py-6 font-mono text-xs">Failed to load glossary.</p>';
       }
     }
 

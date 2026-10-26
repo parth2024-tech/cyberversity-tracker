@@ -295,7 +295,8 @@ class TranslationService:
             translator = GoogleTranslator(source=src, target=target)
             result = translator.translate(text)
             if result and not result.startswith("Error 500"):
-                return html.unescape(result)
+                unescaped = html.unescape(result)
+                return self._refine_ai_translation(unescaped, source_lang)
         except Exception as e:
             logger.debug(f"GoogleTranslator error for '{text[:30]}...': {e}")
 
@@ -335,11 +336,13 @@ class TranslationService:
                     if res and not res.startswith("MYMEMORY WARNING"):
                         translated_parts.append(res)
                 if translated_parts:
-                    return html.unescape(" ".join(translated_parts))
+                    unescaped = html.unescape(" ".join(translated_parts))
+                    return self._refine_ai_translation(unescaped, source_lang)
             else:
                 result = mm.translate(text)
                 if result and not result.startswith("MYMEMORY WARNING"):
-                    return html.unescape(result)
+                    unescaped = html.unescape(result)
+                    return self._refine_ai_translation(unescaped, source_lang)
         except Exception as e:
             logger.debug(f"MyMemoryTranslator fallback error: {e}")
 
@@ -350,11 +353,39 @@ class TranslationService:
             lt = LingueeTranslator(source=source_lang, target=target)
             result = lt.translate(text)
             if result:
-                return html.unescape(result)
+                unescaped = html.unescape(result)
+                return self._refine_ai_translation(unescaped, source_lang)
         except Exception:
             pass
 
         return None
+
+    def _refine_ai_translation(self, text: str, source_lang: str) -> str:
+        """Post-process translated text with researcher-grade AI and cybersecurity terminology."""
+        if not text:
+            return text
+        t = text
+        replacements = [
+            (r"\bbig model(s)?\b", r"Foundation LLM\1"),
+            (r"\blarge model(s)?\b", r"Large Language Model\1"),
+            (r"\bthought chain(s)?\b", r"Chain-of-Thought (CoT)"),
+            (r"\bvideo memory\b", "VRAM"),
+            (r"\bcompute power\b", "compute budget"),
+            (r"\bend-side model(s)?\b", r"on-device SLM\1"),
+            (r"\bopen source weight(s)?\b", r"open-weights release\1"),
+            (r"\bquantification\b", "quantization"),
+            (r"\bstrengthen tuning\b", "RL / RLHF alignment"),
+            (r"\bmicro-tuning\b", "fine-tuning"),
+            (r"\bprompt words\b", "prompts"),
+            (r"\b0day\b", "Zero-Day"),
+            (r"\butilization code\b", "exploit PoC"),
+            (r"\bright escalation\b", "privilege escalation"),
+            (r"\bsecurity announcement(s)?\b", r"security advisory\1"),
+            (r"\bknowledge distilling\b", "knowledge distillation"),
+        ]
+        for pat, rep in replacements:
+            t = re.sub(pat, rep, t, flags=re.I)
+        return t
 
     def _set_cache(self, key: str, value: str, lang: str) -> None:
         """Store translation in memory cache with size bound."""

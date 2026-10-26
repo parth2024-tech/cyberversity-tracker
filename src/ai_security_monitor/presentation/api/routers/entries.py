@@ -247,20 +247,28 @@ async def query_serialized_entries(
     categories_filter = None
     if category in ("important", "vault"):
         important_only = True
+    elif category == "china":
+        # Dedicated China corridor view: include all Chinese AI and cybersecurity intelligence
+        region = "china"
+        categories_filter = None
     elif category and category != "all" and isinstance(category, str):
         try:
             cat_enum = Category(category)
         except ValueError:
             pass
     elif not pre_cve and not high_velocity and not important_only:
-        # Default stream: Prioritize worldwide AI ecosystem (5 pillars) and omit security/CVEs
-        categories_filter = [
-            Category.AI_RESEARCH,
-            Category.AI_MODELS,
-            Category.GITHUB_TRENDING,
-            Category.CYBER_TOOLS,
-            Category.AI_TECH,
-        ]
+        # If querying the China corridor, the user explicitly requests full coverage of both AI and cybersecurity
+        if region in ("china", "cn") or country in ("CN", "HK"):
+            categories_filter = None
+        else:
+            # Default stream: Prioritize worldwide AI ecosystem (5 pillars) and omit security/CVEs
+            categories_filter = [
+                Category.AI_RESEARCH,
+                Category.AI_MODELS,
+                Category.GITHUB_TRENDING,
+                Category.CYBER_TOOLS,
+                Category.AI_TECH,
+            ]
 
     # Fetch sources map from cache (never hits DB when warm)
     sources_map = await _get_sources_map()
