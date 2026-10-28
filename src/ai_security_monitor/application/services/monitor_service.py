@@ -137,6 +137,7 @@ class MonitorService:
                     cfg_dict = dict(s_cfg.config or {})
                     cfg_dict["region"] = getattr(s_cfg, "region", "global")
                     cfg_dict["country"] = getattr(s_cfg, "country", "GLOBAL")
+                    cfg_dict["tier"] = getattr(s_cfg, "tier", 2.0)
                     new_source = Source(
                         name=s_cfg.name,
                         category=Category(s_cfg.category)
@@ -149,6 +150,7 @@ class MonitorService:
                         query=s_cfg.query,
                         rate_limit_seconds=s_cfg.rate_limit_seconds,
                         enabled=s_cfg.enabled,
+                        tier=getattr(s_cfg, "tier", 2.0),
                         config=cfg_dict,
                     )
                     await uow.sources.add(new_source)
@@ -191,8 +193,10 @@ class MonitorService:
                         new_cfg["frequency"] = str(since_val)
                     new_cfg["region"] = getattr(s_cfg, "region", "global")
                     new_cfg["country"] = getattr(s_cfg, "country", "GLOBAL")
+                    new_cfg["tier"] = getattr(s_cfg, "tier", 2.0)
                     if existing.config != new_cfg:
                         existing.config = {**(existing.config or {}), **new_cfg}
+                        existing.tier = getattr(s_cfg, "tier", 2.0)
                         changed = True
                     if changed:
                         await uow.sources.update(existing)

@@ -81,6 +81,7 @@ class Source(Entity):
     last_fetched_at: datetime | None = None
     last_status: FetchStatus | None = None
     last_entries_new: int = 0
+    tier: float = 2.0
     config: dict = field(default_factory=dict)
 
 

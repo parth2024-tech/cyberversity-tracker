@@ -60,6 +60,11 @@ class SourceModel(Base):
 
     __table_args__ = (Index("ix_sources_category_enabled", "category", "enabled"),)
 
+    @property
+    def tier(self) -> float:
+        """Source credibility tier (1.0 = Labs/ArXiv, 1.5 = Repos/Tools, 2.0 = Aggregators/Default)."""
+        return float((self.config or {}).get("tier", 2.0))
+
 
 class EntryModel(Base):
     """Intelligence entry model."""
