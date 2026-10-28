@@ -34,9 +34,33 @@ class SourceConfig(BaseModel):
         description="Geographic region (global, europe, apac, north_america)",
     )
     country: str = Field(default="GLOBAL", description="Country ISO or flag code")
+    tier: float = Field(
+        default=2.0,
+        description="Source credibility tier: 1.0 (Frontier Labs/Arxiv), 1.5 (Primary Tooling/Engineering), 2.0 (Community/Aggregators/Unverified)",
+    )
     config: dict[str, Any] = Field(
         default_factory=dict, description="Type-specific extra config"
     )
+
+    @field_validator("tier", mode="before")
+    @classmethod
+    def validate_tier(cls, v: Any) -> float:
+        if v is None:
+            return 2.0
+        if isinstance(v, str):
+            v_clean = v.strip().upper().replace("T", "")
+            try:
+                val = float(v_clean)
+            except ValueError:
+                return 2.0
+        else:
+            try:
+                val = float(v)
+            except (ValueError, TypeError):
+                return 2.0
+        if val not in (1.0, 1.5, 2.0):
+            return 2.0
+        return val
 
     @field_validator("category")
     @classmethod

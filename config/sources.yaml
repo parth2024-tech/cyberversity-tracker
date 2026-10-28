@@ -7,6 +7,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: Google DeepMind Blog
   category: ai_tech
   type: rss
@@ -15,6 +16,7 @@ sources:
   enabled: true
   region: europe
   country: GB
+  tier: 1.0
 - name: Google AI Blog
   category: ai_tech
   type: rss
@@ -23,6 +25,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: Microsoft AI Blog
   category: ai_tech
   type: rss
@@ -31,6 +34,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: Meta AI Research
   category: ai_tech
   type: rss
@@ -39,6 +43,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: Mistral AI Research
   category: ai_models
   type: rss
@@ -47,6 +52,7 @@ sources:
   enabled: true
   region: europe
   country: FR
+  tier: 1.0
 - name: NVIDIA Developer AI Blog
   category: ai_tech
   type: rss
@@ -55,6 +61,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: AWS Machine Learning Blog
   category: ai_tech
   type: rss
@@ -63,6 +70,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.5
 - name: Hugging Face Blog
   category: ai_tech
   type: rss
@@ -71,6 +79,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: OECD AI Policy & Safety Observatory
   category: ai_tech
   type: rss
@@ -79,6 +88,7 @@ sources:
   enabled: false
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Euractiv European AI Policy
   category: ai_tech
   type: rss
@@ -87,6 +97,7 @@ sources:
   enabled: false
   region: europe
   country: EU
+  tier: 2.0
 - name: MIT Technology Review AI
   category: ai_tech
   type: rss
@@ -95,6 +106,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.5
 - name: VentureBeat AI
   category: ai_tech
   type: rss
@@ -103,6 +115,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: TechCrunch AI
   category: ai_tech
   type: rss
@@ -111,6 +124,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Wired AI
   category: ai_tech
   type: rss
@@ -119,6 +133,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Ars Technica AI
   category: ai_tech
   type: rss
@@ -127,6 +142,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: The Register AI / ML
   category: ai_tech
   type: rss
@@ -135,6 +151,7 @@ sources:
   enabled: true
   region: europe
   country: GB
+  tier: 2.0
 - name: BBC Technology (Global AI)
   category: ai_tech
   type: rss
@@ -143,6 +160,7 @@ sources:
   enabled: true
   region: europe
   country: GB
+  tier: 2.0
 - name: Anthropic & Claude Safety Radar
   category: ai_research
   type: arxiv
@@ -152,6 +170,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: Cohere AI Frontier Research
   category: ai_tech
   type: rss
@@ -160,6 +179,7 @@ sources:
   enabled: false
   region: north_america
   country: CA
+  tier: 2.0
 - name: xAI Grok Architecture Releases
   category: ai_models
   type: rss
@@ -168,6 +188,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: AI Business
   category: ai_tech
   type: rss
@@ -176,6 +197,7 @@ sources:
   enabled: true
   region: europe
   country: GB
+  tier: 2.0
 - name: EU AI Office (European Commission AI Act)
   category: ai_tech
   type: rss
@@ -184,6 +206,7 @@ sources:
   enabled: true
   region: europe
   country: EU
+  tier: 2.0
 - name: SiliconANGLE AI
   category: ai_tech
   type: rss
@@ -192,6 +215,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: The AI Edge
   category: ai_tech
   type: rss
@@ -200,6 +224,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: arXiv AI Papers (cs.AI, cs.LG, cs.CL, cs.CV)
   category: ai_research
   type: arxiv
@@ -209,16 +234,18 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.0
 - name: arXiv AI Safety & Alignment (Pre-CVE Radar)
   category: ai_research
   type: arxiv
-  query: (cat:cs.CR AND (ti:LLM OR ti:"language model" OR ti:adversarial OR ti:jailbreak OR ti:agent OR ti:safety OR ti:alignment
-    OR ti:backdoor OR ti:trojan OR ti:multimodal))
+  query: (cat:cs.CR AND (ti:LLM OR ti:"language model" OR ti:adversarial OR ti:jailbreak
+    OR ti:agent OR ti:safety OR ti:alignment OR ti:backdoor OR ti:trojan OR ti:multimodal))
   max_results: 30
   rate_limit_seconds: 1800
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.0
 - name: MIT News AI
   category: ai_research
   type: rss
@@ -227,6 +254,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Hacker News (Global AI & Frontier Models)
   category: ai_tech
   type: hackernews
@@ -244,6 +272,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: CERT-EU (European Union Cyber Intel)
   category: cybersecurity
   type: rss
@@ -252,6 +281,7 @@ sources:
   enabled: false
   region: europe
   country: EU
+  tier: 2.0
 - name: UK NCSC (National Cyber Security Centre)
   category: cybersecurity
   type: rss
@@ -260,6 +290,7 @@ sources:
   enabled: false
   region: europe
   country: GB
+  tier: 2.0
 - name: France ANSSI (CERT-FR Alerts)
   category: cybersecurity
   type: rss
@@ -268,6 +299,7 @@ sources:
   enabled: false
   region: europe
   country: FR
+  tier: 2.0
 - name: Germany BSI (Cybersecurity Alerts)
   category: cybersecurity
   type: rss
@@ -276,6 +308,7 @@ sources:
   enabled: false
   region: europe
   country: DE
+  tier: 2.0
 - name: Japan JPCERT/CC (East Asia Incident Grid)
   category: cybersecurity
   type: rss
@@ -284,6 +317,7 @@ sources:
   enabled: false
   region: apac
   country: JP
+  tier: 2.0
 - name: Australian Cyber Security Centre (ACSC)
   category: cybersecurity
   type: rss
@@ -292,6 +326,7 @@ sources:
   enabled: false
   region: apac
   country: AU
+  tier: 2.0
 - name: Canadian Centre for Cyber Security (CCCS)
   category: cybersecurity
   type: rss
@@ -300,6 +335,7 @@ sources:
   enabled: false
   region: north_america
   country: CA
+  tier: 2.0
 - name: SANS Internet Storm Center (Worldwide Telemetry)
   category: cybersecurity
   type: rss
@@ -308,6 +344,7 @@ sources:
   enabled: false
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: SecurityWeek (International Cyber Defense)
   category: cybersecurity
   type: rss
@@ -316,6 +353,7 @@ sources:
   enabled: false
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Krebs on Security
   category: cybersecurity
   type: rss
@@ -324,6 +362,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: The Hacker News
   category: cybersecurity
   type: rss
@@ -332,6 +371,7 @@ sources:
   enabled: false
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Schneier on Security
   category: cybersecurity
   type: rss
@@ -340,6 +380,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Dark Reading
   category: cybersecurity
   type: rss
@@ -348,6 +389,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: BleepingComputer
   category: cybersecurity
   type: rss
@@ -356,6 +398,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Wired Security
   category: cybersecurity
   type: rss
@@ -364,6 +407,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Ars Technica Security
   category: cybersecurity
   type: rss
@@ -372,6 +416,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Microsoft MSRC (Security Response Center)
   category: vulnerabilities
   type: rss
@@ -380,6 +425,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Cisco PSIRT (Security Advisories)
   category: vulnerabilities
   type: rss
@@ -388,6 +434,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Fortinet PSIRT (FortiGuard Advisories)
   category: vulnerabilities
   type: rss
@@ -396,6 +443,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Ivanti Security Advisories
   category: vulnerabilities
   type: rss
@@ -404,6 +452,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: GitHub Trending AI Repositories (Daily)
   category: github_trending
   type: github_trending
@@ -415,6 +464,7 @@ sources:
   config:
     frequency: daily
     filter_mode: ai
+  tier: 1.5
 - name: GitHub Trending Python AI & LLMs
   category: github_trending
   type: github_trending
@@ -427,6 +477,7 @@ sources:
     frequency: daily
     language: python
     filter_mode: ai
+  tier: 1.5
 - name: GitHub Trending TypeScript AI Agents & Tools
   category: github_trending
   type: github_trending
@@ -439,6 +490,7 @@ sources:
     frequency: daily
     language: typescript
     filter_mode: ai
+  tier: 1.5
 - name: Hugging Face Trending AI Models & Repos
   category: ai_models
   type: huggingface_trending
@@ -449,6 +501,7 @@ sources:
   country: GLOBAL
   config:
     limit: 20
+  tier: 1.0
 - name: Hugging Face Curated Daily Papers
   category: ai_research
   type: huggingface_daily_papers
@@ -459,6 +512,7 @@ sources:
   country: GLOBAL
   config:
     limit: 25
+  tier: 1.0
 - name: OSS Insight Trending AI Repositories
   category: github_trending
   type: oss_insight
@@ -469,6 +523,7 @@ sources:
   config:
     period: past_24_hours
     limit: 20
+  tier: 1.5
 - name: LMDeploy High-Performance LLM Serving (Shanghai AI Lab)
   category: github_trending
   type: rss
@@ -477,6 +532,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: ModelScope Open Source AI Hub (Alibaba)
   category: github_trending
   type: rss
@@ -485,6 +541,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 1.0
 - name: ModelScope Hub Open Source Foundation Models
   category: ai_models
   type: modelscope
@@ -494,9 +551,10 @@ sources:
   region: china
   country: CN
   config:
-    search: ""
+    search: ''
     limit: 15
     sort: last_modified
+  tier: 1.0
 - name: Hugging Face Chinese Frontier AI Labs
   category: ai_models
   type: huggingface_china
@@ -507,6 +565,7 @@ sources:
   country: CN
   config:
     limit_per_author: 5
+  tier: 1.0
 - name: Kimi / Moonshot AI Open Codebases
   category: github_trending
   type: rss
@@ -515,6 +574,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: QbitAI (量子位) AI Research & Repos
   category: ai_tech
   type: rss
@@ -525,6 +585,7 @@ sources:
   country: CN
   config:
     require_ai: true
+  tier: 2.0
 - name: Synced / 机器之心 AI Frontier
   category: ai_research
   type: rss
@@ -535,6 +596,7 @@ sources:
   country: CN
   config:
     require_ai: true
+  tier: 2.0
 - name: GitHub Trending AI Repositories (Weekly)
   category: github_trending
   type: github_trending
@@ -546,6 +608,7 @@ sources:
   config:
     frequency: weekly
     filter_mode: ai
+  tier: 1.5
 - name: Open-WebUI Releases & Codebase
   category: github_trending
   type: rss
@@ -554,6 +617,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: AutoGPT Agent Runtime Releases
   category: github_trending
   type: rss
@@ -562,6 +626,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Dify AI Application Platform Releases
   category: github_trending
   type: rss
@@ -570,6 +635,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: ComfyUI Generative Workflow Releases
   category: github_trending
   type: rss
@@ -578,6 +644,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: DeepSeek-V3 Open Model Codebase
   category: github_trending
   type: rss
@@ -586,6 +653,7 @@ sources:
   enabled: true
   region: apac
   country: CN
+  tier: 1.0
 - name: Qwen Open Source Releases
   category: ai_models
   type: rss
@@ -594,6 +662,7 @@ sources:
   enabled: true
   region: apac
   country: CN
+  tier: 1.0
 - name: Reddit r/LocalLLaMA (Open Weights & Local AI)
   category: ai_models
   type: reddit
@@ -604,9 +673,9 @@ sources:
   country: GLOBAL
   config:
     subreddits:
-      - LocalLLaMA
+    - LocalLLaMA
     fetch_limit: 15
-
+  tier: 2.0
 - name: Reddit r/MachineLearning (Research & Breakthroughs)
   category: ai_research
   type: reddit
@@ -617,9 +686,9 @@ sources:
   country: GLOBAL
   config:
     subreddits:
-      - MachineLearning
+    - MachineLearning
     fetch_limit: 15
-
+  tier: 2.0
 - name: Reddit r/Singularity (Frontier Models & AGI)
   category: ai_models
   type: reddit
@@ -630,9 +699,9 @@ sources:
   country: GLOBAL
   config:
     subreddits:
-      - Singularity
+    - Singularity
     fetch_limit: 15
-
+  tier: 2.0
 - name: Reddit r/ArtificialIntelligence (Global AI Radar)
   category: ai_tech
   type: reddit
@@ -643,9 +712,9 @@ sources:
   country: GLOBAL
   config:
     subreddits:
-      - ArtificialIntelligence
+    - ArtificialIntelligence
     fetch_limit: 15
-
+  tier: 2.0
 - name: Reddit r/OpenSource (Open-Source AI & Developer Tools)
   category: cyber_tools
   type: reddit
@@ -656,9 +725,9 @@ sources:
   country: GLOBAL
   config:
     subreddits:
-      - OpenSource
+    - OpenSource
     fetch_limit: 15
-
+  tier: 2.0
 - name: Reddit r/BestGitHubRepos (Trending Open-Source Projects)
   category: github_trending
   type: reddit
@@ -669,10 +738,10 @@ sources:
   country: GLOBAL
   config:
     subreddits:
-      - BestGitHubRepos
+    - BestGitHubRepos
     fetch_limit: 15
-
-- name: "X / Twitter: Frontier AI Models & Releases"
+  tier: 2.0
+- name: 'X / Twitter: Frontier AI Models & Releases'
   category: ai_models
   type: twitter_x
   url: https://x.com
@@ -682,10 +751,10 @@ sources:
   country: GLOBAL
   config:
     queries:
-      - 'site:x.com ("DeepSeek" OR "Claude" OR "OpenAI" OR "Qwen" OR "Llama") model when:14d'
+    - site:x.com ("DeepSeek" OR "Claude" OR "OpenAI" OR "Qwen" OR "Llama") model when:14d
     fetch_limit: 20
-
-- name: "X / Twitter: AI Research & Preprint Breakthroughs"
+  tier: 2.0
+- name: 'X / Twitter: AI Research & Preprint Breakthroughs'
   category: ai_research
   type: twitter_x
   url: https://x.com
@@ -695,13 +764,13 @@ sources:
   country: GLOBAL
   config:
     queries:
-      - 'site:x.com ("arXiv" OR "benchmark" OR "reasoning model") AI when:14d'
-      - 'site:x.com/_akhaliq when:14d'
-      - 'site:x.com/karpathy when:14d'
-      - 'site:x.com/sama when:14d'
+    - site:x.com ("arXiv" OR "benchmark" OR "reasoning model") AI when:14d
+    - site:x.com/_akhaliq when:14d
+    - site:x.com/karpathy when:14d
+    - site:x.com/sama when:14d
     fetch_limit: 20
-
-- name: "X / Twitter: AI Developer Tools & Inference Runtimes"
+  tier: 2.0
+- name: 'X / Twitter: AI Developer Tools & Inference Runtimes'
   category: cyber_tools
   type: twitter_x
   url: https://x.com
@@ -711,10 +780,10 @@ sources:
   country: GLOBAL
   config:
     queries:
-      - 'site:x.com ("vLLM" OR "Ollama" OR "SGLang" OR "llama.cpp" OR "ComfyUI") when:14d'
-      - 'site:x.com ("agent" OR "coding agent" OR "AI agent") framework when:14d'
+    - site:x.com ("vLLM" OR "Ollama" OR "SGLang" OR "llama.cpp" OR "ComfyUI") when:14d
+    - site:x.com ("agent" OR "coding agent" OR "AI agent") framework when:14d
     fetch_limit: 20
-
+  tier: 2.0
 - name: Hugging Face Model Releases
   category: ai_models
   type: rss
@@ -723,6 +792,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: vLLM Inference Engine Releases
   category: cyber_tools
   type: rss
@@ -731,6 +801,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Ollama Local Inference Runtime Releases
   category: cyber_tools
   type: rss
@@ -739,6 +810,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.5
 - name: llama.cpp High-Performance LLM Engine Releases
   category: cyber_tools
   type: rss
@@ -747,6 +819,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: SGLang Fast Serving Engine Releases
   category: cyber_tools
   type: rss
@@ -755,6 +828,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: LangChain AI Application Framework Releases
   category: cyber_tools
   type: rss
@@ -763,6 +837,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.5
 - name: LlamaIndex Data Framework Releases
   category: cyber_tools
   type: rss
@@ -771,6 +846,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.5
 - name: Hugging Face Transformers Releases
   category: cyber_tools
   type: rss
@@ -779,6 +855,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Unsloth Fast LLM Fine-Tuning Releases
   category: cyber_tools
   type: rss
@@ -787,6 +864,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Chroma Vector Database Releases
   category: cyber_tools
   type: rss
@@ -795,6 +873,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Qdrant Vector Search Engine Releases
   category: cyber_tools
   type: rss
@@ -803,6 +882,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Simon Willison AI & LLM Tools
   category: cyber_tools
   type: rss
@@ -811,6 +891,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.5
 - name: Ollama Developer Updates & Blog
   category: cyber_tools
   type: rss
@@ -819,6 +900,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.5
 - name: LangChain AI Engineering Blog
   category: cyber_tools
   type: rss
@@ -827,6 +909,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.5
 - name: Packet Storm 0-Day Exploits & PoCs
   category: exploits_tricks
   type: rss
@@ -835,6 +918,7 @@ sources:
   enabled: false
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: PortSwigger Research (Attack Tricks)
   category: exploits_tricks
   type: rss
@@ -843,6 +927,7 @@ sources:
   enabled: false
   region: europe
   country: GB
+  tier: 2.0
 - name: Google Project Zero (Elite 0-Days)
   category: exploits_tricks
   type: rss
@@ -851,6 +936,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Trail of Bits Research & Tradecraft
   category: exploits_tricks
   type: rss
@@ -859,6 +945,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Exploit-DB (Verified 0-Day PoCs)
   category: exploits_tricks
   type: rss
@@ -867,6 +954,7 @@ sources:
   enabled: false
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Rapid7 Metasploit Framework Modules
   category: exploits_tricks
   type: rss
@@ -875,6 +963,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Shodan Trends & Exposure Radar
   category: cybersecurity
   type: rss
@@ -883,6 +972,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Censys Threat Research & Exposure
   category: cybersecurity
   type: rss
@@ -891,6 +981,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: MITRE ATT&CK Framework Releases
   category: cybersecurity
   type: rss
@@ -899,6 +990,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Have I Been Pwned (HIBP Breach Feed)
   category: cybersecurity
   type: rss
@@ -907,6 +999,7 @@ sources:
   enabled: false
   region: apac
   country: AU
+  tier: 2.0
 - name: CNNVD China Vulnerability Alerts (CNNVD安全动态)
   category: vulnerabilities
   type: rss
@@ -915,6 +1008,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: GovCERT China / Hong Kong Alerts
   category: cybersecurity
   type: rss
@@ -923,6 +1017,7 @@ sources:
   enabled: true
   region: china
   country: HK
+  tier: 2.0
 - name: Qihoo 360 Threat Intelligence (360威胁情报中心)
   category: cybersecurity
   type: rss
@@ -931,6 +1026,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Qi-AnXin Threat Research (奇安信技术研究院)
   category: cybersecurity
   type: rss
@@ -939,6 +1035,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Qi-AnXin XLab (奇安信XLab)
   category: cybersecurity
   type: rss
@@ -947,6 +1044,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Cyber Kunlun CERT (赛博昆仑CERT)
   category: vulnerabilities
   type: rss
@@ -955,6 +1053,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Antiy AVL Threat Intel (安天AVL威胁情报)
   category: cybersecurity
   type: rss
@@ -963,6 +1062,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: DarkNavy Security Research
   category: cybersecurity
   type: rss
@@ -971,6 +1071,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Tsinghua NISL Lab (清华大学网络与信息安全实验室)
   category: ai_research
   type: rss
@@ -979,6 +1080,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 1.0
 - name: Venustech ADLab (启明星辰积极防御实验室)
   category: vulnerabilities
   type: rss
@@ -987,6 +1089,7 @@ sources:
   enabled: false
   region: china
   country: CN
+  tier: 2.0
 - name: 0x727 Red Team (0x727开源安全团队)
   category: exploits_tricks
   type: rss
@@ -995,6 +1098,7 @@ sources:
   enabled: false
   region: china
   country: CN
+  tier: 2.0
 - name: Xmirror DevSecOps (悬镜安全技术研究)
   category: cybersecurity
   type: rss
@@ -1003,6 +1107,7 @@ sources:
   enabled: false
   region: china
   country: CN
+  tier: 2.0
 - name: Hawkeye Threat Intelligence (鹰眼威胁情报)
   category: cybersecurity
   type: rss
@@ -1011,6 +1116,7 @@ sources:
   enabled: false
   region: china
   country: CN
+  tier: 2.0
 - name: Fudan CodeWisdom Lab (复旦大学软件安全)
   category: ai_research
   type: rss
@@ -1019,6 +1125,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 1.0
 - name: DeepSeek AI Official Releases
   category: ai_models
   type: rss
@@ -1027,6 +1134,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 1.0
 - name: Shanghai AI Lab (InternLM Open Releases)
   category: ai_models
   type: rss
@@ -1035,14 +1143,17 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: arXiv China Frontier AI Labs
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND (Tsinghua OR DeepSeek OR Qwen OR Peking OR Zhipu OR "Shanghai AI Lab")
+  query: cat:cs.AI AND (Tsinghua OR DeepSeek OR Qwen OR Peking OR Zhipu OR "Shanghai
+    AI Lab")
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
+  tier: 1.0
 - name: SCMP China Tech & AI Radar
   category: ai_tech
   type: rss
@@ -1051,6 +1162,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Pandaily China Tech & AI Breakthroughs
   category: ai_tech
   type: rss
@@ -1059,6 +1171,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Analytics India Magazine (AIM AI & Models)
   category: ai_tech
   type: rss
@@ -1067,6 +1180,7 @@ sources:
   enabled: false
   region: south_asia
   country: IN
+  tier: 2.0
 - name: Inc42 AI & Deep Tech India
   category: ai_tech
   type: rss
@@ -1075,6 +1189,7 @@ sources:
   enabled: true
   region: south_asia
   country: IN
+  tier: 2.0
 - name: CERT-In (Indian Computer Emergency Response Team)
   category: cybersecurity
   type: rss
@@ -1083,14 +1198,17 @@ sources:
   enabled: false
   region: south_asia
   country: IN
+  tier: 2.0
 - name: arXiv India AI & Deep Tech Radar (IIT / IISc)
   category: ai_research
   type: arxiv
-  query: (cat:cs.AI OR cat:cs.CR) AND (IIT OR "Indian Institute of Science" OR IISc OR MeitY OR "India AI")
+  query: (cat:cs.AI OR cat:cs.CR) AND (IIT OR "Indian Institute of Science" OR IISc
+    OR MeitY OR "India AI")
   rate_limit_seconds: 1800
   enabled: true
   region: south_asia
   country: IN
+  tier: 1.0
 - name: YourStory AI Startups & Tech India
   category: ai_tech
   type: rss
@@ -1099,6 +1217,7 @@ sources:
   enabled: true
   region: south_asia
   country: IN
+  tier: 2.0
 - name: Check Point Research (Elite Threat Intel)
   category: cybersecurity
   type: rss
@@ -1107,6 +1226,7 @@ sources:
   enabled: false
   region: middle_east
   country: IL
+  tier: 2.0
 - name: CTech by Calcalist (Israel Cyber & AI High-Tech)
   category: ai_tech
   type: rss
@@ -1115,6 +1235,7 @@ sources:
   enabled: false
   region: middle_east
   country: IL
+  tier: 2.0
 - name: Team8 Cyber & AI Think Tank
   category: ai_tech
   type: rss
@@ -1123,14 +1244,17 @@ sources:
   enabled: true
   region: middle_east
   country: IL
+  tier: 2.0
 - name: arXiv Israel Cybernetics & AI Security
   category: ai_research
   type: arxiv
-  query: (cat:cs.AI OR cat:cs.CR) AND ("Tel Aviv University" OR "Technion" OR "Weizmann" OR "Hebrew University")
+  query: (cat:cs.AI OR cat:cs.CR) AND ("Tel Aviv University" OR "Technion" OR "Weizmann"
+    OR "Hebrew University")
   rate_limit_seconds: 1800
   enabled: true
   region: middle_east
   country: IL
+  tier: 1.0
 - name: Nikkei Asia Tech & AI Hardware
   category: ai_tech
   type: rss
@@ -1139,6 +1263,7 @@ sources:
   enabled: true
   region: apac
   country: JP
+  tier: 2.0
 - name: arXiv Japan AI & Robotics Radar (RIKEN / AIST / UTokyo)
   category: ai_research
   type: arxiv
@@ -1147,6 +1272,7 @@ sources:
   enabled: true
   region: apac
   country: JP
+  tier: 1.0
 - name: Japan Times Technology & AI
   category: ai_tech
   type: rss
@@ -1155,6 +1281,7 @@ sources:
   enabled: true
   region: apac
   country: JP
+  tier: 2.0
 - name: ETNews Korea (Electronic Times AI Chips & IT)
   category: ai_tech
   type: rss
@@ -1163,6 +1290,7 @@ sources:
   enabled: false
   region: apac
   country: KR
+  tier: 2.0
 - name: Korea JoongAng Daily Tech & AI
   category: ai_tech
   type: rss
@@ -1171,6 +1299,7 @@ sources:
   enabled: false
   region: apac
   country: KR
+  tier: 2.0
 - name: KrCERT/CC (Korea Internet & Security Agency)
   category: cybersecurity
   type: rss
@@ -1179,6 +1308,7 @@ sources:
   enabled: false
   region: apac
   country: KR
+  tier: 2.0
 - name: arXiv South Korea AI & HBM Memory Radar (KAIST / SNU)
   category: ai_research
   type: arxiv
@@ -1187,6 +1317,7 @@ sources:
   enabled: true
   region: apac
   country: KR
+  tier: 1.0
 - name: Digitimes Asia (Taiwan Semiconductors & TSMC Foundry)
   category: ai_tech
   type: rss
@@ -1198,6 +1329,7 @@ sources:
   language: en
   config:
     language: en
+  tier: 2.0
 - name: Taiwan TWCERT/CC (Computer Emergency Response Team)
   category: cybersecurity
   type: rss
@@ -1206,6 +1338,7 @@ sources:
   enabled: false
   region: apac
   country: TW
+  tier: 2.0
 - name: ITRI Taiwan (Industrial Technology Research Institute)
   category: ai_tech
   type: rss
@@ -1214,6 +1347,7 @@ sources:
   enabled: false
   region: apac
   country: TW
+  tier: 2.0
 - name: Technology Innovation Institute (TII Falcon Foundation Models)
   category: ai_models
   type: rss
@@ -1222,14 +1356,17 @@ sources:
   enabled: false
   region: middle_east
   country: AE
+  tier: 2.0
 - name: arXiv UAE Falcon & Abu Dhabi AI Radar (TII / MBZUAI)
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND ("Technology Innovation Institute" OR TII OR Falcon OR "Mohamed bin Zayed University" OR MBZUAI)
+  query: cat:cs.AI AND ("Technology Innovation Institute" OR TII OR Falcon OR "Mohamed
+    bin Zayed University" OR MBZUAI)
   rate_limit_seconds: 1800
   enabled: true
   region: middle_east
   country: AE
+  tier: 1.0
 - name: UAE AI Office & Future Foundation Wire
   category: ai_tech
   type: rss
@@ -1238,6 +1375,7 @@ sources:
   enabled: false
   region: middle_east
   country: AE
+  tier: 2.0
 - name: Cyber Security Agency of Singapore (CSA SingCERT)
   category: cybersecurity
   type: rss
@@ -1246,6 +1384,7 @@ sources:
   enabled: false
   region: apac
   country: SG
+  tier: 2.0
 - name: AI Singapore (AISG National Frontier Initiatives)
   category: ai_tech
   type: rss
@@ -1254,6 +1393,7 @@ sources:
   enabled: true
   region: apac
   country: SG
+  tier: 2.0
 - name: DFKI (German Research Center for Artificial Intelligence)
   category: ai_research
   type: rss
@@ -1262,6 +1402,7 @@ sources:
   enabled: false
   region: europe
   country: DE
+  tier: 2.0
 - name: Heise Security Alerts (German Cyber Defense)
   category: cybersecurity
   type: rss
@@ -1270,6 +1411,7 @@ sources:
   enabled: false
   region: europe
   country: DE
+  tier: 2.0
 - name: INRIA (French National Institute for Digital & AI Research)
   category: ai_research
   type: rss
@@ -1278,6 +1420,7 @@ sources:
   enabled: true
   region: europe
   country: FR
+  tier: 2.0
 - name: arXiv France Frontier AI & Kyutai Radar
   category: ai_research
   type: arxiv
@@ -1286,6 +1429,7 @@ sources:
   enabled: true
   region: europe
   country: FR
+  tier: 1.0
 - name: NCSC-NL (National Cyber Security Centrum Netherlands)
   category: cybersecurity
   type: rss
@@ -1294,6 +1438,7 @@ sources:
   enabled: false
   region: europe
   country: NL
+  tier: 2.0
 - name: Bits of Freedom Dutch Tech & ASML Semiconductor Wire
   category: ai_tech
   type: rss
@@ -1302,6 +1447,7 @@ sources:
   enabled: true
   region: europe
   country: NL
+  tier: 2.0
 - name: arXiv Netherlands AI & Lithography Radar (TU Delft / UvA)
   category: ai_research
   type: arxiv
@@ -1310,6 +1456,7 @@ sources:
   enabled: true
   region: europe
   country: NL
+  tier: 1.0
 - name: Traficom NCSC-FI (National Cyber Security Centre Finland)
   category: cybersecurity
   type: rss
@@ -1318,6 +1465,7 @@ sources:
   enabled: false
   region: nordic
   country: FI
+  tier: 2.0
 - name: VTT Technical Research Centre of Finland (AI & Microelectronics)
   category: ai_tech
   type: rss
@@ -1326,6 +1474,7 @@ sources:
   enabled: false
   region: nordic
   country: FI
+  tier: 2.0
 - name: CERT-SE (Swedish Civil Contingencies Agency MSB)
   category: cybersecurity
   type: rss
@@ -1334,6 +1483,7 @@ sources:
   enabled: false
   region: nordic
   country: SE
+  tier: 2.0
 - name: AI Sweden (National Centre for Applied Artificial Intelligence)
   category: ai_tech
   type: rss
@@ -1342,6 +1492,7 @@ sources:
   enabled: true
   region: nordic
   country: SE
+  tier: 2.0
 - name: GovCERT.ch (Swiss National Cyber Security Centre NCSC)
   category: cybersecurity
   type: rss
@@ -1350,6 +1501,7 @@ sources:
   enabled: false
   region: europe
   country: CH
+  tier: 2.0
 - name: ETH Zürich AI Center Research Wire
   category: ai_research
   type: rss
@@ -1358,6 +1510,7 @@ sources:
   enabled: false
   region: europe
   country: CH
+  tier: 2.0
 - name: CERN Computing & AI Technology Wire
   category: ai_tech
   type: rss
@@ -1366,6 +1519,7 @@ sources:
   enabled: false
   region: europe
   country: CH
+  tier: 2.0
 - name: Vector Institute for Artificial Intelligence
   category: ai_tech
   type: rss
@@ -1374,14 +1528,17 @@ sources:
   enabled: true
   region: north_america
   country: CA
+  tier: 2.0
 - name: arXiv Canada AI & Deep Learning (Mila / Vector / Waterloo)
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND (Mila OR "Vector Institute" OR "University of Toronto" OR McGill OR Waterloo)
+  query: cat:cs.AI AND (Mila OR "Vector Institute" OR "University of Toronto" OR McGill
+    OR Waterloo)
   rate_limit_seconds: 1800
   enabled: true
   region: north_america
   country: CA
+  tier: 1.0
 - name: CSIRO Data61 (Australia AI Research & Cybernetics)
   category: ai_research
   type: rss
@@ -1390,6 +1547,7 @@ sources:
   enabled: true
   region: apac
   country: AU
+  tier: 2.0
 - name: The Alan Turing Institute (UK AI Data Science)
   category: ai_research
   type: rss
@@ -1398,6 +1556,7 @@ sources:
   enabled: false
   region: europe
   country: GB
+  tier: 2.0
 - name: TechUK Digital & AI Policy Wire
   category: ai_tech
   type: rss
@@ -1406,14 +1565,17 @@ sources:
   enabled: false
   region: europe
   country: GB
+  tier: 2.0
 - name: arXiv UK AI Safety & Governance (Oxford / Cambridge / Turing)
   category: ai_research
   type: arxiv
-  query: cat:cs.AI AND ("Alan Turing Institute" OR "UK AI Safety Institute" OR Oxford OR Cambridge)
+  query: cat:cs.AI AND ("Alan Turing Institute" OR "UK AI Safety Institute" OR Oxford
+    OR Cambridge)
   rate_limit_seconds: 1800
   enabled: true
   region: europe
   country: GB
+  tier: 1.0
 - name: SemiAnalysis (Frontier AI Chips & Semiconductor Architecture)
   category: ai_tech
   type: rss
@@ -1422,6 +1584,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.5
 - name: arXiv US Frontier AI & Hardware (Stanford / Berkeley / MIT)
   category: ai_research
   type: arxiv
@@ -1430,6 +1593,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 1.0
 - name: ENISA (European Union Agency for Cybersecurity News)
   category: cybersecurity
   type: rss
@@ -1438,6 +1602,7 @@ sources:
   enabled: false
   region: europe
   country: EU
+  tier: 2.0
 - name: AlgorithmWatch (European AI & Algorithmic Accountability)
   category: ai_tech
   type: rss
@@ -1446,6 +1611,7 @@ sources:
   enabled: true
   region: europe
   country: EU
+  tier: 2.0
 - name: Stanford HAI (Human-Centered AI Institute)
   category: ai_research
   type: rss
@@ -1454,6 +1620,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: CSET Georgetown (AI Policy & National Security)
   category: ai_tech
   type: rss
@@ -1462,6 +1629,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Allen Institute for AI (AI2) Research
   category: ai_research
   type: rss
@@ -1470,6 +1638,7 @@ sources:
   enabled: false
   region: north_america
   country: US
+  tier: 2.0
 - name: Mistral AI Official Blog
   category: ai_models
   type: rss
@@ -1478,6 +1647,7 @@ sources:
   enabled: false
   region: europe
   country: FR
+  tier: 1.0
 - name: EleutherAI Open Source AI Research
   category: ai_research
   type: rss
@@ -1486,6 +1656,7 @@ sources:
   enabled: false
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Sebastian Raschka ML Research Blog
   category: ai_research
   type: rss
@@ -1494,6 +1665,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: The Gradient (AI Research Perspectives)
   category: ai_research
   type: rss
@@ -1502,6 +1674,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Interconnects (AI Systems & Models Research)
   category: ai_research
   type: rss
@@ -1510,6 +1683,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.5
 - name: Andrej Karpathy Research Blog
   category: ai_research
   type: rss
@@ -1518,6 +1692,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Lil'Log (Lilian Weng OpenAI Research)
   category: ai_research
   type: rss
@@ -1526,6 +1701,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 1.0
 - name: Chip Huyen AI Systems Engineering
   category: ai_research
   type: rss
@@ -1534,6 +1710,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: CrewAI Multi-Agent Framework Releases
   category: github_trending
   type: rss
@@ -1542,6 +1719,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Langflow Visual Agent Studio Releases
   category: github_trending
   type: rss
@@ -1550,6 +1728,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Flowise AI Generative Workflows Releases
   category: github_trending
   type: rss
@@ -1558,6 +1737,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: DSPy Programming Framework Releases
   category: github_trending
   type: rss
@@ -1566,6 +1746,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: LiteLLM Universal Proxy Engine Releases
   category: github_trending
   type: rss
@@ -1574,6 +1755,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: MemGPT / Letta Autonomous Memory Releases
   category: github_trending
   type: rss
@@ -1582,6 +1764,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Meta Llama Official Model Releases
   category: ai_models
   type: rss
@@ -1590,6 +1773,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Google Gemma Open Models Releases
   category: ai_models
   type: rss
@@ -1598,6 +1782,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Kyutai Labs Moshi Audio LLM (France)
   category: ai_models
   type: rss
@@ -1606,6 +1791,7 @@ sources:
   enabled: true
   region: europe
   country: FR
+  tier: 2.0
 - name: Zhipu AI GLM-4 Foundation Models (China)
   category: ai_models
   type: rss
@@ -1614,6 +1800,7 @@ sources:
   enabled: true
   region: china
   country: CN
+  tier: 2.0
 - name: Google DeepMind Research Blog
   category: ai_research
   type: rss
@@ -1622,6 +1809,7 @@ sources:
   enabled: true
   region: europe
   country: GB
+  tier: 1.0
 - name: Microsoft Research AI Lab
   category: ai_research
   type: rss
@@ -1630,6 +1818,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Stanford CRFM Foundation Models Center
   category: ai_research
   type: rss
@@ -1638,6 +1827,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: AI4Bharat Indic NLP & Multilingual AI (India)
   category: ai_research
   type: rss
@@ -1646,6 +1836,7 @@ sources:
   enabled: true
   region: south_asia
   country: IN
+  tier: 2.0
 - name: NVIDIA TensorRT-LLM Inference Engine
   category: cyber_tools
   type: rss
@@ -1654,6 +1845,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Exo Distributed Edge LLM Cluster
   category: cyber_tools
   type: rss
@@ -1662,6 +1854,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: Weaviate Vector Database Releases
   category: cyber_tools
   type: rss
@@ -1670,6 +1863,7 @@ sources:
   enabled: true
   region: europe
   country: NL
+  tier: 2.0
 - name: Milvus Cloud-Native Vector DB Releases
   category: cyber_tools
   type: rss
@@ -1678,6 +1872,7 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
+  tier: 2.0
 - name: LanceDB Multi-Modal Vector DB Releases
   category: cyber_tools
   type: rss
@@ -1686,6 +1881,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: Promptfoo LLM Security & Eval Releases
   category: cyber_tools
   type: rss
@@ -1694,6 +1890,7 @@ sources:
   enabled: true
   region: north_america
   country: US
+  tier: 2.0
 - name: TechNode China AI & Tech Wire
   category: ai_tech
   type: rss
@@ -1705,6 +1902,7 @@ sources:
   language: en
   config:
     language: en
+  tier: 2.0
 - name: The Decoder Global Frontier AI (Germany/EU)
   category: ai_tech
   type: rss
@@ -1716,6 +1914,7 @@ sources:
   language: en
   config:
     language: en
+  tier: 1.5
 - name: KED Global Tech & Chips (South Korea)
   category: ai_tech
   type: rss
@@ -1727,6 +1926,7 @@ sources:
   language: en
   config:
     language: en
+  tier: 2.0
 - name: MediaNama Indian Digital & AI Wire
   category: ai_tech
   type: rss
@@ -1735,6 +1935,7 @@ sources:
   enabled: true
   region: south_asia
   country: IN
+  tier: 2.0
 - name: Sakana AI Tokyo Research Releases
   category: ai_tech
   type: rss
@@ -1746,6 +1947,7 @@ sources:
   language: en
   config:
     language: en
+  tier: 2.0
 - name: Taiwan AI Labs Wire
   category: ai_tech
   type: rss
@@ -1757,6 +1959,7 @@ sources:
   language: en
   config:
     language: en
+  tier: 2.0
 - name: Silicon Republic Tech & AI (Europe)
   category: ai_tech
   type: rss
@@ -1765,6 +1968,7 @@ sources:
   enabled: true
   region: europe
   country: IE
+  tier: 2.0
 - name: MarkTechPost Global AI Wire
   category: ai_tech
   type: rss
@@ -1776,6 +1980,7 @@ sources:
   language: en
   config:
     language: en
+  tier: 1.5
 delivery:
   email:
     enabled: false

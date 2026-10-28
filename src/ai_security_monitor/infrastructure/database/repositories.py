@@ -1186,6 +1186,7 @@ class SQLAlchemySourceRepository(SourceRepository):
             last_fetched_at=model.last_fetched_at,
             last_status=FetchStatus(model.last_status) if model.last_status else None,
             last_entries_new=model.last_entries_new,
+            tier=float((model.config or {}).get("tier", 2.0)),
             config=model.config or {},
             created_at=model.created_at,
             updated_at=model.updated_at,
