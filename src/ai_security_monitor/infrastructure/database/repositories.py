@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, desc, func, or_, select, text
+from sqlalchemy import and_, desc, false, func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -698,6 +698,57 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 stmt = stmt.where(or_(*kw_conditions))
 
         analysis_joined = False
+
+        watchlist_rules = filters.watchlist_rules
+        if watchlist_rules:
+            rule_clauses = []
+            needs_analysis = any(
+                getattr(r, "min_threat_velocity", 0) > 0 for r in watchlist_rules
+            )
+            if needs_analysis and not analysis_joined:
+                stmt = stmt.outerjoin(
+                    AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id
+                )
+                analysis_joined = True
+
+            for rule in watchlist_rules:
+                if not getattr(rule, "enabled", True):
+                    continue
+                rule_subclauses = []
+
+                # 1. Keywords
+                kw_conditions = []
+                for kw in rule.keywords:
+                    kw_clean = kw.strip()
+                    if kw_clean:
+                        pat = f"%{kw_clean}%"
+                        kw_conditions.append(EntryModel.title.ilike(pat))
+                        kw_conditions.append(EntryModel.summary.ilike(pat))
+                        kw_conditions.append(EntryModel.tags.like(f"%{kw_clean}%"))
+                if kw_conditions:
+                    rule_subclauses.append(or_(*kw_conditions))
+
+                # 2. Categories
+                if rule.categories:
+                    cat_vals = [
+                        c.value if hasattr(c, "value") else str(c)
+                        for c in rule.categories
+                    ]
+                    rule_subclauses.append(EntryModel.category.in_(cat_vals))
+
+                # 3. Minimum velocity threshold
+                if getattr(rule, "min_threat_velocity", 0) > 0:
+                    rule_subclauses.append(
+                        AnalysisModelDB.threat_velocity >= rule.min_threat_velocity
+                    )
+
+                if rule_subclauses:
+                    rule_clauses.append(and_(*rule_subclauses))
+
+            if rule_clauses:
+                stmt = stmt.where(or_(*rule_clauses))
+            else:
+                stmt = stmt.where(false())
 
         if filters.pre_cve_only:
             if not analysis_joined:

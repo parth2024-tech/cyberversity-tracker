@@ -9,6 +9,7 @@ import builtins
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from ai_security_monitor.domain.entities import (
@@ -52,6 +53,7 @@ class EntryFilters:
     region: str | None = None
     country: str | None = None
     important_only: bool = False
+    watchlist_rules: list[Any] | None = None
 
 
 class EntryRepository(ABC):

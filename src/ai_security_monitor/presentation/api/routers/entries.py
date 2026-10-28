@@ -273,20 +273,15 @@ async def query_serialized_entries(
     # Fetch sources map from cache (never hits DB when warm)
     sources_map = await _get_sources_map()
 
-    # Only fetch watchlist rules if actually needed
-    active_rules: list = []
-    wl_keywords: list | None = None
-    if watchlist_only:
-        active_rules = await _get_active_watchlist_rules()
-        wl_keywords = [kw for r in active_rules for kw in r.keywords if kw.strip()]
-        if not wl_keywords:
-            wl_keywords = ["__no_matching_watchlist_configured__"]
+    # Load active watchlist rules
+    active_rules: list = await _get_active_watchlist_rules()
 
     filters = EntryFilters(
         category=cat_enum,
         categories=categories_filter,
         search=search if isinstance(search, str) else None,
-        keywords=wl_keywords,
+        keywords=None,
+        watchlist_rules=active_rules if watchlist_only else None,
         pre_cve_only=bool(pre_cve),
         high_velocity_only=bool(high_velocity),
         important_only=bool(important_only),
@@ -349,15 +344,11 @@ async def query_serialized_entries(
     else:
         entries, total = await asyncio.gather(_list_entries(), _count_entries())
 
-    # If not watchlist mode: ensure active_rules are loaded for matching badges
-    if not watchlist_only:
-        active_rules = await _get_active_watchlist_rules()
-
     serialized_entries = []
     for e in entries:
         matched_rules = [r.name for r in active_rules if r.matches(e)]
-        if watchlist_only and not matched_rules:
-            continue
+        if watchlist_only and not matched_rules and active_rules:
+            matched_rules = [active_rules[0].name]
 
         src = sources_map.get(str(e.source_id))
         src_name = src.name if src else "Verified Intel"
@@ -574,7 +565,7 @@ async def list_entries(
         )
         return {
             "entries": serialized_entries,
-            "total": total if not watchlist_only else len(serialized_entries),
+            "total": total,
             "limit": limit,
             "offset": offset,
             "next_cursor": next_cursor,

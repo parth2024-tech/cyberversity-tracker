@@ -8,6 +8,7 @@ from uuid import uuid4
 import pytest
 
 from ai_security_monitor.domain.entities import Analysis, AnalysisModel, Category, Entry
+from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
 from ai_security_monitor.domain.watchlist import WatchlistRule
 
 
@@ -130,3 +131,55 @@ async def test_watchlist_repository_crud(test_uow):
         assert deleted is True
 
         assert await uow.watchlist.get(saved.id) is None
+
+
+@pytest.mark.asyncio
+async def test_watchlist_pagination_and_sql_filtering(test_uow):
+    """Verify that watchlist queries respect category filters in SQL and maintain exact page limits."""
+    src_id = uuid4()
+    async with test_uow as uow:
+        # 1. Create a watchlist rule requiring category AI_MODELS and keyword 'vllm'
+        rule = WatchlistRule(
+            id=uuid4(),
+            name="vLLM Models Watchlist",
+            keywords=["vllm"],
+            categories=[Category.AI_MODELS],
+            enabled=True,
+        )
+        await uow.watchlist.add(rule)
+
+        # 2. Add 5 matching entries (Category.AI_MODELS with 'vllm' in title)
+        for i in range(5):
+            entry = Entry(
+                id=uuid4(),
+                source_id=src_id,
+                title=f"vLLM High Performance Serving #{i}",
+                url=f"https://example.com/vllm-{src_id}-{i}",
+                content_hash=f"hash_vllm_{src_id}_{i}",
+                summary=f"Inference optimization #{i} using vLLM PagedAttention.",
+                category=Category.AI_MODELS,
+                published_at=datetime.utcnow(),
+            )
+            await uow.entries.add(entry)
+
+        # 3. Add non-matching entry (Category.CYBERSECURITY, wrong category)
+        bad_entry = Entry(
+            id=uuid4(),
+            source_id=src_id,
+            title="vLLM in cyber tools",
+            url=f"https://example.com/bad-vllm-{src_id}",
+            content_hash=f"hash_bad_vllm_{src_id}",
+            summary="Testing wrong category filter.",
+            category=Category.CYBERSECURITY,
+            published_at=datetime.utcnow(),
+        )
+        await uow.entries.add(bad_entry)
+        await uow.commit()
+
+        # 4. Query with watchlist_rules and limit=2
+        filters = EntryFilters(watchlist_rules=[rule])
+        page1 = await uow.entries.list(filters=filters, pagination=PaginationParams(limit=2, offset=0))
+        assert len(page1) == 2
+
+        count = await uow.entries.count(filters=filters)
+        assert count == 5  # The bad_entry with wrong category was excluded
