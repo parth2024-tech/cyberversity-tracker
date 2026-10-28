@@ -456,6 +456,15 @@ async def query_serialized_entries(
             or meta_dict.get("is_pinned", False)
         )
 
+        heat_val = float(meta_dict.get("heat_score", 0.0))
+        heat_bdg = meta_dict.get("heat_badge")
+        if not heat_val and e.published_at:
+            from ai_security_monitor.application.services.heat_ranking_service import (
+                heat_ranking_service,
+            )
+
+            heat_val, heat_bdg = heat_ranking_service.compute_entry_heat(e)
+
         serialized_entries.append(
             {
                 "id": str(e.id),
@@ -473,6 +482,9 @@ async def query_serialized_entries(
                 "category": cat_val,
                 "tags": e.tags,
                 "metadata": e.metadata,
+                "heat_score": heat_val,
+                "heat_badge": heat_bdg,
+                "story_id": str(e.story_id) if getattr(e, "story_id", None) else meta_dict.get("story_id"),
                 "is_important": is_imp,
                 "importance_reason": meta_dict.get("importance_reason"),
                 "user_notes": meta_dict.get("user_notes", ""),
@@ -507,6 +519,9 @@ async def query_serialized_entries(
                 else None,
             }
         )
+
+    if sort_by == "heat":
+        serialized_entries.sort(key=lambda item: float(item.get("heat_score", 0.0)), reverse=True)
 
     # Enforce source diversity and impartiality across entries
     serialized_entries = interleave_impartial(serialized_entries, max_consecutive=2)
