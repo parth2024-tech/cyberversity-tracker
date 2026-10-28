@@ -139,9 +139,57 @@ class Story(Entity):
     metadata: dict = field(default_factory=dict)
     first_seen_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     last_seen_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    participant_timestamps: list[datetime] = field(default_factory=list)
+    heat_score: float = 0.0
+    heat_badge: str | None = None
+
+    def calculate_heat(
+        self, now: datetime | None = None, half_life_hours: float = 24.0
+    ) -> float:
+        """Compute half-life heat decay: sum(0.5 ** (delta_t / 24.0)) across all participant timestamps."""
+        ref_time = now or datetime.now(UTC)
+        total_heat = 0.0
+        timestamps = self.participant_timestamps or [self.last_seen_at]
+        for ts in timestamps:
+            ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
+            ref_aware = (
+                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+            )
+            delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
+            total_heat += 0.5 ** (delta_hours / half_life_hours)
+        self.heat_score = round(total_heat, 3)
+        return self.heat_score
+
+    def update_badge(self, now: datetime | None = None) -> str | None:
+        """Assign heat badge: surge (requires >= 2 unique sources + strong heat), rising, or new."""
+        ref_time = now or datetime.now(UTC)
+        heat = self.calculate_heat(now=ref_time)
+        first_seen = (
+            self.first_seen_at
+            if self.first_seen_at.tzinfo is not None
+            else self.first_seen_at.replace(tzinfo=UTC)
+        )
+        ref_aware = (
+            ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+        )
+        age_hours = max(0.0, (ref_aware - first_seen).total_seconds() / 3600.0)
+
+        # 1. Surge: multi-source momentum
+        # Strictly requires at least 2 unique corroborating sources AND heat >= 1.6
+        if self.source_count >= 2 and heat >= 1.6:
+            self.heat_badge = "surge"
+        # 2. Rising: accelerating interest or solid heat
+        elif heat >= 1.2 or (age_hours <= 12.0 and heat >= 0.85):
+            self.heat_badge = "rising"
+        # 3. New: broke very recently
+        elif age_hours <= 6.0:
+            self.heat_badge = "new"
+        else:
+            self.heat_badge = None
+        return self.heat_badge
 
     def add_entry(self, entry: Entry, source_name: str | None = None) -> None:
-        """Add corroborating entry to story and update decoupled factual confidence."""
+        """Add corroborating entry to story and update decoupled factual confidence and heat."""
         import math
 
         if entry.id not in self.entry_ids:
@@ -152,10 +200,14 @@ class Story(Entity):
             # Decoupled Factual Confidence: C = min(1.0, 0.50 + 0.25 * log2(N_sources))
             n_src = max(1, self.source_count)
             self.confidence_score = min(1.0, round(0.50 + 0.25 * math.log2(n_src), 2))
+            ts = entry.published_at or entry.created_at or datetime.now(UTC)
+            self.participant_timestamps.append(ts)
             self.last_seen_at = datetime.now(UTC)
             for tag in entry.tags:
                 if tag not in self.tags:
                     self.tags.append(tag)
+            self.calculate_heat()
+            self.update_badge()
 
 
 @dataclass(kw_only=True)

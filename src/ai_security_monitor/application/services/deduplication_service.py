@@ -400,13 +400,17 @@ class DeduplicationService:
             # Corroborate existing story
             existing_story.add_entry(entry, source_name=source_name)
             entry.story_id = existing_story.id
+            entry.metadata = dict(entry.metadata or {})
+            entry.metadata["heat_score"] = existing_story.heat_score
+            entry.metadata["heat_badge"] = existing_story.heat_badge
             logger.info(
                 f"Merged entry '{entry.title[:40]}...' into Story '{existing_story.title[:40]}...' "
-                f"(sources: {existing_story.source_count}, confidence: {existing_story.confidence_score:.2f})"
+                f"(sources: {existing_story.source_count}, confidence: {existing_story.confidence_score:.2f}, heat: {existing_story.heat_score}, badge: {existing_story.heat_badge})"
             )
             return entry, existing_story, False
 
         # Create new story aggregate
+        entry_ts = entry.published_at or entry.created_at or datetime.now(UTC)
         new_story = Story(
             title=entry.title,
             canonical_url=canon_url,
@@ -418,6 +422,7 @@ class DeduplicationService:
             entry_ids=[entry.id],
             sources=[source_name] if source_name else [],
             tags=list(entry.tags),
+            participant_timestamps=[entry_ts],
             metadata={
                 "initial_category": entry.category.value
                 if hasattr(entry.category, "value")
@@ -426,7 +431,12 @@ class DeduplicationService:
             first_seen_at=datetime.now(UTC),
             last_seen_at=datetime.now(UTC),
         )
+        new_story.calculate_heat()
+        new_story.update_badge()
         entry.story_id = new_story.id
+        entry.metadata = dict(entry.metadata or {})
+        entry.metadata["heat_score"] = new_story.heat_score
+        entry.metadata["heat_badge"] = new_story.heat_badge
 
         # Index new story
         self._stories[new_story.id] = new_story
