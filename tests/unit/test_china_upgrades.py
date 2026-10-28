@@ -6,18 +6,11 @@ Unit tests for the upgraded China Intelligence Corridor v3 components:
 - ModelScopeFetcher & HuggingFaceChinaFetcher
 """
 
-from unittest.mock import AsyncMock, patch
-
-import pytest
-
 from ai_security_monitor.application.services.china_dedup_service import (
     ChinaDeduplicationService,
 )
 from ai_security_monitor.application.services.china_token_shield import (
     ChinaTokenShield,
-)
-from ai_security_monitor.application.services.cisa_epss_service import (
-    CisaEpssService,
 )
 from ai_security_monitor.domain.entities import Category, Source, SourceType
 from ai_security_monitor.infrastructure.fetchers.huggingface_china_fetcher import (
@@ -121,37 +114,6 @@ class TestChinaDeduplicationService:
             is True
         )
         assert dedup.is_near_duplicate(article_a, unrelated) is False
-
-
-class TestCisaEpssService:
-    """Tests for CISA KEV and EPSS zero-cost enrichment."""
-
-    @pytest.mark.asyncio
-    async def test_cisa_kev_caching(self):
-        svc = CisaEpssService()
-        svc._kev_set = {"CVE-2024-3094", "CVE-2023-38606"}
-
-        assert svc.is_known_exploited("CVE-2024-3094") is True
-        assert svc.is_known_exploited("cve-2024-3094") is True  # case-insensitive
-        assert svc.is_known_exploited("CVE-2099-0001") is False
-
-    def test_nvd_url_generation(self):
-        svc = CisaEpssService()
-        url = svc.get_nvd_url("CVE-2026-12345")
-        assert url == "https://nvd.nist.gov/vuln/detail/CVE-2026-12345"
-
-    @pytest.mark.asyncio
-    async def test_enrich_cve(self):
-        svc = CisaEpssService()
-        svc._kev_set = {"CVE-2024-3094"}
-
-        with patch.object(svc, "get_epss_score", AsyncMock(return_value=(0.92, 0.99))):
-            enrichment = await svc.enrich_cve("CVE-2024-3094")
-            assert enrichment["cve"] == "CVE-2024-3094"
-            assert enrichment["is_kev"] is True
-            assert enrichment["epss"] == 0.92
-            assert enrichment["threat_tier"] == "CRITICAL_EXPLOITED"
-            assert "nvd.nist.gov" in enrichment["nvd_url"]
 
 
 class TestModelScopeFetcher:

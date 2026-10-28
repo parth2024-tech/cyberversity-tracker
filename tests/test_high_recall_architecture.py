@@ -33,10 +33,6 @@ from ai_security_monitor.application.services.deduplication_service import (
     minhash_jaccard_similarity,
     simhash_hamming_distance,
 )
-from ai_security_monitor.application.services.recall_auditor import (
-    RecallAuditorService,
-    calculate_chapman_estimate,
-)
 from ai_security_monitor.application.services.source_health_service import (
     SourceHealthMetrics,
     SourceHealthService,
@@ -440,99 +436,55 @@ def test_sqlite_fts5_triggers_and_bm25_search():
     assert len(after_del) == 0
 
 
-# ── Technique 10: Lincoln-Petersen Recall Auditor ───────────────────────────
-def test_lincoln_petersen_chapman_recall_auditor():
-    """Verify Chapman estimator calculations for total universe and empirical recall."""
-    # n1 = 100, n2 = 60, m = 40
-    # N = ((101 * 61) / 41) - 1 = floor(149.26) = 149
-    # Captured = 100 + 60 - 40 = 120
-    # Recall = 120 / 149 = 80.54%
-    res = calculate_chapman_estimate(n1_rss=100, n2_sitemap=60, overlap_m=40)
-    assert res["estimated_universe_N"] == 149
-    assert res["total_captured"] == 120
-    assert res["empirical_recall_pct"] == 80.54
-    assert res["coverage_gap_pct"] == 19.46
-    assert res["ci_95"][0] <= 149 <= res["ci_95"][1]
+# ── Technique 10: Empirical Source Yield Metrics ─────────────────────────────
+@pytest.mark.asyncio
+async def test_source_yield_empirical_metrics():
+    """Verify source yield metrics endpoint computes empirical articles per day per source."""
+    import httpx
 
-    # Verify Auditor service with mock entries
-    auditor = RecallAuditorService(window_days=14)
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+    from ai_security_monitor.presentation.api.main import create_app
+
+    src_id = uuid4()
     now = datetime.now(UTC)
-    entries = [
-        Entry(
-            source_id=uuid4(),
-            title="Art 1",
-            url="https://example.com/art1",
-            content_hash="h1",
-            published_at=now,
-            category=Category.AI_MODELS,
-            metadata={"channel": "rss"},
-        ),
-        Entry(
-            source_id=uuid4(),
-            title="Art 2",
-            url="https://example.com/art2",
-            content_hash="h2",
-            published_at=now,
-            category=Category.AI_MODELS,
-            metadata={"channel": "rss"},
-        ),
-        Entry(
-            source_id=uuid4(),
-            title="Art 2",
-            url="https://example.com/art2",
-            content_hash="h2_sm",
-            published_at=now,
-            category=Category.AI_MODELS,
-            metadata={"channel": "sitemap"},
-        ),
-        Entry(
-            source_id=uuid4(),
-            title="Art 3",
-            url="https://example.com/art3",
-            content_hash="h3",
-            published_at=now,
-            category=Category.AI_MODELS,
-            metadata={"channel": "sitemap"},
-        ),
-    ]
+    async with SqlAlchemyUnitOfWork() as uow:
+        src = Source(
+            id=src_id,
+            name=f"Yield Test Source {src_id}",
+            url=f"https://yield.test.org/feed-{src_id}",
+            type=SourceType.RSS,
+            category=Category.AI_RESEARCH,
+        )
+        await uow.sources.add(src)
 
-    audit = auditor.audit_entries(entries)
-    assert audit["n1_rss"] == 2
-    assert audit["n2_sitemap"] == 2
-    assert audit["overlap_m"] == 1
-    assert audit["total_captured"] == 3
-    assert audit["status"] == "dual_channel_verified"
+        for i in range(14):
+            entry = Entry(
+                id=uuid4(),
+                source_id=src_id,
+                title=f"Yield Paper #{i}",
+                url=f"https://yield.test.org/p-{src_id}-{i}",
+                content_hash=f"hash_yield_{src_id}_{i}",
+                summary=f"Summary for yield item {i}",
+                category=Category.AI_RESEARCH,
+                published_at=now - timedelta(days=i % 5),
+            )
+            await uow.entries.add(entry)
+        await uow.commit()
 
-
-def test_chapman_estimator_adversarial_boundaries():
-    """Brutally test edge cases, negative counts, zero denominators, and excessive overlap in Chapman estimator."""
-    # 1. Both samples zero (idle state)
-    res_zero = calculate_chapman_estimate(n1_rss=0, n2_sitemap=0, overlap_m=0)
-    assert res_zero["total_captured"] == 0
-    assert res_zero["estimated_universe_N"] == 0
-    assert res_zero["status"] == "idle"
-
-    # 2. Only single channel data
-    res_single = calculate_chapman_estimate(n1_rss=42, n2_sitemap=0, overlap_m=0)
-    assert res_single["n1_rss"] == 42
-    assert res_single["estimated_universe_N"] == 42
-    assert res_single["status"] == "single_channel_rss_only"
-
-    res_single_sm = calculate_chapman_estimate(n1_rss=0, n2_sitemap=30, overlap_m=0)
-    assert res_single_sm["n2_sitemap"] == 30
-    assert res_single_sm["status"] == "single_channel_sitemap_only"
-
-    # 3. Negative values must raise ValueError
-    for bad_args in ((-1, 10, 0), (10, -5, 0), (10, 10, -2)):
-        with pytest.raises(ValueError) as exc:
-            calculate_chapman_estimate(*bad_args)
-        assert "Item counts must be non-negative integers" in str(exc.value)
-
-    # 4. Overlap exceeds smaller sample (must clamp safely without negative universe)
-    res_clamped = calculate_chapman_estimate(n1_rss=15, n2_sitemap=25, overlap_m=100)
-    assert res_clamped["overlap_m"] == 15  # Clamped to min(n1, n2)
-    assert res_clamped["total_captured"] == 25
-    assert res_clamped["estimated_universe_N"] >= 25
+    app = create_app()
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        resp = await ac.get("/api/stats/source-yield?days=7")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["window_days"] == 7
+        assert data["total_articles"] >= 14
+        assert any(
+            s["source_name"] == f"Yield Test Source {src_id}" for s in data["sources"]
+        )
 
 
 def test_simhash_minhash_adversarial_boundaries():

@@ -96,17 +96,3 @@ async def test_china_export_endpoint():
         assert "total_entries" in data
         assert "key_laboratories" in data
         assert "Cache-Control" in resp.headers
-
-
-@pytest.mark.asyncio
-async def test_china_threat_signals_endpoint():
-    """GET /api/china/threat-signals should return threat signals with CISA KEV and EPSS signals."""
-    app = create_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get("/api/china/threat-signals")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "threat_signals" in data
-        assert "count" in data

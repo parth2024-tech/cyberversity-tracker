@@ -116,24 +116,59 @@ async def restore_purged_entries(
     return await service.restore_purged_entries()
 
 
-@stats_router.get("/recall-audit")
-async def get_recall_audit(
+@stats_router.get("/source-yield")
+async def get_source_yield(
     days: int = Query(
         default=14,
         ge=1,
         le=30,
-        description="Rolling audit window in days",
+        description="Rolling window in days for computing source yield",
     ),
-    service: MonitorService = Depends(get_monitor_service),
 ):
-    """Automated Lincoln-Petersen / Chapman capture-recapture recall audit across RSS and sitemap channels."""
-    from ai_security_monitor.application.services.recall_auditor import (
-        recall_auditor,
-    )
-    from ai_security_monitor.domain.repositories import PaginationParams
+    """Calculate empirical intelligence yield (articles per day) per source over a rolling window."""
+    from collections import defaultdict
+    from datetime import UTC, datetime, timedelta
 
+    from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
+
+    cutoff = datetime.now(UTC) - timedelta(days=days)
     async with SqlAlchemyUnitOfWork() as uow:
-        entries = await uow.entries.list(
-            pagination=PaginationParams(limit=1000, offset=0)
+        sources = await uow.sources.list()
+        sources_map = {str(s.id): s.name for s in sources}
+
+        source_counts: dict[str, int] = defaultdict(int)
+        offset = 0
+        batch_size = 200
+        while True:
+            pagination = PaginationParams(limit=batch_size, offset=offset)
+            batch = await uow.entries.list(
+                filters=EntryFilters(since=cutoff),
+                pagination=pagination,
+            )
+            if not batch:
+                break
+            for e in batch:
+                src_name = sources_map.get(str(e.source_id), "Unknown Source")
+                source_counts[src_name] += 1
+            if len(batch) < pagination.limit:
+                break
+            offset += len(batch)
+
+    yield_data = []
+    total_articles = sum(source_counts.values())
+    for name, count in sorted(source_counts.items(), key=lambda x: x[1], reverse=True):
+        yield_data.append(
+            {
+                "source_name": name,
+                "total_articles": count,
+                "articles_per_day": round(count / max(1, days), 2),
+            }
         )
-    return recall_auditor.audit_entries(entries)
+
+    return {
+        "window_days": days,
+        "total_sources_active": len(yield_data),
+        "total_articles": total_articles,
+        "overall_articles_per_day": round(total_articles / max(1, days), 2),
+        "sources": yield_data,
+    }
