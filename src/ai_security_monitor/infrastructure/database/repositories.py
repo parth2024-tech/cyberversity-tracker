@@ -24,6 +24,7 @@ from ai_security_monitor.domain.entities import (
     Entry,
     FetchLog,
     FetchStatus,
+    LLMReceipt,
     Source,
     SourceType,
 )
@@ -37,6 +38,7 @@ from ai_security_monitor.domain.repositories import (
     EntryFilters,
     EntryRepository,
     FetchLogRepository,
+    LLMReceiptRepository,
     PaginationParams,
     SourceRepository,
 )
@@ -48,6 +50,7 @@ from ai_security_monitor.infrastructure.database.models import (
     DigestModel,
     EntryModel,
     FetchLogModel,
+    ReceiptModel,
     SourceModel,
     WatchlistRuleModel,
 )
@@ -1423,3 +1426,124 @@ class SQLAlchemyWatchlistRepository:
             enabled=model.enabled,
             created_at=model.created_at,
         )
+
+
+class SQLAlchemyReceiptRepository(LLMReceiptRepository):
+    """SQLAlchemy implementation of LLMReceiptRepository for idempotent model calls."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    def _model_to_entity(self, model: ReceiptModel) -> LLMReceipt:
+        return LLMReceipt(
+            id=_str_to_uuid(model.id),
+            logical_key=model.logical_key,
+            entry_id=_str_to_uuid(model.entry_id) if model.entry_id else None,
+            provider=model.provider,
+            model=model.model,
+            prompt_version=model.prompt_version,
+            status=model.status,
+            attempts=model.attempts,
+            max_attempts=model.max_attempts,
+            response_json=model.response_json,
+            error_message=model.error_message,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
+    async def get_by_key(self, logical_key: str) -> LLMReceipt | None:
+        stmt = select(ReceiptModel).where(ReceiptModel.logical_key == logical_key)
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def get_by_entry(self, entry_id: UUID) -> list[LLMReceipt]:
+        stmt = (
+            select(ReceiptModel)
+            .where(ReceiptModel.entry_id == _uuid_to_str(entry_id))
+            .order_by(desc(ReceiptModel.created_at))
+        )
+        res = await self._session.execute(stmt)
+        return [self._model_to_entity(m) for m in res.scalars()]
+
+    async def record_attempt(
+        self,
+        logical_key: str,
+        provider: str,
+        model: str,
+        prompt_version: str,
+        entry_id: UUID | None = None,
+        max_attempts: int = 3,
+    ) -> tuple[LLMReceipt, bool]:
+        """Record an attempt. Returns (receipt, should_execute)."""
+        stmt = select(ReceiptModel).where(ReceiptModel.logical_key == logical_key)
+        res = await self._session.execute(stmt)
+        existing = res.scalar_one_or_none()
+
+        if existing is None:
+            new_model = ReceiptModel(
+                logical_key=logical_key,
+                entry_id=_uuid_to_str(entry_id) if entry_id else None,
+                provider=provider,
+                model=model,
+                prompt_version=prompt_version,
+                status="pending",
+                attempts=1,
+                max_attempts=max_attempts,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+            self._session.add(new_model)
+            await self._session.flush()
+            return self._model_to_entity(new_model), True
+
+        # Existing receipt: if succeeded, do not re-execute
+        if existing.status == "succeeded":
+            return self._model_to_entity(existing), False
+
+        # If failed and retry limit reached: poison entry, do not re-execute
+        if existing.status == "failed" and existing.attempts >= existing.max_attempts:
+            return self._model_to_entity(existing), False
+
+        # Otherwise increment attempt count and set pending
+        existing.attempts += 1
+        existing.status = "pending"
+        existing.updated_at = datetime.now(UTC)
+        await self._session.flush()
+        return self._model_to_entity(existing), True
+
+    async def record_success(
+        self,
+        logical_key: str,
+        response_json: dict[str, Any],
+    ) -> LLMReceipt:
+        stmt = select(ReceiptModel).where(ReceiptModel.logical_key == logical_key)
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("ReceiptModel", logical_key)
+
+        model.status = "succeeded"
+        model.response_json = response_json
+        model.error_message = None
+        model.updated_at = datetime.now(UTC)
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def record_failure(
+        self,
+        logical_key: str,
+        error_message: str,
+    ) -> LLMReceipt:
+        stmt = select(ReceiptModel).where(ReceiptModel.logical_key == logical_key)
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("ReceiptModel", logical_key)
+
+        model.status = "failed"
+        model.error_message = error_message[:2000] if error_message else None
+        model.updated_at = datetime.now(UTC)
+        await self._session.flush()
+        return self._model_to_entity(model)
+

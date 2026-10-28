@@ -14,6 +14,7 @@ from ai_security_monitor.infrastructure.database.repositories import (
     SQLAlchemyDigestRepository,
     SQLAlchemyEntryRepository,
     SQLAlchemyFetchLogRepository,
+    SQLAlchemyReceiptRepository,
     SQLAlchemySourceRepository,
     SQLAlchemyWatchlistRepository,
 )
@@ -36,6 +37,7 @@ class UnitOfWork:
         self._fetch_logs: SQLAlchemyFetchLogRepository | None = None
         self._digests: SQLAlchemyDigestRepository | None = None
         self._watchlist: SQLAlchemyWatchlistRepository | None = None
+        self._receipts: SQLAlchemyReceiptRepository | None = None
 
     @property
     def session(self) -> AsyncSession:
@@ -84,6 +86,12 @@ class UnitOfWork:
         if self._watchlist is None:
             self._watchlist = SQLAlchemyWatchlistRepository(self.session)
         return self._watchlist
+
+    @property
+    def receipts(self) -> SQLAlchemyReceiptRepository:
+        if self._receipts is None:
+            self._receipts = SQLAlchemyReceiptRepository(self.session)
+        return self._receipts
 
     async def __aenter__(self) -> "UnitOfWork":
         if self._owns_session:

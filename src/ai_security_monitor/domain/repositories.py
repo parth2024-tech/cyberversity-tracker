@@ -18,6 +18,7 @@ from ai_security_monitor.domain.entities import (
     Digest,
     Entry,
     FetchLog,
+    LLMReceipt,
     Source,
 )
 
@@ -305,3 +306,49 @@ class DigestRepository(ABC):
     async def purge_old_digests(self, older_than_days: int = 7) -> int:
         """Purge digests older than retention window."""
         return 0
+
+
+class LLMReceiptRepository(ABC):
+    """Repository for LLM execution receipts ensuring idempotency and retry caps."""
+
+    @abstractmethod
+    async def get_by_key(self, logical_key: str) -> LLMReceipt | None:
+        """Get receipt by its unique logical key."""
+        ...
+
+    @abstractmethod
+    async def get_by_entry(self, entry_id: UUID) -> list[LLMReceipt]:
+        """Get all receipts for an entry."""
+        ...
+
+    @abstractmethod
+    async def record_attempt(
+        self,
+        logical_key: str,
+        provider: str,
+        model: str,
+        prompt_version: str,
+        entry_id: UUID | None = None,
+        max_attempts: int = 3,
+    ) -> tuple[LLMReceipt, bool]:
+        """Record an attempt. Returns (receipt, should_execute)."""
+        ...
+
+    @abstractmethod
+    async def record_success(
+        self,
+        logical_key: str,
+        response_json: dict[str, Any],
+    ) -> LLMReceipt:
+        """Record successful execution."""
+        ...
+
+    @abstractmethod
+    async def record_failure(
+        self,
+        logical_key: str,
+        error_message: str,
+    ) -> LLMReceipt:
+        """Record failed execution."""
+        ...
+
