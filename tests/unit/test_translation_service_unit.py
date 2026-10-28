@@ -209,3 +209,30 @@ class TestLanguageNames:
     def test_english_present(self):
         name, flag = LANGUAGE_NAMES["en"]
         assert name == "English"
+
+
+# ---------------------------------------------------------------------------
+# ChinaTokenShield Integration
+# ---------------------------------------------------------------------------
+
+
+class TestChinaTokenShieldIntegration:
+    def test_translate_text_preserves_technical_tokens_via_token_shield(self):
+        svc = TranslationService()
+        raw_text = "阿里团队开源了Qwen2.5-72B模型，并在vLLM上完成优化"
+
+        def fake_translate(text: str, src: str, target: str) -> str:
+            # Verify the translator received shielded text with placeholders
+            assert "⟦" in text and "⟧" in text
+            translated = text.replace("阿里团队开源了", "Alibaba team open-sourced ")
+            translated = translated.replace("模型，并在", " model, and optimized on ")
+            translated = translated.replace("上完成优化", "")
+            return translated
+
+        with patch.object(svc, "_execute_translation", side_effect=fake_translate):
+            res, lang, translated = svc.translate_text(raw_text)
+            assert translated is True
+            assert "Qwen2.5-72B" in res
+            assert "vLLM" in res
+            assert "⟦" not in res
+

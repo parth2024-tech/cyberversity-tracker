@@ -150,3 +150,37 @@ def test_canonicalize_url_schemeless_and_credentials():
         canonicalize_url("https://example.com:8080/docs")
         == "https://example.com:8080/docs"
     )
+
+
+def test_chinese_deduplication_integration():
+    """Verify that compute_title_similarity and compute_simhash64 use Chinese bi-gram indexing."""
+    from ai_security_monitor.application.services.deduplication_service import (
+        compute_simhash64,
+        extract_title_tokens,
+    )
+
+    title_zh1 = "通义千问发布Qwen2.5大模型，性能超越Llama-3"
+    title_zh2 = "通义千问团队发布Qwen2.5开源模型，多项性能优于Llama-3"
+    unrelated_zh = "苹果发布全新iPhone系列智能手机"
+
+    tokens1 = extract_title_tokens(title_zh1)
+    tokens2 = extract_title_tokens(title_zh2)
+    unrelated_tokens = extract_title_tokens(unrelated_zh)
+
+    # Ideogram bi-grams are properly extracted
+    assert len(tokens1) > 2
+    assert "千问" in tokens1 or "通义" in tokens1
+    assert "开源" in tokens2
+    assert len(unrelated_tokens) > 0
+
+    sim_similar = compute_title_similarity(title_zh1, title_zh2)
+    sim_unrelated = compute_title_similarity(title_zh1, unrelated_zh)
+
+    assert sim_similar > 0.20
+    assert sim_unrelated < 0.05
+
+    # SimHash test for Chinese text
+    hash1 = compute_simhash64(title_zh1)
+    hash2 = compute_simhash64(title_zh2)
+    assert hash1 != 0
+    assert hash2 != 0

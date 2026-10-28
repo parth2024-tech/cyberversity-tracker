@@ -70,10 +70,17 @@ async def dispatch_telegram_digest(req: TelegramDigestRequest):
     async with SqlAlchemyUnitOfWork() as uow:
         recent_entries = await uow.entries.list()
 
-    entries_with_analysis = [(e, e.analysis) for e in recent_entries]
+    from ai_security_monitor.application.services.balanced_digest import (
+        BalancedDigestService,
+    )
+
+    balanced_result = BalancedDigestService(max_total_items=30).balance(recent_entries)
+    selected_entries = balanced_result.items
+
+    entries_with_analysis = [(e, e.analysis) for e in selected_entries]
     entries_by_cat: dict[str, list[Entry]] = {}
-    for e in recent_entries:
-        c = e.category.value
+    for e in selected_entries:
+        c = e.category.value if hasattr(e.category, "value") else str(e.category)
         if c not in entries_by_cat:
             entries_by_cat[c] = []
         entries_by_cat[c].append(e)
@@ -81,7 +88,7 @@ async def dispatch_telegram_digest(req: TelegramDigestRequest):
     digest = Digest(
         schedule=req.schedule,
         entries_by_category=entries_by_cat,
-        total_entries=len(recent_entries),
+        total_entries=len(selected_entries),
         period_start=period_start,
         period_end=period_end,
         delivery_channels=["telegram"],
@@ -140,6 +147,14 @@ async def get_markdown_digest(
         if vel >= min_velocity:
             filtered_entries.append(e)
 
+    # Balance across categories using BalancedDigestService
+    from ai_security_monitor.application.services.balanced_digest import (
+        BalancedDigestService,
+    )
+
+    balanced_result = BalancedDigestService(max_total_items=40).balance(filtered_entries)
+    balanced_entries = balanced_result.items
+
     date_str = datetime.now(UTC).strftime("%Y-%m-%d")
     period_label = f"Past {days} Day{'s' if days > 1 else ''}"
 
@@ -151,7 +166,7 @@ async def get_markdown_digest(
         "Global & Sovereign AI Ecosystems": [],
     }
 
-    for e in filtered_entries:
+    for e in balanced_entries:
         cat = e.category.value if hasattr(e.category, "value") else str(e.category)
         if cat == "ai_models":
             groups["Frontier Foundation Models"].append(e)
@@ -166,7 +181,7 @@ async def get_markdown_digest(
 
     lines = [
         f"# AETHERGUARD: Worldwide AI Intelligence Briefing ({date_str})",
-        f"*Coverage Window: {period_label} | Total Breakthroughs: {len(filtered_entries)} | Min Velocity: {min_velocity}*",
+        f"*Coverage Window: {period_label} | Total Breakthroughs: {len(balanced_entries)} | Min Velocity: {min_velocity}*",
         "",
         "---",
         "",

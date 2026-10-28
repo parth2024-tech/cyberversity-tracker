@@ -980,9 +980,29 @@ class NewspaperService:
             return score
 
         sorted_entries = sorted(filtered_entries, key=priority_score, reverse=True)
-        lead = sorted_entries[0] if sorted_entries else None
-        secondary_anchor = sorted_entries[1] if len(sorted_entries) > 1 else None
-        remaining = sorted_entries[2:] if len(sorted_entries) > 2 else []
+
+        from ai_security_monitor.application.services.balanced_digest import (
+            DEFAULT_CATEGORY_QUOTAS,
+            BalancedDigestService,
+            CategoryQuota,
+        )
+
+        newspaper_quotas = [
+            CategoryQuota(q.name, limit=15, categories=q.categories)
+            for q in DEFAULT_CATEGORY_QUOTAS
+        ]
+        balanced_res = BalancedDigestService(
+            quotas=newspaper_quotas,
+            max_total_items=120,
+            default_limit=15,
+        ).balance(sorted_entries)
+        balanced_pool = (
+            balanced_res.items if len(balanced_res.items) >= 20 else sorted_entries
+        )
+
+        lead = balanced_pool[0] if balanced_pool else None
+        secondary_anchor = balanced_pool[1] if len(balanced_pool) > 1 else None
+        remaining = balanced_pool[2:] if len(balanced_pool) > 2 else []
 
         front_page_briefs: list[Entry] = []
         ciso_briefs: list[Entry] = []

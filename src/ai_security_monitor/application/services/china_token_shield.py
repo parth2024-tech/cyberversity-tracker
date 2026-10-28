@@ -91,6 +91,9 @@ class ChinaTokenShield:
         restored = text
         for placeholder, original in mapping.items():
             restored = restored.replace(placeholder, original)
+            tag_num = placeholder.strip("⟦⟧")
+            spaced_pattern = re.compile(rf"⟦\s*{re.escape(tag_num)}\s*⟧", re.IGNORECASE)
+            restored = spaced_pattern.sub(original, restored)
         return restored
 
     def verify(self, text: str, mapping: dict[str, str]) -> tuple[bool, list[str]]:

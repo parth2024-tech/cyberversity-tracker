@@ -62,3 +62,30 @@ def test_balanced_digest_empty_input():
     result = service.balance([])
     assert result.total_selected == 0
     assert result.items == []
+
+
+def test_balanced_digest_default_quotas_caps_source_spam():
+    """Verify that default quotas cap any single category at default limit (5) and preserve all pillars."""
+    service = BalancedDigestService(max_total_items=25)
+
+    entries = [
+        make_entry(f"Spam Repo {i}", Category.GITHUB_TRENDING, score=100)
+        for i in range(20)
+    ]
+    entries.extend([
+        make_entry(f"Frontier Model {i}", Category.AI_MODELS, score=80)
+        for i in range(5)
+    ])
+    entries.extend([
+        make_entry(f"Research Paper {i}", Category.AI_RESEARCH, score=70)
+        for i in range(5)
+    ])
+
+    result = service.balance(entries)
+    assert result.total_eligible == 30
+    assert result.total_selected == 15
+    assert result.group_counts["Trending Codebases & Runtimes"] == 5
+    assert result.group_counts["Frontier Models & Weights"] == 5
+    assert result.group_counts["Research Breakthroughs"] == 5
+    assert result.dropped_count == 15
+

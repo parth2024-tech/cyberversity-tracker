@@ -15,6 +15,10 @@ from datetime import UTC, datetime
 
 import structlog
 
+from ai_security_monitor.application.services.china_token_shield import (
+    ChinaTokenShield,
+    token_shield,
+)
 from ai_security_monitor.config.settings import settings
 
 logger = structlog.get_logger(__name__)
@@ -46,11 +50,16 @@ LANGUAGE_NAMES: dict[str, tuple[str, str]] = {
 class TranslationService:
     """Zero-cost autonomous neural translation engine with multi-provider fallbacks."""
 
-    def __init__(self, max_cache_size: int = 2000):
+    def __init__(
+        self,
+        max_cache_size: int = 2000,
+        token_shield_instance: ChinaTokenShield | None = None,
+    ):
         self._cache: dict[
             str, tuple[str, str]
         ] = {}  # text -> (translated, detected_lang)
         self._max_cache_size = max_cache_size
+        self._token_shield = token_shield_instance or token_shield
 
     def detect_language(self, text: str) -> str:
         """Detect the source language of a text with high accuracy."""
@@ -197,10 +206,15 @@ class TranslationService:
             self._set_cache(cache_key, clean_text, "en")
             return clean_text, "en", False
 
-        # Attempt translation with multi-provider fallback
-        translated = self._execute_translation(clean_text, detected_lang, target)
+        # Protect technical tokens (model identifiers, param counts, CVEs, repo paths)
+        shielded_text, mapping = self._token_shield.shield(clean_text)
 
-        if translated and translated.strip() and translated.strip() != clean_text:
+        # Attempt translation with multi-provider fallback
+        translated = self._execute_translation(shielded_text, detected_lang, target)
+
+        if translated and translated.strip() and translated.strip() != shielded_text:
+            if mapping:
+                translated = self._token_shield.unshield(translated, mapping)
             self._set_cache(cache_key, translated, detected_lang)
             return translated, detected_lang, True
 

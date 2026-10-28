@@ -173,7 +173,18 @@ def normalize_title(title: str) -> str:
 
 
 def extract_title_tokens(title: str) -> set[str]:
-    """Extract significant lowercase tokens from a title, filtering stop words."""
+    """Extract significant lowercase tokens from a title, filtering stop words.
+    Integrates Chinese bi-gram segmentation when Chinese ideograms are present.
+    """
+    if not title:
+        return set()
+    if re.search(r"[\u4e00-\u9fa5]", title):
+        from ai_security_monitor.application.services.china_dedup_service import (
+            ChinaDeduplicationService,
+        )
+
+        return ChinaDeduplicationService.extract_fingerprint(title)
+
     norm = normalize_title(title)
     tokens = set()
     for word in norm.split():
@@ -216,10 +227,17 @@ def compute_simhash64(text: str) -> int:
     """Compute deterministic 64-bit SimHash for full-text / summary near-duplicate comparison.
 
     Tokenizes text into words, computes MD5-based 64-bit hashes, accumulates sign weights,
-    and returns a 64-bit bitmask integer.
+    and returns a 64-bit bitmask integer. Integrates Chinese SimHash when ideograms are present.
     """
     if not text:
         return 0
+    if re.search(r"[\u4e00-\u9fa5]", text):
+        from ai_security_monitor.application.services.china_dedup_service import (
+            ChinaDeduplicationService,
+        )
+
+        return ChinaDeduplicationService.compute_simhash(text)
+
     words = re.findall(r"\b\w+\b", text.lower())
     if not words:
         return 0
