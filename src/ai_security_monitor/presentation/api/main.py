@@ -30,7 +30,6 @@ from ai_security_monitor.presentation.api.routers import (
     entries_router,
     feed_router,
     newspaper_router,
-    proxy_router,
     sources_router,
     stats_router,
     translation_router,
@@ -237,7 +236,6 @@ def create_app() -> FastAPI:
         app.include_router(newspaper_router, prefix=api_prefix, tags=["Newspaper"])
         app.include_router(audio_router, prefix=api_prefix, tags=["Audio"])
         app.include_router(translation_router, prefix=api_prefix, tags=["Translation"])
-        app.include_router(proxy_router, prefix=api_prefix, tags=["Proxy"])
         app.include_router(
             backup_router, prefix=api_prefix, tags=["Backup & Portability"]
         )

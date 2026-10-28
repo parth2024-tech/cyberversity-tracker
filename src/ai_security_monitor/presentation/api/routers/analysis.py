@@ -7,10 +7,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
-from ai_security_monitor.application.services.monitor_service import MonitorService
 from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.infrastructure.analyzers.base import analyzer_registry
 
@@ -101,12 +100,87 @@ async def quick_analyze(req: QuickAnalyzeRequest):
     }
 
 
+async def _execute_batch_analysis(limit: int = 50) -> int:
+    """Analyze unanalyzed entries in the database using the configured analyzer and blast engine."""
+    from sqlalchemy import select
+
+    from ai_security_monitor.config.settings import settings
+    from ai_security_monitor.domain.entities import Analysis, AnalysisModel
+    from ai_security_monitor.infrastructure.database.models import (
+        AnalysisModel as AnalysisModelDB,
+    )
+    from ai_security_monitor.infrastructure.database.models import EntryModel
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    analyzer = analyzer_registry.create(settings.analyzer.default_model)
+    blast_engine = analyzer_registry.create("blast_radius")
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        stmt = (
+            select(EntryModel)
+            .outerjoin(AnalysisModelDB, EntryModel.id == AnalysisModelDB.entry_id)
+            .where(AnalysisModelDB.id.is_(None))
+            .order_by(EntryModel.created_at.desc())
+            .limit(limit)
+        )
+        result = await uow.session.execute(stmt)
+        models = result.scalars().all()
+        entries = [uow.entries._model_to_entity(m) for m in models]
+
+        analyzed_count = 0
+        for entry in entries:
+            analysis_res = await analyzer.analyze(entry)
+            blast_res = await blast_engine.analyze(entry)
+
+            combined_ecosystem = sorted(
+                set(
+                    (analysis_res.affected_ecosystem or [])
+                    + (blast_res.affected_ecosystem or [])
+                )
+            )
+            analysis = Analysis(
+                entry_id=entry.id,
+                attack_vector=analysis_res.attack_vector
+                or "Standard Architecture Pattern",
+                risk_assessment=analysis_res.risk_assessment
+                or "Production / Stable Implementation",
+                mitigation=analysis_res.mitigation
+                or "Refer to official documentation and release notes.",
+                threat_velocity=analysis_res.threat_velocity,
+                severity_index=analysis_res.severity_index,
+                blast_radius_score=blast_res.blast_radius_score,
+                affected_ecosystem=combined_ecosystem,
+                is_pre_cve_warning=False,
+                attack_archetype=analysis_res.attack_archetype,
+                weaponization_potential=analysis_res.weaponization_potential
+                or "Production Ready",
+                model=AnalysisModel.HEURISTIC,
+                confidence=0.85,
+            )
+            await uow.analyses.add(analysis)
+            analyzed_count += 1
+
+        if analyzed_count > 0:
+            await uow.commit()
+
+        return analyzed_count
+
+
 @analysis_router.post("/run-batch")
-async def run_batch_analysis(background_tasks: BackgroundTasks):
-    """Trigger background batch analysis on any unanalyzed entries."""
-    service = MonitorService()
-    background_tasks.add_task(service.fetch_all)
+async def run_batch_analysis(
+    limit: int = Query(
+        default=50,
+        ge=1,
+        le=200,
+        description="Maximum number of unanalyzed database entries to analyze",
+    ),
+):
+    """Analyze unanalyzed entries in the database without running a network sweep."""
+    analyzed_count = await _execute_batch_analysis(limit=limit)
     return {
-        "status": "initiated",
-        "message": "Batch analysis pipeline queued in background.",
+        "status": "success",
+        "analyzed_count": analyzed_count,
+        "message": f"Successfully analyzed {analyzed_count} unanalyzed database entries.",
     }

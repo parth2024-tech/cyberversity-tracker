@@ -39,10 +39,23 @@ class BackupImportPayload(BaseModel):
 async def export_system_backup() -> Response:
     """Export all pinned Vault entries and registered sources into a standardized portable JSON package."""
     async with SqlAlchemyUnitOfWork() as uow:
-        # Retrieve all vaulted (important) entries
+        # Retrieve all vaulted (important) entries without arbitrary truncation
         filters = EntryFilters(important_only=True)
-        pagination = PaginationParams(limit=200, offset=0)
-        vault_entries = await uow.entries.list(filters=filters, pagination=pagination)
+        vault_entries: list[Entry] = []
+        offset = 0
+        batch_size = 200
+        while True:
+            pagination = PaginationParams(limit=batch_size, offset=offset)
+            batch = await uow.entries.list(
+                filters=filters,
+                pagination=pagination,
+            )
+            if not batch:
+                break
+            vault_entries.extend(batch)
+            if len(batch) < pagination.limit:
+                break
+            offset += len(batch)
         sources = await uow.sources.list()
 
     serialized_vault = []
