@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
 from uuid import UUID, uuid4
 
 
@@ -226,3 +227,26 @@ class Digest(Entity):
     period_end: datetime
     delivered: bool = False
     delivery_channels: list[str] = field(default_factory=list)
+
+
+@dataclass(kw_only=True)
+class LLMReceipt(Entity):
+    """Execution receipt for LLM inference to ensure idempotency and prevent retry loops."""
+
+    logical_key: str
+    provider: str
+    model: str
+    prompt_version: str
+    status: str = "pending"  # "pending", "succeeded", "failed"
+    entry_id: UUID | None = None
+    attempts: int = 1
+    max_attempts: int = 3
+    response_json: dict[str, Any] | None = None
+    error_message: str | None = None
+
+    @property
+    def is_retryable(self) -> bool:
+        if self.status == "succeeded":
+            return False
+        return self.attempts < self.max_attempts
+

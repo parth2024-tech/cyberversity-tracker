@@ -47,6 +47,16 @@ class AutonomousTriageService:
         self._hold_until_sweep: bool = getattr(
             settings.analyzer, "queue_hold_until_sweep", True
         )
+        try:
+            from ai_security_monitor.application.services.llm_receipt_service import (
+                LLMReceiptService,
+            )
+
+            self._receipt_service: LLMReceiptService | None = LLMReceiptService(
+                uow_factory=self._uow_factory
+            )
+        except Exception:
+            self._receipt_service = None
 
     def set_broadcast_callback(self, cb: Callable[[dict], None]) -> None:
         """Set callback for broadcasting live triage events over WebSockets."""
@@ -380,6 +390,17 @@ class AutonomousTriageService:
             if entry.analysis and entry.analysis.model != AnalysisModel.HEURISTIC:
                 continue
 
+            # Skip poison entries that have exhausted max retries
+            if self._receipt_service and await self._receipt_service.is_poison_entry(
+                entry,
+                provider="ollama",
+                model=settings.analyzer.ollama_model,
+            ):
+                logger.info(
+                    f"Skipping poison entry {entry.id} ({entry.title[:45]}) during startup backfill"
+                )
+                continue
+
             p = self.calculate_priority(entry)
             if await self.enqueue(entry.id, priority=p):
                 enqueued_count += 1
@@ -425,7 +446,9 @@ class AutonomousTriageService:
 
     async def _worker_loop(self) -> None:
         """Worker loop processing entries by priority score from the queue."""
-        analyzer = LLMAnalyzer(config={"provider": "ollama"})
+        analyzer = LLMAnalyzer(
+            config={"provider": "ollama"}, receipt_service=self._receipt_service
+        )
 
         while self._running:
             try:

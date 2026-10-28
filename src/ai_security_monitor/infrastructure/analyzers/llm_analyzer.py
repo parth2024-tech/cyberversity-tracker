@@ -2,6 +2,7 @@
 
 import json
 import os
+from typing import Any
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
@@ -19,7 +20,12 @@ logger = get_logger(__name__)
 class LLMAnalyzer(BaseAnalyzer):
     """LLM-based analyzer supporting Ollama, Groq, and local gateway (auto/offline)."""
 
-    def __init__(self, config: dict | None = None):
+    def __init__(
+        self,
+        config: dict | None = None,
+        receipt_service: Any | None = None,
+        enable_receipts: bool = True,
+    ):
         super().__init__(config)
         cfg = config or {}
         self.provider = cfg.get("provider") or (
@@ -29,6 +35,21 @@ class LLMAnalyzer(BaseAnalyzer):
         )
         self.max_tokens = cfg.get("max_tokens", 250)
         self.temperature = cfg.get("temperature", settings.analyzer.temperature)
+        self.enable_receipts = enable_receipts
+
+        if receipt_service is not None:
+            self.receipt_service = receipt_service
+        elif self.enable_receipts:
+            try:
+                from ai_security_monitor.application.services.llm_receipt_service import (
+                    LLMReceiptService,
+                )
+
+                self.receipt_service = LLMReceiptService()
+            except Exception:
+                self.receipt_service = None
+        else:
+            self.receipt_service = None
 
         # Route to Groq if explicitly requested, otherwise use local Ollama
         if self.provider == "groq":
@@ -211,55 +232,21 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
                     return json.loads(json_match.group())
                 raise
 
-    async def analyze(self, entry: Entry) -> AnalysisResult:
-        """Analyze entry using multi-tier resilient LLM with automatic graceful fallback."""
-        prompt = self._build_prompt(entry)
+    def _get_active_model_name(self) -> str:
+        if self.provider == "groq":
+            return getattr(self, "groq_model", "groq")
+        elif self.provider == "ollama":
+            return getattr(self, "ollama_model", "ollama")
+        else:
+            return getattr(self, "gateway_model", "local")
 
-        result: dict | None = None
-        active_model = self.model
-
-        # Multi-Tier Routing: Try preferred provider, then fallback gracefully
-        try:
-            if self.provider == "groq":
-                result = await self._call_groq(prompt)
-                active_model = AnalysisModel.GROQ
-            elif self.provider in ("ollama", "local"):
-                # Try Ollama first
-                try:
-                    result = await self._call_ollama(prompt)
-                    active_model = AnalysisModel.OLLAMA
-                except Exception as ollama_err:
-                    # If gateway host is configured, try gateway
-                    if getattr(self, "gateway_host", None):
-                        try:
-                            result = await self._call_gateway(prompt)
-                            active_model = AnalysisModel.LOCAL
-                        except Exception:
-                            raise ollama_err
-                    else:
-                        raise ollama_err
-            else:
-                result = await self._call_gateway(prompt)
-                active_model = AnalysisModel.LOCAL
-        except Exception as llm_err:
-            logger.info(
-                f"LLM primary route unavailable ({llm_err}), activating neural heuristic synthesis"
-            )
-            from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
-                HeuristicAnalyzer,
-            )
-
-            fallback = HeuristicAnalyzer()
-            return await fallback.analyze(entry)
-
-        if not result or not isinstance(result, dict):
-            from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
-                HeuristicAnalyzer,
-            )
-
-            fallback = HeuristicAnalyzer()
-            return await fallback.analyze(entry)
-
+    def _build_analysis_result(
+        self,
+        entry: Entry,
+        result: dict[str, Any],
+        active_model: AnalysisModel,
+        reused_receipt: bool = False,
+    ) -> AnalysisResult:
         # Validate and normalize string fields
         raw_risk = result.get("risk_assessment")
         if isinstance(raw_risk, dict):
@@ -316,6 +303,110 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
             model=active_model,
             confidence=0.95,
         )
+
+    async def analyze(self, entry: Entry) -> AnalysisResult:
+        """Analyze entry using multi-tier resilient LLM with automatic graceful fallback and receipts."""
+        model_name = self._get_active_model_name()
+        logical_key: str | None = None
+
+        # Check idempotent receipts and poison entry retry cap
+        if self.receipt_service:
+            try:
+                logical_key, receipt, should_call = (
+                    await self.receipt_service.check_or_record_attempt(
+                        entry=entry,
+                        provider=self.provider,
+                        model=model_name,
+                    )
+                )
+                if receipt.status == "succeeded" and receipt.response_json:
+                    logger.info(
+                        f"⚡ Idempotent receipt hit ({logical_key[:10]}...): reusing cached LLM analysis for {entry.title[:45]}"
+                    )
+                    return self._build_analysis_result(
+                        entry, receipt.response_json, self.model, reused_receipt=True
+                    )
+                if not should_call:
+                    logger.warning(
+                        f"🛑 Poison entry {entry.id} ({entry.title[:40]}) halted by receipt retry cap ({receipt.attempts}/{receipt.max_attempts})"
+                    )
+                    from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
+                        HeuristicAnalyzer,
+                    )
+
+                    return await HeuristicAnalyzer().analyze(entry)
+            except Exception as rc_err:
+                logger.debug(f"Receipt attempt check non-blocking error: {rc_err}")
+
+        prompt = self._build_prompt(entry)
+
+        result: dict | None = None
+        active_model = self.model
+
+        # Multi-Tier Routing: Try preferred provider, then fallback gracefully
+        try:
+            if self.provider == "groq":
+                result = await self._call_groq(prompt)
+                active_model = AnalysisModel.GROQ
+            elif self.provider in ("ollama", "local"):
+                # Try Ollama first
+                try:
+                    result = await self._call_ollama(prompt)
+                    active_model = AnalysisModel.OLLAMA
+                except Exception as ollama_err:
+                    # If gateway host is configured, try gateway
+                    if getattr(self, "gateway_host", None):
+                        try:
+                            result = await self._call_gateway(prompt)
+                            active_model = AnalysisModel.LOCAL
+                        except Exception:
+                            raise ollama_err
+                    else:
+                        raise ollama_err
+            else:
+                result = await self._call_gateway(prompt)
+                active_model = AnalysisModel.LOCAL
+        except Exception as llm_err:
+            if self.receipt_service and logical_key:
+                try:
+                    await self.receipt_service.record_failure(logical_key, str(llm_err))
+                except Exception as rf_err:
+                    logger.debug(f"Failed to record receipt failure: {rf_err}")
+
+            logger.info(
+                f"LLM primary route unavailable ({llm_err}), activating neural heuristic synthesis"
+            )
+            from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
+                HeuristicAnalyzer,
+            )
+
+            fallback = HeuristicAnalyzer()
+            return await fallback.analyze(entry)
+
+        if not result or not isinstance(result, dict):
+            if self.receipt_service and logical_key:
+                try:
+                    await self.receipt_service.record_failure(
+                        logical_key, "Malformed or empty JSON returned by model"
+                    )
+                except Exception as rf_err:
+                    logger.debug(f"Failed to record receipt failure: {rf_err}")
+
+            from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
+                HeuristicAnalyzer,
+            )
+
+            fallback = HeuristicAnalyzer()
+            return await fallback.analyze(entry)
+
+        # Successful call: record receipt for 0 repeat spend
+        if self.receipt_service and logical_key:
+            try:
+                await self.receipt_service.record_success(logical_key, result)
+            except Exception as rs_err:
+                logger.debug(f"Failed to record receipt success: {rs_err}")
+
+        return self._build_analysis_result(entry, result, active_model)
 
 
 analyzer_registry.register("ollama", LLMAnalyzer)

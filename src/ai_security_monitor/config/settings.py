@@ -177,6 +177,14 @@ class AnalyzerSettings(BaseSettings):
         default=True,
         description="Hold queued entries in triage queue until user triggers Live Sweep",
     )
+    prompt_version: str = Field(
+        default="v1.0",
+        description="Prompt version string hashed into LLM receipts to enable intentional cache invalidation",
+    )
+    receipt_max_retries: int = Field(
+        default=3,
+        description="Maximum failed LLM attempts before an entry is marked poisoned and skipped on boot",
+    )
 
     model_config = SettingsConfigDict(env_prefix="ANALYZER_")
 
