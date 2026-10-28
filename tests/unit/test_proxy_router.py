@@ -65,6 +65,57 @@ def test_proxy_blocks_internal_tld():
     assert "internal hosts" in response.json()["detail"].lower()
 
 
+@pytest.mark.parametrize(
+    ("obfuscated_url", "expected_fragment"),
+    [
+        ("http://2130706433/data", "blocked"),  # Decimal IP notation for 127.0.0.1
+        ("http://0177.0.0.1/data", "blocked"),  # Octal IP notation for 127.0.0.1
+        ("http://0x7f.0.0.1/data", "blocked"),  # Hex IP notation for 127.0.0.1
+        ("http://[::1]/data", "blocked"),  # IPv6 loopback
+        ("http://[::]/data", "blocked"),  # IPv6 unspecified
+        (
+            "http://169.254.169.254/latest/meta-data",
+            "blocked",
+        ),  # Link-Local Cloud Metadata
+        ("http://172.16.0.1/data", "blocked"),  # RFC 1918 Class B
+        ("http://10.0.0.1/data", "blocked"),  # RFC 1918 Class A
+        ("http://metadata.google.internal/test", "internal hosts"),  # GCP metadata
+        ("gopher://127.0.0.1:11211/", "http and https"),  # Gopher injection
+        ("ftp://example.com/file", "http and https"),  # FTP scheme
+        ("http:///path", "missing hostname"),  # Missing hostname
+    ],
+)
+def test_proxy_blocks_adversarial_ssrf_and_schemes(
+    obfuscated_url: str, expected_fragment: str
+):
+    """Brutally test adversarial IP encodings, cloud metadata endpoints, and dangerous schemes."""
+    response = client.get(f"/api/proxy?url={obfuscated_url}")
+    assert response.status_code == 400
+    assert expected_fragment in response.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_ssrf_protected_backend_blocks_dns_rebinding(monkeypatch):
+    """Verify SSRFProtectedBackend intercepts and terminates DNS rebinding at socket connection level."""
+    import httpcore
+
+    from ai_security_monitor.presentation.api.routers.proxy import SSRFProtectedBackend
+
+    # Simulate DNS resolving to 127.0.0.1 at connection time (after passing initial domain check)
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        lambda h, p, **kw: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 80))
+        ],
+    )
+
+    backend = SSRFProtectedBackend()
+    with pytest.raises(httpcore.ConnectError) as excinfo:
+        await backend.connect_tcp("rebound.example.com", 80)
+    assert "dns rebinding protection" in str(excinfo.value).lower()
+
+
 @pytest.mark.asyncio
 async def test_proxy_success_mock(monkeypatch):
     class MockStreamResponse:

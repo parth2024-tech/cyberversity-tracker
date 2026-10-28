@@ -116,7 +116,10 @@ class TestChinaDeduplicationService:
         article_b = "阿里通义千问团队开源Qwen2.5-Coder代码模型，支持多种不同参数尺寸。"
         unrelated = "微软针对Windows内核远程代码执行高危漏洞发布带外补丁修复。"
 
-        assert dedup.is_near_duplicate(article_a, article_b, jaccard_threshold=0.30) is True
+        assert (
+            dedup.is_near_duplicate(article_a, article_b, jaccard_threshold=0.30)
+            is True
+        )
         assert dedup.is_near_duplicate(article_a, unrelated) is False
 
 

@@ -89,7 +89,9 @@ class HuggingFaceChinaFetcher(BaseFetcher):
                                 it["_tracked_author"] = author
                             all_models.extend(items)
                 except Exception as e:
-                    logger.debug(f"Failed to fetch models for Chinese lab {author}: {e}")
+                    logger.debug(
+                        f"Failed to fetch models for Chinese lab {author}: {e}"
+                    )
                     continue
 
         return all_models
@@ -97,7 +99,9 @@ class HuggingFaceChinaFetcher(BaseFetcher):
     def _parse_entry(self, raw: dict[str, Any]) -> Entry:
         """Parse Hugging Face model entry into domain Entry entity."""
         model_id = raw.get("id") or raw.get("modelId") or "unknown/model"
-        author = raw.get("_tracked_author") or (model_id.split("/")[0] if "/" in model_id else "China-Lab")
+        author = raw.get("_tracked_author") or (
+            model_id.split("/")[0] if "/" in model_id else "China-Lab"
+        )
         downloads = int(raw.get("downloads", 0) or 0)
         likes = int(raw.get("likes", 0) or 0)
         pipeline_tag = raw.get("pipeline_tag") or "foundation-model"
@@ -150,10 +154,17 @@ class HuggingFaceChinaFetcher(BaseFetcher):
             "original_summary": summary,
         }
 
-        category = self.source.category if self.source and self.source.category else Category.AI_MODELS
-        content_hash = ContentHash.from_content("huggingface_china", model_id.lower().strip(), url.lower().strip())
+        category = (
+            self.source.category
+            if self.source and self.source.category
+            else Category.AI_MODELS
+        )
+        content_hash = ContentHash.from_content(
+            "huggingface_china", model_id.lower().strip(), url.lower().strip()
+        )
 
         from uuid import uuid4
+
         return Entry(
             source_id=self.source.id if self.source and self.source.id else uuid4(),
             title=title,

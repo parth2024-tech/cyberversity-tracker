@@ -96,6 +96,9 @@
     "Balanced digest quota selection prevents single-source flood (e.g. RSS bursts) from drowning out frontier models and papers.",
     "Anti-AI-slop cleaning requires multi-pass stripping to handle nested conversational preambles (e.g. 'Sure, here is the technical summary:').",
     "SSRF defense for proxy endpoints requires both IP literal bounds checking and DNS resolution verification to block private and link-local ranges.",
-    "URL tracking parameter stripping on incoming feeds ensures canonical deduplication across disparate social/syndication channels."
+    "URL tracking parameter stripping on incoming feeds ensures canonical deduplication across disparate social/syndication channels.",
+    "Fetcher parsing: variables like content_hash and metadata must never be defined inside iterative item loops to avoid UnboundLocalError when collections are empty.",
+    "SlowAPI rate limiter should be disabled under pytest execution to prevent rate limit accumulation and cross-test 429 interference.",
+    "MinHash 64-permutation Jaccard estimation must guard against all-zero signatures to prevent empty token sets from erroneously matching as 1.0 duplicates."
   ]
 }

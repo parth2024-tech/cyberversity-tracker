@@ -257,6 +257,8 @@ def minhash_jaccard_similarity(sig1: list[int], sig2: list[int]) -> float:
     """Estimate Jaccard similarity between two 64-permutation MinHash signatures."""
     if not sig1 or not sig2 or len(sig1) != len(sig2):
         return 0.0
+    if not any(sig1) or not any(sig2):
+        return 0.0
     matches = sum(1 for x, y in zip(sig1, sig2, strict=True) if x == y)
     return matches / len(sig1)
 

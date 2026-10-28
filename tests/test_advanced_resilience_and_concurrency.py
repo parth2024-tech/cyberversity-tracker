@@ -187,3 +187,74 @@ async def test_database_sqlite_concurrency_and_wal_robustness(tmp_path):
         count = result.scalar()
         assert count == 20
     await manager.engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_vault_toggle_and_importance_race_condition(tmp_path):
+    """Brutally test 30 concurrent coroutines toggling the exact same entry to verify WAL lock resilience."""
+    import uuid
+
+    from ai_security_monitor.infrastructure.database.connection import DatabaseManager
+    from ai_security_monitor.infrastructure.database.models import (
+        Base,
+        EntryModel,
+        SourceModel,
+    )
+    from ai_security_monitor.infrastructure.database.unit_of_work import UnitOfWork
+
+    db_file = tmp_path / "concurrent_vault.db"
+    manager = DatabaseManager(url=f"sqlite+aiosqlite:///{db_file}")
+    async with manager.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    # Seed source and a single target entry
+    target_entry_id = uuid.uuid4()
+    async with manager.session() as session:
+        src = SourceModel(
+            name="Race Condition Source",
+            type="rss",
+            url="http://example.com/race",
+            category="ai_models",
+            enabled=True,
+        )
+        session.add(src)
+        await session.flush()
+
+        entry = EntryModel(
+            id=str(target_entry_id),
+            title="Reasoning Model Under High Concurrency Hammer",
+            summary="Testing concurrent toggle operations on a single database record.",
+            url="https://example.com/race-entry",
+            content_hash="race_hash_single_entry",
+            category="ai_models",
+            source_id=src.id,
+            published_at=datetime.now(UTC),
+            extra_metadata={"is_important": False},
+        )
+        session.add(entry)
+        await session.commit()
+
+    # Launch 30 concurrent togglers using isolated sessions
+    async def toggle_worker():
+        async with manager.session() as session:
+            uow = UnitOfWork(session=session)
+            await uow.entries.toggle_importance(
+                target_entry_id, reason="Concurrent Test"
+            )
+            await uow.commit()
+
+    tasks = [toggle_worker() for _ in range(30)]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # All 30 tasks must finish without database lock exceptions
+    for idx, res in enumerate(results):
+        assert not isinstance(res, Exception), f"Worker {idx} crashed with: {res}"
+
+    # Final check: entry exists and is accessible
+    async with manager.session() as session:
+        uow = UnitOfWork(session=session)
+        final_entry = await uow.entries.get(target_entry_id)
+        assert final_entry is not None
+        assert "is_important" in (final_entry.metadata or {})
+
+    await manager.engine.dispose()

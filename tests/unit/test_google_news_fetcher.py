@@ -31,7 +31,9 @@ async def test_google_news_fetcher_parses_feed(google_news_source: Source):
     """GoogleNewsFetcher should parse RSS search output and clean publisher suffix."""
     from datetime import UTC, datetime, timedelta
 
-    pub_date = (datetime.now(UTC) - timedelta(days=2)).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    pub_date = (datetime.now(UTC) - timedelta(days=2)).strftime(
+        "%a, %d %b %Y %H:%M:%S GMT"
+    )
     mock_rss_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
     <rss version="2.0">
       <channel>

@@ -110,4 +110,3 @@ async def test_china_threat_signals_endpoint():
         data = resp.json()
         assert "threat_signals" in data
         assert "count" in data
-

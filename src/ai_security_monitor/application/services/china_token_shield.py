@@ -16,7 +16,12 @@ class ChinaTokenShield:
     """Invariant placeholder protection and deterministic verifier for technical translation."""
 
     PATTERNS: ClassVar[list[tuple[str, re.Pattern[str]]]] = [
-        ("CVE", re.compile(r"(?<![a-zA-Z0-9])CVE-\d{4}-\d{4,}(?![a-zA-Z0-9])", re.IGNORECASE)),
+        (
+            "CVE",
+            re.compile(
+                r"(?<![a-zA-Z0-9])CVE-\d{4}-\d{4,}(?![a-zA-Z0-9])", re.IGNORECASE
+            ),
+        ),
         (
             "REPO",
             re.compile(
@@ -32,10 +37,18 @@ class ChinaTokenShield:
                 re.IGNORECASE,
             ),
         ),
-        ("PARAM", re.compile(r"(?<![a-zA-Z0-9])\d+(?:\.\d+)?(?:B|M|K)(?![a-zA-Z0-9])", re.IGNORECASE)),
+        (
+            "PARAM",
+            re.compile(
+                r"(?<![a-zA-Z0-9])\d+(?:\.\d+)?(?:B|M|K)(?![a-zA-Z0-9])", re.IGNORECASE
+            ),
+        ),
         (
             "VER",
-            re.compile(r"(?<![a-zA-Z0-9])v\d+(?:\.\d+)*(?:-[a-zA-Z0-9\.]+)?(?![a-zA-Z0-9])", re.IGNORECASE),
+            re.compile(
+                r"(?<![a-zA-Z0-9])v\d+(?:\.\d+)*(?:-[a-zA-Z0-9\.]+)?(?![a-zA-Z0-9])",
+                re.IGNORECASE,
+            ),
         ),
     ]
 

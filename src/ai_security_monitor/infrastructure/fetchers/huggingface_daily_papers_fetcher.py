@@ -70,7 +70,9 @@ class HuggingFaceDailyPapersFetcher(BaseFetcher):
                             raw_papers = data["papers"]
                             break
             except Exception as e:
-                logger.debug(f"Hugging Face daily papers request to {target_url} failed: {e}")
+                logger.debug(
+                    f"Hugging Face daily papers request to {target_url} failed: {e}"
+                )
                 continue
 
         return raw_papers
@@ -110,30 +112,36 @@ class HuggingFaceDailyPapersFetcher(BaseFetcher):
             )
 
         # Authors and upvotes
+        # Authors and upvotes
         authors_data = paper.get("authors") or []
-        authors: list[str] = [
-            str(a["name"])
-            for a in authors_data
-            if isinstance(a, dict) and a.get("name")
-        ][:5]
+        authors: list[str] = []
+        for a in authors_data:
+            if isinstance(a, dict) and a.get("name"):
+                authors.append(str(a["name"]))
+            elif isinstance(a, str) and a.strip():
+                authors.append(a.strip())
+        authors = authors[:5]
+
         upvotes = paper.get("upvotes") or raw.get("upvotes") or 0
 
         tags = ["ai_research", "arxiv", "huggingface", "paper"]
         for a_name in authors[:3]:
             tags.append(a_name.lower().replace(" ", "_"))
 
-            content_hash = str(ContentHash.from_content("huggingface_daily_papers", paper_id, url))
+        content_hash = str(
+            ContentHash.from_content("huggingface_daily_papers", paper_id, url)
+        )
 
-            metadata = {
-                "arxiv_id": paper_id,
-                "authors": authors,
-                "upvotes": upvotes,
-                "source_platform": "huggingface_daily_papers",
-                "arxiv_url": f"https://arxiv.org/abs/{paper_id}",
-                "pdf_url": f"https://arxiv.org/pdf/{paper_id}.pdf",
-                "region": (self.source.config or {}).get("region", "global"),
-                "is_triaged": True,
-            }
+        metadata = {
+            "arxiv_id": paper_id,
+            "authors": authors,
+            "upvotes": upvotes,
+            "source_platform": "huggingface_daily_papers",
+            "arxiv_url": f"https://arxiv.org/abs/{paper_id}",
+            "pdf_url": f"https://arxiv.org/pdf/{paper_id}.pdf",
+            "region": (self.source.config or {}).get("region", "global"),
+            "is_triaged": True,
+        }
 
         return Entry(
             source_id=self.source.id,

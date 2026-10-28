@@ -150,6 +150,14 @@ class AIPromptSanitizer:
         while changed and iterations < 5:
             changed = False
             iterations += 1
+
+            # Remove enclosing quotes if wrapped
+            if (cleaned.startswith('"') and cleaned.endswith('"')) or (
+                cleaned.startswith("'") and cleaned.endswith("'")
+            ):
+                cleaned = cleaned[1:-1].strip()
+                changed = True
+
             for pattern in _INTRO_PATTERNS:
                 new_text = pattern.sub("", cleaned).strip()
                 if new_text != cleaned:
@@ -162,11 +170,15 @@ class AIPromptSanitizer:
                 cleaned = new_text
                 changed = True
 
-        # Remove enclosing quotes if the entire summary is wrapped
+        # Final check for enclosing or dangling trailing quotes
         if (cleaned.startswith('"') and cleaned.endswith('"')) or (
             cleaned.startswith("'") and cleaned.endswith("'")
         ):
             cleaned = cleaned[1:-1].strip()
+        elif cleaned.endswith('"') and not cleaned.startswith('"'):
+            cleaned = cleaned.rstrip('"').strip()
+        elif cleaned.endswith("'") and not cleaned.startswith("'"):
+            cleaned = cleaned.rstrip("'").strip()
 
         return cleaned
 

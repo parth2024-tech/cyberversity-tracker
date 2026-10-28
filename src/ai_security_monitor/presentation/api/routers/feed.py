@@ -48,7 +48,9 @@ def _format_rfc822(dt: datetime | None) -> str:
 async def get_rss_feed(
     category: str | None = Query(default=None, description="Optional category filter"),
     limit: int = Query(default=50, ge=1, le=100, description="Max entries to return"),
-    min_velocity: int = Query(default=0, ge=0, le=100, description="Minimum velocity threshold"),
+    min_velocity: int = Query(
+        default=0, ge=0, le=100, description="Minimum velocity threshold"
+    ),
 ) -> Response:
     """Generate RSS 2.0 syndicated feed of global AI ecosystem intelligence."""
     cache_key = f"feed_rss_{category}_{limit}_{min_velocity}"
@@ -65,7 +67,8 @@ async def get_rss_feed(
             filters = EntryFilters(
                 category=cat_enum,
                 categories=None if cat_enum else AI_ECOSYSTEM_CATEGORIES,
-                since=datetime.now(UTC) - timedelta(days=settings.database.max_ingest_age_days),
+                since=datetime.now(UTC)
+                - timedelta(days=settings.database.max_ingest_age_days),
                 sort_by="newest",
             )
             pagination = PaginationParams(limit=limit, offset=0)
@@ -103,7 +106,9 @@ async def get_rss_feed(
                     summary_parts.append(f"Breakthrough: {cap_summary}")
 
             full_desc = escape("\n\n".join(summary_parts) if summary_parts else e.title)
-            cat_val = escape(e.category.value if hasattr(e.category, "value") else str(e.category))
+            cat_val = escape(
+                e.category.value if hasattr(e.category, "value") else str(e.category)
+            )
 
             items_xml.append(f"""    <item>
       <title>{item_title}</title>
@@ -158,7 +163,8 @@ async def get_json_feed(
             filters = EntryFilters(
                 category=cat_enum,
                 categories=None if cat_enum else AI_ECOSYSTEM_CATEGORIES,
-                since=datetime.now(UTC) - timedelta(days=settings.database.max_ingest_age_days),
+                since=datetime.now(UTC)
+                - timedelta(days=settings.database.max_ingest_age_days),
                 sort_by="newest",
             )
             pagination = PaginationParams(limit=limit, offset=0)
@@ -166,21 +172,30 @@ async def get_json_feed(
 
         items = []
         for e in entries:
-            pub_iso = e.published_at.isoformat() if e.published_at else datetime.now(UTC).isoformat()
-            items.append({
-                "id": str(e.id),
-                "url": e.url,
-                "title": e.title,
-                "content_text": e.summary or e.title,
-                "date_published": pub_iso,
-                "tags": e.tags,
-                "category": e.category.value if hasattr(e.category, "value") else str(e.category),
-            })
+            pub_iso = (
+                e.published_at.isoformat()
+                if e.published_at
+                else datetime.now(UTC).isoformat()
+            )
+            items.append(
+                {
+                    "id": str(e.id),
+                    "url": e.url,
+                    "title": e.title,
+                    "content_text": e.summary or e.title,
+                    "date_published": pub_iso,
+                    "tags": e.tags,
+                    "category": e.category.value
+                    if hasattr(e.category, "value")
+                    else str(e.category),
+                }
+            )
 
         feed_data = {
             "version": "https://jsonfeed.org/version/1.1",
             "title": "AETHERGUARD Worldwide AI Ecosystem",
             "home_page_url": "https://github.com/parth2024-tech/cyberversity-tracker",
+            "feed_url": "https://github.com/parth2024-tech/cyberversity-tracker/feed.json",
             "description": "Continuous telemetry, trending models, and research breakthroughs across the global AI ecosystem.",
             "items": items,
         }

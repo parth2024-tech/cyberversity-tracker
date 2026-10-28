@@ -39,7 +39,11 @@ class CisaEpssService:
         Returns the number of known exploited CVEs cached.
         """
         now = datetime.now(UTC)
-        if not force and self._kev_last_synced and (now - self._kev_last_synced) < timedelta(hours=6):
+        if (
+            not force
+            and self._kev_last_synced
+            and (now - self._kev_last_synced) < timedelta(hours=6)
+        ):
             return len(self._kev_set)
 
         headers: dict[str, str] = {
@@ -69,7 +73,9 @@ class CisaEpssService:
                         self._kev_etag = resp.headers.get("ETag")
                         self._kev_last_synced = now
 
-                    logger.info(f"CISA KEV catalog refreshed: {len(cves)} active exploited CVEs cached.")
+                    logger.info(
+                        f"CISA KEV catalog refreshed: {len(cves)} active exploited CVEs cached."
+                    )
                     return len(self._kev_set)
         except Exception as e:
             logger.warning(f"Failed to synchronize CISA KEV feed: {e}")
@@ -105,8 +111,14 @@ class CisaEpssService:
                     rows = data.get("data", [])
                     if rows:
                         first_row = rows[0]
-                        epss_val = float(first_row["epss"]) if "epss" in first_row else None
-                        pct_val = float(first_row["percentile"]) if "percentile" in first_row else None
+                        epss_val = (
+                            float(first_row["epss"]) if "epss" in first_row else None
+                        )
+                        pct_val = (
+                            float(first_row["percentile"])
+                            if "percentile" in first_row
+                            else None
+                        )
                         self._epss_cache[cve] = (epss_val, pct_val, now)
                         return epss_val, pct_val
         except Exception as e:
@@ -132,7 +144,9 @@ class CisaEpssService:
             "epss": epss,
             "epss_percentile": pct,
             "nvd_url": self.get_nvd_url(cve),
-            "threat_tier": "CRITICAL_EXPLOITED" if is_kev else ("HIGH_PROBABILITY" if (epss and epss > 0.3) else "MONITORED"),
+            "threat_tier": "CRITICAL_EXPLOITED"
+            if is_kev
+            else ("HIGH_PROBABILITY" if (epss and epss > 0.3) else "MONITORED"),
         }
 
 

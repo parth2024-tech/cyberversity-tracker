@@ -102,10 +102,16 @@ async def dispatch_telegram_digest(req: TelegramDigestRequest):
 
 @digest_router.get("/markdown")
 async def get_markdown_digest(
-    days: int = Query(default=1, ge=1, le=14, description="Days of intelligence to include"),
-    min_velocity: int = Query(default=30, ge=0, le=100, description="Minimum velocity threshold"),
+    days: int = Query(
+        default=1, ge=1, le=14, description="Days of intelligence to include"
+    ),
+    min_velocity: int = Query(
+        default=30, ge=0, le=100, description="Minimum velocity threshold"
+    ),
     category: str | None = Query(default=None, description="Optional category filter"),
-    download: bool = Query(default=False, description="Set attachment header for direct file download"),
+    download: bool = Query(
+        default=False, description="Set attachment header for direct file download"
+    ),
 ) -> Response:
     """Generate a clean, structured Markdown intelligence briefing of worldwide AI breakthroughs."""
     from ai_security_monitor.domain.entities import Category
@@ -174,7 +180,9 @@ async def get_markdown_digest(
         lines.append(f"## {group_name} ({len(items)})")
         lines.append("")
         for it in items[:15]:
-            pub_date = it.published_at.strftime("%b %d, %Y") if it.published_at else "Recent"
+            pub_date = (
+                it.published_at.strftime("%b %d, %Y") if it.published_at else "Recent"
+            )
             vel = getattr(it.analysis, "threat_velocity", 0) if it.analysis else 0
             lines.append(f"### [{it.title}]({it.url})")
             lines.append(f"**Velocity**: `{vel}/100` | **Published**: {pub_date}")
@@ -191,7 +199,9 @@ async def get_markdown_digest(
             lines.append("")
 
     if not has_items:
-        lines.append("_No entries matched the velocity threshold for this time window._")
+        lines.append(
+            "_No entries matched the velocity threshold for this time window._"
+        )
         lines.append("")
 
     lines.append("---")
@@ -203,7 +213,10 @@ async def get_markdown_digest(
 
     headers = {"Cache-Control": "public, max-age=60"}
     if download:
-        headers["Content-Disposition"] = f'attachment; filename="aetherguard-briefing-{date_str}.md"'
+        headers["Content-Disposition"] = (
+            f'attachment; filename="aetherguard-briefing-{date_str}.md"'
+        )
 
-    return Response(content=md_text, media_type="text/markdown; charset=utf-8", headers=headers)
-
+    return Response(
+        content=md_text, media_type="text/markdown; charset=utf-8", headers=headers
+    )

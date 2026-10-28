@@ -502,3 +502,63 @@ def test_lincoln_petersen_chapman_recall_auditor():
     assert audit["overlap_m"] == 1
     assert audit["total_captured"] == 3
     assert audit["status"] == "dual_channel_verified"
+
+
+def test_chapman_estimator_adversarial_boundaries():
+    """Brutally test edge cases, negative counts, zero denominators, and excessive overlap in Chapman estimator."""
+    # 1. Both samples zero (idle state)
+    res_zero = calculate_chapman_estimate(n1_rss=0, n2_sitemap=0, overlap_m=0)
+    assert res_zero["total_captured"] == 0
+    assert res_zero["estimated_universe_N"] == 0
+    assert res_zero["status"] == "idle"
+
+    # 2. Only single channel data
+    res_single = calculate_chapman_estimate(n1_rss=42, n2_sitemap=0, overlap_m=0)
+    assert res_single["n1_rss"] == 42
+    assert res_single["estimated_universe_N"] == 42
+    assert res_single["status"] == "single_channel_rss_only"
+
+    res_single_sm = calculate_chapman_estimate(n1_rss=0, n2_sitemap=30, overlap_m=0)
+    assert res_single_sm["n2_sitemap"] == 30
+    assert res_single_sm["status"] == "single_channel_sitemap_only"
+
+    # 3. Negative values must raise ValueError
+    for bad_args in ((-1, 10, 0), (10, -5, 0), (10, 10, -2)):
+        with pytest.raises(ValueError) as exc:
+            calculate_chapman_estimate(*bad_args)
+        assert "Item counts must be non-negative integers" in str(exc.value)
+
+    # 4. Overlap exceeds smaller sample (must clamp safely without negative universe)
+    res_clamped = calculate_chapman_estimate(n1_rss=15, n2_sitemap=25, overlap_m=100)
+    assert res_clamped["overlap_m"] == 15  # Clamped to min(n1, n2)
+    assert res_clamped["total_captured"] == 25
+    assert res_clamped["estimated_universe_N"] >= 25
+
+
+def test_simhash_minhash_adversarial_boundaries():
+    """Brutally test SimHash and MinHash behavior on empty strings, disjoint sets, and zero-token inputs."""
+    # 1. SimHash on empty or whitespace strings
+    assert compute_simhash64("") == 0
+    assert compute_simhash64("   \t\n  ") == 0
+    assert compute_simhash64("!@#$%^&*()") == 0
+
+    # 2. SimHash identity invariant
+    sh_text = compute_simhash64("DeepSeek-R1 test-time compute scaling laws")
+    assert simhash_hamming_distance(sh_text, sh_text) == 0
+
+    # 3. MinHash on empty token sets
+    empty_sig1 = compute_minhash64(set())
+    empty_sig2 = compute_minhash64(set())
+    assert empty_sig1 == [0] * 64
+    # Empty sets must return 0.0 similarity to prevent false positive matching
+    assert minhash_jaccard_similarity(empty_sig1, empty_sig2) == 0.0
+
+    # 4. MinHash identity on valid tokens
+    tokens = {"deepseek", "moe", "latent", "attention"}
+    sig = compute_minhash64(tokens)
+    assert minhash_jaccard_similarity(sig, sig) == 1.0
+
+    # 5. MinHash on completely disjoint sets
+    tokens_disjoint = {"pytorch", "cuda", "vulkan", "driver"}
+    sig_disjoint = compute_minhash64(tokens_disjoint)
+    assert minhash_jaccard_similarity(sig, sig_disjoint) < 0.20

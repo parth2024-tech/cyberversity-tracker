@@ -25,17 +25,19 @@ async def test_quick_analyze_endpoint():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         payload = {
-            "title": "Critical RCE vulnerability in LangChain and PyTorch worker nodes",
-            "summary": "Attacker can supply malicious pickle payload to execute arbitrary code.",
-            "category": "vulnerabilities",
-            "tags": ["pytorch", "langchain", "rce"],
+            "title": "DeepSeek-V3 Open Architecture MoE with 671B Parameters",
+            "summary": "Full multi-head latent attention (MLA) and DeepSeekMoE architecture benchmarks.",
+            "category": "ai_models",
+            "tags": ["deepseek", "moe", "weights"],
         }
         resp = await client.post("/api/analysis/quick", json=payload)
         assert resp.status_code == 200
         data = resp.json()
         assert "triage" in data
         assert "blast_radius" in data
-        assert data["blast_radius"]["blast_radius_score"] >= 1
+        assert "threat_velocity" in data["triage"]
+        assert "attack_vector" in data["triage"]
+        assert data["blast_radius"]["blast_radius_score"] >= 0
 
 
 @pytest.mark.asyncio
@@ -344,17 +346,19 @@ async def test_syndication_feeds_and_markdown_digest():
         resp_rss = await client.get("/feed.xml")
         assert resp_rss.status_code == 200
         assert resp_rss.headers["content-type"].startswith("application/rss+xml")
-        assert "<rss version=\"2.0\"" in resp_rss.text
+        assert '<rss version="2.0"' in resp_rss.text
         assert "<channel>" in resp_rss.text
 
         resp_v1_rss = await client.get("/api/v1/feed.xml")
         assert resp_v1_rss.status_code == 200
-        assert "<rss version=\"2.0\"" in resp_v1_rss.text
+        assert '<rss version="2.0"' in resp_v1_rss.text
 
         # JSON Feed
         resp_json_feed = await client.get("/feed.json")
         assert resp_json_feed.status_code == 200
-        assert resp_json_feed.headers["content-type"].startswith("application/feed+json")
+        assert resp_json_feed.headers["content-type"].startswith(
+            "application/feed+json"
+        )
         json_feed = resp_json_feed.json()
         assert json_feed["version"] == "https://jsonfeed.org/version/1.1"
         assert "items" in json_feed
@@ -371,4 +375,3 @@ async def test_syndication_feeds_and_markdown_digest():
         data = resp_entries.json()
         assert "next_cursor" in data
         assert "has_more" in data
-

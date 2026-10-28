@@ -279,14 +279,18 @@ async def get_china_threat_signals(request: Request):
                     enrichment = await cisa_epss_service.enrich_cve(cve)
                     cve_enrichments.append(enrichment)
 
-                enriched.append({
-                    "id": e.id,
-                    "title": e.title,
-                    "url": e.url,
-                    "published_at": e.published_at.isoformat() if e.published_at else None,
-                    "cve_signals": cve_enrichments,
-                    "has_kev": any(sig["is_kev"] for sig in cve_enrichments),
-                })
+                enriched.append(
+                    {
+                        "id": e.id,
+                        "title": e.title,
+                        "url": e.url,
+                        "published_at": e.published_at.isoformat()
+                        if e.published_at
+                        else None,
+                        "cve_signals": cve_enrichments,
+                        "has_kev": any(sig["is_kev"] for sig in cve_enrichments),
+                    }
+                )
 
             return {"threat_signals": enriched, "count": len(enriched)}
 
@@ -305,10 +309,16 @@ async def export_china_static_snapshot(request: Request):
     from pathlib import Path
 
     overview = await get_china_corridor_overview(request)
-    overview_data = json.loads(overview.body.decode("utf-8")) if hasattr(overview, "body") else {}
+    overview_data = (
+        json.loads(overview.body.decode("utf-8")) if hasattr(overview, "body") else {}
+    )
 
     glossary_resp = await get_china_glossary()
-    glossary_data = json.loads(glossary_resp.body.decode("utf-8")) if hasattr(glossary_resp, "body") else {}
+    glossary_data = (
+        json.loads(glossary_resp.body.decode("utf-8"))
+        if hasattr(glossary_resp, "body")
+        else {}
+    )
 
     snapshot = {
         "generated_at": overview_data.get("snapshot_time"),
@@ -324,12 +334,16 @@ async def export_china_static_snapshot(request: Request):
     try:
         out_dir = Path("data")
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "china_radar.json").write_text(json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8")
+        (out_dir / "china_radar.json").write_text(
+            json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
     except Exception:
         pass
 
     return JSONResponse(
         content=snapshot,
-        headers={"Cache-Control": "public, max-age=60", "Access-Control-Allow-Origin": "*"},
+        headers={
+            "Cache-Control": "public, max-age=60",
+            "Access-Control-Allow-Origin": "*",
+        },
     )
-

@@ -127,7 +127,9 @@ class ModelScopeFetcher(BaseFetcher):
         content_lines = [
             f"**ModelScope Open-Source Model Release**: `{model_id}`",
             f"- **Display Name**: {display_name}",
-            f"- **Parameter Count**: {param_str} ({raw_params:,} parameters)" if raw_params else f"- **Parameter Count**: {param_str}",
+            f"- **Parameter Count**: {param_str} ({raw_params:,} parameters)"
+            if raw_params
+            else f"- **Parameter Count**: {param_str}",
             f"- **Tasks / Capabilities**: {task_str}",
             f"- **License**: `{license_name}`",
             f"- **Community Signals**: {likes:,} likes | {downloads:,} downloads",
@@ -155,10 +157,17 @@ class ModelScopeFetcher(BaseFetcher):
             "original_summary": description or summary,
         }
 
-        category = self.source.category if self.source and self.source.category else Category.AI_TECH
-        content_hash = ContentHash.from_content("modelscope", model_id.lower().strip(), url.lower().strip())
+        category = (
+            self.source.category
+            if self.source and self.source.category
+            else Category.AI_TECH
+        )
+        content_hash = ContentHash.from_content(
+            "modelscope", model_id.lower().strip(), url.lower().strip()
+        )
 
         from uuid import uuid4
+
         return Entry(
             source_id=self.source.id if self.source and self.source.id else uuid4(),
             title=title,

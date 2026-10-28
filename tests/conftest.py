@@ -4,7 +4,7 @@ Pytest configuration and global fixtures.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -72,7 +72,7 @@ def sample_entry(sample_source: Source) -> Entry:
         url="https://arxiv.org/abs/2401.00001",
         content_hash="a" * 64,
         summary="Novel adversarial prompt injection and jailbreak vector exploiting multimodal alignment.",
-        published_at=datetime.utcnow(),
+        published_at=datetime.now(UTC),
         category=Category.AI_RESEARCH,
         tags=["jailbreak", "llm", "adversarial"],
     )
