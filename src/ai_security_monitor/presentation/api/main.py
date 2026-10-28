@@ -28,6 +28,7 @@ from ai_security_monitor.presentation.api.routers import (
     china_router,
     digest_router,
     entries_router,
+    feed_router,
     newspaper_router,
     proxy_router,
     sources_router,
@@ -241,6 +242,10 @@ def create_app() -> FastAPI:
             backup_router, prefix=api_prefix, tags=["Backup & Portability"]
         )
         app.include_router(china_router, prefix=api_prefix, tags=["China Corridor"])
+        app.include_router(feed_router, prefix=api_prefix, tags=["Syndication Feeds"])
+
+    # Top-level syndication feed route for standard RSS reader auto-discovery
+    app.include_router(feed_router, tags=["Syndication Feeds"])
 
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 

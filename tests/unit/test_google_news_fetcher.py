@@ -29,7 +29,10 @@ def google_news_source() -> Source:
 @pytest.mark.asyncio
 async def test_google_news_fetcher_parses_feed(google_news_source: Source):
     """GoogleNewsFetcher should parse RSS search output and clean publisher suffix."""
-    mock_rss_xml = """<?xml version="1.0" encoding="UTF-8"?>
+    from datetime import UTC, datetime, timedelta
+
+    pub_date = (datetime.now(UTC) - timedelta(days=2)).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    mock_rss_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
     <rss version="2.0">
       <channel>
         <title>Google News</title>
@@ -37,7 +40,7 @@ async def test_google_news_fetcher_parses_feed(google_news_source: Source):
           <title>vLLM 0.7.0 Released with SGLang Kernel Acceleration - TechWire</title>
           <link>https://news.google.com/rss/articles/CBMiZGh0dHBz...</link>
           <description>&lt;p&gt;High-throughput inference runtime updates.&lt;/p&gt;</description>
-          <pubDate>Mon, 13 Oct 2026 12:00:00 GMT</pubDate>
+          <pubDate>{pub_date}</pubDate>
           <source url="https://techwire.com">TechWire</source>
         </item>
       </channel>

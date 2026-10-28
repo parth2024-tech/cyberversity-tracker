@@ -8,6 +8,7 @@ from ai_security_monitor.presentation.api.routers.backup import backup_router
 from ai_security_monitor.presentation.api.routers.china import china_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router
 from ai_security_monitor.presentation.api.routers.entries import entries_router
+from ai_security_monitor.presentation.api.routers.feed import feed_router
 from ai_security_monitor.presentation.api.routers.newspaper import newspaper_router
 from ai_security_monitor.presentation.api.routers.proxy import proxy_router
 from ai_security_monitor.presentation.api.routers.sources import sources_router
@@ -32,4 +33,6 @@ __all__ = [
     "backup_router",
     "vault_router",
     "china_router",
+    "feed_router",
 ]
+

@@ -471,6 +471,16 @@ sources:
   country: GLOBAL
   config:
     limit: 20
+- name: Hugging Face Curated Daily Papers
+  category: ai_research
+  type: huggingface_daily_papers
+  url: https://huggingface.co/api/daily_papers
+  rate_limit_seconds: 1800
+  enabled: true
+  region: global
+  country: GLOBAL
+  config:
+    limit: 25
 - name: OSS Insight Trending AI Repositories
   category: github_trending
   type: oss_insight

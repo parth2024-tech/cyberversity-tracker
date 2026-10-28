@@ -318,15 +318,23 @@ async def query_serialized_entries(
         async with SqlAlchemyUnitOfWork() as uow:
             if (
                 search
-                and not cat_enum
                 and not pre_cve
                 and not high_velocity
                 and not watchlist_only
                 and not important_only
             ):
-                fts_results = await uow.entries.search_fts(search, limit=limit)
+                fts_results = await uow.entries.search_fts(search, limit=limit * 2)
                 if fts_results:
-                    return fts_results
+                    if cat_enum:
+                        fts_results = [e for e in fts_results if e.category == cat_enum]
+                    if region and region != "all":
+                        fts_results = [
+                            e
+                            for e in fts_results
+                            if (e.metadata or {}).get("region") == region
+                        ]
+                    if fts_results:
+                        return fts_results[:limit]
             return await uow.entries.list(filters=filters, pagination=pagination)
 
     async def _count_entries():
@@ -559,11 +567,18 @@ async def list_entries(
             limit=limit,
             offset=offset,
         )
+        next_cursor = (
+            serialized_entries[-1]["id"]
+            if (len(serialized_entries) >= limit and serialized_entries)
+            else None
+        )
         return {
             "entries": serialized_entries,
             "total": total if not watchlist_only else len(serialized_entries),
             "limit": limit,
             "offset": offset,
+            "next_cursor": next_cursor,
+            "has_more": bool(next_cursor),
         }
 
     payload = await response_cache.get_or_set(cache_key, 60.0, _fetch)

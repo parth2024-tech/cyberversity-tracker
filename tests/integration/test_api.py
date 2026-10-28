@@ -332,3 +332,43 @@ async def test_sources_management_endpoints():
         )
         assert resp_delete.status_code == 200
         assert resp_delete.json()["status"] == "success"
+
+
+@pytest.mark.asyncio
+async def test_syndication_feeds_and_markdown_digest():
+    """Verify RSS 2.0, JSON Feed, Markdown digest export, and cursor pagination."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # RSS Feed top-level and versioned
+        resp_rss = await client.get("/feed.xml")
+        assert resp_rss.status_code == 200
+        assert resp_rss.headers["content-type"].startswith("application/rss+xml")
+        assert "<rss version=\"2.0\"" in resp_rss.text
+        assert "<channel>" in resp_rss.text
+
+        resp_v1_rss = await client.get("/api/v1/feed.xml")
+        assert resp_v1_rss.status_code == 200
+        assert "<rss version=\"2.0\"" in resp_v1_rss.text
+
+        # JSON Feed
+        resp_json_feed = await client.get("/feed.json")
+        assert resp_json_feed.status_code == 200
+        assert resp_json_feed.headers["content-type"].startswith("application/feed+json")
+        json_feed = resp_json_feed.json()
+        assert json_feed["version"] == "https://jsonfeed.org/version/1.1"
+        assert "items" in json_feed
+
+        # Markdown Briefing
+        resp_md = await client.get("/api/v1/digest/markdown?days=7")
+        assert resp_md.status_code == 200
+        assert resp_md.headers["content-type"].startswith("text/markdown")
+        assert "# AETHERGUARD: Worldwide AI Intelligence Briefing" in resp_md.text
+
+        # Cursor pagination fields on /api/v1/entries
+        resp_entries = await client.get("/api/v1/entries?limit=5")
+        assert resp_entries.status_code == 200
+        data = resp_entries.json()
+        assert "next_cursor" in data
+        assert "has_more" in data
+

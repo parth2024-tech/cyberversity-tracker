@@ -37,6 +37,7 @@ class SourceType(str, Enum):
     TWITTER_X = "twitter_x"
     MODELSCOPE = "modelscope"
     HUGGINGFACE_CHINA = "huggingface_china"
+    HUGGINGFACE_DAILY_PAPERS = "huggingface_daily_papers"
 
 
 class FetchStatus(str, Enum):
