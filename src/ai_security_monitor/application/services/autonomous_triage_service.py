@@ -427,6 +427,12 @@ class AutonomousTriageService:
                     continue
 
                 priority, enqueued_at, entry_id = await self._queue.get()
+                if self._hold_until_sweep:
+                    await self._queue.put((priority, enqueued_at, entry_id))
+                    self._queue.task_done()
+                    await asyncio.sleep(1.0)
+                    continue
+
                 self._is_processing = True
                 self._current_priority = f"P{priority}: {'Urgent Frontier' if priority == 0 else ('High' if priority == 1 else 'Standard')}"
 

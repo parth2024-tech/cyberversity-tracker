@@ -171,18 +171,27 @@ class HackerNewsFetcher(BaseFetcher):
             pass
 
     def _parse_entry(self, raw: dict) -> Entry:
-        content_hash = ContentHash.from_content(
-            raw["title"],
-            raw["url"],
-            str(raw["published_at"]),
+        title = raw.get("title") or "Untitled Hacker News Item"
+        hn_id = raw.get("metadata", {}).get("hn_id") or ""
+        url_str = raw.get("url") or (
+            f"https://news.ycombinator.com/item?id={hn_id}"
+            if hn_id
+            else "https://news.ycombinator.com"
         )
+        pub_at = raw.get("published_at") or datetime.now(UTC)
+        content_hash = ContentHash.from_content(
+            title,
+            url_str,
+            str(pub_at),
+        )
+        content = raw.get("content") or ""
         return Entry(
             source_id=self.source.id,
-            title=raw["title"],
-            url=raw["url"],
+            title=title,
+            url=url_str,
             content_hash=str(content_hash),
-            summary=raw["content"][:500] if raw["content"] else "",
-            published_at=raw["published_at"],
+            summary=content[:500] if content else title,
+            published_at=pub_at,
             category=self.source.category,
             tags=raw.get("tags", []),
             metadata=raw.get("metadata", {}),

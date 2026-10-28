@@ -126,3 +126,52 @@ async def test_api_entries_china_theatre_filter():
             reg = e.get("region", "").lower()
             cntry = e.get("country", "").upper()
             assert reg == "china" or cntry in ("CN", "HK")
+
+
+def test_modelscope_fetcher_handles_string_params_and_metrics():
+    """ModelScopeFetcher._parse_entry must handle raw['params'] being a string ('7B') without crashing format string."""
+    from ai_security_monitor.domain.entities import Source, SourceType
+    from ai_security_monitor.infrastructure.fetchers.modelscope_fetcher import (
+        ModelScopeFetcher,
+    )
+
+    dummy_source = Source(
+        id=uuid.uuid4(),
+        name="ModelScope Hub",
+        category=Category.AI_MODELS,
+        type=SourceType.MODELSCOPE,
+        url="https://modelscope.cn",
+    )
+    fetcher = ModelScopeFetcher(dummy_source)
+
+    # String params and string metrics
+    raw_item = {
+        "id": "qwen/Qwen2.5-7B-Instruct",
+        "name": "Qwen2.5-7B-Instruct",
+        "description": "Alibaba foundation model",
+        "params": "7B",
+        "downloads": "120000",
+        "likes": "4500",
+        "tasks": ["text-generation"],
+        "license": "Apache-2.0",
+    }
+    entry = fetcher._parse_entry(raw_item)
+    assert (
+        entry.title
+        == "[ModelScope] qwen/Qwen2.5-7B-Instruct (7B Params) - text-generation"
+    )
+    assert "7B" in entry.summary
+    assert entry.metadata["parameters"] == "7B"
+    assert entry.metadata["downloads"] == 120000
+    assert entry.metadata["likes"] == 4500
+
+    # Non-numeric string metrics
+    raw_invalid_metrics = {
+        "id": "deepseek/DeepSeek-V3",
+        "params": "236B",
+        "downloads": "N/A",
+        "likes": None,
+    }
+    entry_invalid = fetcher._parse_entry(raw_invalid_metrics)
+    assert entry_invalid.metadata["downloads"] == 0
+    assert entry_invalid.metadata["likes"] == 0

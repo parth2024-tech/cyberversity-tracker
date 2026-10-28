@@ -216,22 +216,32 @@ class SitemapFetcher(BaseFetcher):
 
     def _parse_entry(self, raw: dict) -> Entry:
         """Parse raw entry dict into Entry domain entity."""
-        content_hash = ContentHash.from_content(
-            raw["title"],
-            raw["url"],
-            str(raw["published_at"]),
+        title = raw.get("title") or "Untitled Sitemap Entry"
+        url = raw.get("url") or (
+            str(self.source.url)
+            if self.source and self.source.url
+            else "https://example.com"
         )
+        pub_at = raw.get("published_at") or datetime.now(UTC)
+        content_hash = ContentHash.from_content(
+            title,
+            url,
+            str(pub_at),
+        )
+        summary = raw.get("summary") or title
 
         return Entry(
             source_id=self.source.id,
-            title=raw["title"],
-            url=raw["url"],
+            title=title,
+            url=url,
             content_hash=str(content_hash),
-            summary=raw.get("summary", ""),
-            published_at=raw["published_at"],
+            summary=summary[:500],
+            published_at=pub_at,
             category=self.source.category,
             tags=raw.get("tags", []),
-            metadata=raw.get("metadata", {}),
+            metadata=raw.get("metadata", {})
+            if isinstance(raw.get("metadata"), dict)
+            else {},
         )
 
 

@@ -90,8 +90,8 @@ async def get_rss_feed(
         items_xml: list[str] = []
         for e in entries:
             pub_date = _format_rfc822(e.published_at)
-            item_url = escape(e.url)
-            item_title = escape(e.title)
+            item_url = escape(str(e.url or ""))
+            item_title = escape(str(e.title or "Untitled"))
 
             # Enrich summary with tech focus and analysis details
             summary_parts = []
@@ -105,9 +105,15 @@ async def get_rss_feed(
                 if cap_summary:
                     summary_parts.append(f"Breakthrough: {cap_summary}")
 
-            full_desc = escape("\n\n".join(summary_parts) if summary_parts else e.title)
+            full_desc = escape(
+                "\n\n".join(summary_parts) if summary_parts else str(e.title or "")
+            )
             cat_val = escape(
-                e.category.value if hasattr(e.category, "value") else str(e.category)
+                str(
+                    e.category.value
+                    if hasattr(e.category, "value")
+                    else (e.category or "")
+                )
             )
 
             items_xml.append(f"""    <item>

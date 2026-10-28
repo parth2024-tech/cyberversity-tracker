@@ -88,6 +88,8 @@ def canonicalize_url(url: str) -> str:
     """Canonicalize a URL to collapse cross-source variations into a single canonical target.
 
     Features:
+    - Normalizes schemeless URLs (e.g. example.com/path -> https://example.com/path)
+    - Strips embedded basic auth credentials (user:pass@) to prevent credential leakage
     - Strips marketing/tracking query parameters (utm_*, fbclid, gclid, mc_eid, spm, _ga, etc.)
     - Removes default ports (:80, :443) and lowercases domain names
     - Strips anchor fragments and redundant trailing slashes
@@ -98,14 +100,16 @@ def canonicalize_url(url: str) -> str:
         return ""
 
     try:
-        parsed = urlparse(url.strip())
-        netloc = parsed.netloc.lower()
+        raw = url.strip()
+        if not raw.startswith(("http://", "https://")):
+            raw = "https://" + raw.lstrip("/")
 
-        # Remove default HTTP/HTTPS ports
-        if netloc.endswith(":80") and parsed.scheme in ("http", ""):
-            netloc = netloc[:-3]
-        elif netloc.endswith(":443") and parsed.scheme in ("https", ""):
-            netloc = netloc[:-4]
+        parsed = urlparse(raw)
+        hostname = (parsed.hostname or "").lower()
+        port_suffix = (
+            f":{parsed.port}" if parsed.port and parsed.port not in (80, 443) else ""
+        )
+        netloc = hostname + port_suffix
 
         path = parsed.path.rstrip("/")
 
@@ -138,7 +142,7 @@ def canonicalize_url(url: str) -> str:
             filtered_query.sort()
 
         new_query = urlencode(filtered_query)
-        # Reconstruct without anchor fragments or tracking query
+        # Reconstruct without anchor fragments, credentials, or tracking query
         canonical = urlunparse(
             (
                 parsed.scheme.lower() or "https",

@@ -102,8 +102,15 @@ class HuggingFaceChinaFetcher(BaseFetcher):
         author = raw.get("_tracked_author") or (
             model_id.split("/")[0] if "/" in model_id else "China-Lab"
         )
-        downloads = int(raw.get("downloads", 0) or 0)
-        likes = int(raw.get("likes", 0) or 0)
+
+        def _to_int(val: Any) -> int:
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return 0
+
+        downloads = _to_int(raw.get("downloads"))
+        likes = _to_int(raw.get("likes"))
         pipeline_tag = raw.get("pipeline_tag") or "foundation-model"
         tags = raw.get("tags", [])
 

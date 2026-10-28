@@ -213,22 +213,35 @@ class ArxivFetcher(BaseFetcher):
         return entries
 
     def _parse_entry(self, raw: dict) -> Entry:
-        content_hash = ContentHash.from_content(
-            raw["title"],
-            raw["url"],
-            str(raw["published_at"]),
+        title = raw.get("title") or "Untitled arXiv Paper"
+        arxiv_id = (
+            raw.get("metadata", {}).get("arxiv_id")
+            if isinstance(raw.get("metadata"), dict)
+            else ""
         )
+        url_str = raw.get("url") or (
+            f"https://arxiv.org/abs/{arxiv_id}" if arxiv_id else "https://arxiv.org"
+        )
+        pub_at = raw.get("published_at") or datetime.now(UTC)
+        content_hash = ContentHash.from_content(
+            title,
+            url_str,
+            str(pub_at),
+        )
+        content = raw.get("content") or ""
 
         return Entry(
             source_id=self.source.id,
-            title=raw["title"],
-            url=raw["url"],
+            title=title,
+            url=url_str,
             content_hash=str(content_hash),
-            summary=raw["content"][:500] if raw["content"] else "",
-            published_at=raw["published_at"],
+            summary=content[:500] if content else title,
+            published_at=pub_at,
             category=self.source.category,
             tags=raw.get("tags", []),
-            metadata=raw.get("metadata", {}),
+            metadata=raw.get("metadata", {})
+            if isinstance(raw.get("metadata"), dict)
+            else {},
         )
 
     def _clean_arxiv_text(self, text: str) -> str:

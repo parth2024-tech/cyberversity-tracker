@@ -96,12 +96,10 @@ async def pin_to_vault(
             if not entry:
                 raise EntityNotFoundError("Entry", entry_id)
 
-            # Update entry importance
-            updated = await uow.entries.toggle_importance(uid, reason=reason)
-            # Ensure it is marked important
-            meta = updated.metadata or {}
-            if not meta.get("is_important"):
-                updated = await uow.entries.toggle_importance(uid, reason=reason)
+            # Explicitly mark important=True
+            updated = await uow.entries.toggle_importance(
+                uid, is_important=True, reason=reason
+            )
             await uow.commit()
         except EntityNotFoundError:
             raise HTTPException(status_code=404, detail="Entry not found")
@@ -143,12 +141,8 @@ async def unpin_from_vault(entry_id: str):
             if not entry:
                 raise EntityNotFoundError("Entry", entry_id)
 
-            meta = entry.metadata or {}
-            # If currently important, toggle it off
-            if meta.get("is_important"):
-                updated = await uow.entries.toggle_importance(uid)
-            else:
-                updated = entry
+            # Explicitly mark important=False
+            updated = await uow.entries.toggle_importance(uid, is_important=False)
             await uow.commit()
         except EntityNotFoundError:
             raise HTTPException(status_code=404, detail="Entry not found")

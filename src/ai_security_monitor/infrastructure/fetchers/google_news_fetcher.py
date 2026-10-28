@@ -161,10 +161,10 @@ class GoogleNewsFetcher(BaseFetcher):
             if not publisher:
                 publisher = parts[1].strip()
 
-        link = raw.get("link", "")
-        summary_raw = raw.get("summary", "")
-        published_at = raw.get("published_at", datetime.now(UTC))
-        query = raw.get("_query", "AI Ecosystem")
+        link = raw.get("link") or ""
+        summary_raw = raw.get("summary") or ""
+        published_at = raw.get("published_at") or datetime.now(UTC)
+        query = raw.get("_query") or "AI Ecosystem"
 
         clean_summary = summary_raw.replace("<p>", "").replace("</p>", "").strip()
         if not clean_summary:

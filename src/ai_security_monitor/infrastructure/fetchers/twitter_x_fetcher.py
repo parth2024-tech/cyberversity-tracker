@@ -298,10 +298,10 @@ class TwitterXFetcher(BaseFetcher):
             )
 
         # Standard syndication fallback
-        title = raw.get("title", "Untitled Tweet").strip()
-        url = raw.get("url", "")
-        author = raw.get("author", "X / Twitter")
-        summary_text = raw.get("summary", "")
+        title = (raw.get("title") or "Untitled Tweet").strip()
+        url = raw.get("url") or "https://x.com"
+        author = raw.get("author") or "X / Twitter"
+        summary_text = raw.get("summary") or ""
         published_at = raw.get("published_at") or datetime.now(UTC)
 
         content_lines = [

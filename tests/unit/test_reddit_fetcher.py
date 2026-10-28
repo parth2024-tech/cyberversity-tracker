@@ -133,3 +133,35 @@ async def test_reddit_fetcher_fallback_on_429(reddit_source: Source):
         assert "Llama 4" in entry.title
         assert "Throughput tests" in entry.summary
         assert entry.metadata["source_type"] == "reddit"
+
+
+def test_reddit_fetcher_handles_none_and_malformed_scores(reddit_source: Source):
+    """RedditFetcher._parse_entry should gracefully handle null or string scores without throwing TypeError or ValueError."""
+    fetcher = RedditFetcher(reddit_source)
+    raw_with_nulls = {
+        "id": "null_post",
+        "title": None,
+        "permalink": "/r/LocalLLaMA/comments/null_post/",
+        "score": None,
+        "num_comments": None,
+        "author": None,
+        "created_utc": None,
+    }
+    entry = fetcher._parse_entry(raw_with_nulls)
+    assert entry.metadata["score"] == 0
+    assert entry.metadata["num_comments"] == 0
+    assert entry.metadata["author"] == "redditor"
+    assert entry.published_at is not None
+    assert entry.title == "Untitled Reddit Post"
+
+    raw_with_strings = {
+        "id": "str_post",
+        "title": "Post with string metrics",
+        "permalink": "/r/LocalLLaMA/comments/str_post/",
+        "score": "not_an_int",
+        "num_comments": "invalid",
+        "author": "tester",
+    }
+    entry_str = fetcher._parse_entry(raw_with_strings)
+    assert entry_str.metadata["score"] == 0
+    assert entry_str.metadata["num_comments"] == 0

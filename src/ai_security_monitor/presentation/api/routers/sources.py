@@ -98,11 +98,12 @@ async def toggle_source(source_id: str, req: SourceToggleRequest):
         await uow.sources.update(source)
         await uow.commit()
 
-        return {
-            "status": "success",
-            "source_id": str(source.id),
-            "enabled": source.enabled,
-        }
+    response_cache.invalidate_prefix("sources_")
+    return {
+        "status": "success",
+        "source_id": str(source.id),
+        "enabled": source.enabled,
+    }
 
 
 @sources_router.post("/fetch")

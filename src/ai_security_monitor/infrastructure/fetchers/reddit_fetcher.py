@@ -255,7 +255,7 @@ class RedditFetcher(BaseFetcher):
         """Parse raw Reddit post data into a domain Entry."""
         post_id = str(raw.get("id", uuid4().hex[:8]))
         sub = raw.get("_subreddit", "LocalLLaMA")
-        title = raw.get("title", "Untitled Reddit Post").strip()
+        title = (raw.get("title") or "Untitled Reddit Post").strip()
         permalink = raw.get("permalink", "")
         url = (
             f"https://www.reddit.com{permalink}"
@@ -272,9 +272,15 @@ class RedditFetcher(BaseFetcher):
         if len(selftext) > 1200:
             selftext = selftext[:1197] + "..."
 
-        score = int(raw.get("score", 0))
-        num_comments = int(raw.get("num_comments", 0))
-        author = raw.get("author", "redditor")
+        def _to_int(val: Any) -> int:
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return 0
+
+        score = _to_int(raw.get("score"))
+        num_comments = _to_int(raw.get("num_comments"))
+        author = raw.get("author") or "redditor"
         created_utc = raw.get("created_utc")
 
         if created_utc:

@@ -539,7 +539,7 @@ async def list_entries(
     high_velocity: bool | None = Query(False),
     watchlist_only: bool | None = Query(False),
     important_only: bool | None = Query(False),
-    hours: int | None = Query(None),
+    hours: int | None = Query(None, ge=1, le=87600),
     region: str | None = Query(None),
     country: str | None = Query(None),
     sort: str | None = Query(None),

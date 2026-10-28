@@ -394,3 +394,98 @@ async def test_high_concurrency_read_write_burst_stress():
             assert resp.status_code == 200, (
                 f"Request {i} returned status {resp.status_code}: {resp.text}"
             )
+
+
+@pytest.mark.asyncio
+async def test_hours_bounds_and_fts_sanitization_and_vault_lifecycle():
+    """Verify hours bounds (422), FTS5 operator crash immunity (200), and vault pin/unpin idempotence."""
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # 1. Bounds on hours parameter
+        resp_neg = await client.get("/api/entries?hours=-5")
+        assert resp_neg.status_code == 422
+
+        resp_huge = await client.get("/api/entries?hours=999999999")
+        assert resp_huge.status_code == 422
+
+        # 2. FTS5 operator crash immunity (must never return 500 OperationalError)
+        for special_search in (
+            "*",
+            '"',
+            "AND OR NOT",
+            "^",
+            "deepseek*",
+            'test-time "compute"',
+        ):
+            resp_fts = await client.get(f"/api/entries?search={special_search}")
+            assert resp_fts.status_code == 200, (
+                f"FTS query '{special_search}' failed with {resp_fts.status_code}"
+            )
+            data = resp_fts.json()
+            assert "entries" in data
+
+        # 3. Source toggle cache invalidation
+        sources_resp = await client.get("/api/sources")
+        assert sources_resp.status_code == 200
+        sources = sources_resp.json().get("sources", [])
+        if sources:
+            src = sources[0]
+            src_id = src["id"]
+            orig_enabled = src["enabled"]
+
+            # Toggle source
+            toggle_resp = await client.post(
+                f"/api/sources/{src_id}/toggle",
+                json={"enabled": not orig_enabled},
+            )
+            assert toggle_resp.status_code == 200
+            assert toggle_resp.json()["enabled"] == (not orig_enabled)
+
+            # Immediate GET /api/sources must reflect change (no stale cache)
+            refreshed_resp = await client.get("/api/sources")
+            refreshed_sources = refreshed_resp.json().get("sources", [])
+            refreshed_src = next(s for s in refreshed_sources if s["id"] == src_id)
+            assert refreshed_src["enabled"] == (not orig_enabled)
+
+            # Revert back
+            await client.post(
+                f"/api/sources/{src_id}/toggle",
+                json={"enabled": orig_enabled},
+            )
+
+        # 4. Vault pin and unpin lifecycle
+        entries_resp = await client.get("/api/entries?limit=1")
+        assert entries_resp.status_code == 200
+        entries = entries_resp.json().get("entries", [])
+        if entries:
+            target_entry_id = entries[0]["id"]
+
+            # Pin to vault
+            pin_resp = await client.post(
+                f"/api/vault/{target_entry_id}",
+                json={"reason": "Seminal Frontier Reasoning Benchmark"},
+            )
+            assert pin_resp.status_code == 200
+            assert pin_resp.json()["is_vaulted"] is True
+
+            # Double pin should be idempotent
+            pin_double = await client.post(f"/api/vault/{target_entry_id}")
+            assert pin_double.status_code == 200
+            assert pin_double.json()["is_vaulted"] is True
+
+            # Verify presence in vault list
+            vault_list_resp = await client.get("/api/vault")
+            assert vault_list_resp.status_code == 200
+            v_entries = vault_list_resp.json().get("entries", [])
+            assert any(v["id"] == target_entry_id for v in v_entries)
+
+            # Unpin from vault
+            unpin_resp = await client.delete(f"/api/vault/{target_entry_id}")
+            assert unpin_resp.status_code == 200
+            assert unpin_resp.json()["is_vaulted"] is False
+
+            # Verify removed from vault
+            vault_after_resp = await client.get("/api/vault")
+            v_after = vault_after_resp.json().get("entries", [])
+            assert not any(v["id"] == target_entry_id for v in v_after)

@@ -92,24 +92,34 @@ class ChinaDeduplicationService:
         """Strip tracking parameters, normalize scheme/host, and drop trailing slashes."""
         if not url:
             return ""
-        parsed = urlparse(url.strip())
-        scheme = parsed.scheme.lower() or "https"
-        netloc = parsed.netloc.lower()
-        if netloc.startswith("www."):
-            netloc = netloc[4:]
+        raw = url.strip()
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", raw):
+            raw = "https://" + raw.lstrip("/")
+
+        parsed = urlparse(raw)
+        hostname = (parsed.hostname or "").lower()
+        if hostname.startswith("www."):
+            hostname = hostname[4:]
+        port_suffix = (
+            f":{parsed.port}" if parsed.port and parsed.port not in (80, 443) else ""
+        )
+        netloc = hostname + port_suffix
 
         # Filter query params
         query_pairs = parse_qsl(parsed.query, keep_blank_values=False)
         clean_query = [
             (k, v) for k, v in query_pairs if k.lower() not in cls.TRACKING_PARAMS
         ]
+        clean_query.sort()
         query_str = urlencode(clean_query)
 
         path = parsed.path.rstrip("/")
         if not path:
             path = "/"
 
-        return urlunparse((scheme, netloc, path, parsed.params, query_str, ""))
+        return urlunparse(
+            (parsed.scheme.lower() or "https", netloc, path, "", query_str, "")
+        )
 
     @classmethod
     def extract_fingerprint(cls, text: str) -> set[str]:

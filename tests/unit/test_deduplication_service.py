@@ -130,3 +130,23 @@ def test_story_confidence_scaling():
     story.add_entry(e3, source_name="Source C")
     assert story.source_count == 3
     assert story.confidence_score >= 0.89
+
+
+def test_canonicalize_url_schemeless_and_credentials():
+    # Schemeless URL should automatically be upgraded to https
+    schemeless = "huggingface.co/models?utm_campaign=winter"
+    assert canonicalize_url(schemeless) == "https://huggingface.co/models"
+
+    # Embedded credentials should be stripped completely
+    cred_url = "https://user:password123@example.com/api/feed?token=xyz"
+    assert canonicalize_url(cred_url) == "https://example.com/api/feed?token=xyz"
+
+    # Standard ports (80, 443) should be stripped, non-standard preserved
+    assert canonicalize_url("http://example.com:80/docs") == "http://example.com/docs"
+    assert (
+        canonicalize_url("https://example.com:443/docs") == "https://example.com/docs"
+    )
+    assert (
+        canonicalize_url("https://example.com:8080/docs")
+        == "https://example.com:8080/docs"
+    )

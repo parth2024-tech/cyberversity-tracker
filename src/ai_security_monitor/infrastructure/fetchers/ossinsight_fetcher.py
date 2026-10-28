@@ -140,9 +140,16 @@ class OSSInsightFetcher(BaseFetcher):
     def _parse_entry(self, raw: dict[str, Any]) -> Entry:
         """Parse raw OSS Insight row into a domain Entry."""
         repo_name = raw.get("repo_name", "unknown/repo")
-        stars = int(raw.get("stars", 0) or raw.get("star_gain", 0) or 0)
-        forks = int(raw.get("forks", 0) or 0)
-        pushes = int(raw.get("pushes", 0) or 0)
+
+        def _to_int(val: Any) -> int:
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return 0
+
+        stars = _to_int(raw.get("stars")) or _to_int(raw.get("star_gain"))
+        forks = _to_int(raw.get("forks"))
+        pushes = _to_int(raw.get("pushes"))
         description = (raw.get("description") or "").strip()
         period = raw.get("_period", "past_24_hours")
         lang = raw.get("primary_language") or raw.get("_language", "Python")
@@ -170,6 +177,8 @@ class OSSInsightFetcher(BaseFetcher):
             "source_type": SourceType.OSS_INSIGHT.value,
         }
 
+        pub_at = raw.get("published_at") or datetime.now(UTC)
+
         return Entry(
             source_id=self.source.id,
             title=title,
@@ -177,7 +186,7 @@ class OSSInsightFetcher(BaseFetcher):
             summary=full_content[:1000],
             content_hash=str(ContentHash.from_content(f"{repo_name}\n{url}")),
             category=Category.GITHUB_TRENDING,
-            published_at=datetime.now(UTC),
+            published_at=pub_at,
             metadata=metadata,
         )
 

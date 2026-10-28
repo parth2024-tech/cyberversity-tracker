@@ -71,21 +71,27 @@ class GitHubAdvisoriesFetcher(BaseFetcher):
         return entries
 
     def _parse_entry(self, raw: dict) -> Entry:
+        title = raw.get("title") or "Untitled GitHub Advisory"
+        url = raw.get("url") or "https://github.com/advisories"
+        pub_at = raw.get("published_at") or datetime.now(UTC)
         content_hash = ContentHash.from_content(
-            raw["title"],
-            raw["url"],
-            str(raw["published_at"]),
+            title,
+            url,
+            str(pub_at),
         )
+        content = raw.get("content") or ""
         return Entry(
             source_id=self.source.id,
-            title=raw["title"],
-            url=raw["url"],
+            title=title,
+            url=url,
             content_hash=str(content_hash),
-            summary=raw["content"][:500] if raw["content"] else "",
-            published_at=raw["published_at"],
+            summary=content[:500] if content else title,
+            published_at=pub_at,
             category=self.source.category,
             tags=raw.get("tags", []),
-            metadata=raw.get("metadata", {}),
+            metadata=raw.get("metadata", {})
+            if isinstance(raw.get("metadata"), dict)
+            else {},
         )
 
 

@@ -100,8 +100,15 @@ class ModelScopeFetcher(BaseFetcher):
         model_id = raw.get("id") or raw.get("name") or "unknown/model"
         display_name = raw.get("display_name") or model_id
         description = raw.get("description", "").strip()
-        downloads = int(raw.get("downloads", 0) or 0)
-        likes = int(raw.get("likes", 0) or 0)
+
+        def _to_int(val: Any) -> int:
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return 0
+
+        downloads = _to_int(raw.get("downloads"))
+        likes = _to_int(raw.get("likes"))
         license_name = raw.get("license") or "open"
         tasks = raw.get("tasks", [])
         task_str = ", ".join(tasks) if tasks else "foundation-model"
@@ -124,12 +131,15 @@ class ModelScopeFetcher(BaseFetcher):
                 pass
 
         # Build structured markdown body
+        formatted_param_detail = (
+            f"- **Parameter Count**: {param_str} ({raw_params:,} parameters)"
+            if isinstance(raw_params, int) and raw_params > 0
+            else f"- **Parameter Count**: {param_str}"
+        )
         content_lines = [
             f"**ModelScope Open-Source Model Release**: `{model_id}`",
             f"- **Display Name**: {display_name}",
-            f"- **Parameter Count**: {param_str} ({raw_params:,} parameters)"
-            if raw_params
-            else f"- **Parameter Count**: {param_str}",
+            formatted_param_detail,
             f"- **Tasks / Capabilities**: {task_str}",
             f"- **License**: `{license_name}`",
             f"- **Community Signals**: {likes:,} likes | {downloads:,} downloads",

@@ -6,6 +6,7 @@ Implements the domain repository interfaces.
 from __future__ import annotations
 
 import builtins
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
@@ -209,9 +210,10 @@ class SQLAlchemyEntryRepository(EntryRepository):
         """Sub-millisecond BM25 full-text search using SQLite FTS5 table."""
         import re
 
-        clean_q = re.sub(r"[^\w\s\*\"]", " ", query).strip()
-        if not clean_q:
+        tokens = re.findall(r"\w+", query)
+        if not tokens:
             return []
+        safe_q = " ".join(f'"{t}"' for t in tokens)
 
         try:
             sql = text(
@@ -219,9 +221,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 "FROM entries_fts WHERE entries_fts MATCH :query "
                 "ORDER BY rank ASC LIMIT :limit"
             )
-            result = await self._session.execute(
-                sql, {"query": clean_q, "limit": limit}
-            )
+            result = await self._session.execute(sql, {"query": safe_q, "limit": limit})
             rows = result.fetchall()
             if not rows:
                 return []
@@ -237,12 +237,13 @@ class SQLAlchemyEntryRepository(EntryRepository):
             return [self._model_to_entity(m) for m in ordered]
         except Exception:
             # Fallback to ILIKE if FTS5 table is uninitialized
+            raw_fallback = " ".join(tokens)
             stmt = (
                 select(EntryModel)
                 .where(
                     or_(
-                        EntryModel.title.ilike(f"%{clean_q}%"),
-                        EntryModel.summary.ilike(f"%{clean_q}%"),
+                        EntryModel.title.ilike(f"%{raw_fallback}%"),
+                        EntryModel.summary.ilike(f"%{raw_fallback}%"),
                     ),
                     EntryModel.is_purged.is_(False),
                 )
@@ -813,16 +814,33 @@ class SQLAlchemyEntryRepository(EntryRepository):
                     )
                 )
             else:
-                stmt = stmt.where(
-                    SourceModel.config.like(f'%"region": "{filters.region}"%')
-                )
+                clean_reg = re.sub(r"[^a-zA-Z0-9_\-]", "", filters.region.lower())
+                if clean_reg:
+                    stmt = stmt.where(
+                        or_(
+                            SourceModel.config.like(f'%"region": "{clean_reg}"%'),
+                            EntryModel.extra_metadata.like(
+                                f'%"region": "{clean_reg}"%'
+                            ),
+                        )
+                    )
 
         if filters.country and filters.country != "all":
-            if not source_joined:
-                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id)
-                source_joined = True
-            c_code = filters.country.upper()
-            stmt = stmt.where(SourceModel.config.like(f'%"country": "{c_code}"%'))
+            clean_country = re.sub(r"[^a-zA-Z0-9_\-]", "", filters.country.upper())
+            if clean_country:
+                if not source_joined:
+                    stmt = stmt.join(
+                        SourceModel, EntryModel.source_id == SourceModel.id
+                    )
+                    source_joined = True
+                stmt = stmt.where(
+                    or_(
+                        SourceModel.config.like(f'%"country": "{clean_country}"%'),
+                        EntryModel.extra_metadata.like(
+                            f'%"country": "{clean_country}"%'
+                        ),
+                    )
+                )
 
         return stmt, analysis_joined
 
@@ -852,6 +870,11 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 updated_at=model.analysis.updated_at,
             )
 
+        try:
+            category_enum = Category(model.category)
+        except ValueError:
+            category_enum = Category.AI_TECH
+
         return Entry(
             id=_str_to_uuid(model.id),
             source_id=_str_to_uuid(model.source_id),
@@ -861,7 +884,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             summary=model.summary,
             published_at=model.published_at,
             fetched_at=model.fetched_at,
-            category=Category(model.category),
+            category=category_enum,
             tags=model.tags or [],
             metadata=model.extra_metadata or {},
             created_at=model.created_at,
@@ -997,7 +1020,9 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             weaponization_potential=model.weaponization_potential,
             mitre_attack_id=getattr(model, "mitre_attack_id", None),
             mitre_technique=getattr(model, "mitre_technique", None),
-            model=AnalysisModel(model.model),
+            model=AnalysisModel(model.model)
+            if model.model in [m.value for m in AnalysisModel]
+            else AnalysisModel.HEURISTIC,
             confidence=model.confidence,
             created_at=model.created_at,
             updated_at=model.updated_at,
@@ -1088,11 +1113,21 @@ class SQLAlchemySourceRepository(SourceRepository):
         return True
 
     def _model_to_entity(self, model: SourceModel) -> Source:
+        try:
+            cat_enum = Category(model.category)
+        except ValueError:
+            cat_enum = Category.AI_TECH
+
+        try:
+            type_enum = SourceType(model.type)
+        except ValueError:
+            type_enum = SourceType.RSS
+
         return Source(
             id=_str_to_uuid(model.id),
             name=model.name,
-            category=Category(model.category),
-            type=SourceType(model.type),
+            category=cat_enum,
+            type=type_enum,
             url=model.url or "",
             query=model.query,
             rate_limit_seconds=model.rate_limit_seconds,

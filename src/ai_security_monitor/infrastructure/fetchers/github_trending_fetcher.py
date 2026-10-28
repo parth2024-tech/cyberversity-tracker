@@ -587,28 +587,36 @@ class GitHubTrendingFetcher(BaseFetcher):
         return entries
 
     def _parse_entry(self, raw: dict) -> Entry:
-        repo_ident = raw.get("metadata", {}).get("repo_name") or raw["url"]
+        url_str = raw.get("url") or "https://github.com/trending"
+        title_str = raw.get("title") or "Trending GitHub Repository"
+        pub_at = raw.get("published_at") or datetime.now(UTC)
+        repo_ident = (
+            raw.get("metadata", {}).get("repo_name")
+            if isinstance(raw.get("metadata"), dict)
+            else None
+        ) or url_str
         pub_date_str = (
-            raw["published_at"].strftime("%Y-%m-%d")
-            if hasattr(raw.get("published_at"), "strftime")
-            else "trending"
+            pub_at.strftime("%Y-%m-%d") if hasattr(pub_at, "strftime") else "trending"
         )
         content_hash = ContentHash.from_content(
             "github_trending",
-            repo_ident.lower().strip(),
-            raw["url"].lower().strip(),
+            str(repo_ident).lower().strip(),
+            url_str.lower().strip(),
             pub_date_str,
         )
+        content = raw.get("content") or ""
         return Entry(
             source_id=self.source.id,
-            title=raw["title"],
-            url=raw["url"],
+            title=title_str,
+            url=url_str,
             content_hash=str(content_hash),
-            summary=raw["content"][:500] if raw["content"] else "",
-            published_at=raw["published_at"],
+            summary=content[:500] if content else title_str,
+            published_at=pub_at,
             category=self.source.category,
             tags=[t for t in raw.get("tags", []) if t],
-            metadata=raw.get("metadata", {}),
+            metadata=raw.get("metadata", {})
+            if isinstance(raw.get("metadata"), dict)
+            else {},
         )
 
 

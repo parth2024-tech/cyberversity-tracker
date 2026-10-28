@@ -125,3 +125,26 @@ async def test_hackernews_parse_entry(hn_source: Source):
     assert entry.title == raw["title"]
     assert len(entry.content_hash) == 64
     assert "hackernews" in entry.tags
+
+
+def test_hackernews_parse_entry_handles_malformed_and_missing_keys(hn_source: Source):
+    """_parse_entry must never crash on empty dict, missing title, missing url, or None published_at."""
+    fetcher = HackerNewsFetcher(hn_source)
+    malformed = {
+        "title": None,
+        "url": None,
+        "content": None,
+        "published_at": None,
+        "metadata": {"hn_id": "99999"},
+    }
+    entry = fetcher._parse_entry(malformed)
+    assert entry.title == "Untitled Hacker News Item"
+    assert "99999" in entry.url
+    assert entry.published_at is not None
+    assert len(entry.content_hash) == 64
+
+    # Completely empty dict
+    empty_entry = fetcher._parse_entry({})
+    assert empty_entry.title == "Untitled Hacker News Item"
+    assert empty_entry.url == "https://news.ycombinator.com"
+    assert empty_entry.published_at is not None

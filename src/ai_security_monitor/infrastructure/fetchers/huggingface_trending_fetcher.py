@@ -75,8 +75,15 @@ class HuggingFaceTrendingFetcher(BaseFetcher):
                 if "/" in repo_id
                 else ""
             )
-            downloads = int(repo.get("downloads", 0) or 0)
-            likes = int(repo.get("likes", 0) or 0)
+
+            def _to_int(val: Any) -> int:
+                try:
+                    return int(val)
+                except (ValueError, TypeError):
+                    return 0
+
+            downloads = _to_int(repo.get("downloads"))
+            likes = _to_int(repo.get("likes"))
             pipeline_tag = repo.get("pipeline_tag") or "ai-model"
             repo_type = repo.get("type", "model")
 
@@ -118,40 +125,49 @@ class HuggingFaceTrendingFetcher(BaseFetcher):
 
     def _parse_entry(self, raw: dict[str, Any]) -> Entry:
         """Parse raw Hugging Face trending entry into an Entry entity."""
+        repo_id = raw.get("repo_id") or "unknown/model"
+        url = raw.get("url") or f"https://huggingface.co/{repo_id}"
+        title = raw.get("title") or f"Trending Hugging Face Model: {repo_id}"
+        pub_at = raw.get("published_at") or datetime.now(UTC)
         pub_date_str = (
-            raw["published_at"].strftime("%Y-%m-%d")
-            if hasattr(raw.get("published_at"), "strftime")
+            pub_at.strftime("%Y-%m-%d")
+            if hasattr(pub_at, "strftime")
             else "hf_trending"
         )
         content_hash = ContentHash.from_content(
             "huggingface_trending",
-            raw["repo_id"].lower().strip(),
-            raw["url"].lower().strip(),
+            repo_id.lower().strip(),
+            url.lower().strip(),
             pub_date_str,
         )
 
         metadata = {
-            "source_name": self.source.name,
-            "repo_name": raw["repo_id"],
-            "author": raw["author"],
-            "likes": raw["likes"],
-            "downloads": raw["downloads"],
-            "pipeline_tag": raw["pipeline_tag"],
-            "repo_type": raw["repo_type"],
+            "source_name": self.source.name if self.source else "Hugging Face Trending",
+            "repo_name": repo_id,
+            "author": raw.get("author") or "",
+            "likes": raw.get("likes") or 0,
+            "downloads": raw.get("downloads") or 0,
+            "pipeline_tag": raw.get("pipeline_tag") or "ai-model",
+            "repo_type": raw.get("repo_type") or "model",
             "provenance_type": "trending_repo",
             "source_type": SourceType.HUGGINGFACE_TRENDING.value,
             "source_platform": "Hugging Face",
         }
 
-        category = self.source.category or Category.AI_MODELS
+        category = (
+            self.source.category
+            if self.source and self.source.category
+            else Category.AI_MODELS
+        )
+        content = raw.get("content") or ""
 
         return Entry(
             source_id=self.source.id,
-            title=raw["title"],
-            url=raw["url"],
+            title=title,
+            url=url,
             content_hash=str(content_hash),
-            summary=raw["content"][:800],
-            published_at=raw["published_at"],
+            summary=content[:800] if content else title,
+            published_at=pub_at,
             category=category,
             tags=raw.get("tags", []),
             metadata=metadata,
