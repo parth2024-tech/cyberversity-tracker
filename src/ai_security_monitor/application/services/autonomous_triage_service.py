@@ -356,11 +356,20 @@ class AutonomousTriageService:
         return True
 
     async def backfill_high_priority(self, limit: int = 25) -> int:
-        """Find highest-velocity un-triaged entries in DB and enqueue them with priority ranking."""
+        """Find unanalyzed or highest-velocity un-triaged entries in DB and enqueue them with priority ranking."""
         async with self._uow_factory() as uow:
-            # Query top unanalyzed or heuristic high-velocity entries
-            filters = EntryFilters(high_velocity_only=True)
-            entries = await uow.entries.list(filters=filters)
+            # First priority: entries that have no analysis record at all
+            filters_unanalyzed = EntryFilters(unanalyzed_only=True)
+            entries = await uow.entries.list(filters=filters_unanalyzed)
+            # Second priority: high-velocity items triaged only by heuristic
+            if len(entries) < limit:
+                filters_velocity = EntryFilters(high_velocity_only=True)
+                velocity_entries = await uow.entries.list(filters=filters_velocity)
+                seen_ids = {e.id for e in entries}
+                for ve in velocity_entries:
+                    if ve.id not in seen_ids:
+                        entries.append(ve)
+                        seen_ids.add(ve.id)
 
         # Sort so frontier models & trending repos lead the backfill
         entries.sort(key=lambda e: self.calculate_priority(e))

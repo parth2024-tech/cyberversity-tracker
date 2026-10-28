@@ -1,7 +1,7 @@
 """
-Multi-Agent Critique & Debate Triage Engine.
-Simulates a multi-agent council (Creator/Analyst vs. Critic/Validator)
-to scrutinize and score high-velocity AI intelligence before publication.
+Heuristic Keyword & Impact Scorer.
+Evaluates technical impact vs hype signals using dual-perspective keyword scoring
+(Technical Impact vs Signal-to-Noise Rigor) to scrutinize incoming AI intelligence.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ class AgentCritiqueResult:
     consensus_score: float
     critique_summary: str
     approved: bool
+    scorer_type: str = "heuristic_keyword"
 
     def to_dict(self) -> dict:
         return {
@@ -28,22 +29,23 @@ class AgentCritiqueResult:
             "consensus_score": self.consensus_score,
             "critique_summary": self.critique_summary,
             "approved": self.approved,
+            "scorer_type": self.scorer_type,
         }
 
 
-class MultiAgentDebateEngine:
-    """Orchestrates multi-perspective autonomous critique for incoming AI intelligence."""
+class HeuristicKeywordScorer:
+    """Heuristic keyword scorer evaluating technical impact vs hype for incoming AI intelligence."""
 
     def __init__(self):
-        self.name = "AetherGuard Multi-Agent Council"
+        self.name = "AetherGuard Heuristic Keyword Scorer"
 
     async def debate_and_critique(
         self, title: str, summary: str, category: str
     ) -> AgentCritiqueResult:
-        """Run an asynchronous multi-agent evaluation on a piece of intelligence."""
-        logger.info(f"Initiating multi-agent debate council for: {title[:60]}...")
+        """Run a heuristic critique evaluating technical impact vs hype on incoming intelligence."""
+        logger.info(f"Initiating heuristic keyword critique for: {title[:60]}...")
 
-        # 1. Analyst Agent (Creator / Technical Impact Evaluation)
+        # 1. Technical Impact Evaluation
         text_lower = f"{title} {summary}".lower()
         impact_keywords = (
             "breakthrough",
@@ -68,7 +70,7 @@ class MultiAgentDebateEngine:
         if category in ("ai_models", "ai_research", "github_trending"):
             creator_score = min(100.0, creator_score + 6.0)
 
-        # 2. Critic Agent (Rigor & Signal-to-Noise Validation)
+        # 2. Hype & Signal-to-Noise Validation
         hype_words = (
             "revolutionary",
             "game-changing",
@@ -91,8 +93,8 @@ class MultiAgentDebateEngine:
         )
 
         summary_text = (
-            f"Council Evaluation: Creator Impact Score {creator_score}/100, "
-            f"Critic Rigor Score {critic_score}/100. Consensus: {consensus_score}/100. "
+            f"Heuristic Evaluation: Technical Impact Score {creator_score}/100, "
+            f"Rigor Score {critic_score}/100. Consensus: {consensus_score}/100. "
             f"{verdict}"
         )
 
@@ -102,7 +104,13 @@ class MultiAgentDebateEngine:
             consensus_score=consensus_score,
             critique_summary=summary_text,
             approved=approved,
+            scorer_type="heuristic_keyword",
         )
 
 
-multi_agent_council = MultiAgentDebateEngine()
+# Backward-compatible alias for existing imports
+MultiAgentDebateEngine = HeuristicKeywordScorer
+
+heuristic_scorer = HeuristicKeywordScorer()
+multi_agent_council = heuristic_scorer
+

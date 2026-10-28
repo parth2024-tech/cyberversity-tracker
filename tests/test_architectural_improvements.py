@@ -344,6 +344,7 @@ async def test_multi_agent_council_debate_and_critique():
     assert res_good.critic_score == 90.0
     assert "Approved for publication" in res_good.critique_summary
     assert res_good.to_dict()["approved"] is True
+    assert res_good.to_dict()["scorer_type"] == "heuristic_keyword"
 
     # 2. Low-signal hype clickbait
     res_hype = await multi_agent_council.debate_and_critique(
