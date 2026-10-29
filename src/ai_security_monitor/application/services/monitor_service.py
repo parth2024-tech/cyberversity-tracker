@@ -38,6 +38,47 @@ from ai_security_monitor.infrastructure.fetchers.base import fetcher_registry
 logger = get_logger(__name__)
 
 _consecutive_failures: dict[str, int] = {}
+_zero_entry_streaks: dict[str, int] = {}
+
+
+async def send_source_zero_yield_alert(source_name: str, count: int) -> bool:
+    """Send alert via Telegram when an intelligence source produces 0 entries across consecutive sweeps."""
+    try:
+        tg_token = (
+            getattr(settings.delivery, "telegram_bot_token", None)
+            or getattr(settings, "telegram_bot_token", None)
+            or os.getenv("TELEGRAM_BOT_TOKEN")
+        )
+        tg_chat = (
+            getattr(settings.delivery, "telegram_chat_id", None)
+            or getattr(settings, "telegram_chat_id", None)
+            or os.getenv("TELEGRAM_CHAT_ID")
+        )
+        if not tg_token or not tg_chat:
+            return False
+
+        text = (
+            f"⚠️ <b>AETHERGUARD SOURCE DORMANT ALERT</b>\n\n"
+            f"Source: <b>{source_name}</b>\n"
+            f"Status: Produced <b>0 entries</b> for <b>{count}</b> consecutive sweeps (possible silent breakdown or stale URL)\n\n"
+            f"<i>Timestamp: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}</i>"
+        )
+        import httpx
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"https://api.telegram.org/bot{tg_token}/sendMessage",
+                json={
+                    "chat_id": tg_chat,
+                    "text": text,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": True,
+                },
+            )
+        return resp.status_code == 200
+    except Exception as e:
+        logger.warning(f"Failed to dispatch Telegram zero-yield alert: {e}")
+        return False
 
 
 async def send_source_failure_alert(
@@ -1013,10 +1054,30 @@ class MonitorService:
                             success += 1
                             total_new += log.entries_new
                             _consecutive_failures[src.name] = 0
+                            if log.entries_total == 0 or log.entries_new == 0:
+                                streak = _zero_entry_streaks.get(src.name, 0) + 1
+                                _zero_entry_streaks[src.name] = streak
+                                zero_threshold = getattr(
+                                    settings.fetch, "zero_entry_streak_threshold", 5
+                                )
+                                if streak == zero_threshold or (
+                                    streak > zero_threshold and streak % 5 == 0
+                                ):
+                                    logger.warning(
+                                        f"Source {src.name} produced 0 entries for {streak} consecutive sweeps. Alerting."
+                                    )
+                                    asyncio.create_task(
+                                        send_source_zero_yield_alert(src.name, streak)
+                                    )
+                            else:
+                                _zero_entry_streaks[src.name] = 0
                         else:
                             error += 1
                             failures = _consecutive_failures.get(src.name, 0) + 1
                             _consecutive_failures[src.name] = failures
+                            _zero_entry_streaks[src.name] = (
+                                _zero_entry_streaks.get(src.name, 0) + 1
+                            )
                             threshold = settings.fetch.consecutive_failure_threshold
                             if failures == threshold or (
                                 failures > threshold and failures % 5 == 0
@@ -1034,6 +1095,9 @@ class MonitorService:
                         error += 1
                         failures = _consecutive_failures.get(src.name, 0) + 1
                         _consecutive_failures[src.name] = failures
+                        _zero_entry_streaks[src.name] = (
+                            _zero_entry_streaks.get(src.name, 0) + 1
+                        )
                         threshold = settings.fetch.consecutive_failure_threshold
                         if failures == threshold or (
                             failures > threshold and failures % 5 == 0
