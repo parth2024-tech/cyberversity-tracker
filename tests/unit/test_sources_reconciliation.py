@@ -224,3 +224,118 @@ class TestSourcesReconciliation:
             assert new_db is not None
             assert new_db.url == "https://stable.org/rss.xml"
             assert new_db.enabled is True
+
+    @pytest.mark.asyncio
+    async def test_get_by_url_and_name_handles_duplicates_gracefully(self, test_uow_factory):
+        """Verify that get_by_url safely handles duplicate rows without MultipleResultsFound."""
+        uow_factory = test_uow_factory
+        shared_url = "https://duplicate-feed.ai/rss"
+
+        async with uow_factory() as uow:
+            s1 = Source(
+                name="Unique Source One",
+                category=Category.AI_MODELS,
+                type=SourceType.RSS,
+                url=shared_url,
+                enabled=True,
+            )
+            s2 = Source(
+                name="Unique Source Two",
+                category=Category.AI_MODELS,
+                type=SourceType.RSS,
+                url=shared_url,
+                enabled=True,
+            )
+            await uow.sources.add(s1)
+            await uow.sources.add(s2)
+            await uow.commit()
+
+        async with uow_factory() as uow:
+            # Must return one of the matching records without throwing MultipleResultsFound
+            res_url = await uow.sources.get_by_url(shared_url)
+            assert res_url is not None
+            assert res_url.url == shared_url
+            assert res_url.name in ("Unique Source One", "Unique Source Two")
+
+            # Empty or whitespace inputs must safely return None
+            assert await uow.sources.get_by_url("") is None
+            assert await uow.sources.get_by_url("   ") is None
+            assert await uow.sources.get_by_name("") is None
+            assert await uow.sources.get_by_name("   ") is None
+
+    @pytest.mark.asyncio
+    async def test_retired_sources_deactivated_unconditionally_even_if_untagged(
+        self, test_uow_factory, monkeypatch
+    ):
+        """Verify that explicitly retired sources are deactivated even if legacy untagged (no origin in config)."""
+        uow_factory = test_uow_factory
+
+        async with uow_factory() as uow:
+            # Seed legacy CNNVD row without any origin tag (as exists in production SQLite)
+            legacy_cnnvd = Source(
+                name="CNNVD China Vulnerability Alerts (CNNVD安全动态)",
+                category=Category.VULNERABILITIES,
+                type=SourceType.RSS,
+                url="https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml",
+                enabled=True,
+                config={},  # NO origin tag
+            )
+            # Seed legacy user custom row without origin tag
+            legacy_custom = Source(
+                name="My Custom Untagged Feed",
+                category=Category.AI_TECH,
+                type=SourceType.RSS,
+                url="https://custom.org/feed",
+                enabled=True,
+                config={},  # NO origin tag
+            )
+            await uow.sources.add(legacy_cnnvd)
+            await uow.sources.add(legacy_custom)
+
+            # Seed 55 dummy active sources
+            for i in range(55):
+                await uow.sources.add(
+                    Source(
+                        name=f"Active Source {i}",
+                        category=Category.AI_MODELS,
+                        type=SourceType.RSS,
+                        url=f"https://active{i}.ai/rss",
+                        enabled=True,
+                        config={"origin": "yaml"},
+                    )
+                )
+            await uow.commit()
+
+        # Mock YAML with the 55 active sources
+        mock_yaml = [
+            SourceConfig(
+                name=f"Active Source {i}",
+                category="ai_models",
+                type="rss",
+                url=f"https://active{i}.ai/rss",
+                enabled=True,
+                tier=1.0,
+            )
+            for i in range(55)
+        ]
+
+        monkeypatch.setattr(
+            "ai_security_monitor.application.services.monitor_service.load_sources_from_yaml",
+            lambda *args, **kwargs: mock_yaml,
+        )
+
+        monitor = MonitorService(uow_factory=uow_factory)
+        await monitor.init_sources()
+
+        async with uow_factory() as uow:
+            cnnvd_db = await uow.sources.get_by_name(
+                "CNNVD China Vulnerability Alerts (CNNVD安全动态)"
+            )
+            assert cnnvd_db is not None
+            assert cnnvd_db.enabled is False
+            assert (cnnvd_db.config or {}).get("retired") is True
+
+            # Legacy custom untagged feed must remain enabled and untouched
+            custom_db = await uow.sources.get_by_name("My Custom Untagged Feed")
+            assert custom_db is not None
+            assert custom_db.enabled is True

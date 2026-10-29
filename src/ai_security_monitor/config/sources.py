@@ -109,6 +109,7 @@ class SourcesConfig(BaseModel):
     """All sources configuration."""
 
     sources: list[SourceConfig] = Field(default_factory=list)
+    retired_sources: list[dict[str, Any]] = Field(default_factory=list)
 
 
 @dataclass
@@ -149,6 +150,14 @@ def load_sources_from_yaml(config_path: Any | None = None) -> list[SourceConfig]
     """Load sources list directly from YAML configuration file."""
     path = Path(config_path) if config_path else Path("config/sources.yaml")
     return load_sources(path).sources
+
+
+def load_retired_sources_from_yaml(
+    config_path: Any | None = None,
+) -> list[dict[str, Any]]:
+    """Load explicitly retired / decommissioned sources from YAML configuration file."""
+    path = Path(config_path) if config_path else Path("config/sources.yaml")
+    return load_sources(path).retired_sources
 
 
 def create_registry(config_path: Path | None = None) -> SourceRegistry:
