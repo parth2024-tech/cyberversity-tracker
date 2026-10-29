@@ -586,17 +586,6 @@ sources:
   config:
     require_ai: true
   tier: 2.0
-- name: Synced / 机器之心 AI Frontier
-  category: ai_research
-  type: rss
-  url: https://www.jiqizhixin.com/rss
-  rate_limit_seconds: 1800
-  enabled: true
-  region: china
-  country: CN
-  config:
-    require_ai: true
-  tier: 2.0
 - name: GitHub Trending AI Repositories (Weekly)
   category: github_trending
   type: github_trending
@@ -1950,3 +1939,7 @@ retired_sources:
   - name: "DeepSeek-V3 Open Model Codebase"
     url: "https://github.com/deepseek-ai/DeepSeek-V3/releases.atom"
     reason: "Deduplicated with DeepSeek AI Official Releases"
+  # Dead / Redirected feeds
+  - name: "Synced / 机器之心 AI Frontier"
+    url: "https://www.jiqizhixin.com/rss"
+    reason: "Dead RSS URL redirecting to HTML data-service"

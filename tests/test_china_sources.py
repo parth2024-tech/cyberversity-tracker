@@ -175,3 +175,50 @@ def test_modelscope_fetcher_handles_string_params_and_metrics():
     entry_invalid = fetcher._parse_entry(raw_invalid_metrics)
     assert entry_invalid.metadata["downloads"] == 0
     assert entry_invalid.metadata["likes"] == 0
+
+
+def test_huggingface_china_fetcher_orgs_and_quantization_filtering():
+    """HuggingFaceChinaFetcher must include all 2026 frontier Chinese labs and filter derivatives."""
+    from ai_security_monitor.infrastructure.fetchers.huggingface_china_fetcher import (
+        HuggingFaceChinaFetcher,
+    )
+
+    authors = HuggingFaceChinaFetcher.DEFAULT_AUTHORS
+    assert "deepseek-ai" in authors
+    assert "Qwen" in authors
+    assert "zai-org" in authors
+    assert "moonshotai" in authors
+    assert "MiniMaxAI" in authors
+    assert "stepfun-ai" in authors
+    assert "ByteDance-Seed" in authors
+
+    # Quantization detection
+    assert HuggingFaceChinaFetcher._is_derivative_or_quantization(
+        "Qwen/Qwen2.5-72B-Instruct-GGUF"
+    )
+    assert HuggingFaceChinaFetcher._is_derivative_or_quantization(
+        "deepseek-ai/DeepSeek-V3-FP8"
+    )
+    assert HuggingFaceChinaFetcher._is_derivative_or_quantization(
+        "moonshotai/Kimi-k1.5-AWQ"
+    )
+    assert not HuggingFaceChinaFetcher._is_derivative_or_quantization(
+        "deepseek-ai/DeepSeek-V3"
+    )
+    assert not HuggingFaceChinaFetcher._is_derivative_or_quantization(
+        "Qwen/Qwen2.5-72B-Instruct"
+    )
+
+
+def test_modelscope_fetcher_org_level_polling_defaults():
+    """ModelScopeFetcher must have default owners covering top Chinese AI labs."""
+    from ai_security_monitor.infrastructure.fetchers.modelscope_fetcher import (
+        ModelScopeFetcher,
+    )
+
+    owners = ModelScopeFetcher.DEFAULT_OWNERS
+    assert "deepseek-ai" in owners
+    assert "Qwen" in owners
+    assert "Shanghai_AI_Laboratory" in owners
+    assert "ZhipuAI" in owners
+    assert "moonshotai" in owners

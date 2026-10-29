@@ -71,3 +71,45 @@ def test_get_health_report():
     assert "regional_rollups" in report
     assert "north_america" in report["regional_rollups"]
     assert "europe" in report["regional_rollups"]
+
+
+def test_source_health_zero_entry_streak():
+    svc = SourceHealthService()
+
+    # Record 4 consecutive runs with 0 new entries
+    for _ in range(4):
+        svc.record_success(
+            source_name="Dormant Feed",
+            duration_ms=150,
+            entries_new=0,
+            source_type="rss",
+        )
+
+    data = svc.get_source_health("Dormant Feed")
+    assert data is not None
+    assert data["zero_entry_streak"] == 4
+    assert data["status"] == "healthy"
+    assert not svc.is_stale("Dormant Feed", threshold=5)
+
+    # 5th run with 0 new entries triggers degraded status and stale flag
+    svc.record_success(
+        source_name="Dormant Feed",
+        duration_ms=150,
+        entries_new=0,
+        source_type="rss",
+    )
+    data = svc.get_source_health("Dormant Feed")
+    assert data["zero_entry_streak"] == 5
+    assert data["status"] == "degraded"
+    assert svc.is_stale("Dormant Feed", threshold=5)
+
+    # A productive run resets zero_entry_streak
+    svc.record_success(
+        source_name="Dormant Feed",
+        duration_ms=200,
+        entries_new=3,
+        source_type="rss",
+    )
+    data = svc.get_source_health("Dormant Feed")
+    assert data["zero_entry_streak"] == 0
+    assert not svc.is_stale("Dormant Feed", threshold=5)

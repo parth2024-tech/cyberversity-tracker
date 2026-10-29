@@ -111,19 +111,41 @@ class TopicRelevanceSignal(ScoringSignal):
 
     # Priority keyword patterns
     REASONING_PATTERNS = re.compile(
-        r"\b(reasoning|deepseek-r1|r1|o1|o3|chain-of-thought|test-time compute|inference-time scaling|extended thinking)\b",
+        r"\b(reasoning|deepseek-r1|r1|o1|o3|chain-of-thought|test-time compute|inference-time scaling|extended thinking|process reward model|prm|mcts|search-based reasoning)\b",
+        re.IGNORECASE,
+    )
+    ARCHITECTURE_PATTERNS = re.compile(
+        r"\b(mixture-of-experts|moe|sparse attention|linear attention|multi-head latent attention|mla|state space model|mamba|speculative decoding|quantization kernel|fp8 training|1-bit llm|bitnet|kernel fusion|triton kernel|flashinfer)\b",
         re.IGNORECASE,
     )
     FRONTIER_MODELS_PATTERNS = re.compile(
-        r"\b(deepseek|qwen|claude|gemini|llama-3|llama3|mistral|open weights|weights released|moe|mixture-of-experts)\b",
+        r"\b(deepseek|qwen|claude|gemini|llama-3|llama3|mistral|open weights|weights released|foundation model)\b",
+        re.IGNORECASE,
+    )
+    BENCHMARK_PATTERNS = re.compile(
+        r"\b(swe-bench|livecodebench|math-500|gpqa|eval harness|arena-hard|chatbot arena|lmsys|helm|mmlu-pro|benchmark results?|frontier evals?)\b",
         re.IGNORECASE,
     )
     INFERENCE_INFRA_PATTERNS = re.compile(
-        r"\b(vllm|sglang|llama\.cpp|ollama|tensorrt-llm|triton|kernel|serving|inference engine)\b",
+        r"\b(vllm|sglang|llama\.cpp|ollama|tensorrt-llm|triton|kernel|serving|inference engine|exllamav2|cutlass)\b",
         re.IGNORECASE,
     )
     HARDWARE_PATTERNS = re.compile(
         r"\b(blackwell|b200|gb200|h100|h200|mi300|npu|tpu|accelerator)\b",
+        re.IGNORECASE,
+    )
+    SLOP_WRAPPER_PATTERNS = re.compile(
+        r"\b("
+        r"awesome-[\w-]+|"
+        r"1000\+\s*prompts?|collection\s+of\s+prompts?|curated\s+list\s+of|"
+        r"chatgpt-wrapper|wrapper\s+for\s+chatgpt|wrapper\s+for\s+claude|"
+        r"simple\s+ui\s+for\s+openai|telegram\s+bot\s+for\s+openai|telegram\s+bot\s+wrapper|"
+        r"unofficial\s+api\s+for|reverse\s+engineered\s+chatgpt|"
+        r"free\s+api\s+keys?|prompt\s+engineering\s+cheatsheet|"
+        r"roadmap\s+to\s+learn|cheatsheet|cheat\s+sheet|"
+        r"memecoin|airdrop|solana\s+bot|trading\s+bot|pump\.fun|dexscreener|token\s+launch|sniper\s+bot|"
+        r"make\s+money\s+with\s+ai|earn\s+\$|10x\s+your\s+productivity|just\s+another\s+chatgpt\s+clone"
+        r")\b",
         re.IGNORECASE,
     )
 
@@ -135,10 +157,19 @@ class TopicRelevanceSignal(ScoringSignal):
             else str(entry.category)
         )
 
+        # 1. Epistemic Slop & Wrapper Penalty Gate
+        if self.SLOP_WRAPPER_PATTERNS.search(text):
+            return 0.10, "Filtered: Low-effort prompt wrapper / star-farmed list / crypto bot"
+
+        # 2. Frontier Breakthroughs and Architectural Innovations
         if self.REASONING_PATTERNS.search(text):
             return 1.0, "Seminal Reasoning Architecture & Test-Time Compute"
+        if self.ARCHITECTURE_PATTERNS.search(text):
+            return 0.95, "Breakthrough Model Architecture & Kernel Innovation"
         if self.FRONTIER_MODELS_PATTERNS.search(text) or cat_val == "ai_models":
             return 0.90, "Frontier Foundation Model Release / Open Weights"
+        if self.BENCHMARK_PATTERNS.search(text):
+            return 0.88, "Verified Empirical Benchmark & Evaluation Harness"
         if self.INFERENCE_INFRA_PATTERNS.search(text):
             return 0.85, "Critical Inference Runtime & Serving Infrastructure"
         if self.HARDWARE_PATTERNS.search(text):
@@ -328,7 +359,24 @@ class ScoringPipeline:
             else str(entry.category)
         )
         title_lower = (entry.title or "").lower()
-        if cat_val == "ai_models" or any(
+        full_text_lower = f"{entry.title} {entry.summary}".lower()
+
+        # Epistemic Slop & Wrapper Demotion Guard
+        is_slop = bool(
+            TopicRelevanceSignal.SLOP_WRAPPER_PATTERNS.search(full_text_lower)
+        )
+
+        if is_slop:
+            # Force demotion: low-effort wrappers/lists/bots are capped at P2 regardless of category or velocity
+            priority = 2
+            tier = "P2 (Standard - Slop Filtered)"
+            reasons = [
+                "Filtered: Low-effort prompt wrapper / star-farmed list / crypto bot"
+            ]
+            if entry.metadata is None:
+                entry.metadata = {}
+            entry.metadata["filtered_as_slop"] = True
+        elif cat_val == "ai_models" or any(
             k in title_lower
             for k in (
                 "deepseek",

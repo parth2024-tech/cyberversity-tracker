@@ -227,3 +227,27 @@ async def test_rss_fetcher_require_ai_filtering(rss_source: Source):
 
     assert len(raw) == 1
     assert "DeepSeek" in raw[0]["title"]
+
+
+@pytest.mark.asyncio
+async def test_rss_fetcher_detects_html_redirect_and_raises(rss_source: Source):
+    """When an RSS feed redirects to an HTML landing page (e.g. Synced), it must raise RuntimeError."""
+    html_page = b"<!DOCTYPE html><html lang='en'><head><title>Data Service</title></head><body>Redirected</body></html>"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = html_page
+    mock_response.headers = {"content-type": "text/html; charset=utf-8"}
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        fetcher = RSSFetcher(rss_source)
+        with pytest.raises(RuntimeError, match="returned HTML instead of RSS/Atom"):
+            await fetcher._fetch_raw()

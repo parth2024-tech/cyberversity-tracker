@@ -34,6 +34,7 @@ class SourceHealthMetrics:
     last_error_message: str | None = None
     last_entries_new: int = 0
     recent_entry_counts: list[int] = field(default_factory=list)
+    zero_entry_streak: int = 0
 
     @property
     def entry_frequency(self) -> float:
@@ -80,7 +81,11 @@ class SourceHealthMetrics:
         """Health classification: healthy, degraded, or failing."""
         if self.consecutive_failures >= 3:
             return "failing"
-        if self.consecutive_failures >= 1 or self.success_rate < 80.0:
+        if (
+            self.consecutive_failures >= 1
+            or self.zero_entry_streak >= 5
+            or self.success_rate < 80.0
+        ):
             return "degraded"
         return "healthy"
 
@@ -118,6 +123,7 @@ class SourceHealthMetrics:
             "entry_frequency": self.entry_frequency,
             "adaptive_polling_interval_seconds": self.adaptive_polling_interval_seconds,
             "consecutive_failures": self.consecutive_failures,
+            "zero_entry_streak": self.zero_entry_streak,
             "total_runs": self.total_runs,
             "success_count": self.success_count,
             "error_count": self.error_count,
@@ -185,6 +191,12 @@ class SourceHealthService:
         metrics.last_entries_new = entries_new
         metrics.last_error_message = None
 
+        # Zero-entry streak management
+        if entries_new == 0:
+            metrics.zero_entry_streak += 1
+        else:
+            metrics.zero_entry_streak = 0
+
         # Keep rolling window of last 10 entry counts for adaptive frequency
         metrics.recent_entry_counts.append(entries_new)
         if len(metrics.recent_entry_counts) > 10:
@@ -210,6 +222,7 @@ class SourceHealthService:
         metrics.total_runs += 1
         metrics.error_count += 1
         metrics.consecutive_failures += 1
+        metrics.zero_entry_streak += 1
         metrics.last_run_at = now
         metrics.last_error_at = now
         metrics.last_latency_ms = duration_ms
@@ -226,8 +239,13 @@ class SourceHealthService:
 
         logger.warning(
             f"Source '{source_name}' health degraded: {metrics.consecutive_failures} "
-            f"consecutive failures (status: {metrics.status})"
+            f"consecutive failures, {metrics.zero_entry_streak} zero-entry streak (status: {metrics.status})"
         )
+
+    def is_stale(self, source_name: str, threshold: int = 5) -> bool:
+        """Return True if the source has produced 0 entries for >= threshold consecutive sweeps."""
+        m = self._sources.get(source_name)
+        return m.zero_entry_streak >= threshold if m else False
 
     def get_source_health(self, source_name: str) -> dict | None:
         """Get health data for a specific source."""
