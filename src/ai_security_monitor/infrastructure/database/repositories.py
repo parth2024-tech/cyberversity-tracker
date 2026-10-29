@@ -1122,6 +1122,12 @@ class SQLAlchemySourceRepository(SourceRepository):
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
+    async def get_by_url(self, url: str) -> Source | None:
+        stmt = select(SourceModel).where(SourceModel.url == url)
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
     async def list(self, enabled_only: bool = False) -> list[Source]:
         stmt = select(SourceModel)
         if enabled_only:

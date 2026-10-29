@@ -18,8 +18,24 @@ from ai_security_monitor.domain.entities import (
     Source,
     SourceType,
 )
+from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.infrastructure.database.models import Base
 from ai_security_monitor.infrastructure.database.unit_of_work import UnitOfWork
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Ensure database tables exist and initial sources are seeded before running test session."""
+    import asyncio
+
+    from ai_security_monitor.application.services.monitor_service import MonitorService
+
+    async def _init_clean_db() -> None:
+        await db_manager.init_db()
+        monitor_service = MonitorService()
+        await monitor_service.init_sources()
+        await db_manager.close()
+
+    asyncio.run(_init_clean_db())
 
 
 @pytest_asyncio.fixture

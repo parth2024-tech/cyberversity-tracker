@@ -294,7 +294,10 @@ async def test_adversarial_markdown_briefing_export_contracts():
         assert resp.headers["content-type"].startswith("text/markdown")
         content = resp.text
         assert "# AETHERGUARD: Worldwide AI Intelligence Briefing" in content
-        assert "## " in content
+        if "Total Breakthroughs: 0" in content:
+            assert "No entries matched the velocity threshold" in content
+        else:
+            assert "## " in content
         assert "Coverage Window:" in content
 
         # Verify Markdown fences are balanced

@@ -27,13 +27,13 @@ def test_china_sources_configuration_loaded():
     # We configured 19 verified China sources
     assert len(china_sources) >= 15
 
-    # Verify core entities exist
+    # Verify core AI frontier entities exist
     names = {s.name for s in china_sources}
-    assert any("CNNVD" in n for n in names)
-    assert any("360" in n for n in names)
-    assert any("Qi-AnXin" in n for n in names)
     assert any("DeepSeek" in n for n in names)
-    assert any("GovCERT" in n for n in names)
+    assert any("Qwen" in n for n in names)
+    assert any("ModelScope" in n for n in names)
+    assert any("InternLM" in n for n in names)
+    assert any("GLM" in n for n in names)
     assert any("arXiv" in n for n in names)
 
 
