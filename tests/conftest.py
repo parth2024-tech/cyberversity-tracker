@@ -33,6 +33,17 @@ from ai_security_monitor.infrastructure.database.unit_of_work import UnitOfWork
 def pytest_sessionstart(session: pytest.Session) -> None:
     """Ensure database tables exist and initial sources are seeded before running test session."""
     import asyncio
+    import os
+
+    # Wipe stale test database file to guarantee a fresh state on each test session run
+    data_dir = os.environ.get("DATA_DIR")
+    if data_dir and os.path.exists(data_dir):
+        db_file = os.path.join(data_dir, "monitor.db")
+        if os.path.exists(db_file):
+            try:
+                os.remove(db_file)
+            except OSError:
+                pass
 
     from ai_security_monitor.application.services.monitor_service import MonitorService
 
