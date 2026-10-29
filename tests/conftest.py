@@ -4,6 +4,13 @@ Pytest configuration and global fixtures.
 
 from __future__ import annotations
 
+import os
+
+# Guarantee that automated test sessions use an isolated throwaway SQLite DB
+# and never mutate a developer's real local database or production state.
+os.environ.setdefault("DATA_DIR", "/tmp/aetherguard_test_data")
+os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
+
 from datetime import UTC, datetime
 from uuid import uuid4
 

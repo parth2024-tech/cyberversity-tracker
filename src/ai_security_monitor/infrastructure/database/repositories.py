@@ -1117,15 +1117,19 @@ class SQLAlchemySourceRepository(SourceRepository):
         return self._model_to_entity(model) if model else None
 
     async def get_by_name(self, name: str) -> Source | None:
-        stmt = select(SourceModel).where(SourceModel.name == name)
+        if not name or not name.strip():
+            return None
+        stmt = select(SourceModel).where(SourceModel.name == name.strip()).limit(1)
         result = await self._session.execute(stmt)
-        model = result.scalar_one_or_none()
+        model = result.scalars().first()
         return self._model_to_entity(model) if model else None
 
     async def get_by_url(self, url: str) -> Source | None:
-        stmt = select(SourceModel).where(SourceModel.url == url)
+        if not url or not url.strip():
+            return None
+        stmt = select(SourceModel).where(SourceModel.url == url.strip()).limit(1)
         result = await self._session.execute(stmt)
-        model = result.scalar_one_or_none()
+        model = result.scalars().first()
         return self._model_to_entity(model) if model else None
 
     async def list(self, enabled_only: bool = False) -> list[Source]:

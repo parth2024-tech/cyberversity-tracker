@@ -13,7 +13,10 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from ai_security_monitor.config.settings import settings
-from ai_security_monitor.config.sources import load_sources_from_yaml
+from ai_security_monitor.config.sources import (
+    load_retired_sources_from_yaml,
+    load_sources_from_yaml,
+)
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import (
     Analysis,
@@ -235,7 +238,39 @@ class MonitorService:
                         await uow.sources.update(existing)
                         count += 1
 
-            # Reconciliation guardrail: only run deactivation if YAML contains sufficient sources
+            # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
+            retired_cfg = load_retired_sources_from_yaml(config_path)
+            retired_names = {
+                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+            }
+            retired_urls = {
+                r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
+            }
+
+            for db_s in all_db_sources:
+                db_name_key = db_s.name.strip().lower()
+                db_url_key = db_s.url.strip().lower() if db_s.url else ""
+
+                # Invariant: Active sources explicitly listed in sources.yaml must never be retired
+                if db_name_key in yaml_names:
+                    continue
+
+                if db_s.enabled and (
+                    db_name_key in retired_names
+                    or (db_url_key and db_url_key in retired_urls)
+                ):
+                    db_s.enabled = False
+                    cfg = dict(db_s.config or {})
+                    cfg["origin"] = "yaml"
+                    cfg["retired"] = True
+                    db_s.config = cfg
+                    await uow.sources.update(db_s)
+                    deactivated_count += 1
+                    logger.info(
+                        f"Soft-deactivated explicitly retired source in DB: {db_s.name} (id={db_s.id})"
+                    )
+
+            # Phase 2: Reconciliation guardrail: only run general orphan deactivation if YAML contains sufficient sources
             # (protects against partial or corrupt YAML configs mass-disabling sources on startup)
             min_expected = 50
             if len(sources_cfg) < min_expected:
