@@ -85,6 +85,14 @@ class Source(Entity):
     tier: float = 2.0
     config: dict = field(default_factory=dict)
 
+    @property
+    def region(self) -> str:
+        return (self.config or {}).get("region", "global")
+
+    @property
+    def country(self) -> str:
+        return (self.config or {}).get("country", "GLOBAL")
+
 
 @dataclass(kw_only=True)
 class Entry(Entity):

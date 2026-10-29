@@ -195,6 +195,15 @@ class ArxivFetcher(BaseFetcher):
             ).strip()
             clean_title = self._clean_arxiv_text(clean_title)
 
+            region_val = (
+                getattr(self.source, "region", None)
+                or (self.source.config or {}).get("region", "global")
+            )
+            country_val = (
+                getattr(self.source, "country", None)
+                or (self.source.config or {}).get("country", "GLOBAL")
+            )
+
             entries.append(
                 {
                     "title": clean_title or raw_title,
@@ -207,6 +216,8 @@ class ArxivFetcher(BaseFetcher):
                         "authors": authors,
                         "arxiv_id": getattr(item, "id", "").split("/")[-1],
                         "categories": [tag.term for tag in getattr(item, "tags", [])],
+                        "region": region_val,
+                        "country": country_val,
                     },
                 }
             )

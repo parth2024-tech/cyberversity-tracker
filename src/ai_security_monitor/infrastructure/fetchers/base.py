@@ -40,6 +40,7 @@ class FetchResult:
     status: FetchStatus
     error_message: str | None = None
     duration_ms: int = 0
+    http_status: int | None = None
 
 
 class BaseFetcher(ABC):
@@ -124,6 +125,11 @@ class BaseFetcher(ABC):
                     floor=self._rate_limit_seconds,
                 )
 
+                http_status = getattr(self, "_last_http_status", None) or (
+                    (self.source.config or {}).get("last_http_status")
+                    if self.source
+                    else None
+                )
                 return FetchResult(
                     entries=entries,
                     entries_new=len(
@@ -132,6 +138,7 @@ class BaseFetcher(ABC):
                     entries_total=len(raw_entries),
                     status=FetchStatus.SUCCESS,
                     duration_ms=duration_ms,
+                    http_status=http_status,
                 )
 
             except TimeoutError:

@@ -911,6 +911,10 @@ class MonitorService:
         )
 
         if status == FetchStatus.SUCCESS:
+            is_304 = (
+                getattr(fetch_result, "http_status", None) == 304
+                or (source.config or {}).get("last_http_status") == 304
+            )
             source_health_service.record_success(
                 source_name=source.name,
                 duration_ms=duration_ms,
@@ -920,6 +924,7 @@ class MonitorService:
                 if hasattr(source.category, "value")
                 else str(source.category),
                 region=source.config.get("region", "global"),
+                is_not_modified=is_304,
             )
         else:
             source_health_service.record_failure(
@@ -1054,7 +1059,8 @@ class MonitorService:
                             success += 1
                             total_new += log.entries_new
                             _consecutive_failures[src.name] = 0
-                            if log.entries_total == 0 or log.entries_new == 0:
+                            is_304 = (src.config or {}).get("last_http_status") == 304
+                            if log.entries_total == 0 and not is_304:
                                 streak = _zero_entry_streaks.get(src.name, 0) + 1
                                 _zero_entry_streaks[src.name] = streak
                                 zero_threshold = getattr(
@@ -1069,7 +1075,7 @@ class MonitorService:
                                     asyncio.create_task(
                                         send_source_zero_yield_alert(src.name, streak)
                                     )
-                            else:
+                            elif log.entries_total > 0:
                                 _zero_entry_streaks[src.name] = 0
                         else:
                             error += 1
