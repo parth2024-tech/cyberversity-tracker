@@ -178,6 +178,7 @@ class SourceHealthService:
         source_type: str = "unknown",
         category: str = "unknown",
         region: str = "global",
+        is_not_modified: bool = False,
     ) -> None:
         """Record a successful fetch sweep for a source."""
         metrics = self._get_or_create(source_name, source_type, category, region)
@@ -191,11 +192,12 @@ class SourceHealthService:
         metrics.last_entries_new = entries_new
         metrics.last_error_message = None
 
-        # Zero-entry streak management
-        if entries_new == 0:
-            metrics.zero_entry_streak += 1
-        else:
+        # Zero-entry streak management:
+        # HTTP 304 Not Modified is a valid cache hit and does NOT increment zero_entry_streak
+        if entries_new > 0:
             metrics.zero_entry_streak = 0
+        elif not is_not_modified:
+            metrics.zero_entry_streak += 1
 
         # Keep rolling window of last 10 entry counts for adaptive frequency
         metrics.recent_entry_counts.append(entries_new)

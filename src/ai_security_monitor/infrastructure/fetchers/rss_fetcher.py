@@ -95,8 +95,15 @@ class RSSFetcher(BaseFetcher):
                             f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
                             "Feed unchanged; skipping body payload."
                         )
+                        self._last_http_status = 304
+                        if self.source.config is None:
+                            self.source.config = {}
+                        self.source.config["last_http_status"] = 304
                         return []
                     resp.raise_for_status()
+                    self._last_http_status = resp.status_code
+                    if self.source.config is not None:
+                        self.source.config["last_http_status"] = resp.status_code
                     response = resp
                     break
                 except Exception as req_err:
@@ -367,8 +374,10 @@ class RSSFetcher(BaseFetcher):
             entry_meta = {
                 "feed_title": feed.feed.get("title", ""),
                 "feed_link": feed.feed.get("link", ""),
-                "region": (self.source.config or {}).get("region", "global"),
-                "country": (self.source.config or {}).get("country", "GLOBAL"),
+                "region": getattr(self.source, "region", None)
+                or (self.source.config or {}).get("region", "global"),
+                "country": getattr(self.source, "country", None)
+                or (self.source.config or {}).get("country", "GLOBAL"),
                 "provenance_type": "trending_repo"
                 if extracted_repo_url
                 else (self.source.config or {}).get("provenance_type", "rss_feed"),

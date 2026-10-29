@@ -113,3 +113,29 @@ def test_source_health_zero_entry_streak():
     data = svc.get_source_health("Dormant Feed")
     assert data["zero_entry_streak"] == 0
     assert not svc.is_stale("Dormant Feed", threshold=5)
+
+
+def test_source_health_http_304_not_modified_does_not_increment_streak():
+    svc = SourceHealthService()
+
+    # Active source has streak = 0
+    svc.record_success(
+        source_name="Active Feed",
+        duration_ms=100,
+        entries_new=5,
+        source_type="rss",
+    )
+    assert svc.get_source_health("Active Feed")["zero_entry_streak"] == 0
+
+    # HTTP 304 response (is_not_modified=True) occurs
+    svc.record_success(
+        source_name="Active Feed",
+        duration_ms=45,
+        entries_new=0,
+        source_type="rss",
+        is_not_modified=True,
+    )
+    # Streak should remain 0 because 304 is a valid cache hit, not dormant/dead
+    assert svc.get_source_health("Active Feed")["zero_entry_streak"] == 0
+    assert svc.get_source_health("Active Feed")["status"] == "healthy"
+

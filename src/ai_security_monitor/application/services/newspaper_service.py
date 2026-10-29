@@ -157,6 +157,9 @@ class NewspaperService:
             return True
 
         async with self._uow_factory() as uow:
+            active_sources = await uow.sources.list(enabled_only=True)
+            active_source_ids = {s.id for s in active_sources}
+
             # Query comprehensive recent entries from the AI monitoring horizon
             recent_filters = EntryFilters(since=cutoff, sort_by="velocity")
             raw_entries = await uow.entries.list(
@@ -321,11 +324,12 @@ class NewspaperService:
                     re.search(rf"\b{re.escape(k)}\b", combined) for k in ai_keywords
                 )
 
-            # Strict AI isolation: purge all CVE/vulnerability/exploit entries and non-AI general news
+            # Strict AI isolation: purge all CVE/vulnerability/exploit entries, disabled/retired sources, and non-AI general news
             entries = [
                 e
                 for e in raw_entries
-                if not is_security_item(e)
+                if (not active_source_ids or e.source_id in active_source_ids)
+                and not is_security_item(e)
                 and is_ai_relevant(e)
                 and calculate_content_quality(e)
             ]
@@ -353,6 +357,7 @@ class NewspaperService:
                     for item in fallback_items:
                         if (
                             item.id not in existing_ids
+                            and (not active_source_ids or item.source_id in active_source_ids)
                             and not is_security_item(item)
                             and is_ai_relevant(item)
                             and calculate_content_quality(item)

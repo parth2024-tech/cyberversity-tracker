@@ -222,3 +222,73 @@ async def test_newspaper_security_exclusion_and_quality(temp_output_dir: Path):
 
     directive_sec = service._generate_executive_directive(entry_sec)
     assert len(directive_sec) > 20
+
+
+@pytest.mark.asyncio
+async def test_newspaper_excludes_inactive_or_retired_source_entries(
+    temp_output_dir: Path,
+):
+    """Verify that newspaper strictly excludes entries from disabled or retired sources."""
+    from datetime import UTC
+    from uuid import uuid4
+
+    from ai_security_monitor.domain.entities import Source, SourceType
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    active_source = Source(
+        id=uuid4(),
+        name="Active AI Frontier Lab",
+        category=Category.AI_MODELS,
+        type=SourceType.RSS,
+        url="https://frontier.example.com/rss",
+        enabled=True,
+    )
+    retired_source = Source(
+        id=uuid4(),
+        name="Retired Legacy Feed",
+        category=Category.AI_TECH,
+        type=SourceType.RSS,
+        url="https://retired.example.com/rss",
+        enabled=False,
+    )
+
+    active_entry = Entry(
+        id=uuid4(),
+        source_id=active_source.id,
+        title="Active Lab Releases Frontier MoE Architecture",
+        url="https://frontier.example.com/moe-release",
+        content_hash="active_hash_moe",
+        published_at=datetime.now(UTC),
+        category=Category.AI_MODELS,
+        summary="Major MoE architecture release with open weights.",
+    )
+    retired_entry = Entry(
+        id=uuid4(),
+        source_id=retired_source.id,
+        title="Retired Source Outdated Item",
+        url="https://retired.example.com/old-item",
+        content_hash="retired_hash_item",
+        published_at=datetime.now(UTC),
+        category=Category.AI_TECH,
+        summary="This item is from an inactive or retired source.",
+    )
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        await uow.sources.add(active_source)
+        await uow.sources.add(retired_source)
+        await uow.entries.add(active_entry)
+        await uow.entries.add(retired_entry)
+        await uow.commit()
+
+    service = NewspaperService(output_dir=temp_output_dir)
+    with patch.object(service, "_render_pdf", return_value=None):
+        meta = await service.generate_edition(window_hours=24)
+
+    edition_id = meta["edition_id"]
+    md_content = (temp_output_dir / f"{edition_id}.md").read_text(encoding="utf-8")
+
+    assert "Frontier MoE Architecture" in md_content
+    assert "Retired Source Outdated Item" not in md_content
+

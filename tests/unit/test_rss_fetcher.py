@@ -251,3 +251,84 @@ async def test_rss_fetcher_detects_html_redirect_and_raises(rss_source: Source):
         fetcher = RSSFetcher(rss_source)
         with pytest.raises(RuntimeError, match="returned HTML instead of RSS/Atom"):
             await fetcher._fetch_raw()
+
+
+@pytest.mark.asyncio
+async def test_rss_fetcher_stamps_region_from_source_property():
+    """RSSFetcher extracts region and country from source properties/config."""
+    source = Source(
+        id=uuid4(),
+        name="Mistral News",
+        category=Category.AI_TECH,
+        type=SourceType.RSS,
+        url="https://mistral.ai/news/index.xml",
+        rate_limit_seconds=0,
+        enabled=True,
+        config={"region": "europe", "country": "FR"},
+    )
+    xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Mistral News</title>
+        <item>
+          <title>Mistral Large 2 Released</title>
+          <link>https://mistral.ai/news/large-2</link>
+          <description>New frontier reasoning model</description>
+        </item>
+      </channel>
+    </rss>"""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = xml_content
+    mock_response.headers = {"content-type": "application/rss+xml"}
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        fetcher = RSSFetcher(source)
+        raw = await fetcher._fetch_raw()
+
+    assert len(raw) == 1
+    assert raw[0]["metadata"]["region"] == "europe"
+    assert raw[0]["metadata"]["country"] == "FR"
+
+
+@pytest.mark.asyncio
+async def test_rss_fetcher_records_304_not_modified():
+    """RSSFetcher flags 304 status and returns empty list without raising."""
+    source = Source(
+        id=uuid4(),
+        name="AWS ML Blog",
+        category=Category.AI_TECH,
+        type=SourceType.RSS,
+        url="https://aws.amazon.com/blogs/machine-learning/feed/",
+        rate_limit_seconds=0,
+        enabled=True,
+        config={"etag": "abc-123"},
+    )
+    mock_response = MagicMock()
+    mock_response.status_code = 304
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        fetcher = RSSFetcher(source)
+        raw = await fetcher._fetch_raw()
+
+    assert raw == []
+    assert fetcher._last_http_status == 304
+    assert source.config.get("last_http_status") == 304
+
