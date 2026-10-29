@@ -7,6 +7,7 @@ extreme pagination boundaries, and strict payload schema adherence.
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -213,7 +214,6 @@ async def test_adversarial_syndication_feeds_contracts():
     """Brutally verify RSS 2.0 XML and JSON Feed 1.1 structure, schema conformity, and 14-day freshness."""
     import email.utils
     import xml.etree.ElementTree as ET
-    from datetime import UTC, datetime, timedelta
 
     app = create_app()
     transport = ASGITransport(app=app)
@@ -285,6 +285,40 @@ async def test_adversarial_syndication_feeds_contracts():
 @pytest.mark.asyncio
 async def test_adversarial_markdown_briefing_export_contracts():
     """Verify Markdown export structure, heading validity, query parameter bounds, and code fences."""
+    from uuid import uuid4
+
+    from ai_security_monitor.domain.entities import Analysis, Category, Entry
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    # Seed an analyzed entry so the populated markdown export path is deterministically exercised
+    async with SqlAlchemyUnitOfWork() as uow:
+        srcs = await uow.sources.list()
+        src_id = srcs[0].id if srcs else uuid4()
+        entry_id = uuid4()
+        test_entry = Entry(
+            id=entry_id,
+            source_id=src_id,
+            title="Qwen 2.5 72B Instruct Weights Released",
+            url=f"https://github.com/QwenLM/Qwen2.5/{uuid4().hex[:8]}",
+            content_hash=f"hash_{uuid4().hex[:16]}",
+            published_at=datetime.now(UTC),
+            category=Category.AI_MODELS,
+            summary="Frontier open-weights foundation model release.",
+        )
+        await uow.entries.add(test_entry)
+        test_analysis = Analysis(
+            entry_id=entry_id,
+            attack_vector="Inference optimization and reasoning",
+            risk_assessment="Frontier model release matching proprietary benchmarks",
+            mitigation="Standard deployment verification",
+            threat_velocity=85,
+            severity_index=70,
+        )
+        await uow.analysis.add(test_analysis)
+        await uow.commit()
+
     app = create_app()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -294,10 +328,8 @@ async def test_adversarial_markdown_briefing_export_contracts():
         assert resp.headers["content-type"].startswith("text/markdown")
         content = resp.text
         assert "# AETHERGUARD: Worldwide AI Intelligence Briefing" in content
-        if "Total Breakthroughs: 0" in content:
-            assert "No entries matched the velocity threshold" in content
-        else:
-            assert "## " in content
+        assert "## Frontier Foundation Models" in content
+        assert "Qwen 2.5 72B Instruct Weights Released" in content
         assert "Coverage Window:" in content
 
         # Verify Markdown fences are balanced

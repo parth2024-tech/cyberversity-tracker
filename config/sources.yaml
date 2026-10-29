@@ -1666,6 +1666,15 @@ sources:
   region: china
   country: CN
   tier: 1.0
+- name: Fudan CodeWisdom (复旦大学代码智能与大模型评估)
+  category: ai_research
+  type: rss
+  url: https://wechat2rss.xlab.app/feed/4e361ed9f2258098a35e02a6b738d6e53107f8bb.xml
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
 - name: Google DeepMind Research Blog
   category: ai_research
   type: rss
@@ -1929,9 +1938,6 @@ retired_sources:
     reason: "Zero cybersecurity focus policy"
   - name: "Hawkeye Threat Intelligence (鹰眼威胁情报)"
     url: "https://wechat2rss.xlab.app/feed/6bdcd81fd3702868c913261790ec10ffb76df144.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Fudan CodeWisdom Lab (复旦大学软件安全)"
-    url: "https://wechat2rss.xlab.app/feed/4e361ed9f2258098a35e02a6b738d6e53107f8bb.xml"
     reason: "Zero cybersecurity focus policy"
   - name: "NVD Recent CVEs (API)"
     reason: "Zero cybersecurity focus policy"
