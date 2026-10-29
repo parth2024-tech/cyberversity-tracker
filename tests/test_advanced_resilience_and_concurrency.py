@@ -32,10 +32,14 @@ async def test_monitor_service_resilience_and_edge_states(test_db_engine, test_u
     """Test MonitorService fetching coordination, error boundaries, and concurrency."""
     monitor = MonitorService(uow_factory=lambda: test_uow)
 
-    # 1. Test init_sources with mocked load_sources_from_yaml
-    with patch(
-        "ai_security_monitor.application.services.monitor_service.load_sources_from_yaml"
-    ) as mock_load:
+    with (
+        patch(
+            "ai_security_monitor.application.services.monitor_service.load_sources_from_yaml"
+        ) as mock_load,
+        patch.object(test_uow.sources, "get_by_name", new_callable=AsyncMock, return_value=None),
+        patch.object(test_uow.sources, "add", new_callable=AsyncMock),
+        patch.object(test_uow, "commit", new_callable=AsyncMock),
+    ):
         mock_load.return_value = [
             MagicMock(
                 name="Test RSS Unique",
@@ -50,10 +54,6 @@ async def test_monitor_service_resilience_and_edge_states(test_db_engine, test_u
                 config={},
             )
         ]
-        test_uow.sources.get_by_name = AsyncMock(return_value=None)
-        test_uow.sources.add = AsyncMock()
-        test_uow.commit = AsyncMock()
-
         count = await monitor.init_sources()
         assert count >= 0
 

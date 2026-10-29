@@ -248,10 +248,11 @@ class MonitorService:
                 for db_s in all_db_sources:
                     db_name_key = db_s.name.strip().lower()
                     db_url_key = db_s.url.strip().lower() if db_s.url else ""
-                    # Check if YAML-managed: exclude user-created / custom sources
+                    # Safe reconciliation default: only touch sources explicitly tagged as YAML-managed.
+                    # Untagged legacy sources and user-created sources are preserved untouched.
                     origin_val = (db_s.config or {}).get("origin")
-                    is_user_managed = origin_val in ("user", "custom", "manual")
-                    if not is_user_managed and db_s.enabled:
+                    is_yaml_managed = origin_val == "yaml"
+                    if is_yaml_managed and db_s.enabled:
                         if db_name_key not in yaml_names and (
                             not db_url_key or db_url_key not in yaml_urls
                         ):

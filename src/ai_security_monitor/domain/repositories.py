@@ -237,6 +237,11 @@ class SourceRepository(ABC):
         ...
 
     @abstractmethod
+    async def get_by_url(self, url: str) -> Source | None:
+        """Get source by URL."""
+        ...
+
+    @abstractmethod
     async def list(self, enabled_only: bool = False) -> list[Source]:
         """List all sources."""
         ...
