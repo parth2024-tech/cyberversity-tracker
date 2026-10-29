@@ -163,6 +163,8 @@ async def create_source(
                 detail=f"A source with name '{req.name}' already exists",
             )
 
+        cfg = dict(req.config or {})
+        cfg["origin"] = "user"
         new_source = Source(
             name=req.name,
             url=req.url,
@@ -171,7 +173,7 @@ async def create_source(
             rate_limit_seconds=req.rate_limit_seconds,
             enabled=req.enabled,
             query=req.query,
-            config=req.config,
+            config=cfg,
         )
         created = await uow.sources.add(new_source)
         await uow.commit()

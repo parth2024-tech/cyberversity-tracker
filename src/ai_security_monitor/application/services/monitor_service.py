@@ -126,18 +126,43 @@ class MonitorService:
             pass
 
     async def init_sources(self, config_path: str | None = None) -> int:
-        """Initialize sources from YAML config into the database."""
+        """Initialize sources from YAML config into the database and reconcile orphaned YAML sources."""
         sources_cfg = load_sources_from_yaml(config_path)
         count = 0
+        deactivated_count = 0
 
         async with self._uow_factory() as uow:
+            # Load all current sources from the database for stable URL/name resolution
+            all_db_sources = await uow.sources.list(enabled_only=False)
+            db_by_name = {s.name.strip().lower(): s for s in all_db_sources}
+            db_by_url = {
+                s.url.strip().lower(): s
+                for s in all_db_sources
+                if s.url and s.url.strip()
+            }
+
+            yaml_names: set[str] = set()
+            yaml_urls: set[str] = set()
+
             for s_cfg in sources_cfg:
-                existing = await uow.sources.get_by_name(s_cfg.name)
+                cfg_name_key = s_cfg.name.strip().lower()
+                cfg_url_key = s_cfg.url.strip().lower() if s_cfg.url else ""
+                yaml_names.add(cfg_name_key)
+                if cfg_url_key:
+                    yaml_urls.add(cfg_url_key)
+
+                # Match by stable name first, then fall back to stable URL (handles renames cleanly)
+                existing = db_by_name.get(cfg_name_key)
+                if not existing and cfg_url_key:
+                    existing = db_by_url.get(cfg_url_key)
+
+                cfg_dict = dict(s_cfg.config or {})
+                cfg_dict["region"] = getattr(s_cfg, "region", "global")
+                cfg_dict["country"] = getattr(s_cfg, "country", "GLOBAL")
+                cfg_dict["tier"] = getattr(s_cfg, "tier", 2.0)
+                cfg_dict["origin"] = "yaml"
+
                 if not existing:
-                    cfg_dict = dict(s_cfg.config or {})
-                    cfg_dict["region"] = getattr(s_cfg, "region", "global")
-                    cfg_dict["country"] = getattr(s_cfg, "country", "GLOBAL")
-                    cfg_dict["tier"] = getattr(s_cfg, "tier", 2.0)
                     new_source = Source(
                         name=s_cfg.name,
                         category=Category(s_cfg.category)
@@ -154,9 +179,16 @@ class MonitorService:
                         config=cfg_dict,
                     )
                     await uow.sources.add(new_source)
+                    db_by_name[cfg_name_key] = new_source
+                    if cfg_url_key:
+                        db_by_url[cfg_url_key] = new_source
                     count += 1
                 else:
                     changed = False
+                    # Update name if matched by URL (rename reconciliation)
+                    if existing.name != s_cfg.name:
+                        existing.name = s_cfg.name
+                        changed = True
                     if s_cfg.url and existing.url != s_cfg.url:
                         existing.url = s_cfg.url
                         changed = True
@@ -194,6 +226,7 @@ class MonitorService:
                     new_cfg["region"] = getattr(s_cfg, "region", "global")
                     new_cfg["country"] = getattr(s_cfg, "country", "GLOBAL")
                     new_cfg["tier"] = getattr(s_cfg, "tier", 2.0)
+                    new_cfg["origin"] = "yaml"
                     if existing.config != new_cfg:
                         existing.config = {**(existing.config or {}), **new_cfg}
                         existing.tier = getattr(s_cfg, "tier", 2.0)
@@ -201,9 +234,42 @@ class MonitorService:
                     if changed:
                         await uow.sources.update(existing)
                         count += 1
+
+            # Reconciliation guardrail: only run deactivation if YAML contains sufficient sources
+            # (protects against partial or corrupt YAML configs mass-disabling sources on startup)
+            min_expected = 50
+            if len(sources_cfg) < min_expected:
+                logger.warning(
+                    f"Sources config contains {len(sources_cfg)} sources (< {min_expected}). "
+                    "Skipping deactivation reconciliation to protect feed catalog."
+                )
+            else:
+                # Reconcile orphaned sources: soft-deactivate sources that are YAML-managed but missing from YAML
+                for db_s in all_db_sources:
+                    db_name_key = db_s.name.strip().lower()
+                    db_url_key = db_s.url.strip().lower() if db_s.url else ""
+                    # Check if YAML-managed: exclude user-created / custom sources
+                    origin_val = (db_s.config or {}).get("origin")
+                    is_user_managed = origin_val in ("user", "custom", "manual")
+                    if not is_user_managed and db_s.enabled:
+                        if db_name_key not in yaml_names and (
+                            not db_url_key or db_url_key not in yaml_urls
+                        ):
+                            db_s.enabled = False
+                            await uow.sources.update(db_s)
+                            deactivated_count += 1
+                            logger.info(
+                                f"Soft-deactivated orphaned YAML source in DB: {db_s.name} (id={db_s.id})"
+                            )
+
             await uow.commit()
 
-        logger.info(f"Initialized {count} sources from configuration")
+        if deactivated_count > 0:
+            logger.info(
+                f"Reconciled sources: {count} updated/added, {deactivated_count} orphaned sources soft-deactivated"
+            )
+        else:
+            logger.info(f"Initialized {count} sources from configuration")
         return count
 
     async def fetch_source(self, source: Source) -> FetchLog:

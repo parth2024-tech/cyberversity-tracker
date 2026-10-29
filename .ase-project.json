@@ -65,6 +65,7 @@
   "never_do": [
     "Never focus on cybersecurity, CVEs, or vulnerability telemetry unless the user explicitly requests it",
     "Never ingest or surface news older than 2 weeks (14 days max) — keep all intelligence strictly fresh",
+    "Never autonomously merge pull requests or run gh pr merge — always leave PRs open for human user review",
     "Never use useEffect for data fetching — use Server Components or SWR",
     "Never store secrets in .env files committed to git",
     "Never use inline styles — always use Tailwind classes",

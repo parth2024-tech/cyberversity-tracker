@@ -17,3 +17,8 @@ Always prioritize and balance broad, worldwide artificial intelligence news:
 3. **Top AI Research Papers & Breakthroughs**: Seminal arXiv publications, test-time compute scaling, reasoning architectures, multimodal advancements.
 4. **Frontier AI Models**: New foundation models, reasoning breakthroughs, open weights vs. proprietary releases (DeepSeek, Claude, OpenAI, Qwen, Llama, Mistral).
 5. **Global Sovereign AI & Regional Ecosystems**: National AI labs, robotics, AI chips, hardware, and startup ecosystems worldwide.
+
+## ⚠️ MANDATORY RULE: No Autonomous PR Merging
+- **CRITICAL DIRECTIVE**: Antigravity MUST NEVER run `gh pr merge` or merge its own pull requests autonomously under any circumstance.
+- All pull requests MUST remain open with the PR URL and a clear diff summary provided to the user.
+- Merging and deployment are strictly reserved for the human user.
