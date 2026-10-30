@@ -24,6 +24,7 @@ from ai_security_monitor.domain.entities import (
     Entry,
     FetchLog,
     FetchStatus,
+    Lab,
     LLMReceipt,
     Source,
     SourceType,
@@ -38,6 +39,7 @@ from ai_security_monitor.domain.repositories import (
     EntryFilters,
     EntryRepository,
     FetchLogRepository,
+    LabRepository,
     LLMReceiptRepository,
     PaginationParams,
     SourceRepository,
@@ -50,6 +52,7 @@ from ai_security_monitor.infrastructure.database.models import (
     DigestModel,
     EntryModel,
     FetchLogModel,
+    LabModel,
     ReceiptModel,
     SourceModel,
     WatchlistRuleModel,
@@ -92,6 +95,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
             updated_at=entry.updated_at,
             is_purged=entry.is_purged,
             purged_at=entry.purged_at,
+            lab_id=_uuid_to_str(entry.lab_id) if entry.lab_id else None,
+            subject_region=entry.subject_region,
         )
         self._session.add(model)
         try:
@@ -269,6 +274,10 @@ class SQLAlchemyEntryRepository(EntryRepository):
         model.summary = entry.summary
         model.tags = entry.tags
         model.extra_metadata = entry.metadata
+        if hasattr(entry, "lab_id"):
+            model.lab_id = _uuid_to_str(entry.lab_id) if entry.lab_id else None
+        if hasattr(entry, "subject_region"):
+            model.subject_region = entry.subject_region
         model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
@@ -946,6 +955,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
             analysis=analysis,
             is_purged=bool(getattr(model, "is_purged", False)),
             purged_at=getattr(model, "purged_at", None),
+            lab_id=_str_to_uuid(model.lab_id) if model.lab_id else None,
+            subject_region=getattr(model, "subject_region", None),
         )
 
 
@@ -1556,4 +1567,96 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
+
+
+class SQLAlchemyLabRepository(LabRepository):
+    """SQLAlchemy implementation of LabRepository for Frontier AI Labs."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    def _model_to_entity(self, model: LabModel) -> Lab:
+        return Lab(
+            id=_str_to_uuid(model.id),
+            name=model.name,
+            region=model.region,
+            country=model.country,
+            hf_orgs=model.hf_orgs or [],
+            github_orgs=model.github_orgs or [],
+            modelscope_ids=model.modelscope_ids or [],
+            wechat_accounts=model.wechat_accounts or [],
+            aliases=model.aliases or [],
+            notes=model.notes,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
+    async def get(self, lab_id: UUID) -> Lab | None:
+        stmt = select(LabModel).where(LabModel.id == _uuid_to_str(lab_id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def get_by_name(self, name: str) -> Lab | None:
+        stmt = select(LabModel).where(func.lower(LabModel.name) == name.lower().strip())
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def list(self, region: str | None = None) -> list[Lab]:
+        stmt = select(LabModel).order_by(LabModel.name)
+        if region:
+            stmt = stmt.where(func.lower(LabModel.region) == region.lower().strip())
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+        return [self._model_to_entity(m) for m in models]
+
+    async def create(self, lab: Lab) -> Lab:
+        model = LabModel(
+            id=_uuid_to_str(lab.id),
+            name=lab.name,
+            region=lab.region,
+            country=lab.country,
+            hf_orgs=lab.hf_orgs or [],
+            github_orgs=lab.github_orgs or [],
+            modelscope_ids=lab.modelscope_ids or [],
+            wechat_accounts=lab.wechat_accounts or [],
+            aliases=lab.aliases or [],
+            notes=lab.notes,
+            created_at=lab.created_at,
+            updated_at=lab.updated_at,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def update(self, lab: Lab) -> Lab:
+        stmt = select(LabModel).where(LabModel.id == _uuid_to_str(lab.id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("Lab", str(lab.id))
+        model.name = lab.name
+        model.region = lab.region
+        model.country = lab.country
+        model.hf_orgs = lab.hf_orgs or []
+        model.github_orgs = lab.github_orgs or []
+        model.modelscope_ids = lab.modelscope_ids or []
+        model.wechat_accounts = lab.wechat_accounts or []
+        model.aliases = lab.aliases or []
+        model.notes = lab.notes
+        model.updated_at = datetime.now(UTC)
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def delete(self, lab_id: UUID) -> bool:
+        stmt = select(LabModel).where(LabModel.id == _uuid_to_str(lab_id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            return False
+        await self._session.delete(model)
+        await self._session.flush()
+        return True
+
 

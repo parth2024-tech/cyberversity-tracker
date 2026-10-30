@@ -65,6 +65,39 @@ class SourceModel(Base):
         """Source credibility tier (1.0 = Labs/ArXiv, 1.5 = Repos/Tools, 2.0 = Aggregators/Default)."""
         return float((self.config or {}).get("tier", 2.0))
 
+    @property
+    def region(self) -> str:
+        """Source geographical region (china, us, europe, global)."""
+        return str((self.config or {}).get("region", "global"))
+
+
+class LabModel(Base):
+    """Frontier AI Lab entity model."""
+
+    __tablename__ = "labs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    region: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    country: Mapped[str] = mapped_column(String(10), nullable=False)
+    hf_orgs: Mapped[list[str]] = mapped_column(JSON, default=list)
+    github_orgs: Mapped[list[str]] = mapped_column(JSON, default=list)
+    modelscope_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
+    wechat_accounts: Mapped[list[str]] = mapped_column(JSON, default=list)
+    aliases: Mapped[list[str]] = mapped_column(JSON, default=list)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+
+    # Relationships
+    entries: Mapped[list[EntryModel]] = relationship(
+        "EntryModel", back_populates="lab", lazy="select"
+    )
+
 
 class EntryModel(Base):
     """Intelligence entry model."""
@@ -98,6 +131,12 @@ class EntryModel(Base):
         Boolean, default=False, server_default="0", index=True
     )
     purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    lab_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("labs.id"), nullable=True, index=True
+    )
+    subject_region: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, index=True
+    )
 
     # Relationships
     source: Mapped[SourceModel] = relationship(
@@ -105,6 +144,9 @@ class EntryModel(Base):
     )
     analysis: Mapped[AnalysisModel | None] = relationship(
         back_populates="entry", uselist=False, lazy="selectin"
+    )
+    lab: Mapped[LabModel | None] = relationship(
+        "LabModel", back_populates="entries", lazy="selectin"
     )
 
     __table_args__ = (

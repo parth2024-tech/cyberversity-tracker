@@ -104,6 +104,8 @@ class Entry(Entity):
     is_purged: bool = False
     purged_at: datetime | None = None
     story_id: UUID | None = None
+    lab_id: UUID | None = None
+    subject_region: str | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -301,4 +303,20 @@ class LLMReceipt(Entity):
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
+
+
+@dataclass(kw_only=True)
+class Lab(Entity):
+    """Frontier AI Lab entity."""
+
+    name: str
+    region: str
+    country: str
+    hf_orgs: list[str] = field(default_factory=list)
+    github_orgs: list[str] = field(default_factory=list)
+    modelscope_ids: list[str] = field(default_factory=list)
+    wechat_accounts: list[str] = field(default_factory=list)
+    aliases: list[str] = field(default_factory=list)
+    notes: str | None = None
+
 
