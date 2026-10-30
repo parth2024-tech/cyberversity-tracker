@@ -18,6 +18,8 @@ from ai_security_monitor.domain.entities import (
     Digest,
     Entry,
     FetchLog,
+    Leaderboard,
+    LeaderboardSnapshot,
     LLMReceipt,
     Source,
 )
@@ -357,3 +359,50 @@ class LLMReceiptRepository(ABC):
         """Record failed execution."""
         ...
 
+
+class LeaderboardRepository(ABC):
+    """Repository for Leaderboard and LeaderboardSnapshot entities."""
+
+    @abstractmethod
+    async def add(self, leaderboard: Leaderboard) -> Leaderboard:
+        """Add a tracked leaderboard."""
+        ...
+
+    @abstractmethod
+    async def get(self, id: UUID) -> Leaderboard | None:
+        """Get leaderboard by ID."""
+        ...
+
+    @abstractmethod
+    async def get_by_name(self, name: str) -> Leaderboard | None:
+        """Get leaderboard by name."""
+        ...
+
+    @abstractmethod
+    async def list(self, enabled_only: bool = False) -> builtins.list[Leaderboard]:
+        """List tracked leaderboards."""
+        ...
+
+    @abstractmethod
+    async def update(self, leaderboard: Leaderboard) -> Leaderboard:
+        """Update leaderboard status and last snapshot timestamp."""
+        ...
+
+    @abstractmethod
+    async def add_snapshot(self, snapshot: LeaderboardSnapshot) -> LeaderboardSnapshot:
+        """Persist a point-in-time ranking snapshot."""
+        ...
+
+    @abstractmethod
+    async def get_latest_snapshot(
+        self, leaderboard_id: UUID
+    ) -> LeaderboardSnapshot | None:
+        """Get most recent snapshot for a leaderboard."""
+        ...
+
+    @abstractmethod
+    async def list_snapshots(
+        self, leaderboard_id: UUID, limit: int = 10
+    ) -> builtins.list[LeaderboardSnapshot]:
+        """List historical snapshots for a leaderboard."""
+        ...

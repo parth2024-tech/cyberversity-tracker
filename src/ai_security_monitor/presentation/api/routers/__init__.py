@@ -9,6 +9,9 @@ from ai_security_monitor.presentation.api.routers.china import china_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router
 from ai_security_monitor.presentation.api.routers.entries import entries_router
 from ai_security_monitor.presentation.api.routers.feed import feed_router
+from ai_security_monitor.presentation.api.routers.leaderboards import (
+    router as leaderboards_router,
+)
 from ai_security_monitor.presentation.api.routers.newspaper import newspaper_router
 from ai_security_monitor.presentation.api.routers.sources import sources_router
 from ai_security_monitor.presentation.api.routers.stats import stats_router
@@ -32,4 +35,5 @@ __all__ = [
     "vault_router",
     "china_router",
     "feed_router",
+    "leaderboards_router",
 ]
