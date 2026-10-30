@@ -84,7 +84,9 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
         # Local LLM Runtime
         "Ollama": ["ollama"],
         "vLLM": ["vllm", "vllm-engine"],
+        "SGLang": ["sglang", "sgl-project", "radixattention"],
         "llama.cpp": ["llama.cpp", "llamacpp", "gguf", "ggml"],
+        "Triton": ["triton", "triton-lang", "triton kernel"],
         "LM Studio": ["lm studio", "lmstudio"],
         "Text Generation Inference": ["tgi", "text-generation-inference"],
         # RAG & Vector DBs
@@ -282,6 +284,12 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
             "LangChain",
             "Ollama",
             "vLLM",
+            "SGLang",
+            "CUDA",
+            "Triton",
+            "llama.cpp",
+            "ModelScope",
+            "JAX",
             "HuggingFace Hub",
             "PyPI",
             "Docker Hub",
@@ -292,7 +300,11 @@ class BlastRadiusAnalyzer(BaseAnalyzer):
         score += critical_count * 10
 
         # Category multiplier
-        if category == Category.VULNERABILITIES:
+        if category in (
+            Category.AI_MODELS,
+            Category.GITHUB_TRENDING,
+            Category.CYBER_TOOLS,
+        ):
             score += 20
         elif category == Category.AI_TECH:
             score += 15

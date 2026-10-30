@@ -280,3 +280,21 @@ async def export_china_static_snapshot(request: Request):
             "Access-Control-Allow-Origin": "*",
         },
     )
+
+
+@china_router.get("/telemetry")
+@limiter.limit("60/minute")
+async def get_china_sources_telemetry(request: Request):
+    """
+    Retrieve live health, yield, and signal-to-noise ratio (SNR) telemetry
+    per Chinese intelligence source defined in config/sources.yaml.
+    """
+    from ai_security_monitor.application.services.china_telemetry_service import (
+        china_telemetry_service,
+    )
+
+    data = await response_cache.get_or_set(
+        "china_sources_telemetry", 15.0, china_telemetry_service.get_telemetry
+    )
+    headers = {"Cache-Control": "public, max-age=15, stale-while-revalidate=30"}
+    return JSONResponse(content=data, headers=headers)
