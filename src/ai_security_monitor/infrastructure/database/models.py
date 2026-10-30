@@ -8,7 +8,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -66,6 +75,53 @@ class SourceModel(Base):
         return float((self.config or {}).get("tier", 2.0))
 
 
+class StoryModel(Base):
+    """Synthesized Story cluster model unifying cross-lingual and cross-source entries."""
+
+    __tablename__ = "stories"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    cluster_key: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    canonical_url: Mapped[str] = mapped_column(String(1000), default="")
+    summary: Mapped[str] = mapped_column(Text, default="")
+    category: Mapped[str] = mapped_column(String(50), default="ai_models")
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+    first_source_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("sources.id"), nullable=True, index=True
+    )
+    language_mix: Mapped[dict] = mapped_column(JSON, default=dict)
+    source_count: Mapped[int] = mapped_column(Integer, default=1)
+    entry_count: Mapped[int] = mapped_column(Integer, default=1)
+    confidence_score: Mapped[float] = mapped_column(Float, default=0.50)
+    heat_score: Mapped[float] = mapped_column(Float, default=0.0)
+    heat_badge: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", index=True
+    )
+    anchor_entry_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    extra_metadata: Mapped[dict] = mapped_column("metadata_json", JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+
+    # Relationships
+    entries: Mapped[list[EntryModel]] = relationship(
+        back_populates="story", lazy="selectin"
+    )
+    first_source: Mapped[SourceModel | None] = relationship(lazy="selectin")
+
+
 class EntryModel(Base):
     """Intelligence entry model."""
 
@@ -74,6 +130,9 @@ class EntryModel(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     source_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sources.id"), nullable=False, index=True
+    )
+    story_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("stories.id"), nullable=True, index=True
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
@@ -101,6 +160,9 @@ class EntryModel(Base):
 
     # Relationships
     source: Mapped[SourceModel] = relationship(
+        back_populates="entries", lazy="selectin"
+    )
+    story: Mapped[StoryModel | None] = relationship(
         back_populates="entries", lazy="selectin"
     )
     analysis: Mapped[AnalysisModel | None] = relationship(
@@ -301,4 +363,3 @@ class ReceiptModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-
