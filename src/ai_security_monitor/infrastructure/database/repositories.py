@@ -1675,7 +1675,8 @@ class SQLAlchemySourceHealthRepository(SourceHealthRepository):
                     "source_name": src.name,
                     "region": src_region,
                     "country": str(
-                        getattr(src, "country", None) or src_config.get("country", "GLOBAL")
+                        getattr(src, "country", None)
+                        or src_config.get("country", "GLOBAL")
                     ).upper(),
                     "tier": float(src_config.get("tier", 2.0)),
                     "state": h_state,
@@ -1693,13 +1694,14 @@ class SQLAlchemySourceHealthRepository(SourceHealthRepository):
                 }
             )
 
-        # Worst-first state sort priority: BLOCKED > REDIRECTED > DEAD > STALE > OK
+        # Worst-first state sort priority: BLOCKED > REDIRECTED > DEAD > STALE > PENDING > OK
         state_priority = {
             "BLOCKED": 1,
             "REDIRECTED": 2,
             "DEAD": 3,
             "STALE": 4,
-            "OK": 5,
+            "PENDING": 5,
+            "OK": 6,
         }
 
         def _sort_key(item: dict[str, Any]) -> tuple[int, int, int, str]:

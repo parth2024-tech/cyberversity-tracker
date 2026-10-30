@@ -13,7 +13,9 @@ from rich.console import Console
 from rich.table import Table
 
 # Add project root to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
+)
 
 from ai_security_monitor.application.services.monitor_service import MonitorService
 from ai_security_monitor.application.services.source_health_service import (
@@ -33,7 +35,9 @@ async def run_dashboard(
 
     async with service._uow_factory() as uow:
         if sync_first:
-            console.print("[bold cyan]🔄 Synchronizing source health states from database history...[/bold cyan]")
+            console.print(
+                "[bold cyan]🔄 Synchronizing source health states from database history...[/bold cyan]"
+            )
             summary = await source_health_service.sync_all_from_db(uow.session)
             await uow.commit()
             console.print(
@@ -65,6 +69,7 @@ async def run_dashboard(
         "REDIRECTED": "[bold black on yellow] REDIRECTED [/]",
         "DEAD": "[bold red] DEAD [/]",
         "STALE": "[bold yellow] STALE [/]",
+        "PENDING": "[bold cyan] PENDING [/]",
         "OK": "[bold green] OK [/]",
     }
 
@@ -88,7 +93,9 @@ async def run_dashboard(
         )
 
     console.print(table)
-    console.print(f"[bold white]Total sources matching query:[/bold white] [cyan]{len(results)}[/cyan]\n")
+    console.print(
+        f"[bold white]Total sources matching query:[/bold white] [cyan]{len(results)}[/cyan]\n"
+    )
     await db_manager.close()
 
 
@@ -96,9 +103,17 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="AetherGuard Source Health Dashboard")
-    parser.add_argument("--state", "-s", help="Filter by state (OK, STALE, DEAD, BLOCKED, REDIRECTED)")
-    parser.add_argument("--region", "-r", help="Filter by region (e.g. china, global, europe, us)")
-    parser.add_argument("--no-sync", action="store_true", help="Skip synchronizing from fetch_logs before display")
+    parser.add_argument(
+        "--state", "-s", help="Filter by state (OK, STALE, DEAD, BLOCKED, REDIRECTED)"
+    )
+    parser.add_argument(
+        "--region", "-r", help="Filter by region (e.g. china, global, europe, us)"
+    )
+    parser.add_argument(
+        "--no-sync",
+        action="store_true",
+        help="Skip synchronizing from fetch_logs before display",
+    )
     args = parser.parse_args()
 
     asyncio.run(

@@ -15,7 +15,6 @@ from ai_security_monitor.application.services.source_health_service import (
     source_health_service,
 )
 from ai_security_monitor.domain.entities import (
-    SourceHealth,
     SourceHealthState,
 )
 from ai_security_monitor.infrastructure.database.models import (
@@ -65,15 +64,59 @@ def test_compute_source_state_by_entry_freshness():
 
     # 3 days old -> OK
     recent = now - timedelta(days=3)
-    assert compute_source_state(last_new_entry_at=recent, now=now) == SourceHealthState.OK
+    assert (
+        compute_source_state(last_fetch_at=now, last_new_entry_at=recent, now=now)
+        == SourceHealthState.OK
+    )
 
     # 10 days old -> STALE
     stale = now - timedelta(days=10)
-    assert compute_source_state(last_new_entry_at=stale, now=now) == SourceHealthState.STALE
+    assert (
+        compute_source_state(last_fetch_at=now, last_new_entry_at=stale, now=now)
+        == SourceHealthState.STALE
+    )
 
     # 15 days old -> DEAD
     dead = now - timedelta(days=15)
-    assert compute_source_state(last_new_entry_at=dead, now=now) == SourceHealthState.DEAD
+    assert (
+        compute_source_state(last_fetch_at=now, last_new_entry_at=dead, now=now)
+        == SourceHealthState.DEAD
+    )
+
+
+def test_compute_source_state_pending_when_never_fetched():
+    """A source that has never been polled returns PENDING rather than false DEAD."""
+    assert (
+        compute_source_state(last_fetch_at=None, last_new_entry_at=None)
+        == SourceHealthState.PENDING
+    )
+
+
+def test_compute_source_state_by_consecutive_zero_runs():
+    """Consecutive zero runs with no entries yet: 3-4 -> STALE, 5+ -> DEAD."""
+    now = datetime(2026, 10, 30, 12, 0, 0, tzinfo=UTC)
+
+    # Zero runs 3 -> STALE
+    assert (
+        compute_source_state(
+            last_fetch_at=now,
+            last_new_entry_at=None,
+            consecutive_zero_runs=3,
+            now=now,
+        )
+        == SourceHealthState.STALE
+    )
+
+    # Zero runs 5 -> DEAD
+    assert (
+        compute_source_state(
+            last_fetch_at=now,
+            last_new_entry_at=None,
+            consecutive_zero_runs=5,
+            now=now,
+        )
+        == SourceHealthState.DEAD
+    )
 
 
 @pytest.mark.asyncio
@@ -139,13 +182,14 @@ async def test_sync_source_from_db_streak_and_filtered(test_uow):
 
 @pytest.mark.asyncio
 async def test_worst_first_priority_sorting(test_uow):
-    """Test worst-first sorting: BLOCKED > REDIRECTED > DEAD > STALE > OK."""
+    """Test worst-first sorting: BLOCKED > REDIRECTED > DEAD > STALE > PENDING > OK."""
     session = test_uow.session
     repo = SQLAlchemySourceHealthRepository(session)
 
     # Create sources in various states
     states = [
         ("Source OK", SourceHealthState.OK, 200, 10),
+        ("Source PENDING", SourceHealthState.PENDING, None, 0),
         ("Source STALE", SourceHealthState.STALE, 200, 0),
         ("Source DEAD", SourceHealthState.DEAD, 200, 0),
         ("Source REDIRECTED", SourceHealthState.REDIRECTED, 200, 0),
@@ -166,16 +210,6 @@ async def test_worst_first_priority_sorting(test_uow):
         session.add(src)
         await session.flush()
 
-        health = SourceHealth(
-            id=uuid4(),
-            source_id=uuid4(),
-            state=st,
-            last_http_status=http_st,
-            seven_day_yield=yld,
-            updated_at=datetime.now(UTC),
-        )
-        health.source_id = uuid4()
-        # Direct DB model insertion
         h_model = SourceHealthModel(
             id=str(uuid4()),
             source_id=sid,
@@ -191,11 +225,11 @@ async def test_worst_first_priority_sorting(test_uow):
     await session.commit()
 
     results = await repo.list()
-    assert len(results) == 5
+    assert len(results) == 6
 
-    # Check order: BLOCKED (1), REDIRECTED (2), DEAD (3), STALE (4), OK (5)
+    # Check order: BLOCKED (1), REDIRECTED (2), DEAD (3), STALE (4), PENDING (5), OK (6)
     order_states = [r["state"] for r in results]
-    assert order_states == ["BLOCKED", "REDIRECTED", "DEAD", "STALE", "OK"]
+    assert order_states == ["BLOCKED", "REDIRECTED", "DEAD", "STALE", "PENDING", "OK"]
 
 
 @pytest.mark.asyncio
@@ -216,3 +250,68 @@ async def test_api_health_sources_filtering():
         res_empty = await client.get("/api/health/sources?region=non_existent_galaxy")
         assert res_empty.status_code == 200
         assert res_empty.json()["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_rss_fetcher_redirection_normalization(monkeypatch):
+    """Test host redirection logic: www vs apex is not redirected, but domain change is."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    import httpx
+
+    from ai_security_monitor.domain.entities import Category, Source, SourceType
+    from ai_security_monitor.infrastructure.fetchers.rss_fetcher import RSSFetcher
+
+    src = Source(
+        id=uuid4(),
+        name="Redirection Test Source",
+        url="https://example.com/feed.xml",
+        type=SourceType.RSS,
+        category=Category.AI_RESEARCH,
+        enabled=True,
+    )
+
+    class MockContext:
+        def __init__(self, response):
+            self.mock_client = AsyncMock()
+            self.mock_client.get.return_value = response
+
+        async def __aenter__(self):
+            return self.mock_client
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+    # 1. www redirect should NOT trigger is_redirected
+    fetcher_www = RSSFetcher(src, max_retries=0)
+    resp_www = MagicMock(spec=httpx.Response)
+    resp_www.status_code = 200
+    resp_www.url = httpx.URL("https://www.example.com/feed.xml")
+    resp_www.headers = {"content-type": "application/rss+xml"}
+    resp_www.content = b"<rss><channel><title>OK</title></channel></rss>"
+    resp_www.text = "<rss><channel><title>OK</title></channel></rss>"
+    resp_www.raise_for_status = MagicMock()
+
+    monkeypatch.setattr(
+        "httpx.AsyncClient",
+        lambda **kwargs: MockContext(resp_www),
+    )
+    await fetcher_www._fetch_raw()
+    assert fetcher_www._is_redirected is False
+
+    # 2. Complete domain change SHOULD trigger is_redirected
+    fetcher_diff = RSSFetcher(src, max_retries=0)
+    resp_diff = MagicMock(spec=httpx.Response)
+    resp_diff.status_code = 200
+    resp_diff.url = httpx.URL("https://different-domain.com/feed.xml")
+    resp_diff.headers = {"content-type": "application/rss+xml"}
+    resp_diff.content = b"<rss><channel><title>OK</title></channel></rss>"
+    resp_diff.text = "<rss><channel><title>OK</title></channel></rss>"
+    resp_diff.raise_for_status = MagicMock()
+
+    monkeypatch.setattr(
+        "httpx.AsyncClient",
+        lambda **kwargs: MockContext(resp_diff),
+    )
+    await fetcher_diff._fetch_raw()
+    assert fetcher_diff._is_redirected is True

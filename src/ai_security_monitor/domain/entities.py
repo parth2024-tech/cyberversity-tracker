@@ -57,6 +57,7 @@ class SourceHealthState(str, Enum):
     DEAD = "DEAD"
     BLOCKED = "BLOCKED"
     REDIRECTED = "REDIRECTED"
+    PENDING = "PENDING"
 
 
 class AnalysisModel(str, Enum):

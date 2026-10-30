@@ -180,13 +180,18 @@ def sources():
 @app.command()
 def health(
     state: str | None = typer.Option(
-        None, "--state", "-s", help="Filter by state (OK, STALE, DEAD, BLOCKED, REDIRECTED)"
+        None,
+        "--state",
+        "-s",
+        help="Filter by state (OK, STALE, DEAD, BLOCKED, REDIRECTED, PENDING)",
     ),
     region: str | None = typer.Option(
         None, "--region", "-r", help="Filter by region (e.g. china, global, us, europe)"
     ),
     sync: bool = typer.Option(
-        False, "--sync", help="Synchronize all source health records from DB history first"
+        False,
+        "--sync",
+        help="Synchronize all source health records from DB history first",
     ),
 ):
     """Inspect deterministic source health dashboard (sorted worst-first)."""
@@ -200,7 +205,9 @@ def health(
                     source_health_service,
                 )
 
-                console.print("[yellow]Syncing source health from fetch logs...[/yellow]")
+                console.print(
+                    "[yellow]Syncing source health from fetch logs...[/yellow]"
+                )
                 await source_health_service.sync_all_from_db(uow.session)
                 await uow.commit()
 
@@ -223,6 +230,7 @@ def health(
             "REDIRECTED": "[bold black on yellow] REDIRECTED [/]",
             "DEAD": "[bold red] DEAD [/]",
             "STALE": "[bold yellow] STALE [/]",
+            "PENDING": "[bold cyan] PENDING [/]",
             "OK": "[bold green] OK [/]",
         }
 
@@ -250,7 +258,6 @@ def health(
         await db_manager.close()
 
     asyncio.run(_run())
-
 
 
 @app.command()

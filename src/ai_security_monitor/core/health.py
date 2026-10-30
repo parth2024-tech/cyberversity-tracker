@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.core.metrics import update_business_metrics
 from ai_security_monitor.infrastructure.database.connection import (
     get_db_session,
@@ -89,6 +90,7 @@ async def get_source_health_dashboard(
 @router.post("/health/sources/sync")
 async def sync_source_health_dashboard(
     session: AsyncSession = Depends(get_db_session),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Trigger an explicit synchronization of all source health states from database history."""
     from ai_security_monitor.application.services.source_health_service import (
@@ -98,4 +100,3 @@ async def sync_source_health_dashboard(
     summary = await source_health_service.sync_all_from_db(session)
     await session.commit()
     return {"status": "synchronized", "summary": summary}
-

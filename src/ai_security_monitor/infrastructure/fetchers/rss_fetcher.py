@@ -101,20 +101,50 @@ class RSSFetcher(BaseFetcher):
                     self._last_http_status = resp.status_code
                     response = resp
 
-                    # Host redirection check
+                    # Host redirection check with robust canonical normalization
                     from urllib.parse import urlparse
 
-                    orig_host = urlparse(target_url).netloc.lower()
-                    final_host = urlparse(str(resp.url)).netloc.lower()
-                    if orig_host and final_host and orig_host != final_host:
+                    orig_raw = urlparse(target_url).netloc.lower().split(":")[0].strip()
+                    final_raw = (
+                        urlparse(str(resp.url)).netloc.lower().split(":")[0].strip()
+                    )
+                    orig_clean = (
+                        orig_raw[4:] if orig_raw.startswith("www.") else orig_raw
+                    )
+                    final_clean = (
+                        final_raw[4:] if final_raw.startswith("www.") else final_raw
+                    )
+
+                    # Check for genuine host change (ignoring www prefixes, ports, and feed proxies)
+                    is_redir = False
+                    if orig_clean and final_clean and orig_clean != final_clean:
+                        proxy_hosts = ("feedburner.com", "feedproxy.google.com")
+                        if not any(p in orig_clean for p in proxy_hosts):
+                            orig_parts = orig_clean.split(".")
+                            final_parts = final_clean.split(".")
+                            # Check if root domain differs
+                            if len(orig_parts) >= 2 and len(final_parts) >= 2:
+                                orig_root = ".".join(orig_parts[-2:])
+                                final_root = ".".join(final_parts[-2:])
+                                if orig_root != final_root:
+                                    is_redir = True
+                            else:
+                                is_redir = True
+
+                    if is_redir:
                         logger.warning(
-                            f"Source {self.source.name!r} REDIRECTED: host changed from {orig_host} to {final_host}"
+                            f"Source {self.source.name!r} REDIRECTED: host changed from {orig_raw} to {final_raw}"
                         )
                         self._is_redirected = True
-                        self._redirect_info = f"REDIRECTED: host changed from {orig_host} to {final_host}"
+                        self._redirect_info = (
+                            f"REDIRECTED: host changed from {orig_raw} to {final_raw}"
+                        )
                     break
                 except Exception as req_err:
-                    if hasattr(req_err, "response") and getattr(req_err, "response", None) is not None:
+                    if (
+                        hasattr(req_err, "response")
+                        and getattr(req_err, "response", None) is not None
+                    ):
                         self._last_http_status = req_err.response.status_code
                     last_error = req_err
                     response = None

@@ -61,6 +61,10 @@ class BaseFetcher(ABC):
             else settings.fetch.rate_limit_default
         )
         self._last_fetch_time: datetime | None = None
+        self._last_http_status: int | None = None
+        self._is_html_error: bool = False
+        self._is_redirected: bool = False
+        self._redirect_info: str | None = None
 
     @property
     @abstractmethod

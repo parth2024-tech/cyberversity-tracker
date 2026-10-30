@@ -943,7 +943,11 @@ class MonitorService:
             )
 
         entries_filtered = max(0, entries_total - new_entries_count)
-        raw_http_code = getattr(fetch_result, "http_status", None) if fetch_result is not None else None
+        raw_http_code = (
+            getattr(fetch_result, "http_status", None)
+            if fetch_result is not None
+            else None
+        )
         if hasattr(fetcher, "_last_http_status"):
             cand = getattr(fetcher, "_last_http_status", None)
             if isinstance(cand, int):
@@ -952,8 +956,14 @@ class MonitorService:
 
         if getattr(fetcher, "_is_redirected", False) is True:
             redir_info = getattr(fetcher, "_redirect_info", "REDIRECTED: host changed")
-            redir_info_str = str(redir_info) if isinstance(redir_info, str) else "REDIRECTED: host changed"
-            error_msg = f"{redir_info_str}; {error_msg}" if error_msg else redir_info_str
+            redir_info_str = (
+                str(redir_info)
+                if isinstance(redir_info, str)
+                else "REDIRECTED: host changed"
+            )
+            error_msg = (
+                f"{redir_info_str}; {error_msg}" if error_msg else redir_info_str
+            )
 
         log = FetchLog(
             source_id=source.id,
@@ -982,9 +992,12 @@ class MonitorService:
                 from ai_security_monitor.infrastructure.database.models import (
                     SourceModel,
                 )
+
                 src_model = await uow.session.get(SourceModel, str(source.id))
                 if src_model:
-                    await source_health_service.sync_source_from_db(uow.session, src_model)
+                    await source_health_service.sync_source_from_db(
+                        uow.session, src_model
+                    )
             except Exception as health_err:
                 logger.debug(f"Failed to sync source health in DB: {health_err}")
             await uow.commit()
@@ -1160,7 +1173,9 @@ class MonitorService:
                 await source_health_service.sync_all_from_db(uow.session)
                 await uow.commit()
         except Exception as sync_all_err:
-            logger.warning(f"Failed to sync all source health states in sweep: {sync_all_err}")
+            logger.warning(
+                f"Failed to sync all source health states in sweep: {sync_all_err}"
+            )
 
         # Invalidate response caches so freshly ingested entries and updated stats are immediately visible on website
         from ai_security_monitor.infrastructure.cache import response_cache

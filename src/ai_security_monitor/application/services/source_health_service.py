@@ -29,7 +29,9 @@ def compute_source_state(
     *,
     last_http_status: int | None = None,
     last_new_entry_at: datetime | None = None,
+    last_fetch_at: datetime | None = None,
     consecutive_failures: int = 0,
+    consecutive_zero_runs: int = 0,
     is_html_error: bool = False,
     is_redirected: bool = False,
     now: datetime | None = None,
@@ -40,6 +42,7 @@ def compute_source_state(
     - REDIRECTED: final URL host differs from configured host
     - DEAD: no new entry for >14 days OR 5+ consecutive failures
     - STALE: no new entry for 7-14 days
+    - PENDING: never polled / pending initial sweep
     - OK: new entry within 7 days (and not BLOCKED/DEAD)
     """
     ref_now = now or datetime.now(UTC)
@@ -58,12 +61,11 @@ def compute_source_state(
     if consecutive_failures >= 5:
         return SourceHealthState.DEAD
 
-    # Calculate days since last productive entry
-    ref_time = last_new_entry_at or source_created_at
-    if ref_time is not None:
-        if ref_time.tzinfo is None:
-            ref_time = ref_time.replace(tzinfo=UTC)
-        age_days = (ref_now - ref_time).total_seconds() / 86400.0
+    # 4. Productive entry freshness check (when last_new_entry_at is known)
+    if last_new_entry_at is not None:
+        if last_new_entry_at.tzinfo is None:
+            last_new_entry_at = last_new_entry_at.replace(tzinfo=UTC)
+        age_days = (ref_now - last_new_entry_at).total_seconds() / 86400.0
         if age_days > 14.0:
             return SourceHealthState.DEAD
         elif age_days > 7.0:
@@ -71,8 +73,16 @@ def compute_source_state(
         else:
             return SourceHealthState.OK
 
-    # If never fetched and created recently, assume OK
-    return SourceHealthState.OK
+    # 5. Never yielded an entry (last_new_entry_at is None)
+    if last_fetch_at is None:
+        return SourceHealthState.PENDING
+
+    if consecutive_zero_runs >= 5:
+        return SourceHealthState.DEAD
+    elif consecutive_zero_runs >= 3:
+        return SourceHealthState.STALE
+
+    return SourceHealthState.PENDING
 
 
 @dataclass
@@ -383,7 +393,9 @@ class SourceHealthService:
         last_fetch_at = last_log.fetched_at if last_log else source.last_fetched_at
         last_http_status = getattr(last_log, "http_status", None) if last_log else None
         error_msg = last_log.error_message if last_log else None
-        entries_filtered_last = getattr(last_log, "entries_filtered", 0) if last_log else 0
+        entries_filtered_last = (
+            getattr(last_log, "entries_filtered", 0) if last_log else 0
+        )
 
         # Calculate consecutive failures from latest fetch backwards
         consecutive_failures = 0
@@ -408,33 +420,26 @@ class SourceHealthService:
                 consecutive_zero_runs += 1
 
         # 2. Query last_new_entry_at from entries table
-        last_entry_stmt = (
-            select(func.max(EntryModel.published_at))
-            .where(EntryModel.source_id == source_id)
+        last_entry_stmt = select(func.max(EntryModel.published_at)).where(
+            EntryModel.source_id == source_id
         )
         last_entry_res = await session.execute(last_entry_stmt)
         last_new_entry_at = last_entry_res.scalar()
 
         # If entries table has no published_at, fallback to last productive fetch_log
         if not last_new_entry_at:
-            prod_log_stmt = (
-                select(func.max(FetchLogModel.fetched_at))
-                .where(
-                    FetchLogModel.source_id == source_id,
-                    FetchLogModel.entries_new > 0,
-                )
+            prod_log_stmt = select(func.max(FetchLogModel.fetched_at)).where(
+                FetchLogModel.source_id == source_id,
+                FetchLogModel.entries_new > 0,
             )
             prod_log_res = await session.execute(prod_log_stmt)
             last_new_entry_at = prod_log_res.scalar()
 
         # 3. Query 7-day yield
         seven_days_ago = ref_now - timedelta(days=7)
-        yield_stmt = (
-            select(func.count(EntryModel.id))
-            .where(
-                EntryModel.source_id == source_id,
-                EntryModel.published_at >= seven_days_ago,
-            )
+        yield_stmt = select(func.count(EntryModel.id)).where(
+            EntryModel.source_id == source_id,
+            EntryModel.published_at >= seven_days_ago,
         )
         yield_res = await session.execute(yield_stmt)
         seven_day_yield = yield_res.scalar() or 0
@@ -454,7 +459,9 @@ class SourceHealthService:
         new_state = compute_source_state(
             last_http_status=last_http_status,
             last_new_entry_at=last_new_entry_at,
+            last_fetch_at=last_fetch_at,
             consecutive_failures=consecutive_failures,
+            consecutive_zero_runs=consecutive_zero_runs,
             is_html_error=is_html_error,
             is_redirected=is_redirected,
             now=ref_now,
@@ -462,11 +469,13 @@ class SourceHealthService:
         )
 
         # 6. Upsert into source_health table
-        health_stmt = select(SourceHealthModel).where(SourceHealthModel.source_id == source_id)
+        health_stmt = select(SourceHealthModel).where(
+            SourceHealthModel.source_id == source_id
+        )
         health_res = await session.execute(health_stmt)
         health_model = health_res.scalar_one_or_none()
 
-        prev_state = health_model.state if health_model else "OK"
+        prev_state = health_model.state if health_model else None
 
         if not health_model:
             health_model = SourceHealthModel(
@@ -495,8 +504,13 @@ class SourceHealthService:
             health_model.entries_filtered_last = entries_filtered_last
             health_model.updated_at = ref_now
 
-        # 7. Alert notification on state transition OK -> STALE or DEAD
-        if prev_state == "OK" and new_state.value in ("STALE", "DEAD"):
+        # 7. Alert notification on state transition OK/PENDING -> STALE or DEAD
+        if (
+            prev_state
+            and prev_state in ("OK", "PENDING")
+            and new_state.value in ("STALE", "DEAD")
+            and prev_state != new_state.value
+        ):
             logger.warning(
                 f"[HEALTH ALERT] Source '{source.name}' transitioned from {prev_state} -> {new_state.value} "
                 f"(failures={consecutive_failures}, zero_runs={consecutive_zero_runs}, "
@@ -516,7 +530,14 @@ class SourceHealthService:
         sources_res = await session.execute(sources_stmt)
         sources = list(sources_res.scalars().all())
 
-        counts = {"OK": 0, "STALE": 0, "DEAD": 0, "BLOCKED": 0, "REDIRECTED": 0}
+        counts = {
+            "OK": 0,
+            "STALE": 0,
+            "DEAD": 0,
+            "BLOCKED": 0,
+            "REDIRECTED": 0,
+            "PENDING": 0,
+        }
 
         for src in sources:
             h = await self.sync_source_from_db(session, src, now=now)

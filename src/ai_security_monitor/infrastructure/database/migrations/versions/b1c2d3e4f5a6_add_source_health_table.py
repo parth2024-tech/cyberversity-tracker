@@ -24,30 +24,43 @@ def upgrade() -> None:
     op.create_table(
         "source_health",
         sa.Column("id", sa.String(length=36), primary_key=True),
-        sa.Column("source_id", sa.String(length=36), sa.ForeignKey("sources.id"), nullable=False),
+        sa.Column(
+            "source_id",
+            sa.String(length=36),
+            sa.ForeignKey("sources.id"),
+            nullable=False,
+        ),
         sa.Column("last_fetch_at", sa.DateTime(), nullable=True),
         sa.Column("last_http_status", sa.Integer(), nullable=True),
         sa.Column("last_new_entry_at", sa.DateTime(), nullable=True),
-        sa.Column("consecutive_failures", sa.Integer(), server_default="0", nullable=False),
-        sa.Column("consecutive_zero_runs", sa.Integer(), server_default="0", nullable=False),
+        sa.Column(
+            "consecutive_failures", sa.Integer(), server_default="0", nullable=False
+        ),
+        sa.Column(
+            "consecutive_zero_runs", sa.Integer(), server_default="0", nullable=False
+        ),
         sa.Column("state", sa.String(length=20), server_default="OK", nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.Column("error_message", sa.Text(), nullable=True),
         sa.Column("seven_day_yield", sa.Integer(), server_default="0", nullable=False),
-        sa.Column("entries_filtered_last", sa.Integer(), server_default="0", nullable=False),
+        sa.Column(
+            "entries_filtered_last", sa.Integer(), server_default="0", nullable=False
+        ),
     )
-    op.create_index("ix_source_health_source_id", "source_health", ["source_id"], unique=True)
+    op.create_index(
+        "ix_source_health_source_id", "source_health", ["source_id"], unique=True
+    )
     op.create_index("ix_source_health_state", "source_health", ["state"])
     op.create_index("ix_source_health_updated", "source_health", ["updated_at"])
 
     # 2. Add entries_filtered and http_status to fetch_log if not already present
     with op.batch_alter_table("fetch_log", schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column("entries_filtered", sa.Integer(), server_default="0", nullable=False)
+            sa.Column(
+                "entries_filtered", sa.Integer(), server_default="0", nullable=False
+            )
         )
-        batch_op.add_column(
-            sa.Column("http_status", sa.Integer(), nullable=True)
-        )
+        batch_op.add_column(sa.Column("http_status", sa.Integer(), nullable=True))
 
 
 def downgrade() -> None:
