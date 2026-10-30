@@ -942,18 +942,30 @@ class MonitorService:
                 region=source.region,
             )
 
+        entries_filtered = max(0, entries_total - new_entries_count)
+        raw_http_code = getattr(fetch_result, "http_status", None) if fetch_result is not None else None
+        if hasattr(fetcher, "_last_http_status"):
+            cand = getattr(fetcher, "_last_http_status", None)
+            if isinstance(cand, int):
+                raw_http_code = cand
+        http_code = raw_http_code if isinstance(raw_http_code, int) else None
+
+        if getattr(fetcher, "_is_redirected", False) is True:
+            redir_info = getattr(fetcher, "_redirect_info", "REDIRECTED: host changed")
+            redir_info_str = str(redir_info) if isinstance(redir_info, str) else "REDIRECTED: host changed"
+            error_msg = f"{redir_info_str}; {error_msg}" if error_msg else redir_info_str
+
         log = FetchLog(
             source_id=source.id,
             source_name=source.name,
             status=status,
             entries_new=new_entries_count,
             entries_total=entries_total,
+            entries_filtered=entries_filtered,
             error_message=error_msg,
             duration_ms=duration_ms,
             fetched_at=datetime.now(UTC),
-            http_status=getattr(fetch_result, "http_status", None)
-            if fetch_result is not None
-            else None,
+            http_status=http_code,
         )
 
         source.last_fetched_at = log.fetched_at
@@ -966,6 +978,15 @@ class MonitorService:
             except Exception as update_err:
                 logger.debug(f"Failed to update source telemetry: {update_err}")
             await uow.fetch_logs.add(log)
+            try:
+                from ai_security_monitor.infrastructure.database.models import (
+                    SourceModel,
+                )
+                src_model = await uow.session.get(SourceModel, str(source.id))
+                if src_model:
+                    await source_health_service.sync_source_from_db(uow.session, src_model)
+            except Exception as health_err:
+                logger.debug(f"Failed to sync source health in DB: {health_err}")
             await uow.commit()
 
         return log
@@ -1128,6 +1149,18 @@ class MonitorService:
 
         # Execute all sources concurrently across the worker pool
         await asyncio.gather(*[_worker(src) for src in sources], return_exceptions=True)
+
+        # Database-backed health state synchronization for all sources
+        try:
+            from ai_security_monitor.application.services.source_health_service import (
+                source_health_service,
+            )
+
+            async with self._uow_factory() as uow:
+                await source_health_service.sync_all_from_db(uow.session)
+                await uow.commit()
+        except Exception as sync_all_err:
+            logger.warning(f"Failed to sync all source health states in sweep: {sync_all_err}")
 
         # Invalidate response caches so freshly ingested entries and updated stats are immediately visible on website
         from ai_security_monitor.infrastructure.cache import response_cache

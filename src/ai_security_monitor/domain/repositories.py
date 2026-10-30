@@ -20,6 +20,8 @@ from ai_security_monitor.domain.entities import (
     FetchLog,
     LLMReceipt,
     Source,
+    SourceHealth,
+    SourceHealthState,
 )
 
 
@@ -359,4 +361,27 @@ class LLMReceiptRepository(ABC):
         error_message: str,
     ) -> LLMReceipt:
         """Record failed execution."""
+        ...
+
+
+class SourceHealthRepository(ABC):
+    """Repository for SourceHealth persistence."""
+
+    @abstractmethod
+    async def get_by_source(self, source_id: UUID) -> SourceHealth | None:
+        """Get source health record by source ID."""
+        ...
+
+    @abstractmethod
+    async def upsert(self, health: SourceHealth) -> SourceHealth:
+        """Insert or update source health record."""
+        ...
+
+    @abstractmethod
+    async def list(
+        self,
+        state: SourceHealthState | str | None = None,
+        region: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List source health records sorted worst-first."""
         ...

@@ -100,8 +100,22 @@ class RSSFetcher(BaseFetcher):
                     resp.raise_for_status()
                     self._last_http_status = resp.status_code
                     response = resp
+
+                    # Host redirection check
+                    from urllib.parse import urlparse
+
+                    orig_host = urlparse(target_url).netloc.lower()
+                    final_host = urlparse(str(resp.url)).netloc.lower()
+                    if orig_host and final_host and orig_host != final_host:
+                        logger.warning(
+                            f"Source {self.source.name!r} REDIRECTED: host changed from {orig_host} to {final_host}"
+                        )
+                        self._is_redirected = True
+                        self._redirect_info = f"REDIRECTED: host changed from {orig_host} to {final_host}"
                     break
                 except Exception as req_err:
+                    if hasattr(req_err, "response") and getattr(req_err, "response", None) is not None:
+                        self._last_http_status = req_err.response.status_code
                     last_error = req_err
                     response = None
                     continue

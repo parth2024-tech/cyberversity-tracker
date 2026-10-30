@@ -178,6 +178,82 @@ def sources():
 
 
 @app.command()
+def health(
+    state: str | None = typer.Option(
+        None, "--state", "-s", help="Filter by state (OK, STALE, DEAD, BLOCKED, REDIRECTED)"
+    ),
+    region: str | None = typer.Option(
+        None, "--region", "-r", help="Filter by region (e.g. china, global, us, europe)"
+    ),
+    sync: bool = typer.Option(
+        False, "--sync", help="Synchronize all source health records from DB history first"
+    ),
+):
+    """Inspect deterministic source health dashboard (sorted worst-first)."""
+
+    async def _run():
+        await db_manager.init_db()
+        service = MonitorService()
+        async with service._uow_factory() as uow:
+            if sync:
+                from ai_security_monitor.application.services.source_health_service import (
+                    source_health_service,
+                )
+
+                console.print("[yellow]Syncing source health from fetch logs...[/yellow]")
+                await source_health_service.sync_all_from_db(uow.session)
+                await uow.commit()
+
+            repo = uow.source_health
+            results = await repo.list(state=state, region=region)
+
+        table = Table(title="AetherGuard Source Health Dashboard (Worst-First)")
+        table.add_column("State", style="bold")
+        table.add_column("Source", style="white")
+        table.add_column("Region", style="cyan")
+        table.add_column("Tier", justify="right", style="magenta")
+        table.add_column("Last New Entry", style="yellow")
+        table.add_column("Last Status", style="blue")
+        table.add_column("7d Yield", justify="right", style="green")
+        table.add_column("Failures", justify="right", style="red")
+        table.add_column("Zero Runs", justify="right", style="dim")
+
+        state_colors = {
+            "BLOCKED": "[bold white on red] BLOCKED [/]",
+            "REDIRECTED": "[bold black on yellow] REDIRECTED [/]",
+            "DEAD": "[bold red] DEAD [/]",
+            "STALE": "[bold yellow] STALE [/]",
+            "OK": "[bold green] OK [/]",
+        }
+
+        for r in results:
+            st = r["state"]
+            st_badge = state_colors.get(st, st)
+            last_entry = (
+                r["last_new_entry_at"][:19] if r["last_new_entry_at"] else "Never"
+            )
+            last_status = str(r["last_http_status"]) if r["last_http_status"] else "N/A"
+            table.add_row(
+                st_badge,
+                r["source_name"],
+                r["region"].upper(),
+                f"T{r['tier']:.1f}",
+                last_entry,
+                last_status,
+                str(r["seven_day_yield"]),
+                str(r["consecutive_failures"]),
+                str(r["consecutive_zero_runs"]),
+            )
+
+        console.print(table)
+        console.print(f"[dim]Total shown: {len(results)} sources[/dim]\n")
+        await db_manager.close()
+
+    asyncio.run(_run())
+
+
+
+@app.command()
 def mcp():
     """Launch Model Context Protocol (MCP) server over stdio for AI coding assistants."""
     from ai_security_monitor.presentation.mcp.server import run_stdio_server

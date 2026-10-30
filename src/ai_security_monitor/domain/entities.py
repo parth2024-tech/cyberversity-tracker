@@ -49,6 +49,16 @@ class FetchStatus(str, Enum):
     SKIPPED = "skipped"
 
 
+class SourceHealthState(str, Enum):
+    """Deterministic source health state machine."""
+
+    OK = "OK"
+    STALE = "STALE"
+    DEAD = "DEAD"
+    BLOCKED = "BLOCKED"
+    REDIRECTED = "REDIRECTED"
+
+
 class AnalysisModel(str, Enum):
     """Analysis model used."""
 
@@ -277,6 +287,23 @@ class FetchLog(Entity):
     duration_ms: int = 0
     fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     http_status: int | None = None
+    entries_filtered: int = 0
+
+
+@dataclass(kw_only=True)
+class SourceHealth(Entity):
+    """Source health state and operational telemetry."""
+
+    source_id: UUID
+    last_fetch_at: datetime | None = None
+    last_http_status: int | None = None
+    last_new_entry_at: datetime | None = None
+    consecutive_failures: int = 0
+    consecutive_zero_runs: int = 0
+    state: SourceHealthState = SourceHealthState.OK
+    error_message: str | None = None
+    seven_day_yield: int = 0
+    entries_filtered_last: int = 0
 
 
 @dataclass(kw_only=True)

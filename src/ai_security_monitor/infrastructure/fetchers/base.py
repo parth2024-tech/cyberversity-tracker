@@ -186,6 +186,7 @@ class BaseFetcher(ABC):
             )
         )
 
+        http_status = getattr(self, "_last_http_status", None)
         return FetchResult(
             entries=[],
             entries_new=0,
@@ -193,6 +194,7 @@ class BaseFetcher(ABC):
             status=FetchStatus.ERROR,
             error_message=error_msg,
             duration_ms=duration_ms,
+            http_status=http_status,
         )
 
     async def fetch_stream(self) -> AsyncGenerator[Entry, None]:

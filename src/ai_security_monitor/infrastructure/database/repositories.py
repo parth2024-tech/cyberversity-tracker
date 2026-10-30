@@ -26,6 +26,8 @@ from ai_security_monitor.domain.entities import (
     FetchStatus,
     LLMReceipt,
     Source,
+    SourceHealth,
+    SourceHealthState,
     SourceType,
 )
 from ai_security_monitor.domain.exceptions import (
@@ -40,6 +42,7 @@ from ai_security_monitor.domain.repositories import (
     FetchLogRepository,
     LLMReceiptRepository,
     PaginationParams,
+    SourceHealthRepository,
     SourceRepository,
 )
 from ai_security_monitor.domain.watchlist import WatchlistRule
@@ -51,6 +54,7 @@ from ai_security_monitor.infrastructure.database.models import (
     EntryModel,
     FetchLogModel,
     ReceiptModel,
+    SourceHealthModel,
     SourceModel,
     WatchlistRuleModel,
 )
@@ -1220,6 +1224,8 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
             status=log.status.value,
             entries_new=log.entries_new,
             entries_total=log.entries_total,
+            entries_filtered=getattr(log, "entries_filtered", 0),
+            http_status=getattr(log, "http_status", None),
             error_message=log.error_message,
             duration_ms=log.duration_ms,
             fetched_at=log.fetched_at,
@@ -1280,6 +1286,8 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
             status=FetchStatus(model.status),
             entries_new=model.entries_new,
             entries_total=model.entries_total,
+            entries_filtered=getattr(model, "entries_filtered", 0),
+            http_status=getattr(model, "http_status", None),
             error_message=model.error_message,
             duration_ms=model.duration_ms,
             fetched_at=model.fetched_at,
@@ -1567,3 +1575,160 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
+
+
+class SQLAlchemySourceHealthRepository(SourceHealthRepository):
+    """SQLAlchemy implementation of SourceHealthRepository."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    async def get_by_source(self, source_id: UUID) -> SourceHealth | None:
+        stmt = select(SourceHealthModel).where(
+            SourceHealthModel.source_id == _uuid_to_str(source_id)
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def upsert(self, health: SourceHealth) -> SourceHealth:
+        stmt = select(SourceHealthModel).where(
+            SourceHealthModel.source_id == _uuid_to_str(health.source_id)
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        if not model:
+            model = SourceHealthModel(
+                id=_uuid_to_str(health.id),
+                source_id=_uuid_to_str(health.source_id),
+                last_fetch_at=health.last_fetch_at,
+                last_http_status=health.last_http_status,
+                last_new_entry_at=health.last_new_entry_at,
+                consecutive_failures=health.consecutive_failures,
+                consecutive_zero_runs=health.consecutive_zero_runs,
+                state=health.state.value
+                if hasattr(health.state, "value")
+                else str(health.state),
+                error_message=health.error_message,
+                seven_day_yield=health.seven_day_yield,
+                entries_filtered_last=health.entries_filtered_last,
+                updated_at=datetime.now(UTC),
+            )
+            self._session.add(model)
+        else:
+            model.last_fetch_at = health.last_fetch_at
+            model.last_http_status = health.last_http_status
+            model.last_new_entry_at = health.last_new_entry_at
+            model.consecutive_failures = health.consecutive_failures
+            model.consecutive_zero_runs = health.consecutive_zero_runs
+            model.state = (
+                health.state.value
+                if hasattr(health.state, "value")
+                else str(health.state)
+            )
+            model.error_message = health.error_message
+            model.seven_day_yield = health.seven_day_yield
+            model.entries_filtered_last = health.entries_filtered_last
+            model.updated_at = datetime.now(UTC)
+
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def list(
+        self,
+        state: SourceHealthState | str | None = None,
+        region: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List source health records joined with sources, sorted worst-first."""
+        stmt = (
+            select(SourceModel, SourceHealthModel)
+            .outerjoin(SourceHealthModel, SourceModel.id == SourceHealthModel.source_id)
+            .where(SourceModel.enabled.is_(True))
+        )
+
+        filter_state = (
+            (state.value if hasattr(state, "value") else str(state).upper())
+            if state
+            else None
+        )
+
+        if filter_state:
+            stmt = stmt.where(SourceHealthModel.state == filter_state)
+
+        res = await self._session.execute(stmt)
+        rows = res.all()
+
+        results = []
+        for src, h in rows:
+            src_config = src.config or {}
+            src_region = str(
+                getattr(src, "region", None) or src_config.get("region", "global")
+            ).lower()
+
+            if region and region.lower() != "all" and src_region != region.lower():
+                continue
+
+            h_state = h.state if h else "OK"
+            results.append(
+                {
+                    "source_id": str(src.id),
+                    "source_name": src.name,
+                    "region": src_region,
+                    "country": str(
+                        getattr(src, "country", None) or src_config.get("country", "GLOBAL")
+                    ).upper(),
+                    "tier": float(src_config.get("tier", 2.0)),
+                    "state": h_state,
+                    "last_fetch_at": h.last_fetch_at.isoformat()
+                    if h and h.last_fetch_at
+                    else None,
+                    "last_new_entry_at": h.last_new_entry_at.isoformat()
+                    if h and h.last_new_entry_at
+                    else None,
+                    "last_http_status": h.last_http_status if h else None,
+                    "seven_day_yield": h.seven_day_yield if h else 0,
+                    "consecutive_failures": h.consecutive_failures if h else 0,
+                    "consecutive_zero_runs": h.consecutive_zero_runs if h else 0,
+                    "error_message": h.error_message if h else None,
+                }
+            )
+
+        # Worst-first state sort priority: BLOCKED > REDIRECTED > DEAD > STALE > OK
+        state_priority = {
+            "BLOCKED": 1,
+            "REDIRECTED": 2,
+            "DEAD": 3,
+            "STALE": 4,
+            "OK": 5,
+        }
+
+        def _sort_key(item: dict[str, Any]) -> tuple[int, int, int, str]:
+            st = str(item.get("state", "OK"))
+            cf = item.get("consecutive_failures")
+            failures = cf if isinstance(cf, int) else 0
+            yld = item.get("seven_day_yield")
+            yield_val = yld if isinstance(yld, int) else 0
+            name = str(item.get("source_name", ""))
+            return (state_priority.get(st, 99), -failures, yield_val, name)
+
+        results.sort(key=_sort_key)
+        return results
+
+    def _model_to_entity(self, model: SourceHealthModel) -> SourceHealth:
+        return SourceHealth(
+            id=_str_to_uuid(model.id),
+            source_id=_str_to_uuid(model.source_id),
+            last_fetch_at=model.last_fetch_at,
+            last_http_status=model.last_http_status,
+            last_new_entry_at=model.last_new_entry_at,
+            consecutive_failures=model.consecutive_failures,
+            consecutive_zero_runs=model.consecutive_zero_runs,
+            state=SourceHealthState(model.state)
+            if model.state in SourceHealthState._value2member_map_
+            else SourceHealthState.OK,
+            error_message=model.error_message,
+            seven_day_yield=model.seven_day_yield,
+            entries_filtered_last=model.entries_filtered_last,
+            created_at=model.updated_at,
+            updated_at=model.updated_at,
+        )
