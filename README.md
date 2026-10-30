@@ -1,7 +1,7 @@
 # AETHERGUARD: Worldwide AI Ecosystem Intelligence Pipeline
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-2ea44f?style=flat-square)](https://github.com/parth2024-tech/cyberversity-tracker/actions)
-[![Test Suite](https://img.shields.io/badge/Tests-364%20Passing-brightgreen?style=flat-square)](tests/)
+[![Test Suite](https://img.shields.io/badge/Tests-411%20Passing-brightgreen?style=flat-square)](tests/)
 [![Coverage](https://img.shields.io/badge/Coverage-79%25-blue?style=flat-square)](tests/)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -102,10 +102,10 @@ AETHERGUARD employs three distinct time and retention controls to prevent databa
 Region assignment (e.g. `europe`, `apac`, `china`, `north_america`, `middle_east`, `global`) is **not** an error-prone post-hoc keyword guess. It is explicitly configured per-source in `config/sources.yaml` under the `SourceConfig.region` attribute and inherited by all ingested entries.
 
 ### 🇨🇳 Dedicated China Intelligence Corridor (中国前沿)
-China's rapid AI and cybersecurity advancements are often obscured by language barriers and platform silos. AETHERGUARD integrates a dedicated, first-class **China Radar**:
-* **Bilingual Ingestion & Translation Engine**: Chinese feeds (WeChat syndications, ModelScope, QbitAI, Synced, Zhihu, and security research portals) are automatically translated into English with domain-specific terminology post-processing (e.g. mapping "thought chain" $\to$ "Chain-of-Thought (CoT)", "video memory" $\to$ "VRAM", "right escalation" $\to$ "privilege escalation").
-* **Researcher Glossary**: Built-in curated bilingual vocabulary (`/api/v1/china/glossary`) covering Chinese ML and threat intelligence jargon.
-* **Dual-Track Surveillance**: Tracks both frontier AI engineering (DeepSeek, Qwen/Alibaba, Shanghai AI Lab, ModelScope, Kimi/Moonshot, Zhipu AI) and top-tier cybersecurity research/vulnerability intelligence (Qi-AnXin, Qihoo 360, DarkNavy, Cyber Kunlun, CNNVD).
+China's rapid AI breakthroughs are often obscured by language barriers and platform silos. AETHERGUARD integrates a dedicated, first-class **China Radar**:
+* **Bilingual Ingestion & Translation Engine**: Chinese feeds (WeChat syndications, ModelScope, QbitAI, Synced, Zhihu, and academic research hubs) are automatically translated into English with domain-specific terminology post-processing (e.g. mapping "thought chain" $\to$ "Chain-of-Thought (CoT)", "video memory" $\to$ "VRAM", "test-time scaling" $\to$ "Test-Time Compute Scaling").
+* **Researcher Glossary**: Built-in curated bilingual vocabulary (`/api/v1/china/glossary`) covering Chinese foundation model and machine learning terminology.
+* **Frontier Ecosystem Surveillance**: Tracks top Chinese frontier AI engineering (DeepSeek, Qwen/Alibaba, Shanghai AI Lab, ModelScope, Kimi/Moonshot, Zhipu AI) and university breakthroughs (Tsinghua, Peking University, Fudan, SJTU).
 * **Bilingual Switcher UI**: Frontend cards feature an instant toggle between translated analysis and raw Chinese original title/summary with provenance tags.
 
 ---
@@ -200,7 +200,7 @@ aetherguard sweep
 # Display live database metrics and category breakdown
 aetherguard stats
 
-# List configured threat feeds and intelligence sources
+# List configured intelligence feeds and sources
 aetherguard sources
 
 # Start the web dashboard and REST API server
@@ -246,9 +246,20 @@ All endpoints are fully versioned and available under both `/api` and `/api/v1` 
 | Endpoint | Method | Admin Auth | Description |
 |---|---|:---:|---|
 | `/api/v1/china/overview` | `GET` | No | Aggregated China intelligence telemetry: total signals, category breakdown, monitored frontier labs, and recent highlights |
-| `/api/v1/china/glossary` | `GET` | No | Bilingual researcher-grade vocabulary mapping Chinese AI and cybersecurity terms to global standards |
-| `/api/v1/china/threat-signals` | `GET` | No | Enriched China cybersecurity advisories with CISA KEV active exploitation flags and EPSS percentiles |
+| `/api/v1/china/glossary` | `GET` | No | Bilingual researcher-grade vocabulary mapping Chinese AI foundation models and ML terminology to global standards |
 | `/api/v1/china/export` | `GET` | No | Static JSON snapshot export (`data/china_radar.json`) for zero-compute Cloudflare Pages / CDN delivery |
+
+### 📰 The Global AI Gazette & Autonomous Broadsheet
+
+| Endpoint | Method | Admin Auth | Description |
+|---|---|:---:|---|
+| `/api/v1/newspaper/latest` | `GET` | No | Retrieve metadata and structured markdown of the latest 5-hour autonomous newspaper edition |
+| `/api/v1/newspaper/latest/html` | `GET` | No | Render the latest newspaper broadsheet directly in browser as print-ready HTML |
+| `/api/v1/newspaper/latest/pdf` | `GET` | No | Download the latest newspaper edition as a publication-ready vector PDF document |
+| `/api/v1/newspaper/generate` | `POST` | **Yes** | Trigger immediate generation of a new newspaper edition (`window_hours=5`) |
+| `/api/v1/newspaper/editions` | `GET` | No | List historical newspaper editions archive with timestamps and page counts |
+| `/gazette` | `GET` | No | Dedicated single-page responsive newspaper web reader UI |
+
 ### 📡 Syndication Feeds & Briefing Exports
 
 | Endpoint | Method | Admin Auth | Description |
@@ -261,7 +272,7 @@ All endpoints are fully versioned and available under both `/api` and `/api/v1` 
 
 ## 🧪 Testing & Verification
 
-AETHERGUARD is covered by **364 automated unit and integration tests** enforcing boundary validation, deduplication contracts, SQL injection resilience, and feed freshness invariants:
+AETHERGUARD is covered by **411 automated unit and integration tests** enforcing boundary validation, deduplication contracts, SQL injection resilience, and feed freshness invariants:
 
 ```bash
 # Run full test suite with enforced coverage threshold
