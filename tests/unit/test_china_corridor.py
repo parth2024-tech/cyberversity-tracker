@@ -96,3 +96,25 @@ async def test_china_export_endpoint():
         assert "total_entries" in data
         assert "key_laboratories" in data
         assert "Cache-Control" in resp.headers
+
+
+@pytest.mark.asyncio
+async def test_china_telemetry_endpoint():
+    """GET /api/china/telemetry should return per-source yield, health, and signal-to-noise metrics."""
+    app = create_app()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get("/api/china/telemetry")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "corridor" in data
+        assert "total_sources" in data
+        assert data["total_sources"] >= 10
+        assert "sources" in data
+        assert len(data["sources"]) == data["total_sources"]
+        first_src = data["sources"][0]
+        assert "source_name" in first_src
+        assert "health_status" in first_src
+        assert "signal_to_noise_ratio_pct" in first_src
+        assert "diagnosis" in first_src

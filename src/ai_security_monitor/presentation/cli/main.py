@@ -188,6 +188,96 @@ def mcp():
         pass
 
 
+@app.command(name="china-telemetry")
+def china_telemetry():
+    """Inspect health, yield, and signal-to-noise ratio per Chinese intelligence source."""
+    from ai_security_monitor.application.services.china_telemetry_service import (
+        china_telemetry_service,
+    )
+
+    async def _run():
+        await db_manager.init_db()
+        console.print(
+            "[bold cyan]🔍 Auditing China Sources Health, Yield & Signal-to-Noise Ratio (SNR)...[/bold cyan]"
+        )
+        report = await china_telemetry_service.get_telemetry()
+
+        table = Table(
+            title=f"China AI Corridor Telemetry (Generated {report['generated_at'][:19]})",
+            show_lines=True,
+        )
+        table.add_column("Source Name", style="cyan", no_wrap=True)
+        table.add_column("Health Status", justify="center")
+        table.add_column("Category", style="magenta")
+        table.add_column("DB Total", justify="right", style="bold white")
+        table.add_column("14d Yield", justify="right", style="green")
+        table.add_column("SNR %", justify="right")
+        table.add_column("Sweeps", justify="right", style="dim")
+        table.add_column("Diagnosis", style="yellow")
+
+        for s in report["sources"]:
+            status = s["health_status"]
+            if status == "healthy":
+                status_styled = "[bold green]● HEALTHY[/bold green]"
+            elif status == "operational":
+                status_styled = "[green]● OPERATIONAL[/green]"
+            elif status == "stale":
+                status_styled = "[bold red]✖ STALE PINNED[/bold red]"
+            elif status == "failing":
+                status_styled = "[bold red]✖ FAILING[/bold red]"
+            elif status == "degraded":
+                status_styled = "[yellow]▲ DEGRADED[/yellow]"
+            elif status == "zero_yield":
+                status_styled = "[yellow]○ ZERO YIELD[/yellow]"
+            elif status == "unpolled":
+                status_styled = "[dim]◌ UNPOLLED[/dim]"
+            else:
+                status_styled = f"[dim]{status}[/dim]"
+
+            snr = s["signal_to_noise_ratio_pct"]
+            if snr >= 80.0:
+                snr_styled = f"[bold green]{snr:.1f}%[/bold green]"
+            elif snr >= 50.0:
+                snr_styled = f"[yellow]{snr:.1f}%[/yellow]"
+            elif s["total_entries_db"] > 0:
+                snr_styled = f"[red]{snr:.1f}%[/red]"
+            else:
+                snr_styled = "[dim]0.0%[/dim]"
+
+            table.add_row(
+                s["source_name"][:40],
+                status_styled,
+                s["category"],
+                str(s["total_entries_db"]),
+                str(s["entries_last_14d"]),
+                snr_styled,
+                f"{s['total_sweeps']} (err: {s['error_sweeps']})",
+                s["diagnosis"][:60],
+            )
+
+        console.print(table)
+        console.print("\n[bold]Telemetry Summary:[/bold]")
+        console.print(
+            f"  • Total Configured Sources : [cyan]{report['total_sources']}[/cyan]"
+        )
+        console.print(
+            f"  • Active Yielding Sources  : [green]{report['active_sources']}[/green]"
+        )
+        console.print(
+            f"  • Zero-Yield Sources       : [yellow]{report['zero_yield_sources']}[/yellow]"
+        )
+        console.print(
+            f"  • Total Ingested Entries   : [bold white]{report['total_entries_db']}[/bold white]"
+        )
+        console.print(
+            f"  • Overall Corridor SNR     : [bold green]{report['overall_snr_pct']}%[/bold green]\n"
+        )
+
+        await db_manager.close()
+
+    asyncio.run(_run())
+
+
 def main():
     app()
 

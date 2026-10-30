@@ -215,58 +215,315 @@ class HeuristicAnalyzer(BaseAnalyzer):
         ],
     }
 
-    def _calculate_threat_velocity(self, text: str) -> int:
-        """Calculate threat velocity score (1-100)."""
-        score = 10  # base
+    def _calculate_empirical_ai_newsworthiness(
+        self, text: str, category: Category, metadata: dict | None = None
+    ) -> tuple[int, int]:
+        """
+        Calculate empirical AI Newsworthiness and Technical Depth.
+        Strips legacy CVE/vulnerability weights in favor of:
+        1. Engagement & community momentum (stars, forks, HN points)
+        2. Repo & implementation velocity (Triton, kernels, vLLM/SGLang runtimes)
+        3. Citation indicators, empirical benchmarks (SWE-bench, Chatbot Arena, Math-500)
+        4. Foundation model family & open weights scale (DeepSeek, Qwen, Mistral, Claude, Llama)
+        5. Epistemic slop & prompt-wrapper penalization
+        """
         text_lower = text.lower()
+        meta = metadata or {}
 
-        # Check critical patterns
+        # 1. Base Score calibrated by category
+        if category == Category.AI_MODELS:
+            base_vel = 42
+            base_impact = 45
+        elif category == Category.AI_RESEARCH:
+            base_vel = 38
+            base_impact = 44
+        elif category == Category.GITHUB_TRENDING:
+            base_vel = 36
+            base_impact = 40
+        elif category in (Category.CYBER_TOOLS, Category.AI_TECH):
+            base_vel = 32
+            base_impact = 38
+        else:
+            base_vel = 25
+            base_impact = 30
+
+        vel_score = base_vel
+        impact_score = base_impact
+
+        # 2. Frontier Model & Open Weights Signals (+15 to +30)
+        tier1_labs = (
+            "deepseek",
+            "qwen",
+            "mistral",
+            "anthropic",
+            "claude",
+            "openai",
+            "google deepmind",
+            "meta ai",
+            "llama-3",
+            "llama3",
+            "gemini",
+            "grok",
+            "glm-4",
+            "internlm",
+            "kimi",
+            "moonshot",
+            "zhipu",
+            "cohere",
+        )
+        if any(k in text_lower for k in tier1_labs):
+            vel_score += 22
+            impact_score += 18
+
+        if any(
+            k in text_lower
+            for k in (
+                "open weights",
+                "open-weights",
+                "weights released",
+                "safetensors",
+                "checkpoints",
+                "checkpoint",
+            )
+        ) or (
+            "weights" in text_lower
+            and any(
+                w in text_lower for w in ("open", "released", "public", "available")
+            )
+        ):
+            vel_score += 14
+            impact_score += 12
+
+        # 3. Reasoning & Architecture Breakthroughs (+14 to +25)
+        if any(
+            k in text_lower
+            for k in (
+                "reasoning",
+                "chain of thought",
+                "cot",
+                "test-time compute",
+                "extended thinking",
+                "inference-time scaling",
+                "prm",
+                "mcts",
+                "process reward model",
+                "r1",
+                "o1",
+                "o3",
+                "deepseek-r1",
+                "reinforcement learning",
+                "rlhf",
+                "grpo",
+                "dpo",
+            )
+        ):
+            vel_score += 20
+            impact_score += 22
+
+        if any(
+            k in text_lower
+            for k in (
+                "mixture-of-experts",
+                "moe",
+                "sparse attention",
+                "multi-head latent attention",
+                "mla",
+                "state space model",
+                "mamba",
+                "speculative decoding",
+                "bitnet",
+                "1-bit",
+            )
+        ):
+            vel_score += 16
+            impact_score += 18
+
+        # 4. Repo Velocity & Infrastructure Runtime Innovations (+12 to +20)
+        if any(
+            k in text_lower
+            for k in (
+                "vllm",
+                "sglang",
+                "ollama",
+                "llama.cpp",
+                "tensorrt",
+                "flashinfer",
+                "triton kernel",
+                "cuda kernel",
+                "kernel fusion",
+                "chunked prefill",
+                "radixattention",
+                "unsloth",
+                "axolotl",
+                "mlx",
+                "torch.compile",
+            )
+        ):
+            vel_score += 16
+            impact_score += 16
+
+        # 5. Citation & Empirical Benchmark Rigor (+10 to +20)
+        if any(
+            k in text_lower
+            for k in (
+                "swe-bench",
+                "livecodebench",
+                "math-500",
+                "gpqa",
+                "chatbot arena",
+                "lmsys",
+                "arena-hard",
+                "humaneval",
+                "mmlu-pro",
+                "eval harness",
+                "benchmark",
+                "benchmarks",
+            )
+        ):
+            vel_score += 15
+            impact_score += 18
+
+        if any(
+            k in text_lower
+            for k in (
+                "arxiv:",
+                "doi:",
+                "preprint",
+                "ablation study",
+                "empirical evaluation",
+                "scaling law",
+                "pareto frontier",
+                "state-of-the-art",
+                "sota",
+                "outperform",
+            )
+        ):
+            vel_score += 12
+            impact_score += 14
+
+        # 6. Engagement Metrics from Metadata (+5 to +20)
+        stars = meta.get("stars") or meta.get("stargazers_count") or 0
+        if isinstance(stars, (int, float)):
+            if stars >= 5000:
+                vel_score += 18
+            elif stars >= 1000:
+                vel_score += 12
+            elif stars >= 200:
+                vel_score += 6
+
+        score_val = meta.get("score") or meta.get("points") or 0
+        comments_val = meta.get("comments") or meta.get("num_comments") or 0
+        if isinstance(score_val, (int, float)):
+            if score_val >= 300 or (
+                isinstance(comments_val, (int, float)) and comments_val >= 100
+            ):
+                vel_score += 16
+            elif score_val >= 100 or (
+                isinstance(comments_val, (int, float)) and comments_val >= 40
+            ):
+                vel_score += 10
+
+        if any(
+            k in text_lower
+            for k in (
+                "viral",
+                "trending repo",
+                "10x faster",
+                "2x speedup",
+                "breakout",
+                "record throughput",
+                "day-0",
+            )
+        ):
+            vel_score += 10
+
+        # 7. Epistemic Slop & Wrapper Penalty (-35)
+        slop_indicators = (
+            "awesome-",
+            "1000+ prompt",
+            "collection of prompt",
+            "curated list of",
+            "chatgpt-wrapper",
+            "wrapper for chatgpt",
+            "wrapper for claude",
+            "simple ui for openai",
+            "telegram bot for openai",
+            "cheatsheet",
+            "cheat sheet",
+            "prompt engineering cheatsheet",
+            "memecoin",
+            "airdrop",
+            "solana bot",
+            "pump.fun",
+            "trading bot",
+            "make money with ai",
+            "earn $",
+            "10x your productivity",
+        )
+        if any(sp in text_lower for sp in slop_indicators):
+            vel_score -= 35
+            impact_score -= 30
+
+        # 8. Granular Distribution Smoothing (eliminates clumping at round numbers)
+        variance = (len(text) % 7) - 3
+        vel_score += variance
+        impact_score += ((len(text) // 7) % 5) - 2
+
+        final_vel = min(99, max(10, vel_score))
+        final_impact = min(98, max(15, impact_score))
+
+        return final_vel, final_impact
+
+    def _calculate_threat_velocity(self, text: str) -> int:
+        """Calculate empirical newsworthiness or fallback threat velocity (1-100)."""
+        text_lower = text.lower()
+        if not re.search(r"\bcve-\d{4}-\d{4,}\b", text_lower) and not any(
+            k in text_lower
+            for k in ("0day", "zero-day", "exploit poc", "rce", "ransomware")
+        ):
+            vel, _ = self._calculate_empirical_ai_newsworthiness(text, Category.AI_TECH)
+            return vel
+
+        score = 10  # base for legacy security dispatches
         for pattern in self.THREAT_KEYWORDS["critical"]:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 score += 30
-
-        # Check high patterns
         for pattern in self.THREAT_KEYWORDS["high"]:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 score += 20
-
-        # Check medium patterns
         for pattern in self.THREAT_KEYWORDS["medium"]:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 score += 10
-
-        # Check low patterns
         for pattern in self.THREAT_KEYWORDS["low"]:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 score += 5
-
-        # Boost for CVE mentions
         if re.search(r"\bcve-\d{4}-\d{4,}\b", text_lower):
             score += 15
-
-        # Boost for "exploited" or "active"
         if re.search(r"\b(exploited|active|weaponized|poc)\b", text_lower):
             score += 20
-
         return min(100, max(1, score))
 
     def _calculate_severity(self, text: str, velocity: int) -> int:
-        """Calculate severity index (1-100)."""
-        score = velocity // 2  # base from velocity
+        """Calculate technical depth or fallback severity index (1-100)."""
         text_lower = text.lower()
+        if not re.search(r"\bcve-\d{4}-\d{4,}\b", text_lower) and not any(
+            k in text_lower
+            for k in ("0day", "zero-day", "exploit poc", "rce", "ransomware")
+        ):
+            _, impact = self._calculate_empirical_ai_newsworthiness(
+                text, Category.AI_TECH
+            )
+            return impact
 
-        # CVSS-like keywords
+        score = velocity // 2
         if re.search(r"\b(critical|9\.[0-9]|10\.0)\b", text_lower):
             score += 30
         elif re.search(r"\b(high|7\.[0-9]|8\.[0-9])\b", text_lower):
             score += 20
         elif re.search(r"\b(medium|4\.[0-9]|5\.[0-9]|6\.[0-9])\b", text_lower):
             score += 10
-
-        # Exploited in wild
         if re.search(r"\b(exploited|active|in.the.wild)\b", text_lower):
             score += 25
-
         return min(100, max(1, score))
 
     def _calculate_blast_radius(
@@ -803,136 +1060,10 @@ class HeuristicAnalyzer(BaseAnalyzer):
             )
             _, ecosystems = self._calculate_blast_radius(full_text, entry.category)
 
-            # Compute adoption velocity (45 - 98) — multi-signal scoring
-            velocity = 65  # strong base for all AI content
-            text_lower = full_text.lower()
-
-            # Tier 1: Major frontier labs (+20)
-            if any(
-                k in text_lower
-                for k in (
-                    "deepseek",
-                    "openai",
-                    "anthropic",
-                    "google deepmind",
-                    "meta ai",
-                    "mistral ai",
-                    "xai",
-                    "grok",
-                    "cohere",
-                )
-            ):
-                velocity += 20
-
-            # Tier 2: Popular open-source infra (+12)
-            if any(
-                k in text_lower
-                for k in (
-                    "vllm",
-                    "ollama",
-                    "sglang",
-                    "llama.cpp",
-                    "tensorrt-llm",
-                    "hugging face",
-                    "huggingface",
-                    "unsloth",
-                    "axolotl",
-                    "mlx",
-                )
-            ):
-                velocity += 12
-
-            # Breakthrough / milestone signals (+15)
-            if any(
-                k in text_lower
-                for k in (
-                    "state-of-the-art",
-                    "sota",
-                    "outperform",
-                    "benchmark record",
-                    "surpass",
-                    "human-level",
-                    "beats gpt",
-                    "beats claude",
-                    "new record",
-                    "achieves",
-                )
-            ):
-                velocity += 15
-
-            # Reasoning / test-time compute signals (+12)
-            if any(
-                k in text_lower
-                for k in (
-                    "reasoning",
-                    "chain of thought",
-                    "cot",
-                    "test-time compute",
-                    "extended thinking",
-                    "inference-time scaling",
-                    "long thinking",
-                    "r1",
-                    "o1",
-                    "o3",
-                )
-            ):
-                velocity += 12
-
-            # Open weights / release signals (+10)
-            if any(
-                k in text_lower
-                for k in (
-                    "open weights",
-                    "open-weights",
-                    "weights released",
-                    "publicly available",
-                    "checkpoints",
-                    "now available",
-                )
-            ):
-                velocity += 10
-
-            # Multimodal / specialized capability signals (+8)
-            if any(
-                k in text_lower
-                for k in (
-                    "multimodal",
-                    "vision-language",
-                    "vlm",
-                    "text-to-image",
-                    "text-to-video",
-                    "speech recognition",
-                    "robotics",
-                    "embodied",
-                )
-            ):
-                velocity += 8
-
-            # Category boosts
-            if entry.category == Category.AI_MODELS:
-                velocity += 10
-            elif entry.category == Category.GITHUB_TRENDING:
-                velocity += 6
-            elif entry.category == Category.AI_RESEARCH:
-                velocity += 5
-
-            velocity = min(98, max(45, velocity))
-
-            # Impact rating (65 - 95)
-            impact = 68
-            if any(
-                k in text_lower
-                for k in (
-                    "benchmark",
-                    "sota",
-                    "reasoning",
-                    "r1",
-                    "breakthrough",
-                    "state-of-the-art",
-                )
-            ):
-                impact += 20
-            impact = min(96, max(50, impact))
+            # Compute empirical AI newsworthiness (velocity and impact)
+            velocity, impact = self._calculate_empirical_ai_newsworthiness(
+                full_text, entry.category, entry.metadata
+            )
 
             archetype = (
                 "AI Model Release"
