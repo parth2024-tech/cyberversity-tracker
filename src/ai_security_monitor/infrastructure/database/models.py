@@ -179,6 +179,7 @@ class FetchLogModel(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     entries_new: Mapped[int] = mapped_column(Integer, default=0)
     entries_total: Mapped[int] = mapped_column(Integer, default=0)
+    entries_filtered: Mapped[int] = mapped_column(Integer, default=0)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
     fetched_at: Mapped[datetime] = mapped_column(
@@ -191,6 +192,32 @@ class FetchLogModel(Base):
     __table_args__ = (
         Index("ix_fetch_log_source_fetched", "source_id", "fetched_at"),
         Index("ix_fetch_log_status", "status"),
+    )
+
+
+class FilteredEntryModel(Base):
+    """Audit trail for items dropped by no-slop filter with 7-day TTL."""
+
+    __tablename__ = "filtered_entries"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    source_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("sources.id"), nullable=False, index=True
+    )
+    source_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    matched_pattern: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    filtered_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+
+    # Relationships
+    source: Mapped[SourceModel] = relationship()
+
+    __table_args__ = (
+        Index("ix_filtered_entries_source_filtered", "source_id", "filtered_at"),
     )
 
 
@@ -301,4 +328,3 @@ class ReceiptModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-

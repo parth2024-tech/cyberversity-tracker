@@ -153,7 +153,9 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
@@ -263,9 +265,23 @@ class FetchLog(Entity):
     status: FetchStatus
     entries_new: int = 0
     entries_total: int = 0
+    entries_filtered: int = 0
     error_message: str | None = None
     duration_ms: int = 0
     fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(kw_only=True)
+class FilteredEntry(Entity):
+    """An ingested item rejected by the no-slop filter before entering pipeline."""
+
+    source_id: UUID
+    source_name: str
+    title: str
+    url: str
+    reason: str
+    matched_pattern: str | None = None
+    filtered_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(kw_only=True)
@@ -301,4 +317,3 @@ class LLMReceipt(Entity):
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
-
