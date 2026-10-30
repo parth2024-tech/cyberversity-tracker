@@ -27,6 +27,7 @@ from ai_security_monitor.domain.entities import (
     LLMReceipt,
     Source,
     SourceType,
+    Story,
 )
 from ai_security_monitor.domain.exceptions import (
     DuplicateEntryError,
@@ -41,6 +42,7 @@ from ai_security_monitor.domain.repositories import (
     LLMReceiptRepository,
     PaginationParams,
     SourceRepository,
+    StoryRepository,
 )
 from ai_security_monitor.domain.watchlist import WatchlistRule
 from ai_security_monitor.infrastructure.database.models import (
@@ -52,6 +54,7 @@ from ai_security_monitor.infrastructure.database.models import (
     FetchLogModel,
     ReceiptModel,
     SourceModel,
+    StoryModel,
     WatchlistRuleModel,
 )
 
@@ -79,6 +82,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         model = EntryModel(
             id=_uuid_to_str(entry.id),
             source_id=_uuid_to_str(entry.source_id),
+            story_id=_uuid_to_str(entry.story_id) if entry.story_id else None,
             title=entry.title,
             url=entry.url,
             content_hash=entry.content_hash,
@@ -269,6 +273,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
         model.summary = entry.summary
         model.tags = entry.tags
         model.extra_metadata = entry.metadata
+        if entry.story_id:
+            model.story_id = _uuid_to_str(entry.story_id)
         model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
@@ -945,7 +951,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             updated_at=model.updated_at,
             analysis=analysis,
             is_purged=bool(getattr(model, "is_purged", False)),
-            purged_at=getattr(model, "purged_at", None),
+            story_id=_str_to_uuid(model.story_id) if model.story_id else None,
         )
 
 
@@ -1557,3 +1563,229 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
+
+class SQLAlchemyStoryRepository(StoryRepository):
+    """SQLAlchemy implementation of StoryRepository."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    async def add(self, story: Story) -> Story:
+        metadata_dict = dict(story.metadata or {})
+        if story.fingerprint:
+            metadata_dict["fingerprint"] = story.fingerprint
+        if story.participant_timestamps:
+            metadata_dict["participant_timestamps"] = [
+                ts.isoformat() for ts in story.participant_timestamps
+            ]
+
+        model = StoryModel(
+            id=_uuid_to_str(story.id),
+            cluster_key=story.cluster_key,
+            title=story.title,
+            canonical_url=story.canonical_url,
+            summary=story.summary,
+            category=story.category.value
+            if hasattr(story.category, "value")
+            else str(story.category),
+            first_seen_at=story.first_seen_at,
+            last_seen_at=story.last_seen_at,
+            first_source_id=_uuid_to_str(story.first_source_id)
+            if story.first_source_id
+            else None,
+            language_mix=dict(story.language_mix or {}),
+            source_count=story.source_count,
+            entry_count=story.entry_count,
+            confidence_score=story.confidence_score,
+            heat_score=story.heat_score,
+            heat_badge=story.heat_badge,
+            is_primary=story.is_primary,
+            anchor_entry_id=_uuid_to_str(story.anchor_entry_id)
+            if story.anchor_entry_id
+            else None,
+            extra_metadata=metadata_dict,
+            created_at=story.created_at,
+            updated_at=story.updated_at,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def get(self, id: UUID) -> Story | None:
+        stmt = (
+            select(StoryModel)
+            .options(
+                selectinload(StoryModel.entries).selectinload(EntryModel.source),
+                selectinload(StoryModel.first_source),
+            )
+            .where(StoryModel.id == _uuid_to_str(id))
+        )
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def get_by_cluster_key(self, cluster_key: str) -> Story | None:
+        stmt = (
+            select(StoryModel)
+            .options(
+                selectinload(StoryModel.entries).selectinload(EntryModel.source),
+                selectinload(StoryModel.first_source),
+            )
+            .where(StoryModel.cluster_key == cluster_key)
+        )
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def update(self, story: Story) -> Story:
+        stmt = select(StoryModel).where(StoryModel.id == _uuid_to_str(story.id))
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("Story", str(story.id))
+
+        metadata_dict = dict(story.metadata or {})
+        if story.fingerprint:
+            metadata_dict["fingerprint"] = story.fingerprint
+        if story.participant_timestamps:
+            metadata_dict["participant_timestamps"] = [
+                ts.isoformat() for ts in story.participant_timestamps
+            ]
+
+        model.cluster_key = story.cluster_key
+        model.title = story.title
+        model.canonical_url = story.canonical_url
+        model.summary = story.summary
+        model.category = (
+            story.category.value
+            if hasattr(story.category, "value")
+            else str(story.category)
+        )
+        model.first_seen_at = story.first_seen_at
+        model.last_seen_at = story.last_seen_at
+        model.first_source_id = (
+            _uuid_to_str(story.first_source_id) if story.first_source_id else None
+        )
+        model.language_mix = dict(story.language_mix or {})
+        model.source_count = story.source_count
+        model.entry_count = story.entry_count
+        model.confidence_score = story.confidence_score
+        model.heat_score = story.heat_score
+        model.heat_badge = story.heat_badge
+        model.is_primary = story.is_primary
+        model.anchor_entry_id = (
+            _uuid_to_str(story.anchor_entry_id) if story.anchor_entry_id else None
+        )
+        model.extra_metadata = metadata_dict
+        model.updated_at = datetime.now(UTC)
+
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def list(self, limit: int = 50, offset: int = 0) -> builtins.list[Story]:
+        stmt = (
+            select(StoryModel)
+            .options(
+                selectinload(StoryModel.entries).selectinload(EntryModel.source),
+                selectinload(StoryModel.first_source),
+            )
+            .order_by(desc(StoryModel.last_seen_at))
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+        return [self._model_to_entity(m) for m in models]
+
+    async def list_active_within(
+        self, window_hours: int = 72
+    ) -> builtins.list[Story]:
+        cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
+        cutoff_naive = cutoff.replace(tzinfo=None)
+        stmt = (
+            select(StoryModel)
+            .options(
+                selectinload(StoryModel.entries).selectinload(EntryModel.source),
+                selectinload(StoryModel.first_source),
+            )
+            .where(
+                or_(
+                    StoryModel.last_seen_at >= cutoff,
+                    StoryModel.last_seen_at >= cutoff_naive,
+                )
+            )
+            .order_by(desc(StoryModel.last_seen_at))
+        )
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+        return [self._model_to_entity(m) for m in models]
+
+    def _model_to_entity(self, model: StoryModel) -> Story:
+        try:
+            category_enum = Category(model.category)
+        except (ValueError, TypeError):
+            category_enum = Category.AI_TECH
+
+        meta = dict(model.extra_metadata or {})
+        fingerprint = meta.get("fingerprint", model.cluster_key or "")
+
+        participant_timestamps = []
+        raw_ts = meta.get("participant_timestamps", [])
+        for ts_str in raw_ts:
+            try:
+                participant_timestamps.append(datetime.fromisoformat(ts_str))
+            except Exception:
+                pass
+        if not participant_timestamps and model.last_seen_at:
+            participant_timestamps = [model.last_seen_at]
+
+        entry_ids = []
+        sources = []
+        tags = []
+        if "entries" in model.__dict__ and model.entries:
+            for entry_m in model.entries:
+                entry_ids.append(_str_to_uuid(entry_m.id))
+                if getattr(entry_m, "source", None) and entry_m.source.name:
+                    if entry_m.source.name not in sources:
+                        sources.append(entry_m.source.name)
+                if entry_m.tags:
+                    for t in entry_m.tags:
+                        if t not in tags:
+                            tags.append(t)
+
+        first_source_name = None
+        if "first_source" in model.__dict__ and model.first_source:
+            first_source_name = model.first_source.name
+
+        return Story(
+            id=_str_to_uuid(model.id),
+            title=model.title,
+            canonical_url=model.canonical_url or "",
+            fingerprint=fingerprint,
+            category=category_enum,
+            summary=model.summary or "",
+            source_count=model.source_count,
+            confidence_score=model.confidence_score,
+            entry_ids=entry_ids,
+            sources=sources,
+            tags=tags,
+            metadata=meta,
+            first_seen_at=model.first_seen_at,
+            last_seen_at=model.last_seen_at,
+            participant_timestamps=participant_timestamps,
+            heat_score=model.heat_score,
+            heat_badge=model.heat_badge,
+            cluster_key=model.cluster_key,
+            first_source_id=_str_to_uuid(model.first_source_id)
+            if model.first_source_id
+            else None,
+            first_source_name=first_source_name,
+            language_mix=dict(model.language_mix or {}),
+            entry_count=model.entry_count,
+            is_primary=bool(model.is_primary),
+            anchor_entry_id=_str_to_uuid(model.anchor_entry_id)
+            if model.anchor_entry_id
+            else None,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )

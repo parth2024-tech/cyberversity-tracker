@@ -20,6 +20,7 @@ from ai_security_monitor.domain.entities import (
     FetchLog,
     LLMReceipt,
     Source,
+    Story,
 )
 
 
@@ -357,3 +358,38 @@ class LLMReceiptRepository(ABC):
         """Record failed execution."""
         ...
 
+
+class StoryRepository(ABC):
+    """Abstract interface for Story aggregate persistence."""
+
+    @abstractmethod
+    async def add(self, story: Story) -> Story:
+        """Add a new Story."""
+        ...
+
+    @abstractmethod
+    async def get(self, id: UUID) -> Story | None:
+        """Get Story by ID."""
+        ...
+
+    @abstractmethod
+    async def get_by_cluster_key(self, cluster_key: str) -> Story | None:
+        """Get Story by unique cluster key."""
+        ...
+
+    @abstractmethod
+    async def update(self, story: Story) -> Story:
+        """Update an existing Story."""
+        ...
+
+    @abstractmethod
+    async def list(self, limit: int = 50, offset: int = 0) -> builtins.list[Story]:
+        """List stories sorted by last seen."""
+        ...
+
+    @abstractmethod
+    async def list_active_within(
+        self, window_hours: int = 72
+    ) -> builtins.list[Story]:
+        """List stories active within recent window."""
+        ...

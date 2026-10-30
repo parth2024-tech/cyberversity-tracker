@@ -125,9 +125,9 @@ class Story(Entity):
     """A synthesized cluster/story aggregate uniting 1+ corroborating cross-source entries."""
 
     title: str
-    canonical_url: str
-    fingerprint: str
-    category: Category
+    canonical_url: str = ""
+    fingerprint: str = ""
+    category: Category = Category.AI_TECH
     summary: str = ""
     source_count: int = 1
     confidence_score: float = (
@@ -142,6 +142,34 @@ class Story(Entity):
     participant_timestamps: list[datetime] = field(default_factory=list)
     heat_score: float = 0.0
     heat_badge: str | None = None
+    cluster_key: str | None = None
+    first_source_id: UUID | None = None
+    first_source_name: str | None = None
+    language_mix: dict[str, int] = field(default_factory=dict)
+    entry_count: int = 1
+    is_primary: bool = False
+    anchor_entry_id: UUID | None = None
+
+    @property
+    def coverage_summary(self) -> str:
+        """Human-readable cross-language and multi-source reporting summary."""
+        src_name = self.first_source_name or (
+            self.sources[0] if self.sources else "Unknown source"
+        )
+        dt_str = self.first_seen_at.strftime("%Y-%m-%d %H:%M UTC")
+        languages = []
+        if self.language_mix.get("en", 0) > 0:
+            languages.append("English")
+        if self.language_mix.get("zh", 0) > 0:
+            languages.append("Chinese")
+        lang_str = " and ".join(languages) if languages else "English"
+        if len(self.sources) > 1 or len(self.entry_ids) > 1:
+            n_sources = max(len(self.sources), 1)
+            return (
+                f"First reported by {src_name} ({dt_str}), "
+                f"also covered by {n_sources} sources across {lang_str}"
+            )
+        return f"First reported by {src_name} ({dt_str})"
 
     def calculate_heat(
         self, now: datetime | None = None, half_life_hours: float = 24.0
@@ -153,7 +181,9 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
@@ -191,11 +221,27 @@ class Story(Entity):
     def add_entry(self, entry: Entry, source_name: str | None = None) -> None:
         """Add corroborating entry to story and update decoupled factual confidence and heat."""
         import math
+        import re
+
+        if not self.anchor_entry_id:
+            self.anchor_entry_id = entry.id
+
+        if getattr(entry, "is_primary", False) and not self.is_primary:
+            self.is_primary = True
+            self.anchor_entry_id = entry.id
+            self.title = entry.title
+            self.canonical_url = entry.url
+            self.summary = entry.summary
+
+        # Track language mix
+        lang = "zh" if re.search(r"[\u4e00-\u9fa5]", entry.title) else "en"
+        self.language_mix[lang] = self.language_mix.get(lang, 0) + 1
 
         if entry.id not in self.entry_ids:
             self.entry_ids.append(entry.id)
             if source_name and source_name not in self.sources:
                 self.sources.append(source_name)
+            self.entry_count = len(self.entry_ids)
             self.source_count = len(self.sources) or len(self.entry_ids)
             # Decoupled Factual Confidence: C = min(1.0, 0.50 + 0.25 * log2(N_sources))
             n_src = max(1, self.source_count)
@@ -301,4 +347,3 @@ class LLMReceipt(Entity):
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
-

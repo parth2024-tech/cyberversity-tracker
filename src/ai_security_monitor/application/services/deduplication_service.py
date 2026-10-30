@@ -344,39 +344,80 @@ class DeduplicationService:
             if story_id in self._stories:
                 return self._stories[story_id]
 
-        # 3. Dual-Tier Deduplication:
-        # Tier 1: 64-bit SimHash Hamming distance on substantive full-text / summary
-        entry_text = f"{entry.title} {entry.summary}".strip()
-        entry_words = entry_text.split()
-        entry_simhash = compute_simhash64(entry_text) if len(entry_words) >= 8 else 0
+        # 3. Cross-Language Entity & Cluster Key Match (Feature 6)
+        from ai_security_monitor.application.services.cross_language_clustering import (
+            cross_language_clustering_service,
+        )
 
-        # Tier 2: 64-Permutation MinHash on title tokens
-        entry_tokens = extract_title_tokens(entry.title)
-        entry_minhash = compute_minhash64(entry_tokens) if entry_tokens else []
+        entry_full_text = f"{entry.title} {entry.summary}".strip()
+        entry_ent = cross_language_clustering_service.extract_entities(entry_full_text)
+        entry_ts = entry.published_at or entry.created_at or datetime.now(UTC)
 
-        for story_id, story in self._stories.items():
-            # Check SimHash Hamming distance (<= 4 bits indicates near-duplicate full-text)
-            if entry_simhash:
-                story_sh = self._story_simhashes.get(story_id, 0)
-                if (
-                    story_sh
-                    and simhash_hamming_distance(entry_simhash, story_sh)
-                    <= self.simhash_hamming_threshold
-                ):
-                    return story
-
-            # Check 64-Permutation MinHash Jaccard (>= 0.35 flags syndicated wire rewrites)
-            if entry_minhash:
-                story_mh = self._story_minhashes.get(story_id)
-                if story_mh:
-                    est_jaccard = minhash_jaccard_similarity(entry_minhash, story_mh)
-                    if est_jaccard >= self.minhash_threshold:
+        if entry_ent.cluster_key and not entry_ent.cluster_key.endswith(":general"):
+            for story_id, story in self._stories.items():
+                if story.cluster_key and story.cluster_key == entry_ent.cluster_key:
+                    # 72-hour window check
+                    story_ts = story.last_seen_at
+                    ts_e = (
+                        entry_ts
+                        if entry_ts.tzinfo is not None
+                        else entry_ts.replace(tzinfo=UTC)
+                    )
+                    ts_s = (
+                        story_ts
+                        if story_ts.tzinfo is not None
+                        else story_ts.replace(tzinfo=UTC)
+                    )
+                    if abs((ts_e - ts_s).total_seconds()) <= 72 * 3600:
                         return story
 
-            # Baseline token Jaccard fallback
-            similarity = compute_title_similarity(entry.title, story.title)
-            if similarity >= self.similarity_threshold:
-                return story
+        # 4. Multilingual & Dual-Tier Deduplication:
+        entry_words = entry_full_text.split()
+        entry_simhash = (
+            compute_simhash64(entry_full_text) if len(entry_words) >= 8 else 0
+        )
+        entry_tokens = extract_title_tokens(entry.title)
+        entry_minhash = compute_minhash64(entry_tokens) if entry_tokens else []
+        entry_lang = cross_language_clustering_service.detect_language(entry.title)
+
+        for story_id, story in self._stories.items():
+            story_lang = "zh" if story.language_mix.get("zh", 0) > 0 else "en"
+            is_same_language = entry_lang == story_lang
+
+            if is_same_language:
+                # Same-language: SimHash, MinHash, token Jaccard
+                if entry_simhash:
+                    story_sh = self._story_simhashes.get(story_id, 0)
+                    if (
+                        story_sh
+                        and simhash_hamming_distance(entry_simhash, story_sh)
+                        <= self.simhash_hamming_threshold
+                    ):
+                        return story
+
+                if entry_minhash:
+                    story_mh = self._story_minhashes.get(story_id)
+                    if story_mh:
+                        est_jaccard = minhash_jaccard_similarity(
+                            entry_minhash, story_mh
+                        )
+                        if est_jaccard >= self.minhash_threshold:
+                            return story
+
+                similarity = compute_title_similarity(entry.title, story.title)
+                if similarity >= self.similarity_threshold:
+                    return story
+            else:
+                # Cross-language: Replace simhash-only dedup with cross_language_clustering_service
+                story_full_text = f"{story.title} {story.summary}".strip()
+                if cross_language_clustering_service.are_same_story(
+                    entry_full_text,
+                    story_full_text,
+                    published_a=entry_ts,
+                    published_b=story.last_seen_at,
+                    max_delta_hours=72.0,
+                ):
+                    return story
 
         return None
 
@@ -396,13 +437,25 @@ class DeduplicationService:
         fp = compute_fingerprint(canon_url, entry.title)
 
         existing_story = self.find_matching_story(entry)
+        from ai_security_monitor.application.services.cross_language_clustering import (
+            cross_language_clustering_service,
+        )
+
+        entry_ent = cross_language_clustering_service.extract_entities(
+            f"{entry.title} {entry.summary}"
+        )
+
         if existing_story:
             # Corroborate existing story
             existing_story.add_entry(entry, source_name=source_name)
+            if not existing_story.cluster_key and entry_ent.cluster_key:
+                existing_story.cluster_key = entry_ent.cluster_key
             entry.story_id = existing_story.id
             entry.metadata = dict(entry.metadata or {})
             entry.metadata["heat_score"] = existing_story.heat_score
             entry.metadata["heat_badge"] = existing_story.heat_badge
+            entry.metadata["cluster_key"] = existing_story.cluster_key
+            entry.metadata["coverage_summary"] = existing_story.coverage_summary
             logger.info(
                 f"Merged entry '{entry.title[:40]}...' into Story '{existing_story.title[:40]}...' "
                 f"(sources: {existing_story.source_count}, confidence: {existing_story.confidence_score:.2f}, heat: {existing_story.heat_score}, badge: {existing_story.heat_badge})"
@@ -411,6 +464,11 @@ class DeduplicationService:
 
         # Create new story aggregate
         entry_ts = entry.published_at or entry.created_at or datetime.now(UTC)
+        is_pri = getattr(entry, "is_primary", False) or bool(
+            entry.metadata and entry.metadata.get("is_primary")
+        )
+        lang = cross_language_clustering_service.detect_language(entry.title)
+
         new_story = Story(
             title=entry.title,
             canonical_url=canon_url,
@@ -418,7 +476,14 @@ class DeduplicationService:
             category=entry.category,
             summary=entry.summary,
             source_count=1,
+            entry_count=1,
             confidence_score=0.50,
+            cluster_key=entry_ent.cluster_key,
+            first_source_id=entry.source_id,
+            first_source_name=source_name,
+            language_mix={lang: 1},
+            is_primary=is_pri,
+            anchor_entry_id=entry.id,
             entry_ids=[entry.id],
             sources=[source_name] if source_name else [],
             tags=list(entry.tags),
@@ -426,7 +491,8 @@ class DeduplicationService:
             metadata={
                 "initial_category": entry.category.value
                 if hasattr(entry.category, "value")
-                else str(entry.category)
+                else str(entry.category),
+                "cluster_key": entry_ent.cluster_key,
             },
             first_seen_at=datetime.now(UTC),
             last_seen_at=datetime.now(UTC),
@@ -437,6 +503,8 @@ class DeduplicationService:
         entry.metadata = dict(entry.metadata or {})
         entry.metadata["heat_score"] = new_story.heat_score
         entry.metadata["heat_badge"] = new_story.heat_badge
+        entry.metadata["cluster_key"] = new_story.cluster_key
+        entry.metadata["coverage_summary"] = new_story.coverage_summary
 
         # Index new story
         self._stories[new_story.id] = new_story
