@@ -2,7 +2,8 @@
 Unit and integration tests for the 5-Hour Autonomous Newspaper Document Service.
 """
 
-from datetime import datetime
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -222,3 +223,148 @@ async def test_newspaper_security_exclusion_and_quality(temp_output_dir: Path):
 
     directive_sec = service._generate_executive_directive(entry_sec)
     assert len(directive_sec) > 20
+
+
+@pytest.mark.asyncio
+async def test_newspaper_excludes_inactive_or_retired_source_entries(
+    temp_output_dir: Path,
+):
+    """Verify that newspaper strictly excludes entries from disabled or retired sources."""
+    from datetime import UTC
+    from uuid import uuid4
+
+    from ai_security_monitor.domain.entities import Source, SourceType
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    active_source = Source(
+        id=uuid4(),
+        name="Active AI Frontier Lab",
+        category=Category.AI_MODELS,
+        type=SourceType.RSS,
+        url="https://frontier.example.com/rss",
+        enabled=True,
+    )
+    retired_source = Source(
+        id=uuid4(),
+        name="Retired Legacy Feed",
+        category=Category.AI_TECH,
+        type=SourceType.RSS,
+        url="https://retired.example.com/rss",
+        enabled=False,
+    )
+
+    active_entry = Entry(
+        id=uuid4(),
+        source_id=active_source.id,
+        title="Active Lab Releases Frontier MoE Architecture",
+        url="https://frontier.example.com/moe-release",
+        content_hash="active_hash_moe",
+        published_at=datetime.now(UTC),
+        category=Category.AI_MODELS,
+        summary="Major MoE architecture release with open weights.",
+    )
+    retired_entry = Entry(
+        id=uuid4(),
+        source_id=retired_source.id,
+        title="Retired Source Outdated Item",
+        url="https://retired.example.com/old-item",
+        content_hash="retired_hash_item",
+        published_at=datetime.now(UTC),
+        category=Category.AI_TECH,
+        summary="This item is from an inactive or retired source.",
+    )
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        await uow.sources.add(active_source)
+        await uow.sources.add(retired_source)
+        await uow.entries.add(active_entry)
+        await uow.entries.add(retired_entry)
+        await uow.commit()
+
+    service = NewspaperService(output_dir=temp_output_dir)
+    with patch.object(service, "_render_pdf", return_value=None):
+        meta = await service.generate_edition(window_hours=24)
+
+    edition_id = meta["edition_id"]
+    md_content = (temp_output_dir / f"{edition_id}.md").read_text(encoding="utf-8")
+
+    assert "Frontier MoE Architecture" in md_content
+    assert "Retired Source Outdated Item" not in md_content
+
+
+@pytest.mark.asyncio
+async def test_newspaper_sovereign_word_boundary_regex(temp_output_dir):
+    """Verify word-boundary matching on short sovereign keywords (tii, tsmc) prevents substring false positives."""
+    service = NewspaperService(output_dir=temp_output_dir)
+
+    # Entry 1: contains "tii" as a distinct word
+    e_valid_tii = Entry(
+        id=uuid.uuid4(),
+        source_id=uuid.uuid4(),
+        title="TII Abu Dhabi Releases Open Model",
+        url="https://example.com/tii",
+        content_hash="hash_tii_1",
+        summary="Technology Innovation Institute releases weights.",
+        published_at=datetime.now(UTC),
+        category=Category.AI_MODELS,
+        metadata={"region": "global"},
+    )
+    # Entry 2: contains "initiatives" which has "t-i-i" in some languages/substrings, or "multinational"
+    e_false_pos = Entry(
+        id=uuid.uuid4(),
+        source_id=uuid.uuid4(),
+        title="Multinational AI Initiatives Announce Governance Standards",
+        url="https://example.com/multi",
+        content_hash="hash_multi_1",
+        summary="Global corporate coalition discusses ethical guidelines without regional hub backing.",
+        published_at=datetime.now(UTC),
+        category=Category.AI_TECH,
+        metadata={"region": "global"},
+    )
+
+    cat = await service._categorize_entries([e_valid_tii, e_false_pos])
+    sov_titles = [x.title for x in cat.get("sovereign_ai", [])]
+
+    # Valid TII should be captured under sovereign AI
+    assert any("TII Abu Dhabi" in t for t in sov_titles)
+    # "Multinational AI Initiatives" must NOT be captured as sovereign AI
+    assert not any("Multinational" in t for t in sov_titles)
+
+
+@pytest.mark.asyncio
+async def test_newspaper_small_pool_retains_sections(temp_output_dir):
+    """Verify that a small pool (<= 3 items) does not starve thematic sections."""
+    service = NewspaperService(output_dir=temp_output_dir)
+
+    entries = [
+        Entry(
+            id=uuid.uuid4(),
+            source_id=uuid.uuid4(),
+            title="Qwen 2.5 Released Across All Sizes",
+            url="https://example.com/qwen",
+            content_hash="hash_q1",
+            summary="New reasoning and coding checkpoints available.",
+            published_at=datetime.now(UTC),
+            category=Category.AI_MODELS,
+            metadata={"region": "china", "country": "CN"},
+        ),
+        Entry(
+            id=uuid.uuid4(),
+            source_id=uuid.uuid4(),
+            title="vLLM 0.6 Ships With Native Chunked Prefill",
+            url="https://example.com/vllm",
+            content_hash="hash_v1",
+            summary="High-performance inference engine update.",
+            published_at=datetime.now(UTC),
+            category=Category.CYBER_TOOLS,
+            metadata={"region": "global"},
+        ),
+    ]
+
+    cat = await service._categorize_entries(entries)
+    # Both lead and individual categories should be populated
+    assert cat["lead"] is not None
+    # Model or tools list should receive the entries even with small pool
+    assert len(cat["ai_models"]) + len(cat["ai_tools"]) + len(cat["sovereign_ai"]) >= 1

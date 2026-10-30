@@ -234,18 +234,6 @@ sources:
   enabled: true
   region: global
   country: GLOBAL
-  tier: 1.0
-- name: arXiv AI Safety & Alignment (Pre-CVE Radar)
-  category: ai_research
-  type: arxiv
-  query: (cat:cs.CR AND (ti:LLM OR ti:"language model" OR ti:adversarial OR ti:jailbreak
-    OR ti:agent OR ti:safety OR ti:alignment OR ti:backdoor OR ti:trojan OR ti:multimodal))
-  max_results: 30
-  rate_limit_seconds: 1800
-  enabled: true
-  region: global
-  country: GLOBAL
-  tier: 1.0
 - name: MIT News AI
   category: ai_research
   type: rss
@@ -579,17 +567,6 @@ sources:
   category: ai_tech
   type: rss
   url: https://www.qbitai.com/feed
-  rate_limit_seconds: 1800
-  enabled: true
-  region: china
-  country: CN
-  config:
-    require_ai: true
-  tier: 2.0
-- name: Synced / 机器之心 AI Frontier
-  category: ai_research
-  type: rss
-  url: https://www.jiqizhixin.com/rss
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -1022,7 +999,7 @@ sources:
 - name: SCMP China Tech & AI Radar
   category: ai_tech
   type: rss
-  url: https://www.scmp.com/rss/318206/feed
+  url: https://www.scmp.com/rss/36/feed/
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -1101,20 +1078,11 @@ sources:
   region: middle_east
   country: IL
   tier: 2.0
-- name: Team8 Cyber & AI Think Tank
-  category: ai_tech
-  type: rss
-  url: https://team8.vc/feed/
-  rate_limit_seconds: 1800
-  enabled: true
-  region: middle_east
-  country: IL
-  tier: 2.0
-- name: arXiv Israel Cybernetics & AI Security
+- name: arXiv Israel AI & Machine Learning Research
   category: ai_research
   type: arxiv
-  query: (cat:cs.AI OR cat:cs.CR) AND ("Tel Aviv University" OR "Technion" OR "Weizmann"
-    OR "Hebrew University")
+  query: (cat:cs.AI OR cat:cs.LG OR cat:cs.CL) AND ("Tel Aviv University" OR "Technion"
+    OR "Weizmann" OR "Hebrew University")
   rate_limit_seconds: 1800
   enabled: true
   region: middle_east
@@ -1404,7 +1372,7 @@ sources:
   region: north_america
   country: CA
   tier: 1.0
-- name: CSIRO Data61 (Australia AI Research & Cybernetics)
+- name: CSIRO Data61 (Australia AI Research & Machine Learning)
   category: ai_research
   type: rss
   url: https://research.csiro.au/mlai-fsp/feed/
@@ -1756,7 +1724,7 @@ sources:
   region: north_america
   country: US
   tier: 2.0
-- name: Promptfoo LLM Security & Eval Releases
+- name: Promptfoo LLM Evaluation & Benchmark Suite
   category: cyber_tools
   type: rss
   url: https://github.com/promptfoo/promptfoo/releases.atom
@@ -1950,3 +1918,20 @@ retired_sources:
   - name: "DeepSeek-V3 Open Model Codebase"
     url: "https://github.com/deepseek-ai/DeepSeek-V3/releases.atom"
     reason: "Deduplicated with DeepSeek AI Official Releases"
+  # Dead / Redirected feeds
+  - name: "Synced / 机器之心 AI Frontier"
+    url: "https://www.jiqizhixin.com/rss"
+    reason: "Dead RSS URL redirecting to HTML data-service"
+  - name: "Team8 Cyber & AI Think Tank"
+    url: "https://team8.vc/feed/"
+    reason: "Zero cybersecurity focus policy"
+  - name: "arXiv Israel Cybernetics & AI Security"
+    reason: "Zero cybersecurity focus policy (replaced by arXiv Israel AI & Machine Learning Research)"
+  - name: "arXiv AI Safety & Alignment (Pre-CVE Radar)"
+    reason: "Zero cybersecurity focus policy (pre-CVE radar retired)"
+  - name: "CSIRO Data61 (Australia AI Research & Cybernetics)"
+    url: "https://research.csiro.au/mlai-fsp/feed/"
+    reason: "Renamed to CSIRO Data61 (Australia AI Research & Machine Learning)"
+  - name: "Promptfoo LLM Security & Eval Releases"
+    url: "https://github.com/promptfoo/promptfoo/releases.atom"
+    reason: "Renamed to Promptfoo LLM Evaluation & Benchmark Suite"

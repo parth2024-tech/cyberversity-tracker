@@ -32,7 +32,9 @@ def compute_receipt_logical_key(
 
     Changing prompt_version deliberately invalidates receipts across all models.
     """
-    version: str = str(prompt_version or getattr(settings.analyzer, "prompt_version", "v1.0") or "v1.0")
+    version: str = str(
+        prompt_version or getattr(settings.analyzer, "prompt_version", "v1.0") or "v1.0"
+    )
     opts_str = json.dumps(options or {}, sort_keys=True)
     payload = f"{str(entry_id).strip()}:{content_hash.strip()}:{provider.strip()}:{model.strip()}:{version.strip()}:{opts_str}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
@@ -68,9 +70,7 @@ class LLMReceiptService:
             or "v1.0"
         )
         max_retries: int = int(
-            max_attempts
-            or getattr(settings.analyzer, "receipt_max_retries", 3)
-            or 3
+            max_attempts or getattr(settings.analyzer, "receipt_max_retries", 3) or 3
         )
         logical_key = compute_receipt_logical_key(
             entry_id=entry.id,
@@ -102,18 +102,14 @@ class LLMReceiptService:
             await uow.commit()
             return receipt
 
-    async def record_failure(
-        self, logical_key: str, error_message: str
-    ) -> LLMReceipt:
+    async def record_failure(self, logical_key: str, error_message: str) -> LLMReceipt:
         """Record execution failure, incrementing failure count against retry threshold."""
         async with self._uow_factory() as uow:
             receipt = await uow.receipts.record_failure(logical_key, error_message)
             await uow.commit()
             return receipt
 
-    async def is_poison_entry(
-        self, entry: Entry, provider: str, model: str
-    ) -> bool:
+    async def is_poison_entry(self, entry: Entry, provider: str, model: str) -> bool:
         """Check if an entry has exhausted max retries and is classified as poisoned."""
         logical_key = compute_receipt_logical_key(
             entry_id=entry.id,

@@ -85,6 +85,14 @@ class Source(Entity):
     tier: float = 2.0
     config: dict = field(default_factory=dict)
 
+    @property
+    def region(self) -> str:
+        return (self.config or {}).get("region", "global")
+
+    @property
+    def country(self) -> str:
+        return (self.config or {}).get("country", "GLOBAL")
+
 
 @dataclass(kw_only=True)
 class Entry(Entity):
@@ -153,7 +161,9 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
@@ -266,6 +276,7 @@ class FetchLog(Entity):
     error_message: str | None = None
     duration_ms: int = 0
     fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    http_status: int | None = None
 
 
 @dataclass(kw_only=True)
@@ -301,4 +312,3 @@ class LLMReceipt(Entity):
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
-

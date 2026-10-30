@@ -106,3 +106,41 @@ def test_arxiv_clean_html(arxiv_source: Source):
     assert "LLMs" in clean
     assert "attention" in clean
     assert "bad" not in clean
+
+
+@pytest.mark.asyncio
+async def test_arxiv_fetcher_stamps_regional_metadata():
+    """ArxivFetcher stamps region and country from source config into entry metadata."""
+    regional_source = Source(
+        id=uuid4(),
+        name="arXiv India AI",
+        category=Category.AI_RESEARCH,
+        type=SourceType.ARXIV,
+        url="https://export.arxiv.org/api/query",
+        query="cat:cs.AI AND India",
+        rate_limit_seconds=0,
+        enabled=True,
+        config={"region": "south_asia", "country": "IN"},
+    )
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = ARXIV_ATOM_XML
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.arxiv_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        fetcher = ArxivFetcher(regional_source)
+        raw = await fetcher._fetch_raw()
+
+    assert len(raw) == 2
+    assert raw[0]["metadata"]["region"] == "south_asia"
+    assert raw[0]["metadata"]["country"] == "IN"
+    assert raw[1]["metadata"]["region"] == "south_asia"
+    assert raw[1]["metadata"]["country"] == "IN"

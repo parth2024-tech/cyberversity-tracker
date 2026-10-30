@@ -1261,6 +1261,17 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
         )
         return getattr(del_res, "rowcount", 0) or 0
 
+    async def get_last_productive_at(self, source_id: UUID) -> datetime | None:
+        """Derive the timestamp of the last sweep that produced entries_new > 0 from persisted fetch logs."""
+        from sqlalchemy import func
+
+        stmt = select(func.max(FetchLogModel.fetched_at)).where(
+            FetchLogModel.source_id == _uuid_to_str(source_id),
+            FetchLogModel.entries_new > 0,
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar()
+
     def _model_to_entity(self, model: FetchLogModel) -> FetchLog:
         return FetchLog(
             id=_str_to_uuid(model.id),
@@ -1556,4 +1567,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-

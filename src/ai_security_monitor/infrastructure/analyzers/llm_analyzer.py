@@ -312,12 +312,14 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
         # Check idempotent receipts and poison entry retry cap
         if self.receipt_service:
             try:
-                logical_key, receipt, should_call = (
-                    await self.receipt_service.check_or_record_attempt(
-                        entry=entry,
-                        provider=self.provider,
-                        model=model_name,
-                    )
+                (
+                    logical_key,
+                    receipt,
+                    should_call,
+                ) = await self.receipt_service.check_or_record_attempt(
+                    entry=entry,
+                    provider=self.provider,
+                    model=model_name,
                 )
                 if receipt.status == "succeeded" and receipt.response_json:
                     logger.info(
