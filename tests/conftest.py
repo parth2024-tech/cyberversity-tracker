@@ -8,7 +8,8 @@ import os
 
 # Guarantee that automated test sessions use an isolated throwaway SQLite DB
 # and never mutate a developer's real local database or production state.
-os.environ.setdefault("DATA_DIR", "/tmp/aetherguard_test_data")
+# Hard-assigned (not setdefault) so shell environment cannot override to ./data.
+os.environ["DATA_DIR"] = "/tmp/aetherguard_test_data"
 os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
 
 from datetime import UTC, datetime
@@ -37,7 +38,10 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
     # Wipe stale test database file to guarantee a fresh state on each test session run
     data_dir = os.environ.get("DATA_DIR")
-    if data_dir and os.path.exists(data_dir):
+    assert data_dir and (data_dir.startswith("/tmp") or "test" in data_dir), (
+        f"CRITICAL SAFETY HAZARD: Test DATA_DIR '{data_dir}' is not isolated in /tmp!"
+    )
+    if os.path.exists(data_dir):
         db_file = os.path.join(data_dir, "monitor.db")
         if os.path.exists(db_file):
             try:

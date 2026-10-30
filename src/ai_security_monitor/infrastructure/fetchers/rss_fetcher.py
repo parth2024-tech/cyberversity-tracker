@@ -96,14 +96,9 @@ class RSSFetcher(BaseFetcher):
                             "Feed unchanged; skipping body payload."
                         )
                         self._last_http_status = 304
-                        if self.source.config is None:
-                            self.source.config = {}
-                        self.source.config["last_http_status"] = 304
                         return []
                     resp.raise_for_status()
                     self._last_http_status = resp.status_code
-                    if self.source.config is not None:
-                        self.source.config["last_http_status"] = resp.status_code
                     response = resp
                     break
                 except Exception as req_err:

@@ -911,8 +911,17 @@ class NewspaperService:
             if e.analysis:
                 score += e.analysis.threat_velocity * 2
                 score += e.analysis.severity_index
-            if cat in ("ai_models", "github_trending", "ai_research", "cyber_tools"):
+            if cat in ("ai_tech", "ai_models", "github_trending", "ai_research", "cyber_tools"):
                 score += 260
+            if (e.metadata or {}).get("region") in (
+                "south_asia",
+                "middle_east",
+                "apac",
+                "china",
+                "europe",
+                "nordic",
+            ):
+                score += 100
             if any(
                 k in t_lower
                 for k in (
@@ -984,6 +993,12 @@ class NewspaperService:
                 score += 200
             return score
 
+        for e in filtered_entries:
+            if e.metadata is None:
+                e.metadata = {}
+            if "priority_score" not in e.metadata:
+                e.metadata["priority_score"] = int(priority_score(e))
+
         sorted_entries = sorted(filtered_entries, key=priority_score, reverse=True)
 
         from ai_security_monitor.application.services.balanced_digest import (
@@ -1002,12 +1017,12 @@ class NewspaperService:
             default_limit=15,
         ).balance(sorted_entries)
         balanced_pool = (
-            balanced_res.items if len(balanced_res.items) >= 20 else sorted_entries
+            balanced_res.items if balanced_res.items else sorted_entries
         )
 
         lead = balanced_pool[0] if balanced_pool else None
         secondary_anchor = balanced_pool[1] if len(balanced_pool) > 1 else None
-        remaining = balanced_pool[2:] if len(balanced_pool) > 2 else []
+        remaining = balanced_pool if len(balanced_pool) <= 3 else (balanced_pool[2:] if len(balanced_pool) > 2 else [])
 
         front_page_briefs: list[Entry] = []
         ciso_briefs: list[Entry] = []
@@ -1133,7 +1148,7 @@ class NewspaperService:
                     "EU",
                 )
                 or any(
-                    k in t_lower or k in s_lower
+                    bool(re.search(rf"\b{re.escape(k)}\b", f"{t_lower} {s_lower}"))
                     for k in (
                         "deepseek",
                         "qwen",

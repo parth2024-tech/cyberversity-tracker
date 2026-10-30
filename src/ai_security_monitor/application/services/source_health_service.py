@@ -35,6 +35,7 @@ class SourceHealthMetrics:
     last_entries_new: int = 0
     recent_entry_counts: list[int] = field(default_factory=list)
     zero_entry_streak: int = 0
+    last_productive_at: datetime | None = None
 
     @property
     def entry_frequency(self) -> float:
@@ -138,6 +139,9 @@ class SourceHealthMetrics:
             else None,
             "last_error_message": self.last_error_message,
             "last_entries_new": self.last_entries_new,
+            "last_productive_at": self.last_productive_at.isoformat()
+            if self.last_productive_at
+            else None,
         }
 
 
@@ -196,6 +200,7 @@ class SourceHealthService:
         # HTTP 304 Not Modified is a valid cache hit and does NOT increment zero_entry_streak
         if entries_new > 0:
             metrics.zero_entry_streak = 0
+            metrics.last_productive_at = now
         elif not is_not_modified:
             metrics.zero_entry_streak += 1
 
