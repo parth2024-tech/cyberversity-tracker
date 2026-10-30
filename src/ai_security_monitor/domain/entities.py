@@ -153,7 +153,9 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
@@ -302,3 +304,42 @@ class LLMReceipt(Entity):
             return False
         return self.attempts < self.max_attempts
 
+
+@dataclass(kw_only=True)
+class DiffEvent:
+    """Significant movement or entrant detected between leaderboard snapshots."""
+
+    event_type: str  # "new_number_one", "rank_surge", "rank_drop", "new_entrant"
+    model: str
+    prev_rank: int | None
+    new_rank: int
+    rank_delta: int
+    score: float | str | None = None
+    prev_score: float | str | None = None
+    org: str | None = None
+    summary: str = ""
+    severity: str = "HIGH"  # "HIGH", "MEDIUM", "LOW"
+
+
+@dataclass(kw_only=True)
+class Leaderboard(Entity):
+    """Tracked AI benchmark and model leaderboard."""
+
+    name: str
+    url: str
+    parser: str
+    category: str = "general"
+    enabled: bool = True
+    status: str = "OK"  # "OK", "BROKEN", "STALE"
+    last_snapshot_at: datetime | None = None
+
+
+@dataclass(kw_only=True)
+class LeaderboardSnapshot(Entity):
+    """Point-in-time ranking snapshot for a tracked leaderboard."""
+
+    leaderboard_id: UUID
+    taken_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    row_count: int = 0
+    rows: list[dict[str, Any]] = field(default_factory=list)
+    diff_events: list[dict[str, Any]] = field(default_factory=list)

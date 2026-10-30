@@ -24,6 +24,8 @@ from ai_security_monitor.domain.entities import (
     Entry,
     FetchLog,
     FetchStatus,
+    Leaderboard,
+    LeaderboardSnapshot,
     LLMReceipt,
     Source,
     SourceType,
@@ -38,6 +40,7 @@ from ai_security_monitor.domain.repositories import (
     EntryFilters,
     EntryRepository,
     FetchLogRepository,
+    LeaderboardRepository,
     LLMReceiptRepository,
     PaginationParams,
     SourceRepository,
@@ -50,6 +53,8 @@ from ai_security_monitor.infrastructure.database.models import (
     DigestModel,
     EntryModel,
     FetchLogModel,
+    LeaderboardModel,
+    LeaderboardSnapshotModel,
     ReceiptModel,
     SourceModel,
     WatchlistRuleModel,
@@ -1557,3 +1562,132 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
+
+class SQLAlchemyLeaderboardRepository(LeaderboardRepository):
+    """SQLAlchemy implementation of LeaderboardRepository."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    def _model_to_entity(self, model: LeaderboardModel) -> Leaderboard:
+        return Leaderboard(
+            id=UUID(model.id),
+            name=model.name,
+            url=model.url,
+            parser=model.parser,
+            category=model.category,
+            enabled=model.enabled,
+            status=model.status,
+            last_snapshot_at=model.last_snapshot_at,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
+    def _snapshot_model_to_entity(
+        self, model: LeaderboardSnapshotModel
+    ) -> LeaderboardSnapshot:
+        return LeaderboardSnapshot(
+            id=UUID(model.id),
+            leaderboard_id=UUID(model.leaderboard_id),
+            taken_at=model.taken_at,
+            row_count=model.row_count,
+            rows=model.rows_json or [],
+            diff_events=model.diff_events_json or [],
+        )
+
+    async def add(self, leaderboard: Leaderboard) -> Leaderboard:
+        model = LeaderboardModel(
+            id=_uuid_to_str(leaderboard.id),
+            name=leaderboard.name,
+            url=leaderboard.url,
+            parser=leaderboard.parser,
+            category=leaderboard.category,
+            enabled=leaderboard.enabled,
+            status=leaderboard.status,
+            last_snapshot_at=leaderboard.last_snapshot_at,
+            created_at=leaderboard.created_at,
+            updated_at=leaderboard.updated_at,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def get(self, id: UUID) -> Leaderboard | None:
+        stmt = select(LeaderboardModel).where(LeaderboardModel.id == _uuid_to_str(id))
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def get_by_name(self, name: str) -> Leaderboard | None:
+        stmt = select(LeaderboardModel).where(LeaderboardModel.name == name)
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def list(self, enabled_only: bool = False) -> builtins.list[Leaderboard]:
+        stmt = select(LeaderboardModel).order_by(LeaderboardModel.name)
+        if enabled_only:
+            stmt = stmt.where(LeaderboardModel.enabled.is_(True))
+        res = await self._session.execute(stmt)
+        return [self._model_to_entity(m) for m in res.scalars().all()]
+
+    async def update(self, leaderboard: Leaderboard) -> Leaderboard:
+        stmt = select(LeaderboardModel).where(
+            LeaderboardModel.id == _uuid_to_str(leaderboard.id)
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        if not model:
+            raise EntityNotFoundError("Leaderboard", str(leaderboard.id))
+        model.name = leaderboard.name
+        model.url = leaderboard.url
+        model.parser = leaderboard.parser
+        model.category = leaderboard.category
+        model.enabled = leaderboard.enabled
+        model.status = leaderboard.status
+        model.last_snapshot_at = leaderboard.last_snapshot_at
+        model.updated_at = datetime.now(UTC)
+        await self._session.flush()
+        return self._model_to_entity(model)
+
+    async def add_snapshot(self, snapshot: LeaderboardSnapshot) -> LeaderboardSnapshot:
+        model = LeaderboardSnapshotModel(
+            id=_uuid_to_str(snapshot.id),
+            leaderboard_id=_uuid_to_str(snapshot.leaderboard_id),
+            taken_at=snapshot.taken_at,
+            row_count=snapshot.row_count,
+            rows_json=snapshot.rows,
+            diff_events_json=snapshot.diff_events,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return self._snapshot_model_to_entity(model)
+
+    async def get_latest_snapshot(
+        self, leaderboard_id: UUID
+    ) -> LeaderboardSnapshot | None:
+        stmt = (
+            select(LeaderboardSnapshotModel)
+            .where(
+                LeaderboardSnapshotModel.leaderboard_id == _uuid_to_str(leaderboard_id)
+            )
+            .order_by(desc(LeaderboardSnapshotModel.taken_at))
+            .limit(1)
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return self._snapshot_model_to_entity(model) if model else None
+
+    async def list_snapshots(
+        self, leaderboard_id: UUID, limit: int = 10
+    ) -> builtins.list[LeaderboardSnapshot]:
+        stmt = (
+            select(LeaderboardSnapshotModel)
+            .where(
+                LeaderboardSnapshotModel.leaderboard_id == _uuid_to_str(leaderboard_id)
+            )
+            .order_by(desc(LeaderboardSnapshotModel.taken_at))
+            .limit(limit)
+        )
+        res = await self._session.execute(stmt)
+        return [self._snapshot_model_to_entity(m) for m in res.scalars().all()]

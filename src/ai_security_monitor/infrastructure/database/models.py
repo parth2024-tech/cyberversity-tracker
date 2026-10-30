@@ -302,3 +302,53 @@ class ReceiptModel(Base):
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
+
+class LeaderboardModel(Base):
+    """Tracked AI benchmark and model leaderboard."""
+
+    __tablename__ = "leaderboards"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
+    url: Mapped[str] = mapped_column(String(512), nullable=False)
+    parser: Mapped[str] = mapped_column(String(50), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), default="general")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="OK")
+    last_snapshot_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+
+    # Relationships
+    snapshots: Mapped[list[LeaderboardSnapshotModel]] = relationship(
+        back_populates="leaderboard", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class LeaderboardSnapshotModel(Base):
+    """Point-in-time ranking snapshot for a tracked leaderboard."""
+
+    __tablename__ = "leaderboard_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    leaderboard_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("leaderboards.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    taken_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+    row_count: Mapped[int] = mapped_column(Integer, default=0)
+    rows_json: Mapped[list[dict]] = mapped_column(JSON, default=list)
+    diff_events_json: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+
+    # Relationships
+    leaderboard: Mapped[LeaderboardModel] = relationship(back_populates="snapshots")
