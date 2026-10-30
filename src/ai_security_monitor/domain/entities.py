@@ -83,6 +83,7 @@ class Source(Entity):
     last_status: FetchStatus | None = None
     last_entries_new: int = 0
     tier: float = 2.0
+    is_primary: bool = False
     config: dict = field(default_factory=dict)
 
 
@@ -104,6 +105,7 @@ class Entry(Entity):
     is_purged: bool = False
     purged_at: datetime | None = None
     story_id: UUID | None = None
+    is_primary: bool = False
 
     def __post_init__(self) -> None:
         if (
@@ -142,6 +144,8 @@ class Story(Entity):
     participant_timestamps: list[datetime] = field(default_factory=list)
     heat_score: float = 0.0
     heat_badge: str | None = None
+    is_primary: bool = False
+    anchor_entry_id: UUID | None = None
 
     def calculate_heat(
         self, now: datetime | None = None, half_life_hours: float = 24.0
@@ -153,10 +157,14 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
+        if getattr(self, "is_primary", False):
+            total_heat *= 1.5
         self.heat_score = round(total_heat, 3)
         return self.heat_score
 
@@ -191,6 +199,17 @@ class Story(Entity):
     def add_entry(self, entry: Entry, source_name: str | None = None) -> None:
         """Add corroborating entry to story and update decoupled factual confidence and heat."""
         import math
+
+        if not self.anchor_entry_id:
+            self.anchor_entry_id = entry.id
+
+        # If a primary announcement arrives for an existing cluster, prioritize it as the anchor
+        if getattr(entry, "is_primary", False) and not self.is_primary:
+            self.is_primary = True
+            self.anchor_entry_id = entry.id
+            self.title = entry.title
+            self.canonical_url = entry.url
+            self.summary = entry.summary
 
         if entry.id not in self.entry_ids:
             self.entry_ids.append(entry.id)
@@ -301,4 +320,3 @@ class LLMReceipt(Entity):
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
-

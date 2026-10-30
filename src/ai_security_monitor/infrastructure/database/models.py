@@ -42,6 +42,9 @@ class SourceModel(Base):
     last_fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     last_entries_new: Mapped[int] = mapped_column(Integer, default=0)
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", index=True
+    )
     config: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
@@ -95,6 +98,9 @@ class EntryModel(Base):
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
     is_purged: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", index=True
+    )
+    is_primary: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="0", index=True
     )
     purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -301,4 +307,3 @@ class ReceiptModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-

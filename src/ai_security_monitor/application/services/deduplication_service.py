@@ -411,6 +411,9 @@ class DeduplicationService:
 
         # Create new story aggregate
         entry_ts = entry.published_at or entry.created_at or datetime.now(UTC)
+        is_pri = getattr(entry, "is_primary", False) or bool(
+            entry.metadata and entry.metadata.get("is_primary")
+        )
         new_story = Story(
             title=entry.title,
             canonical_url=canon_url,
@@ -423,6 +426,8 @@ class DeduplicationService:
             sources=[source_name] if source_name else [],
             tags=list(entry.tags),
             participant_timestamps=[entry_ts],
+            is_primary=is_pri,
+            anchor_entry_id=entry.id,
             metadata={
                 "initial_category": entry.category.value
                 if hasattr(entry.category, "value")

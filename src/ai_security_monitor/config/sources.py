@@ -38,9 +38,23 @@ class SourceConfig(BaseModel):
         default=2.0,
         description="Source credibility tier: 1.0 (Frontier Labs/Arxiv), 1.5 (Primary Tooling/Engineering), 2.0 (Community/Aggregators/Unverified)",
     )
+    is_primary: bool | None = Field(
+        default=None,
+        description="Whether this source is an official primary lab announcement",
+    )
     config: dict[str, Any] = Field(
         default_factory=dict, description="Type-specific extra config"
     )
+
+    @property
+    def primary(self) -> bool:
+        if self.is_primary is not None:
+            return self.is_primary
+        return (
+            self.tier <= 1.0
+            or self.type in ("arxiv", "github_trending")
+            or self.category in ("ai_models", "ai_research")
+        )
 
     @field_validator("tier", mode="before")
     @classmethod
