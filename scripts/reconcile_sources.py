@@ -35,17 +35,25 @@ async def reconcile(config_path: str | None = None, apply: bool = False) -> int:
 
     min_expected = 50
     if len(sources_cfg) < min_expected:
-        print(f"ERROR: YAML config has only {len(sources_cfg)} sources (< {min_expected}). Aborting reconciliation to protect catalog.")
+        print(
+            f"ERROR: YAML config has only {len(sources_cfg)} sources (< {min_expected}). Aborting reconciliation to protect catalog."
+        )
         return 1
 
     from ai_security_monitor.config.sources import load_retired_sources_from_yaml
 
     retired_cfg = load_retired_sources_from_yaml(config_path)
-    retired_names = {r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]}
-    retired_urls = {r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]}
+    retired_names = {
+        r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+    }
+    retired_urls = {
+        r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
+    }
 
     yaml_names = {s.name.strip().lower(): s for s in sources_cfg}
-    yaml_urls = {s.url.strip().lower(): s for s in sources_cfg if s.url and s.url.strip()}
+    yaml_urls = {
+        s.url.strip().lower(): s for s in sources_cfg if s.url and s.url.strip()
+    }
 
     await db_manager.init_db()
 
@@ -76,7 +84,9 @@ async def reconcile(config_path: str | None = None, apply: bool = False) -> int:
                 continue
 
             # Check if explicitly retired in YAML
-            is_retired = name_key in retired_names or (url_key and url_key in retired_urls)
+            is_retired = name_key in retired_names or (
+                url_key and url_key in retired_urls
+            )
             if is_retired:
                 if s.enabled:
                     retired_to_deactivate.append(s)
@@ -102,16 +112,22 @@ async def reconcile(config_path: str | None = None, apply: bool = False) -> int:
         print("Summary Analysis:")
         print(f"  - Active YAML sources matching:       {len(matched_active)}")
         print(f"  - User/custom-managed sources:         {len(user_managed_sources)}")
-        print(f"  - Legacy untagged sources (preserved): {len(legacy_untagged_preserved)}")
+        print(
+            f"  - Legacy untagged sources (preserved): {len(legacy_untagged_preserved)}"
+        )
         print(f"  - Already disabled orphaned sources:   {len(already_disabled)}")
         print(f"  - Explicitly retired to deactivate:    {len(retired_to_deactivate)}")
-        print(f"  - YAML-managed orphans to deactivate:  {len(yaml_orphans_to_deactivate)}")
+        print(
+            f"  - YAML-managed orphans to deactivate:  {len(yaml_orphans_to_deactivate)}"
+        )
 
         if total_to_deactivate:
             print(f"\nSources to Soft-Deactivate ({len(total_to_deactivate)}):")
             for s in sorted(total_to_deactivate, key=lambda x: x.name):
                 kind = "RETIRED" if s in retired_to_deactivate else "ORPHAN"
-                print(f"  [{kind}] {s.name} ({s.category.value}) - URL: {s.url or 'N/A'}")
+                print(
+                    f"  [{kind}] {s.name} ({s.category.value}) - URL: {s.url or 'N/A'}"
+                )
 
             if apply:
                 for s in total_to_deactivate:
@@ -122,19 +138,29 @@ async def reconcile(config_path: str | None = None, apply: bool = False) -> int:
                     s.config = cfg
                     await uow.sources.update(s)
                 await uow.commit()
-                print(f"\nSUCCESS: Soft-deactivated {len(total_to_deactivate)} sources in database.")
+                print(
+                    f"\nSUCCESS: Soft-deactivated {len(total_to_deactivate)} sources in database."
+                )
             else:
-                print(f"\nDRY-RUN COMPLETE: Run with --apply to commit these {len(total_to_deactivate)} deactivations.")
+                print(
+                    f"\nDRY-RUN COMPLETE: Run with --apply to commit these {len(total_to_deactivate)} deactivations."
+                )
         else:
-            print("\nDatabase is already in sync with YAML configuration. No deactivations needed.")
+            print(
+                "\nDatabase is already in sync with YAML configuration. No deactivations needed."
+            )
 
     return 0
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Reconcile database sources against sources.yaml")
+    parser = argparse.ArgumentParser(
+        description="Reconcile database sources against sources.yaml"
+    )
     parser.add_argument("--config", help="Path to sources.yaml", default=None)
-    parser.add_argument("--apply", action="store_true", help="Apply changes (defaults to dry-run)")
+    parser.add_argument(
+        "--apply", action="store_true", help="Apply changes (defaults to dry-run)"
+    )
     args = parser.parse_args()
 
     sys.exit(asyncio.run(reconcile(args.config, args.apply)))

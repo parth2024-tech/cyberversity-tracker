@@ -183,7 +183,9 @@ class ScopedSubstringVerifier:
                     return True, var
         return False, None
 
-    def verify_claim(self, claim_text: str, entry: Entry, claim_type: str = "numeric") -> VerifiedClaim:
+    def verify_claim(
+        self, claim_text: str, entry: Entry, claim_type: str = "numeric"
+    ) -> VerifiedClaim:
         """Verify an isolated numeric or benchmark claim against source entry text."""
         corpus = extract_grounding_corpus(entry)
         corpus_norm = normalize_text(corpus)
@@ -220,12 +222,16 @@ class ScopedSubstringVerifier:
             score_val = str(item.get("score", "")).strip()
 
             # Check benchmark name
-            bench_ok, bench_match = self.check_substring_presence(bench_name, corpus_norm)
+            bench_ok, bench_match = self.check_substring_presence(
+                bench_name, corpus_norm
+            )
 
             # Check individual sub-benchmarks if name is composite (e.g. "AIME 2024 / MATH-500")
             if not bench_ok and "/" in bench_name:
                 for sub in bench_name.split("/"):
-                    sub_ok, sub_match = self.check_substring_presence(sub.strip(), corpus_norm)
+                    sub_ok, sub_match = self.check_substring_presence(
+                        sub.strip(), corpus_norm
+                    )
                     if sub_ok:
                         bench_ok = True
                         bench_match = sub_match
@@ -235,9 +241,15 @@ class ScopedSubstringVerifier:
             score_ok, score_match = False, None
             if score_val:
                 # Extract primary numeric value from score string (e.g. "79.8%" from "79.8% (Pass@1)")
-                num_match = re.search(r"\d+(?:\.\d+)?(?:\s*%|\s*x|\s*b|\s*tflops)?", score_val, re.IGNORECASE)
+                num_match = re.search(
+                    r"\d+(?:\.\d+)?(?:\s*%|\s*x|\s*b|\s*tflops)?",
+                    score_val,
+                    re.IGNORECASE,
+                )
                 if num_match:
-                    score_ok, score_match = self.check_substring_presence(num_match.group(0), corpus_norm)
+                    score_ok, score_match = self.check_substring_presence(
+                        num_match.group(0), corpus_norm
+                    )
 
             # A claim is verified if either the benchmark is explicitly cited or its exact numeric score is grounded
             if bench_ok or score_ok:

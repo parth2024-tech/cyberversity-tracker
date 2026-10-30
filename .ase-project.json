@@ -1,6 +1,7 @@
 {
   "name": "ai-security-monitor",
   "version": "1.0.0",
+  "validation_timeout_ms": 120000,
   "description": "Enterprise-grade real-time AI security intelligence, zero-day threat monitoring, and autonomous LLM triage system.",
   "tech_stack": [
     "Python 3.12",
@@ -39,6 +40,7 @@
       "tests/unit",
       "tests/test_high_recall_architecture.py"
     ],
+    "validation_timeout_ms": 120000,
     "patterns": [
       "Unit tests for heuristic and blast radius analyzers",
       "Unit tests for delivery channels (email, telegram, slack, console)",

@@ -279,6 +279,10 @@ class FetchLogRepository(ABC):
         """Purge fetch logs older than retention window."""
         return 0
 
+    async def get_last_productive_at(self, source_id: UUID) -> datetime | None:
+        """Get the timestamp of the most recent sweep that produced entries_new > 0."""
+        return None
+
 
 class DigestRepository(ABC):
     """Repository for Digest entities."""
@@ -356,4 +360,3 @@ class LLMReceiptRepository(ABC):
     ) -> LLMReceipt:
         """Record failed execution."""
         ...
-

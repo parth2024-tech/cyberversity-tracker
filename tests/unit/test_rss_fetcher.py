@@ -333,3 +333,42 @@ async def test_rss_fetcher_records_304_not_modified():
     assert fetcher._last_http_status == 304
     assert "last_http_status" not in (source.config or {})
 
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status_code", [404, 403, 500])
+async def test_rss_fetcher_non_2xx_returns_error(status_code: int):
+    """Verify non-2xx HTTP responses raise status errors and result in FetchStatus.ERROR."""
+    import httpx
+
+    from ai_security_monitor.domain.entities import FetchStatus
+
+    source = Source(
+        id=uuid4(),
+        name="Error Feed",
+        category=Category.AI_RESEARCH,
+        type=SourceType.RSS,
+        url="https://example.com/error-feed.xml",
+        rate_limit_seconds=0,
+    )
+    mock_response = MagicMock()
+    mock_response.status_code = status_code
+    req = httpx.Request("GET", source.url)
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        f"Server error {status_code}", request=req, response=mock_response
+    )
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "ai_security_monitor.infrastructure.fetchers.rss_fetcher.httpx.AsyncClient",
+        return_value=mock_client,
+    ):
+        fetcher = RSSFetcher(source)
+        res = await fetcher.fetch()
+
+    assert res.status == FetchStatus.ERROR
+    assert res.entries == []
+    assert str(status_code) in (res.error_message or "")

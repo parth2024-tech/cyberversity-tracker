@@ -140,10 +140,9 @@ class RSSFetcher(BaseFetcher):
         has_feed_marker = any(
             marker in first_1000 for marker in (b"<rss", b"<feed", b"<rdf:rdf")
         )
-        is_html_markup = (
-            first_1000.startswith((b"<!doctype html", b"<html", b"<!doctypehtml"))
-            or (b"<html" in first_1000 and not has_feed_marker)
-        )
+        is_html_markup = first_1000.startswith(
+            (b"<!doctype html", b"<html", b"<!doctypehtml")
+        ) or (b"<html" in first_1000 and not has_feed_marker)
         is_html_type = ct_header in ("text/html", "application/xhtml+xml")
         if (is_html_type or is_html_markup) and not has_feed_marker:
             raise RuntimeError(

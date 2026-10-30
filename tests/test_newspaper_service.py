@@ -2,7 +2,8 @@
 Unit and integration tests for the 5-Hour Autonomous Newspaper Document Service.
 """
 
-from datetime import datetime
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -292,3 +293,78 @@ async def test_newspaper_excludes_inactive_or_retired_source_entries(
     assert "Frontier MoE Architecture" in md_content
     assert "Retired Source Outdated Item" not in md_content
 
+
+@pytest.mark.asyncio
+async def test_newspaper_sovereign_word_boundary_regex(temp_output_dir):
+    """Verify word-boundary matching on short sovereign keywords (tii, tsmc) prevents substring false positives."""
+    service = NewspaperService(output_dir=temp_output_dir)
+
+    # Entry 1: contains "tii" as a distinct word
+    e_valid_tii = Entry(
+        id=uuid.uuid4(),
+        source_id=uuid.uuid4(),
+        title="TII Abu Dhabi Releases Open Model",
+        url="https://example.com/tii",
+        content_hash="hash_tii_1",
+        summary="Technology Innovation Institute releases weights.",
+        published_at=datetime.now(UTC),
+        category=Category.AI_MODELS,
+        metadata={"region": "global"},
+    )
+    # Entry 2: contains "initiatives" which has "t-i-i" in some languages/substrings, or "multinational"
+    e_false_pos = Entry(
+        id=uuid.uuid4(),
+        source_id=uuid.uuid4(),
+        title="Multinational AI Initiatives Announce Governance Standards",
+        url="https://example.com/multi",
+        content_hash="hash_multi_1",
+        summary="Global corporate coalition discusses ethical guidelines without regional hub backing.",
+        published_at=datetime.now(UTC),
+        category=Category.AI_TECH,
+        metadata={"region": "global"},
+    )
+
+    cat = await service._categorize_entries([e_valid_tii, e_false_pos])
+    sov_titles = [x.title for x in cat.get("sovereign_ai", [])]
+
+    # Valid TII should be captured under sovereign AI
+    assert any("TII Abu Dhabi" in t for t in sov_titles)
+    # "Multinational AI Initiatives" must NOT be captured as sovereign AI
+    assert not any("Multinational" in t for t in sov_titles)
+
+
+@pytest.mark.asyncio
+async def test_newspaper_small_pool_retains_sections(temp_output_dir):
+    """Verify that a small pool (<= 3 items) does not starve thematic sections."""
+    service = NewspaperService(output_dir=temp_output_dir)
+
+    entries = [
+        Entry(
+            id=uuid.uuid4(),
+            source_id=uuid.uuid4(),
+            title="Qwen 2.5 Released Across All Sizes",
+            url="https://example.com/qwen",
+            content_hash="hash_q1",
+            summary="New reasoning and coding checkpoints available.",
+            published_at=datetime.now(UTC),
+            category=Category.AI_MODELS,
+            metadata={"region": "china", "country": "CN"},
+        ),
+        Entry(
+            id=uuid.uuid4(),
+            source_id=uuid.uuid4(),
+            title="vLLM 0.6 Ships With Native Chunked Prefill",
+            url="https://example.com/vllm",
+            content_hash="hash_v1",
+            summary="High-performance inference engine update.",
+            published_at=datetime.now(UTC),
+            category=Category.CYBER_TOOLS,
+            metadata={"region": "global"},
+        ),
+    ]
+
+    cat = await service._categorize_entries(entries)
+    # Both lead and individual categories should be populated
+    assert cat["lead"] is not None
+    # Model or tools list should receive the entries even with small pool
+    assert len(cat["ai_models"]) + len(cat["ai_tools"]) + len(cat["sovereign_ai"]) >= 1

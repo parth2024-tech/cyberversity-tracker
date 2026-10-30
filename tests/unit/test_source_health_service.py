@@ -139,3 +139,24 @@ def test_source_health_http_304_not_modified_does_not_increment_streak():
     assert svc.get_source_health("Active Feed")["zero_entry_streak"] == 0
     assert svc.get_source_health("Active Feed")["status"] == "healthy"
 
+
+def test_source_health_last_productive_at_tracking():
+    svc = SourceHealthService()
+
+    # Initial state: no runs -> None
+    metrics = svc._get_or_create("Productive Feed")
+    assert metrics.last_productive_at is None
+    assert svc.get_source_health("Productive Feed")["last_productive_at"] is None
+
+    # Sweep with entries_new = 0 does NOT update last_productive_at
+    svc.record_success(source_name="Productive Feed", duration_ms=100, entries_new=0)
+    assert svc.get_source_health("Productive Feed")["last_productive_at"] is None
+
+    # Sweep with entries_new > 0 updates last_productive_at
+    svc.record_success(source_name="Productive Feed", duration_ms=150, entries_new=7)
+    first_prod = svc.get_source_health("Productive Feed")["last_productive_at"]
+    assert first_prod is not None
+
+    # Subsequent sweep with entries_new = 0 keeps previous last_productive_at
+    svc.record_success(source_name="Productive Feed", duration_ms=80, entries_new=0)
+    assert svc.get_source_health("Productive Feed")["last_productive_at"] == first_prod

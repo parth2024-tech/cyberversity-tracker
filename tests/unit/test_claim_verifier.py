@@ -15,7 +15,9 @@ from ai_security_monitor.application.services.claim_verifier import (
 from ai_security_monitor.domain.entities import Category, Entry
 
 
-def make_entry_with_text(title: str, summary: str, metadata: dict | None = None) -> Entry:
+def make_entry_with_text(
+    title: str, summary: str, metadata: dict | None = None
+) -> Entry:
     return Entry(
         id=uuid4(),
         source_id=uuid4(),
