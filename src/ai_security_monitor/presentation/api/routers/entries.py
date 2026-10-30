@@ -484,7 +484,9 @@ async def query_serialized_entries(
                 "metadata": e.metadata,
                 "heat_score": heat_val,
                 "heat_badge": heat_bdg,
-                "story_id": str(e.story_id) if getattr(e, "story_id", None) else meta_dict.get("story_id"),
+                "story_id": str(e.story_id)
+                if getattr(e, "story_id", None)
+                else meta_dict.get("story_id"),
                 "is_important": is_imp,
                 "importance_reason": meta_dict.get("importance_reason"),
                 "user_notes": meta_dict.get("user_notes", ""),
@@ -521,7 +523,9 @@ async def query_serialized_entries(
         )
 
     if sort_by == "heat":
-        serialized_entries.sort(key=lambda item: float(item.get("heat_score", 0.0)), reverse=True)
+        serialized_entries.sort(
+            key=lambda item: float(item.get("heat_score", 0.0)), reverse=True
+        )
 
     # Enforce source diversity and impartiality across entries
     serialized_entries = interleave_impartial(serialized_entries, max_consecutive=2)

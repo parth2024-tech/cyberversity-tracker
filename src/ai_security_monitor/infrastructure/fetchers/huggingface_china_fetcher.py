@@ -125,8 +125,9 @@ class HuggingFaceChinaFetcher(BaseFetcher):
                         if isinstance(items, list):
                             for it in items:
                                 m_id = it.get("id") or it.get("modelId") or ""
-                                if filter_quantizations and self._is_derivative_or_quantization(
-                                    m_id
+                                if (
+                                    filter_quantizations
+                                    and self._is_derivative_or_quantization(m_id)
                                 ):
                                     continue
                                 it["_tracked_author"] = author

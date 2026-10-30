@@ -177,9 +177,7 @@ async def test_llm_analyzer_receipt_cache_reuse():
     }
 
     # First call: LLM provider is invoked
-    with patch.object(
-        analyzer, "_call_ollama", new_callable=AsyncMock
-    ) as mock_ollama:
+    with patch.object(analyzer, "_call_ollama", new_callable=AsyncMock) as mock_ollama:
         mock_ollama.return_value = mock_llm_response
 
         res1 = await analyzer.analyze(entry)

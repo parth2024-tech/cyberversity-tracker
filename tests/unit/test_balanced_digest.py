@@ -86,14 +86,18 @@ def test_balanced_digest_default_quotas_caps_source_spam():
         make_entry(f"Spam Repo {i}", Category.GITHUB_TRENDING, score=100)
         for i in range(20)
     ]
-    entries.extend([
-        make_entry(f"Frontier Model {i}", Category.AI_MODELS, score=80)
-        for i in range(5)
-    ])
-    entries.extend([
-        make_entry(f"Research Paper {i}", Category.AI_RESEARCH, score=70)
-        for i in range(5)
-    ])
+    entries.extend(
+        [
+            make_entry(f"Frontier Model {i}", Category.AI_MODELS, score=80)
+            for i in range(5)
+        ]
+    )
+    entries.extend(
+        [
+            make_entry(f"Research Paper {i}", Category.AI_RESEARCH, score=70)
+            for i in range(5)
+        ]
+    )
 
     result = service.balance(entries)
     assert result.total_eligible == 30
@@ -188,15 +192,29 @@ def test_balanced_digest_diagnostics_tracking():
     )
 
     # 1 item dropped by tier (T2 score 50 < 70)
-    tier_dropped = make_entry("Tier Drop", Category.AI_MODELS, score=50, source_name="Feed A", source_tier=2.0)
+    tier_dropped = make_entry(
+        "Tier Drop", Category.AI_MODELS, score=50, source_name="Feed A", source_tier=2.0
+    )
     # 3 items from Feed B (T1 score 80 >= 55). Cap is 2 -> 1 dropped by source cap
     feed_b = [
-        make_entry(f"Feed B Item {i}", Category.AI_MODELS, score=80, source_name="Feed B", source_tier=1.0)
+        make_entry(
+            f"Feed B Item {i}",
+            Category.AI_MODELS,
+            score=80,
+            source_name="Feed B",
+            source_tier=1.0,
+        )
         for i in range(3)
     ]
     # 2 items from Feed C (T1 score 75 >= 55). But quota for Models is 2 (already filled by Feed B 2 items) -> dropped by quota
     feed_c = [
-        make_entry(f"Feed C Item {i}", Category.AI_MODELS, score=75, source_name="Feed C", source_tier=1.0)
+        make_entry(
+            f"Feed C Item {i}",
+            Category.AI_MODELS,
+            score=75,
+            source_name="Feed C",
+            source_tier=1.0,
+        )
         for i in range(2)
     ]
 
@@ -213,5 +231,3 @@ def test_balanced_digest_diagnostics_tracking():
     assert result.dropped_count == 4
     assert result.tier_counts[1.0] == 2
     assert result.source_counts["Feed B"] == 2
-
-

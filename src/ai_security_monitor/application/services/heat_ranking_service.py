@@ -35,9 +35,7 @@ class HeatRankingService:
         delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
         return round(0.5 ** (delta_hours / self.half_life_hours), 4)
 
-    def calculate_story_heat(
-        self, story: Story, now: datetime | None = None
-    ) -> float:
+    def calculate_story_heat(self, story: Story, now: datetime | None = None) -> float:
         """Compute aggregate heat for a story cluster across all participant timestamps."""
         ref_time = now or datetime.now(UTC)
         return story.calculate_heat(now=ref_time, half_life_hours=self.half_life_hours)
@@ -56,7 +54,9 @@ class HeatRankingService:
         ref_time = now or datetime.now(UTC)
 
         if story:
-            heat = story.calculate_heat(now=ref_time, half_life_hours=self.half_life_hours)
+            heat = story.calculate_heat(
+                now=ref_time, half_life_hours=self.half_life_hours
+            )
             story_badge = story.update_badge(now=ref_time)
             return heat, story_badge
 
@@ -67,7 +67,9 @@ class HeatRankingService:
         # Standalone badge evaluation:
         # NOTE: 'surge' strictly requires at least 2 unique corroborating sources, so single entries cannot surge.
         ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
-        ref_aware = ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+        ref_aware = (
+            ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+        )
         delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
 
         badge: str | None = None

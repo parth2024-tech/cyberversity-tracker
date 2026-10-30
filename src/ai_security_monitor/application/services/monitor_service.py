@@ -282,7 +282,9 @@ class MonitorService:
             # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
             retired_cfg = load_retired_sources_from_yaml(config_path)
             retired_names = {
-                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+                r["name"].strip().lower()
+                for r in retired_cfg
+                if "name" in r and r["name"]
             }
             retired_urls = {
                 r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]

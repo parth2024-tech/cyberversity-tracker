@@ -159,7 +159,10 @@ class TopicRelevanceSignal(ScoringSignal):
 
         # 1. Epistemic Slop & Wrapper Penalty Gate
         if self.SLOP_WRAPPER_PATTERNS.search(text):
-            return 0.10, "Filtered: Low-effort prompt wrapper / star-farmed list / crypto bot"
+            return (
+                0.10,
+                "Filtered: Low-effort prompt wrapper / star-farmed list / crypto bot",
+            )
 
         # 2. Frontier Breakthroughs and Architectural Innovations
         if self.REASONING_PATTERNS.search(text):

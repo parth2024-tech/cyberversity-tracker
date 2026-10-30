@@ -144,4 +144,3 @@ async def test_arxiv_fetcher_stamps_regional_metadata():
     assert raw[0]["metadata"]["country"] == "IN"
     assert raw[1]["metadata"]["region"] == "south_asia"
     assert raw[1]["metadata"]["country"] == "IN"
-
