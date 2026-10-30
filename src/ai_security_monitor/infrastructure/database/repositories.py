@@ -19,6 +19,8 @@ from sqlalchemy.orm import selectinload
 from ai_security_monitor.domain.entities import (
     Analysis,
     AnalysisModel,
+    AuditResult,
+    AuditStory,
     Category,
     Digest,
     Entry,
@@ -34,6 +36,7 @@ from ai_security_monitor.domain.exceptions import (
 )
 from ai_security_monitor.domain.repositories import (
     AnalysisRepository,
+    AuditRepository,
     DigestRepository,
     EntryFilters,
     EntryRepository,
@@ -47,6 +50,8 @@ from ai_security_monitor.infrastructure.database.models import (
     AnalysisModel as AnalysisModelDB,
 )
 from ai_security_monitor.infrastructure.database.models import (
+    AuditResultModel,
+    AuditStoryModel,
     DigestModel,
     EntryModel,
     FetchLogModel,
@@ -1557,3 +1562,119 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
+
+class SQLAlchemyAuditRepository(AuditRepository):
+    """SQLAlchemy implementation of AuditRepository for benchmark stories and audit evaluations."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    def _story_model_to_entity(self, model: AuditStoryModel) -> AuditStory:
+        return AuditStory(
+            id=_str_to_uuid(model.id),
+            title=model.title,
+            lab_name=model.lab_name,
+            region=model.region,
+            release_date=model.release_date,
+            canonical_url=model.canonical_url,
+            model_names=model.model_names or [],
+            org_tokens=model.org_tokens or [],
+            added_by=model.added_by,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
+    def _result_model_to_entity(self, model: AuditResultModel) -> AuditResult:
+        return AuditResult(
+            id=_str_to_uuid(model.id),
+            story_id=_str_to_uuid(model.story_id),
+            run_at=model.run_at,
+            captured=model.captured,
+            first_seen_at=model.first_seen_at,
+            lag_hours=model.lag_hours,
+            matched_entry_id=_str_to_uuid(model.matched_entry_id)
+            if model.matched_entry_id
+            else None,
+            matched_source=model.matched_source,
+            match_method=model.match_method,
+            diagnostic=model.diagnostic,
+            created_at=model.created_at,
+        )
+
+    async def list_stories(
+        self, since: datetime | None = None, region: str | None = None
+    ) -> list[AuditStory]:
+        stmt = select(AuditStoryModel).order_by(AuditStoryModel.release_date.desc())
+        if since:
+            since_naive = since.replace(tzinfo=None) if since.tzinfo else since
+            stmt = stmt.where(
+                or_(
+                    AuditStoryModel.release_date >= since,
+                    AuditStoryModel.release_date >= since_naive,
+                )
+            )
+        if region:
+            stmt = stmt.where(
+                func.lower(AuditStoryModel.region) == region.lower().strip()
+            )
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+        return [self._story_model_to_entity(m) for m in models]
+
+    async def get_story(self, story_id: UUID) -> AuditStory | None:
+        stmt = select(AuditStoryModel).where(
+            AuditStoryModel.id == _uuid_to_str(story_id)
+        )
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._story_model_to_entity(model) if model else None
+
+    async def add_story(self, story: AuditStory) -> AuditStory:
+        model = AuditStoryModel(
+            id=_uuid_to_str(story.id),
+            title=story.title,
+            lab_name=story.lab_name,
+            region=story.region,
+            release_date=story.release_date,
+            canonical_url=story.canonical_url,
+            model_names=story.model_names or [],
+            org_tokens=story.org_tokens or [],
+            added_by=story.added_by,
+            created_at=story.created_at,
+            updated_at=story.updated_at,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return self._story_model_to_entity(model)
+
+    async def record_result(self, result: AuditResult) -> AuditResult:
+        model = AuditResultModel(
+            id=_uuid_to_str(result.id),
+            story_id=_uuid_to_str(result.story_id),
+            run_at=result.run_at,
+            captured=result.captured,
+            first_seen_at=result.first_seen_at,
+            lag_hours=result.lag_hours,
+            matched_entry_id=_uuid_to_str(result.matched_entry_id)
+            if result.matched_entry_id
+            else None,
+            matched_source=result.matched_source,
+            match_method=result.match_method,
+            diagnostic=result.diagnostic,
+            created_at=result.created_at,
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return self._result_model_to_entity(model)
+
+    async def get_latest_results(self, limit: int = 100) -> list[AuditResult]:
+        stmt = (
+            select(AuditResultModel)
+            .order_by(
+                AuditResultModel.run_at.desc(), AuditResultModel.created_at.desc()
+            )
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+        return [self._result_model_to_entity(m) for m in models]

@@ -14,6 +14,8 @@ from uuid import UUID
 
 from ai_security_monitor.domain.entities import (
     Analysis,
+    AuditResult,
+    AuditStory,
     Category,
     Digest,
     Entry,
@@ -357,3 +359,33 @@ class LLMReceiptRepository(ABC):
         """Record failed execution."""
         ...
 
+
+class AuditRepository(ABC):
+    """Repository for AuditStory and AuditResult persistence."""
+
+    @abstractmethod
+    async def list_stories(
+        self, since: datetime | None = None, region: str | None = None
+    ) -> list[AuditStory]:
+        """List active benchmark audit stories."""
+        ...
+
+    @abstractmethod
+    async def get_story(self, story_id: UUID) -> AuditStory | None:
+        """Get an audit story by ID."""
+        ...
+
+    @abstractmethod
+    async def add_story(self, story: AuditStory) -> AuditStory:
+        """Add a benchmark audit story."""
+        ...
+
+    @abstractmethod
+    async def record_result(self, result: AuditResult) -> AuditResult:
+        """Record an evaluation result for a story."""
+        ...
+
+    @abstractmethod
+    async def get_latest_results(self, limit: int = 100) -> list[AuditResult]:
+        """Get recent audit results."""
+        ...
