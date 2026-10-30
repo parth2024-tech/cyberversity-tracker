@@ -6,6 +6,7 @@ from ai_security_monitor.presentation.api.routers.analysis import analysis_route
 from ai_security_monitor.presentation.api.routers.audio import audio_router
 from ai_security_monitor.presentation.api.routers.backup import backup_router
 from ai_security_monitor.presentation.api.routers.china import china_router
+from ai_security_monitor.presentation.api.routers.coverage import coverage_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router
 from ai_security_monitor.presentation.api.routers.entries import entries_router
 from ai_security_monitor.presentation.api.routers.feed import feed_router
@@ -31,5 +32,6 @@ __all__ = [
     "backup_router",
     "vault_router",
     "china_router",
+    "coverage_router",
     "feed_router",
 ]

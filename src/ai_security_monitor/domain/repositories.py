@@ -18,6 +18,7 @@ from ai_security_monitor.domain.entities import (
     Digest,
     Entry,
     FetchLog,
+    Lab,
     LLMReceipt,
     Source,
 )
@@ -356,4 +357,39 @@ class LLMReceiptRepository(ABC):
     ) -> LLMReceipt:
         """Record failed execution."""
         ...
+
+
+class LabRepository(ABC):
+    """Repository interface for Frontier AI Labs."""
+
+    @abstractmethod
+    async def get(self, lab_id: UUID) -> Lab | None:
+        """Get lab by ID."""
+        ...
+
+    @abstractmethod
+    async def get_by_name(self, name: str) -> Lab | None:
+        """Get lab by name."""
+        ...
+
+    @abstractmethod
+    async def list(self, region: str | None = None) -> list[Lab]:
+        """List labs, optionally filtered by region."""
+        ...
+
+    @abstractmethod
+    async def create(self, lab: Lab) -> Lab:
+        """Create new lab."""
+        ...
+
+    @abstractmethod
+    async def update(self, lab: Lab) -> Lab:
+        """Update existing lab."""
+        ...
+
+    @abstractmethod
+    async def delete(self, lab_id: UUID) -> bool:
+        """Delete lab by ID."""
+        ...
+
 

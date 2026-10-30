@@ -178,6 +178,48 @@ def sources():
 
 
 @app.command()
+def coverage(
+    region: str | None = typer.Option(
+        None, "--region", "-r", help="Filter coverage report by region (e.g. china, us, europe)"
+    ),
+    format: str = typer.Option(
+        "table", "--format", "-f", help="Output format: table (markdown/rich) or json"
+    ),
+    backfill: bool = typer.Option(
+        False, "--backfill", "-b", help="Backfill lab tags on existing database entries before reporting"
+    ),
+):
+    """Generate regional and frontier AI lab coverage report."""
+    import json
+
+    from ai_security_monitor.application.services.coverage_service import (
+        coverage_service,
+    )
+
+    async def _run():
+        await db_manager.init_db()
+        async with db_manager.session() as session:
+            if backfill:
+                tagged = await coverage_service.backfill_entry_labs(session)
+                await session.commit()
+                console.print(f"[bold green]✓ Successfully tagged {tagged} entries with frontier AI labs.[/bold green]")
+
+            report = await coverage_service.generate_coverage_report(
+                session, target_region=region
+            )
+            await session.commit()
+
+        if format.lower() == "json":
+            console.print(json.dumps(report, indent=2, default=str))
+        else:
+            console.print(report.get("markdown_report", ""))
+
+        await db_manager.close()
+
+    asyncio.run(_run())
+
+
+@app.command()
 def mcp():
     """Launch Model Context Protocol (MCP) server over stdio for AI coding assistants."""
     from ai_security_monitor.presentation.mcp.server import run_stdio_server
