@@ -1220,6 +1220,7 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
             status=log.status.value,
             entries_new=log.entries_new,
             entries_total=log.entries_total,
+            entries_filtered=log.entries_filtered,
             error_message=log.error_message,
             duration_ms=log.duration_ms,
             fetched_at=log.fetched_at,
@@ -1269,6 +1270,7 @@ class SQLAlchemyFetchLogRepository(FetchLogRepository):
             status=FetchStatus(model.status),
             entries_new=model.entries_new,
             entries_total=model.entries_total,
+            entries_filtered=getattr(model, "entries_filtered", 0),
             error_message=model.error_message,
             duration_ms=model.duration_ms,
             fetched_at=model.fetched_at,
@@ -1556,4 +1558,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-

@@ -419,6 +419,63 @@
     </div>
   </div>
 
+  <!-- MODAL: No-Slop Filter Log & Real-Time Evaluator -->
+  <div id="filter-log-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-white/[0.1] shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+            <i data-lucide="filter-x" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-white">No-Slop Ingestion Filter Log</h2>
+            <p class="text-xs text-slate-400 font-sans">Audit trail of roundups, clickbait, and omitted topics dropped before entering the pipeline (7-day TTL)</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="loadFilterLog()" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 font-mono text-xs flex items-center gap-1.5 transition">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Refresh</span>
+          </button>
+          <button onclick="closeFilterLogModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Tester Banner -->
+      <div class="mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center gap-3">
+        <input type="text" id="filter-eval-input" placeholder="Test headline or release title against rules..." class="glass-input flex-1 px-3 py-1.5 text-xs font-mono text-slate-200">
+        <button onclick="testSlopFilterHeadline()" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-mono text-xs transition">
+          Test Rules
+        </button>
+        <span id="filter-eval-result" class="text-xs font-mono text-slate-400"></span>
+      </div>
+
+      <!-- Filter Breakdown Stats -->
+      <div id="filter-stats-bar" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Filtered Items List -->
+      <div class="flex items-center justify-between mt-3 text-xs font-mono text-slate-400">
+        <span>Recent Filtered Items (Last 100)</span>
+        <select id="filter-reason-select" onchange="loadFilterLog()" class="glass-input px-2 py-1 text-xs text-slate-300">
+          <option value="">All Rejection Reasons</option>
+          <option value="roundup">Roundups & Digests</option>
+          <option value="promotional">Promotional Clickbait</option>
+          <option value="social_reaction">Social Reaction</option>
+          <option value="aggregator_launch">Product Hunt / Launch Spam</option>
+          <option value="security_cve_omitted">Cybersecurity Omitted</option>
+        </select>
+      </div>
+
+      <div id="filter-log-list" class="overflow-y-auto mt-2 pr-1 space-y-2 flex-1">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Telegram Dispatcher -->
   <div id="telegram-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-md rounded-2xl p-6 relative border border-white/[0.1] shadow-2xl">
@@ -817,6 +874,12 @@
     <button class="sidebar-btn" onclick="openSourcesModal()" title="">
       <i data-lucide="radio" class="w-4 h-4"></i>
       <span class="sidebar-tooltip">Global Feeds (<span id="sidebar-sources-count">—</span>)</span>
+    </button>
+
+    <!-- No-Slop Filter Log -->
+    <button class="sidebar-btn" id="sidebar-filter-btn" onclick="openFilterLogModal()" title="">
+      <i data-lucide="filter-x" class="w-4 h-4 text-amber-400"></i>
+      <span class="sidebar-tooltip">No-Slop Filter Log</span>
     </button>
 
     <!-- Telegram -->
@@ -3027,6 +3090,110 @@
 
     function closeSourcesModal() {
       document.getElementById('sources-modal').classList.add('hidden');
+    }
+
+    // No-Slop Filter Log Modal Management
+    async function openFilterLogModal() {
+      document.getElementById('filter-log-modal').classList.remove('hidden');
+      playBeep('click');
+      await loadFilterLog();
+    }
+
+    function closeFilterLogModal() {
+      document.getElementById('filter-log-modal').classList.add('hidden');
+    }
+
+    async function loadFilterLog() {
+      const listEl = document.getElementById('filter-log-list');
+      const statsEl = document.getElementById('filter-stats-bar');
+      const reasonSelect = document.getElementById('filter-reason-select');
+      const reasonVal = reasonSelect ? reasonSelect.value : '';
+      listEl.innerHTML = '<p class="text-xs text-slate-400 font-mono py-4 text-center">Loading filter audit log...</p>';
+
+      try {
+        const [statsRes, logsRes] = await Promise.all([
+          fetch('/api/filter-log/stats'),
+          fetch(`/api/filter-log?limit=100${reasonVal ? '&reason=' + encodeURIComponent(reasonVal) : ''}`)
+        ]);
+
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          statsEl.innerHTML = `
+            <div class="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center">
+              <div class="text-[10px] text-slate-400 uppercase font-mono">7-Day Dropped</div>
+              <div class="text-sm font-bold text-white font-mono">${stats.total_filtered_7d || 0}</div>
+            </div>
+            <div class="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center">
+              <div class="text-[10px] text-slate-400 uppercase font-mono">Roundups</div>
+              <div class="text-sm font-bold text-amber-400 font-mono">${(stats.by_reason && stats.by_reason.roundup) || 0}</div>
+            </div>
+            <div class="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center">
+              <div class="text-[10px] text-slate-400 uppercase font-mono">Clickbait</div>
+              <div class="text-sm font-bold text-rose-400 font-mono">${(stats.by_reason && stats.by_reason.promotional) || 0}</div>
+            </div>
+            <div class="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center">
+              <div class="text-[10px] text-slate-400 uppercase font-mono">Security Omitted</div>
+              <div class="text-sm font-bold text-sky-400 font-mono">${(stats.by_reason && stats.by_reason.security_cve_omitted) || 0}</div>
+            </div>
+          `;
+        }
+
+        if (logsRes.ok) {
+          const logs = await logsRes.json();
+          if (!logs.length) {
+            listEl.innerHTML = '<p class="text-xs text-slate-500 font-mono py-6 text-center">No slop items currently in 7-day retention log.</p>';
+            return;
+          }
+          listEl.innerHTML = logs.map(item => `
+            <div class="p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] flex items-center justify-between gap-3 text-xs">
+              <div class="min-w-0 flex-1">
+                <div class="font-medium text-slate-200 truncate">${escapeHtml(item.title)}</div>
+                <div class="text-[11px] text-slate-400 font-mono flex items-center gap-2 mt-0.5">
+                  <span class="text-slate-300 font-medium">${escapeHtml(item.source_name)}</span>
+                  <span>•</span>
+                  <span>${item.filtered_at ? item.filtered_at.slice(0, 16).replace('T', ' ') : ''}</span>
+                  ${item.matched_pattern ? `<span class="text-amber-400/80 font-mono">Pattern: "${escapeHtml(item.matched_pattern)}"</span>` : ''}
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase font-semibold ${
+                item.reason === 'roundup' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' :
+                item.reason === 'promotional' ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' :
+                item.reason === 'security_cve_omitted' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' :
+                'bg-slate-500/15 text-slate-300 border border-slate-500/30'
+              }">${escapeHtml(item.reason.replace(/_/g, ' '))}</span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        listEl.innerHTML = `<p class="text-xs text-rose-400 font-mono py-4 text-center">Failed to load filter log: ${err.message}</p>`;
+      }
+      lucide.createIcons();
+    }
+
+    async function testSlopFilterHeadline() {
+      const input = document.getElementById('filter-eval-input');
+      const resEl = document.getElementById('filter-eval-result');
+      const title = (input.value || '').trim();
+      if (!title) return;
+
+      resEl.textContent = 'Evaluating...';
+      try {
+        const resp = await fetch('/api/filter-log/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: title })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.is_slop) {
+            resEl.innerHTML = `<span class="text-rose-400 font-bold">DROPPED: ${data.reason}</span> <span class="text-slate-400">("${data.matched_pattern}")</span>`;
+          } else {
+            resEl.innerHTML = `<span class="text-emerald-400 font-bold">PASS: Legitimate AI intelligence</span>`;
+          }
+        }
+      } catch (e) {
+        resEl.textContent = 'Evaluation error';
+      }
     }
 
     // (The Global AI Gazette autonomous broadsheet & dispatch engine extracted to /js/gazette.js)

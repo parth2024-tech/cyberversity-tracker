@@ -8,6 +8,7 @@ import asyncio
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -241,7 +242,9 @@ class MonitorService:
             # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
             retired_cfg = load_retired_sources_from_yaml(config_path)
             retired_names = {
-                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+                r["name"].strip().lower()
+                for r in retired_cfg
+                if "name" in r and r["name"]
             }
             retired_urls = {
                 r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
@@ -313,6 +316,8 @@ class MonitorService:
         start_time = datetime.now(UTC)
         new_entries_count = 0
         entries_total = 0
+        entries_filtered_count = 0
+        dropped_items: list[tuple[Any, Any]] = []
         status = FetchStatus.SUCCESS
         error_msg = None
 
@@ -359,6 +364,26 @@ class MonitorService:
                             continue
                     fresh_entries.append(e)
                 new_raw_entries = fresh_entries
+
+            # No-Slop Ingestion Filter: Drop roundups, promotional clickbait, and omitted topics
+            from ai_security_monitor.application.services.no_slop_filter import (
+                no_slop_filter,
+            )
+
+            clean_entries = []
+            for candidate in new_raw_entries:
+                decision = no_slop_filter.evaluate(
+                    title=candidate.title,
+                    summary=candidate.summary or "",
+                    url=candidate.url or "",
+                )
+                if decision.is_slop:
+                    dropped_items.append((candidate, decision))
+                else:
+                    clean_entries.append(candidate)
+
+            entries_filtered_count = len(dropped_items)
+            new_raw_entries = clean_entries
 
             # Cross-Source Deduplication & Story Clustering
             from ai_security_monitor.application.services.deduplication_service import (
@@ -898,6 +923,7 @@ class MonitorService:
             status=status,
             entries_new=new_entries_count,
             entries_total=entries_total,
+            entries_filtered=entries_filtered_count,
             error_message=error_msg,
             duration_ms=duration_ms,
             fetched_at=datetime.now(UTC),
@@ -913,6 +939,25 @@ class MonitorService:
             except Exception as update_err:
                 logger.debug(f"Failed to update source telemetry: {update_err}")
             await uow.fetch_logs.add(log)
+            if dropped_items:
+                from ai_security_monitor.application.services.no_slop_filter import (
+                    no_slop_filter,
+                )
+
+                for dropped_entry, decision in dropped_items:
+                    try:
+                        await no_slop_filter.record_filtered_item(
+                            session=uow.session,
+                            source_id=str(source.id),
+                            source_name=source.name,
+                            title=dropped_entry.title,
+                            url=dropped_entry.url,
+                            decision=decision,
+                        )
+                    except Exception as drop_rec_err:
+                        logger.debug(
+                            f"Failed to record dropped item audit trail: {drop_rec_err}"
+                        )
             await uow.commit()
 
         return log
