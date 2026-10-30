@@ -8,7 +8,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -302,3 +311,74 @@ class ReceiptModel(Base):
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
+
+class AuditStoryModel(Base):
+    """Ground truth benchmark AI story for missed-story audit evaluation."""
+
+    __tablename__ = "audit_stories"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    lab_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    region: Mapped[str] = mapped_column(
+        String(50), default="global", nullable=False, index=True
+    )
+    release_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    canonical_url: Mapped[str] = mapped_column(Text, nullable=False)
+    model_names: Mapped[list[str]] = mapped_column(JSON, default=list)
+    org_tokens: Mapped[list[str]] = mapped_column(JSON, default=list)
+    added_by: Mapped[str] = mapped_column(String(50), default="system", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+
+    results: Mapped[list[AuditResultModel]] = relationship(
+        "AuditResultModel",
+        back_populates="story",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+
+
+class AuditResultModel(Base):
+    """Audit evaluation run outcome for a benchmark story."""
+
+    __tablename__ = "audit_results"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    story_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("audit_stories.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    run_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+    captured: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, index=True
+    )
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    lag_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    matched_entry_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("entries.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    matched_source: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    match_method: Mapped[str] = mapped_column(
+        String(50), default="token_window", nullable=False
+    )
+    diagnostic: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
+
+    story: Mapped[AuditStoryModel] = relationship(
+        "AuditStoryModel", back_populates="results"
+    )
+    matched_entry: Mapped[EntryModel | None] = relationship("EntryModel", lazy="select")

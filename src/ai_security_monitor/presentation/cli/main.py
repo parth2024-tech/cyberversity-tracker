@@ -178,6 +178,58 @@ def sources():
 
 
 @app.command()
+def audit(
+    since: str = typer.Option(
+        "2026-09-01", "--since", "-s", help="Filter release dates (default: 2026-09-01)"
+    ),
+    region: str | None = typer.Option(
+        None, "--region", "-r", help="Filter audit by region (e.g. china, us, europe)"
+    ),
+    window: int = typer.Option(
+        7,
+        "--window",
+        "-w",
+        help="Publication match window tolerance in days (default: 7)",
+    ),
+    format: str = typer.Option(
+        "table", "--format", "-f", help="Output format: table (markdown) or json"
+    ),
+):
+    """Run ground-truth missed-story audit evaluation across AI foundation models."""
+    import json
+    from datetime import datetime
+
+    from ai_security_monitor.application.services.audit_service import audit_service
+
+    async def _run():
+        await db_manager.init_db()
+        since_dt: datetime | None = None
+        if since:
+            try:
+                since_dt = datetime.fromisoformat(since)
+            except ValueError:
+                pass
+
+        async with db_manager.session() as session:
+            report = await audit_service.run_audit(
+                session=session,
+                since=since_dt,
+                region=region,
+                window_days=window,
+            )
+            await session.commit()
+
+        if format.lower() == "json":
+            console.print(json.dumps(report, indent=2, default=str))
+        else:
+            console.print(report.get("markdown_report", ""))
+
+        await db_manager.close()
+
+    asyncio.run(_run())
+
+
+@app.command()
 def mcp():
     """Launch Model Context Protocol (MCP) server over stdio for AI coding assistants."""
     from ai_security_monitor.presentation.mcp.server import run_stdio_server

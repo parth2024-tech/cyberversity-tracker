@@ -153,7 +153,9 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
@@ -302,3 +304,31 @@ class LLMReceipt(Entity):
             return False
         return self.attempts < self.max_attempts
 
+
+@dataclass(kw_only=True)
+class AuditStory(Entity):
+    """Ground-truth benchmark AI story or frontier model release for missed-story audits."""
+
+    title: str
+    lab_name: str
+    region: str = "global"
+    release_date: datetime
+    canonical_url: str
+    model_names: list[str] = field(default_factory=list)
+    org_tokens: list[str] = field(default_factory=list)
+    added_by: str = "system"
+
+
+@dataclass(kw_only=True)
+class AuditResult(Entity):
+    """Result of an audit evaluation matching a benchmark story against ingested entries."""
+
+    story_id: UUID
+    run_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    captured: bool = False
+    first_seen_at: datetime | None = None
+    lag_hours: float | None = None
+    matched_entry_id: UUID | None = None
+    matched_source: str | None = None
+    match_method: str = "token_window"
+    diagnostic: str | None = None
