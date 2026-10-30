@@ -44,15 +44,16 @@ from ai_security_monitor.domain.repositories import (
 )
 from ai_security_monitor.domain.watchlist import WatchlistRule
 from ai_security_monitor.infrastructure.database.models import (
-    AnalysisModel as AnalysisModelDB,
-)
-from ai_security_monitor.infrastructure.database.models import (
+    AlertSentModel,
     DigestModel,
     EntryModel,
     FetchLogModel,
     ReceiptModel,
     SourceModel,
     WatchlistRuleModel,
+)
+from ai_security_monitor.infrastructure.database.models import (
+    AnalysisModel as AnalysisModelDB,
 )
 
 
@@ -1377,6 +1378,13 @@ class SQLAlchemyWatchlistRepository:
             min_threat_velocity=rule.min_threat_velocity,
             enabled=rule.enabled,
             created_at=rule.created_at,
+            lab=rule.lab,
+            model_family=rule.model_family,
+            region=rule.region,
+            min_score=rule.min_score,
+            channel=rule.channel,
+            channel_config=rule.channel_config,
+            rules_json=rule.rules_json,
         )
         self._session.add(model)
         await self._session.flush()
@@ -1435,7 +1443,105 @@ class SQLAlchemyWatchlistRepository:
             min_threat_velocity=model.min_threat_velocity or 0,
             enabled=model.enabled,
             created_at=model.created_at,
+            lab=model.lab,
+            model_family=model.model_family,
+            region=model.region,
+            min_score=model.min_score,
+            channel=model.channel or "telegram",
+            channel_config=model.channel_config or {},
         )
+
+    async def record_alert(
+        self,
+        watch_id: UUID,
+        entry_id: UUID,
+        story_id: UUID | None = None,
+        channel: str = "telegram",
+        sent_at: datetime | None = None,
+    ) -> AlertSentModel:
+        """Record an alert dispatch to avoid duplicate notifications."""
+        model = AlertSentModel(
+            watch_id=_uuid_to_str(watch_id),
+            entry_id=_uuid_to_str(entry_id),
+            story_id=_uuid_to_str(story_id) if story_id else None,
+            channel=channel,
+            sent_at=sent_at or datetime.now(UTC),
+        )
+        self._session.add(model)
+        await self._session.flush()
+        return model
+
+    async def is_alert_sent(
+        self,
+        watch_id: UUID,
+        entry_id: UUID | None = None,
+        story_id: UUID | None = None,
+    ) -> bool:
+        """Check if an alert has already been sent for this story or entry under watch_id."""
+        w_str = _uuid_to_str(watch_id)
+        if story_id is not None:
+            stmt = select(func.count(AlertSentModel.id)).where(
+                and_(
+                    AlertSentModel.watch_id == w_str,
+                    AlertSentModel.story_id == _uuid_to_str(story_id),
+                )
+            )
+            count = (await self._session.execute(stmt)).scalar() or 0
+            if count > 0:
+                return True
+
+        if entry_id is not None:
+            stmt = select(func.count(AlertSentModel.id)).where(
+                and_(
+                    AlertSentModel.watch_id == w_str,
+                    AlertSentModel.entry_id == _uuid_to_str(entry_id),
+                )
+            )
+            count = (await self._session.execute(stmt)).scalar() or 0
+            return count > 0
+
+        return False
+
+    async def count_alerts_in_window(
+        self,
+        watch_id: UUID | None = None,
+        since: datetime | None = None,
+    ) -> int:
+        """Count alerts sent since a timestamp (e.g. past 1 hour) for rate limiting."""
+        stmt = select(func.count(AlertSentModel.id))
+        conditions = []
+        if watch_id is not None:
+            conditions.append(AlertSentModel.watch_id == _uuid_to_str(watch_id))
+        if since is not None:
+            conditions.append(AlertSentModel.sent_at >= since)
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
+        return (await self._session.execute(stmt)).scalar() or 0
+
+    async def list_alerts_sent(
+        self,
+        watch_id: UUID | None = None,
+        limit: int = 50,
+    ) -> builtins.list[dict[str, Any]]:
+        """List sent alerts with metadata."""
+        stmt = (
+            select(AlertSentModel).order_by(desc(AlertSentModel.sent_at)).limit(limit)
+        )
+        if watch_id is not None:
+            stmt = stmt.where(AlertSentModel.watch_id == _uuid_to_str(watch_id))
+        res = await self._session.execute(stmt)
+        models = res.scalars().all()
+        return [
+            {
+                "id": m.id,
+                "watch_id": m.watch_id,
+                "entry_id": m.entry_id,
+                "story_id": m.story_id,
+                "channel": m.channel,
+                "sent_at": m.sent_at.isoformat() if m.sent_at else None,
+            }
+            for m in models
+        ]
 
 
 class SQLAlchemyReceiptRepository(LLMReceiptRepository):
@@ -1556,4 +1662,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-
