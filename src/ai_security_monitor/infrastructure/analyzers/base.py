@@ -30,6 +30,8 @@ class AnalysisResult:
     mitre_technique: str | None = None
     model: AnalysisModel = AnalysisModel.HEURISTIC
     confidence: float = 1.0
+    score_v2: float | None = None
+    score_components: dict[str, float] | None = None
 
     def __post_init__(self):
         if self.affected_ecosystem is None:
@@ -85,6 +87,8 @@ class BaseAnalyzer(ABC):
                     weaponization_potential=result.weaponization_potential,
                     model=result.model,
                     confidence=result.confidence,
+                    score_v2=result.score_v2,
+                    score_components=result.score_components,
                 )
                 await event_bus.publish(
                     EntryAnalyzedEvent(

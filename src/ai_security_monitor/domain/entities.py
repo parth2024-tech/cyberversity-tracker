@@ -153,7 +153,9 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
@@ -231,8 +233,17 @@ class Analysis(Entity):
     mitre_technique: str | None = None  # e.g., "Exploit Public-Facing Application"
     model: AnalysisModel = AnalysisModel.HEURISTIC
     confidence: float = 1.0
+    score_v2: float | None = None
+    score_components: dict[str, Any] | None = None
 
     # Domain language aliases for Worldwide AI Ecosystem context
+    @property
+    def newsworthiness_score(self) -> float:
+        """Ecosystem domain alias for AI newsworthiness score v2 (falls back to threat_velocity)."""
+        return (
+            self.score_v2 if self.score_v2 is not None else float(self.threat_velocity)
+        )
+
     @property
     def tech_focus(self) -> str:
         """Ecosystem domain alias for attack_vector (e.g. Inference Optimization, Reasoning)."""
@@ -301,4 +312,3 @@ class LLMReceipt(Entity):
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
-

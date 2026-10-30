@@ -219,6 +219,11 @@ class AutonomousTriageService:
                             analysis_result.weaponization_potential
                             or "Production Ready"
                         )
+                        if analysis_result.score_v2 is not None:
+                            existing_analysis.score_v2 = analysis_result.score_v2
+                            existing_analysis.score_components = (
+                                analysis_result.score_components
+                            )
                         existing_analysis.updated_at = datetime.now(UTC)
                         await uow.analyses.update(existing_analysis)
                         analysis = existing_analysis
@@ -237,6 +242,8 @@ class AutonomousTriageService:
                             weaponization_potential=analysis_result.weaponization_potential
                             or "Production Ready",
                             model=AnalysisModel.HEURISTIC,
+                            score_v2=analysis_result.score_v2,
+                            score_components=analysis_result.score_components,
                         )
                         await uow.analyses.add(analysis)
 
@@ -561,6 +568,11 @@ class AutonomousTriageService:
                     analysis_result.weaponization_potential or "Production Ready"
                 )
                 existing_analysis.model = AnalysisModel.OLLAMA
+                if analysis_result.score_v2 is not None:
+                    existing_analysis.score_v2 = analysis_result.score_v2
+                    existing_analysis.score_components = (
+                        analysis_result.score_components
+                    )
                 existing_analysis.updated_at = datetime.now(UTC)
                 await uow.analyses.update(existing_analysis)
                 analysis = existing_analysis
@@ -579,6 +591,8 @@ class AutonomousTriageService:
                     weaponization_potential=analysis_result.weaponization_potential
                     or "Production Ready",
                     model=AnalysisModel.OLLAMA,
+                    score_v2=analysis_result.score_v2,
+                    score_components=analysis_result.score_components,
                 )
                 await uow.analyses.add(analysis)
 

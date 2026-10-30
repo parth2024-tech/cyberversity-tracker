@@ -920,6 +920,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 if model.analysis.model in [m.value for m in AnalysisModel]
                 else AnalysisModel.HEURISTIC,
                 confidence=model.analysis.confidence,
+                score_v2=getattr(model.analysis, "score_v2", None),
+                score_components=getattr(model.analysis, "score_components_json", None),
                 created_at=model.analysis.created_at,
                 updated_at=model.analysis.updated_at,
             )
@@ -974,6 +976,8 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             mitre_technique=analysis.mitre_technique,
             model=analysis.model.value,
             confidence=analysis.confidence,
+            score_v2=analysis.score_v2,
+            score_components_json=analysis.score_components,
             created_at=analysis.created_at,
             updated_at=analysis.updated_at,
         )
@@ -1026,6 +1030,8 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         model.mitre_technique = analysis.mitre_technique
         model.model = analysis.model.value
         model.confidence = analysis.confidence
+        model.score_v2 = analysis.score_v2
+        model.score_components_json = analysis.score_components
         model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
@@ -1078,6 +1084,8 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             if model.model in [m.value for m in AnalysisModel]
             else AnalysisModel.HEURISTIC,
             confidence=model.confidence,
+            score_v2=getattr(model, "score_v2", None),
+            score_components=getattr(model, "score_components_json", None),
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -1556,4 +1564,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-

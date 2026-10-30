@@ -956,6 +956,12 @@ class HeuristicAnalyzer(BaseAnalyzer):
                 else "Production Ready"
             )
 
+            from ai_security_monitor.application.services.newsworthiness_scoring_service import (
+                newsworthiness_scoring_service,
+            )
+
+            score_v2, score_comp = newsworthiness_scoring_service.score_entry(entry)
+
             return AnalysisResult(
                 entry_id=entry.id,
                 attack_vector=arch,
@@ -972,6 +978,8 @@ class HeuristicAnalyzer(BaseAnalyzer):
                 mitre_technique=None,
                 model=AnalysisModel.HEURISTIC,
                 confidence=0.90,
+                score_v2=score_v2,
+                score_components=score_comp,
             )
 
         # Cyber Threat / Security Mode
