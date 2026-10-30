@@ -8,7 +8,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -231,6 +240,35 @@ class WatchlistRuleModel(Base):
         DateTime, default=lambda: datetime.now(UTC)
     )
 
+    # Feature 11: Rules and Channels
+    lab: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    model_family: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    region: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    min_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    channel: Mapped[str] = mapped_column(String(50), default="telegram", nullable=False)
+    channel_config: Mapped[dict | None] = mapped_column(JSON, default=dict)
+    rules_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+
+class AlertSentModel(Base):
+    """Alerts dispatched for watchlist rules and source health tracking."""
+
+    __tablename__ = "alerts_sent"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    watch_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    entry_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    story_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    channel: Mapped[str] = mapped_column(String(50), nullable=False)
+    sent_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+
+    __table_args__ = (
+        Index("ix_alerts_sent_watch_entry", "watch_id", "entry_id"),
+        Index("ix_alerts_sent_watch_story", "watch_id", "story_id"),
+    )
+
 
 class AnalysisEvidenceModel(Base):
     """Epistemic evidence tracking for analysis claims."""
@@ -301,4 +339,3 @@ class ReceiptModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-
