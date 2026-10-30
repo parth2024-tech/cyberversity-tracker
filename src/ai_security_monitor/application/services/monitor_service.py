@@ -241,7 +241,9 @@ class MonitorService:
             # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
             retired_cfg = load_retired_sources_from_yaml(config_path)
             retired_names = {
-                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+                r["name"].strip().lower()
+                for r in retired_cfg
+                if "name" in r and r["name"]
             }
             retired_urls = {
                 r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
@@ -475,6 +477,8 @@ class MonitorService:
                         mitre_attack_id=None,
                         mitre_technique=None,
                         model=AnalysisModel.HEURISTIC,
+                        score_v2=analysis_res.score_v2,
+                        score_components=analysis_res.score_components,
                     )
                 else:
                     analysis = Analysis(
@@ -493,6 +497,8 @@ class MonitorService:
                         mitre_attack_id=analysis_res.mitre_attack_id,
                         mitre_technique=analysis_res.mitre_technique,
                         model=AnalysisModel.HEURISTIC,
+                        score_v2=analysis_res.score_v2,
+                        score_components=analysis_res.score_components,
                     )
 
                 title_lower = (entry.title or "").lower()

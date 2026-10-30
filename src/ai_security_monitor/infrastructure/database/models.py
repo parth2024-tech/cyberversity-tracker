@@ -8,7 +8,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -144,6 +153,12 @@ class AnalysisModel(Base):
     confidence: Mapped[float] = mapped_column(default=1.0)
     overall_confidence: Mapped[float] = mapped_column(default=0.7)
     evidence_version: Mapped[str] = mapped_column(String(20), default="v1")
+    score_v2: Mapped[float | None] = mapped_column(
+        Float, nullable=True, default=None, index=True
+    )
+    score_components_json: Mapped[dict | None] = mapped_column(
+        JSON, nullable=True, default=None
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
     )
@@ -301,4 +316,3 @@ class ReceiptModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-
