@@ -135,8 +135,11 @@ async def test_api_entries_regional_theatre_clusters():
             assert "total" in data
 
 
+from pathlib import Path
+
+
 @pytest.mark.asyncio
-async def test_newspaper_worldwide_sovereign_radar_integration():
+async def test_newspaper_worldwide_sovereign_radar_integration(tmp_path: Path):
     """Verify newspaper service categorizes worldwide sovereign entries and compiles all formats."""
     # Create sample entries representing Tier 1 & Tier 2 sovereign nodes
     sample_entries = [
@@ -190,7 +193,7 @@ async def test_newspaper_worldwide_sovereign_radar_integration():
         ),
     ]
 
-    service = NewspaperService()
+    service = NewspaperService(output_dir=tmp_path)
     categorized = await service._categorize_entries(sample_entries)
 
     # Sovereign / Regional radar should capture these entries

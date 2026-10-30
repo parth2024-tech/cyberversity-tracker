@@ -326,9 +326,10 @@ async def test_rss_fetcher_records_304_not_modified():
         return_value=mock_client,
     ):
         fetcher = RSSFetcher(source)
-        raw = await fetcher._fetch_raw()
+        res = await fetcher.fetch()
 
-    assert raw == []
+    assert res.entries == []
+    assert res.http_status == 304
     assert fetcher._last_http_status == 304
-    assert source.config.get("last_http_status") == 304
+    assert "last_http_status" not in (source.config or {})
 

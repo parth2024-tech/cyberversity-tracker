@@ -356,6 +356,7 @@ class MonitorService:
         entries_total = 0
         status = FetchStatus.SUCCESS
         error_msg = None
+        fetch_result = None
 
         logger.info(f"Fetching from {source.name} ({source.type.value})")
 
@@ -913,7 +914,8 @@ class MonitorService:
         if status == FetchStatus.SUCCESS:
             is_304 = (
                 getattr(fetch_result, "http_status", None) == 304
-                or (source.config or {}).get("last_http_status") == 304
+                if fetch_result is not None
+                else False
             )
             source_health_service.record_success(
                 source_name=source.name,
@@ -923,7 +925,7 @@ class MonitorService:
                 category=source.category.value
                 if hasattr(source.category, "value")
                 else str(source.category),
-                region=source.config.get("region", "global"),
+                region=source.region,
                 is_not_modified=is_304,
             )
         else:
@@ -935,7 +937,7 @@ class MonitorService:
                 category=source.category.value
                 if hasattr(source.category, "value")
                 else str(source.category),
-                region=source.config.get("region", "global"),
+                region=source.region,
             )
 
         log = FetchLog(
@@ -947,6 +949,9 @@ class MonitorService:
             error_message=error_msg,
             duration_ms=duration_ms,
             fetched_at=datetime.now(UTC),
+            http_status=getattr(fetch_result, "http_status", None)
+            if fetch_result is not None
+            else None,
         )
 
         source.last_fetched_at = log.fetched_at
@@ -1059,7 +1064,7 @@ class MonitorService:
                             success += 1
                             total_new += log.entries_new
                             _consecutive_failures[src.name] = 0
-                            is_304 = (src.config or {}).get("last_http_status") == 304
+                            is_304 = getattr(log, "http_status", None) == 304
                             if log.entries_total == 0 and not is_304:
                                 streak = _zero_entry_streaks.get(src.name, 0) + 1
                                 _zero_entry_streaks[src.name] = streak

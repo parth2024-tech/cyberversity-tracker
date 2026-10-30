@@ -274,6 +274,7 @@ class FetchLog(Entity):
     error_message: str | None = None
     duration_ms: int = 0
     fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    http_status: int | None = None
 
 
 @dataclass(kw_only=True)
