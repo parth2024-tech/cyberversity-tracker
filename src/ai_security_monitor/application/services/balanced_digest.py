@@ -7,6 +7,7 @@ domination and maintain editorial balance across all AI pillars.
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
@@ -38,6 +39,8 @@ class BalancedDigestResult:
     group_limits: dict[str, int] = field(default_factory=dict)
     source_counts: dict[str, int] = field(default_factory=dict)
     tier_counts: dict[float, int] = field(default_factory=dict)
+    primary_count: int = 0
+    primary_ratio: float = 0.0
     dropped_count: int = 0
     dropped_by_tier: int = 0
     dropped_by_source_cap: int = 0
@@ -109,6 +112,7 @@ class BalancedDigestService:
         max_items_per_source: int = 2,
         tier_thresholds: dict[float, int] | None = None,
         source_tier_map: dict[str, float] | None = None,
+        min_primary_ratio: float = 0.50,
     ):
         self.quotas = quotas or DEFAULT_CATEGORY_QUOTAS
         self.max_total_items = max_total_items
@@ -116,6 +120,7 @@ class BalancedDigestService:
         self.max_items_per_source = max_items_per_source
         self.tier_thresholds = tier_thresholds or dict(DEFAULT_TIER_THRESHOLDS)
         self._source_tier_map = source_tier_map
+        self.min_primary_ratio = min_primary_ratio
 
         # Fast lookup from category string to group
         self._category_to_quota: dict[str, CategoryQuota] = {}
@@ -187,9 +192,17 @@ class BalancedDigestService:
 
         Assumes entries are already sorted by priority/velocity descending,
         or accepts a custom sort key.
+        Guarantees that at least min_primary_ratio (default 50%) of selected items
+        are primary lab releases if sufficient primary entries are available.
         """
         if not entries:
-            return BalancedDigestResult(items=[], total_eligible=0, total_selected=0)
+            return BalancedDigestResult(
+                items=[],
+                total_eligible=0,
+                total_selected=0,
+                primary_count=0,
+                primary_ratio=0.0,
+            )
 
         sorted_items = list(entries)
         if sort_key:
@@ -202,13 +215,19 @@ class BalancedDigestService:
         source_counts: dict[str, int] = defaultdict(int)
         tier_counts: dict[float, int] = defaultdict(int)
 
-        selected: list[Entry] = []
+        def is_primary(entry: Entry) -> bool:
+            return bool(
+                getattr(entry, "is_primary", False)
+                or (entry.metadata and entry.metadata.get("is_primary"))
+            )
+
         dropped_by_tier = 0
         dropped_by_source_cap = 0
         dropped_by_quota = 0
 
+        # Step 1: Pre-filter by Tier Credibility Gate
+        eligible_items: list[tuple[Entry, float, str, str]] = []
         for item in sorted_items:
-            # 1. Tier Credibility Gate
             tier = self._get_entry_tier(item)
             threshold = self.tier_thresholds.get(
                 tier, self.tier_thresholds.get(2.0, 70)
@@ -219,8 +238,58 @@ class BalancedDigestService:
                 dropped_by_tier += 1
                 continue
 
-            # 2. Per-Source Quota Cap (prevents single feed monopoly)
             source_key = self._get_entry_source_identifier(item)
+            cat_str = (
+                item.category.value
+                if hasattr(item.category, "value")
+                else str(item.category)
+            ).lower()
+            quota = self._category_to_quota.get(cat_str)
+            group_name = quota.name if quota else "Other"
+
+            eligible_items.append((item, tier, source_key, group_name))
+
+        selected: list[Entry] = []
+        selected_ids: set[Any] = set()
+
+        # Step 2: Phase 1 - Primary Guarantee (reserve up to min_primary_ratio for primary lab announcements)
+        if self.min_primary_ratio > 0.0:
+            target_primary = math.ceil(
+                min(len(eligible_items), self.max_total_items) * self.min_primary_ratio
+            )
+            for item, tier, source_key, group_name in eligible_items:
+                if len([e for e in selected if is_primary(e)]) >= target_primary:
+                    break
+                if not is_primary(item):
+                    continue
+
+                # Check per-source cap
+                if (
+                    self.max_items_per_source > 0
+                    and source_counts[source_key] >= self.max_items_per_source
+                ):
+                    continue
+
+                # Check category group quota
+                limit = group_limits.get(group_name, self.default_limit)
+                if group_counts[group_name] >= limit:
+                    continue
+
+                if len(selected) >= self.max_total_items:
+                    break
+
+                selected.append(item)
+                selected_ids.add(item.id)
+                group_counts[group_name] += 1
+                source_counts[source_key] += 1
+                tier_counts[tier] += 1
+
+        # Step 3: Phase 2 - Fill remaining allocation from all eligible candidates in priority order
+        for item, tier, source_key, group_name in eligible_items:
+            if item.id in selected_ids:
+                continue
+
+            # Check per-source cap
             if (
                 self.max_items_per_source > 0
                 and source_counts[source_key] >= self.max_items_per_source
@@ -228,36 +297,33 @@ class BalancedDigestService:
                 dropped_by_source_cap += 1
                 continue
 
-            # 3. Category Group Quota
-            cat_str = (
-                item.category.value
-                if hasattr(item.category, "value")
-                else str(item.category)
-            ).lower()
-
-            quota = self._category_to_quota.get(cat_str)
-            group_name = quota.name if quota else "Other"
+            # Check category group quota
             limit = group_limits.get(group_name, self.default_limit)
-
             if group_counts[group_name] >= limit:
                 dropped_by_quota += 1
                 continue
 
-            # 4. Total items limit
+            # Check total items limit
             if len(selected) >= self.max_total_items:
                 dropped_by_quota += 1
                 continue
 
-            # Item accepted!
             selected.append(item)
+            selected_ids.add(item.id)
             group_counts[group_name] += 1
             source_counts[source_key] += 1
             tier_counts[tier] += 1
 
+        if sort_key:
+            selected.sort(key=sort_key, reverse=True)
+
+        primary_cnt = sum(1 for e in selected if is_primary(e))
+        primary_rat = round(primary_cnt / len(selected), 3) if selected else 0.0
         total_dropped = dropped_by_tier + dropped_by_source_cap + dropped_by_quota
+
         logger.info(
             f"Balanced digest selected {len(selected)} items out of {len(entries)} "
-            f"(dropped: tier_gate={dropped_by_tier}, source_cap={dropped_by_source_cap}, quota={dropped_by_quota})"
+            f"(primary: {primary_cnt}/{len(selected)} = {primary_rat:.1%}, dropped: tier_gate={dropped_by_tier}, source_cap={dropped_by_source_cap}, quota={dropped_by_quota})"
         )
 
         return BalancedDigestResult(
@@ -268,6 +334,8 @@ class BalancedDigestService:
             group_limits=group_limits,
             source_counts=dict(source_counts),
             tier_counts=dict(tier_counts),
+            primary_count=primary_cnt,
+            primary_ratio=primary_rat,
             dropped_count=total_dropped,
             dropped_by_tier=dropped_by_tier,
             dropped_by_source_cap=dropped_by_source_cap,
@@ -276,4 +344,3 @@ class BalancedDigestService:
 
 
 balanced_digest_service = BalancedDigestService()
-

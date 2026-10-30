@@ -179,6 +179,7 @@ class MonitorService:
                         rate_limit_seconds=s_cfg.rate_limit_seconds,
                         enabled=s_cfg.enabled,
                         tier=getattr(s_cfg, "tier", 2.0),
+                        is_primary=s_cfg.primary,
                         config=cfg_dict,
                     )
                     await uow.sources.add(new_source)
@@ -234,6 +235,9 @@ class MonitorService:
                         existing.config = {**(existing.config or {}), **new_cfg}
                         existing.tier = getattr(s_cfg, "tier", 2.0)
                         changed = True
+                    if existing.is_primary != s_cfg.primary:
+                        existing.is_primary = s_cfg.primary
+                        changed = True
                     if changed:
                         await uow.sources.update(existing)
                         count += 1
@@ -241,7 +245,9 @@ class MonitorService:
             # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
             retired_cfg = load_retired_sources_from_yaml(config_path)
             retired_names = {
-                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+                r["name"].strip().lower()
+                for r in retired_cfg
+                if "name" in r and r["name"]
             }
             retired_urls = {
                 r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
@@ -367,10 +373,13 @@ class MonitorService:
 
             clustered_entries: list[Entry] = []
             for candidate in new_raw_entries:
+                candidate.is_primary = getattr(source, "is_primary", False)
                 proc_entry, story, _ = deduplication_service.process_candidate(
                     candidate, source_name=source.name
                 )
+                proc_entry.is_primary = getattr(source, "is_primary", False)
                 proc_entry.metadata = dict(proc_entry.metadata or {})
+                proc_entry.metadata["is_primary"] = proc_entry.is_primary
                 proc_entry.metadata["story_confidence"] = story.confidence_score
                 proc_entry.metadata["corroborating_sources"] = list(story.sources)
                 proc_entry.metadata["story_id"] = str(story.id)

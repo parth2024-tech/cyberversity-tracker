@@ -92,6 +92,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             updated_at=entry.updated_at,
             is_purged=entry.is_purged,
             purged_at=entry.purged_at,
+            is_primary=getattr(entry, "is_primary", False),
         )
         self._session.add(model)
         try:
@@ -269,6 +270,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         model.summary = entry.summary
         model.tags = entry.tags
         model.extra_metadata = entry.metadata
+        model.is_primary = getattr(entry, "is_primary", False)
         model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
@@ -946,6 +948,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             analysis=analysis,
             is_purged=bool(getattr(model, "is_purged", False)),
             purged_at=getattr(model, "purged_at", None),
+            is_primary=bool(getattr(model, "is_primary", False)),
         )
 
 
@@ -1102,6 +1105,7 @@ class SQLAlchemySourceRepository(SourceRepository):
             last_fetched_at=source.last_fetched_at,
             last_status=source.last_status.value if source.last_status else None,
             last_entries_new=source.last_entries_new,
+            is_primary=getattr(source, "is_primary", False),
             config=source.config,
             created_at=source.created_at,
             updated_at=source.updated_at,
@@ -1159,6 +1163,7 @@ class SQLAlchemySourceRepository(SourceRepository):
         model.last_fetched_at = source.last_fetched_at
         model.last_status = source.last_status.value if source.last_status else None
         model.last_entries_new = source.last_entries_new
+        model.is_primary = getattr(source, "is_primary", False)
         model.config = source.config
         model.updated_at = datetime.now(UTC)
 
@@ -1200,6 +1205,7 @@ class SQLAlchemySourceRepository(SourceRepository):
             last_status=FetchStatus(model.last_status) if model.last_status else None,
             last_entries_new=model.last_entries_new,
             tier=float((model.config or {}).get("tier", 2.0)),
+            is_primary=bool(getattr(model, "is_primary", False)),
             config=model.config or {},
             created_at=model.created_at,
             updated_at=model.updated_at,
@@ -1556,4 +1562,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-
