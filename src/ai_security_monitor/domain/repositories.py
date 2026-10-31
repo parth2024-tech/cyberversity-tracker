@@ -13,9 +13,11 @@ from typing import Any
 from uuid import UUID
 
 from ai_security_monitor.domain.entities import (
+    AIEntity,
     Analysis,
     Category,
     Digest,
+    EntityType,
     Entry,
     FetchLog,
     LLMReceipt,
@@ -379,3 +381,38 @@ class LLMReceiptRepository(ABC):
             "total_cache_read_tokens": 0,
             "total_cache_creation_tokens": 0,
         }
+
+
+class AIEntityRepository(ABC):
+    """Repository interface for structured AI entity and benchmark knowledge graph."""
+
+    @abstractmethod
+    async def add_all(self, entities: list[AIEntity]) -> list[AIEntity]:
+        """Persist a list of extracted entities."""
+        ...
+
+    @abstractmethod
+    async def get_by_entry(self, entry_id: UUID) -> list[AIEntity]:
+        """Retrieve all entities extracted for a specific entry."""
+        ...
+
+    @abstractmethod
+    async def query_timeline(
+        self,
+        name: str | None = None,
+        entity_type: EntityType | str | None = None,
+        days: int = 14,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Query chronological timeline of mentions across the freshness window (max 14 days)."""
+        ...
+
+    @abstractmethod
+    async def get_top_entities(
+        self,
+        entity_type: EntityType | str | None = None,
+        days: int = 14,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """Retrieve top referenced entities grouped by name within the freshness window."""
+        ...

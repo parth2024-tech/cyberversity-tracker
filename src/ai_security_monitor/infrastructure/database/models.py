@@ -8,7 +8,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -109,6 +118,12 @@ class EntryModel(Base):
     )
     analysis: Mapped[AnalysisModel | None] = relationship(
         back_populates="entry", uselist=False, lazy="selectin"
+    )
+    entities: Mapped[list[EntryEntityModel]] = relationship(
+        "EntryEntityModel",
+        back_populates="entry",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     __table_args__ = (
@@ -315,3 +330,39 @@ class ReceiptModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
+
+
+class EntryEntityModel(Base):
+    """Relational knowledge graph entity links extracted from intelligence entries."""
+
+    __tablename__ = "entry_entities"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    entry_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    metric_value: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    context: Mapped[str | None] = mapped_column(Text, nullable=True)
+    confidence: Mapped[float] = mapped_column(Float, default=1.0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        index=True,
+    )
+
+    entry: Mapped[EntryModel] = relationship(
+        "EntryModel", back_populates="entities"
+    )
+
+    __table_args__ = (
+        Index("ix_entry_entities_type_name", "entity_type", "name"),
+        Index("ix_entry_entities_created_type", "created_at", "entity_type"),
+    )
+

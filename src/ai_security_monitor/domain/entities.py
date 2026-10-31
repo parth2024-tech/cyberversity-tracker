@@ -59,6 +59,19 @@ class AnalysisModel(str, Enum):
     BLAST_RADIUS = "blast_radius"
 
 
+class EntityType(str, Enum):
+    """Types of extracted AI entities for the knowledge graph."""
+
+    MODEL = "model"
+    ORGANIZATION = "organization"
+    REPOSITORY = "repository"
+    ARXIV = "arxiv"
+    BENCHMARK = "benchmark"
+    HARDWARE = "hardware"
+    CVE = "cve"
+
+
+
 @dataclass(kw_only=True)
 class Entity:
     """Base entity with ID and timestamps."""
@@ -108,6 +121,7 @@ class Entry(Entity):
     is_purged: bool = False
     purged_at: datetime | None = None
     story_id: UUID | None = None
+    entities: list[AIEntity] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if (
@@ -311,3 +325,17 @@ class LLMReceipt(Entity):
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
+
+
+@dataclass(kw_only=True)
+class AIEntity(Entity):
+    """Knowledge graph entity linked to an intelligence entry."""
+
+    entry_id: UUID
+    entity_type: EntityType
+    name: str  # Normalized identifier (e.g., 'deepseek-r1', 'vllm-project/vllm')
+    display_name: str  # Display name (e.g., 'DeepSeek-R1', 'vllm')
+    metric_value: str | None = None  # Benchmark score or metric (e.g., '88.5%', '49.2%')
+    context: str | None = None  # Context sentence or snippet where mentioned
+    confidence: float = 1.0
+

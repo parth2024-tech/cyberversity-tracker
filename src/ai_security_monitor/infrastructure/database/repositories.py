@@ -17,10 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ai_security_monitor.domain.entities import (
+    AIEntity,
     Analysis,
     AnalysisModel,
     Category,
     Digest,
+    EntityType,
     Entry,
     FetchLog,
     FetchStatus,
@@ -33,6 +35,7 @@ from ai_security_monitor.domain.exceptions import (
     EntityNotFoundError,
 )
 from ai_security_monitor.domain.repositories import (
+    AIEntityRepository,
     AnalysisRepository,
     DigestRepository,
     EntryFilters,
@@ -48,6 +51,7 @@ from ai_security_monitor.infrastructure.database.models import (
 )
 from ai_security_monitor.infrastructure.database.models import (
     DigestModel,
+    EntryEntityModel,
     EntryModel,
     FetchLogModel,
     ReceiptModel,
@@ -946,6 +950,27 @@ class SQLAlchemyEntryRepository(EntryRepository):
         except ValueError:
             category_enum = Category.AI_TECH
 
+        entities_list: list[AIEntity] = []
+        if "entities" in model.__dict__ and model.entities:
+            for ent_m in model.entities:
+                try:
+                    e_type = EntityType(ent_m.entity_type)
+                except ValueError:
+                    e_type = EntityType.MODEL
+                entities_list.append(
+                    AIEntity(
+                        id=_str_to_uuid(ent_m.id),
+                        entry_id=_str_to_uuid(ent_m.entry_id),
+                        entity_type=e_type,
+                        name=ent_m.name,
+                        display_name=ent_m.display_name,
+                        metric_value=ent_m.metric_value,
+                        context=ent_m.context,
+                        confidence=ent_m.confidence,
+                        created_at=ent_m.created_at,
+                    )
+                )
+
         return Entry(
             id=_str_to_uuid(model.id),
             source_id=_str_to_uuid(model.source_id),
@@ -963,6 +988,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             analysis=analysis,
             is_purged=bool(getattr(model, "is_purged", False)),
             purged_at=getattr(model, "purged_at", None),
+            entities=entities_list,
         )
 
 
@@ -1653,3 +1679,187 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
             "total_cache_read_tokens": total_cache_read,
             "total_cache_creation_tokens": total_cache_creation,
         }
+
+
+class SQLAlchemyEntityRepository(AIEntityRepository):
+    """SQLAlchemy implementation of AIEntityRepository."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    def _model_to_entity(self, model: EntryEntityModel) -> AIEntity:
+        try:
+            e_type = EntityType(model.entity_type)
+        except ValueError:
+            e_type = EntityType.MODEL
+        return AIEntity(
+            id=_str_to_uuid(model.id),
+            entry_id=_str_to_uuid(model.entry_id),
+            entity_type=e_type,
+            name=model.name,
+            display_name=model.display_name,
+            metric_value=model.metric_value,
+            context=model.context,
+            confidence=model.confidence,
+            created_at=model.created_at,
+        )
+
+    async def add_all(self, entities: list[AIEntity]) -> list[AIEntity]:
+        """Persist a list of extracted entities, updating duplicates idempotently."""
+        if not entities:
+            return []
+
+        models: list[EntryEntityModel] = []
+        for ent in entities:
+            type_str = (
+                ent.entity_type.value
+                if hasattr(ent.entity_type, "value")
+                else str(ent.entity_type)
+            )
+            stmt = select(EntryEntityModel).where(
+                EntryEntityModel.entry_id == _uuid_to_str(ent.entry_id),
+                EntryEntityModel.entity_type == type_str,
+                EntryEntityModel.name == ent.name,
+            )
+            res = await self._session.execute(stmt)
+            existing = res.scalar_one_or_none()
+            if existing:
+                if ent.metric_value:
+                    existing.metric_value = ent.metric_value
+                if ent.context:
+                    existing.context = ent.context
+                models.append(existing)
+            else:
+                new_m = EntryEntityModel(
+                    id=_uuid_to_str(ent.id),
+                    entry_id=_uuid_to_str(ent.entry_id),
+                    entity_type=type_str,
+                    name=ent.name,
+                    display_name=ent.display_name,
+                    metric_value=ent.metric_value,
+                    context=ent.context,
+                    confidence=ent.confidence,
+                    created_at=ent.created_at or datetime.now(UTC),
+                )
+                self._session.add(new_m)
+                models.append(new_m)
+
+        await self._session.flush()
+        return [self._model_to_entity(m) for m in models]
+
+    async def get_by_entry(self, entry_id: UUID) -> list[AIEntity]:
+        """Retrieve all entities for a specific entry."""
+        stmt = (
+            select(EntryEntityModel)
+            .where(EntryEntityModel.entry_id == _uuid_to_str(entry_id))
+            .order_by(EntryEntityModel.created_at.asc())
+        )
+        res = await self._session.execute(stmt)
+        return [self._model_to_entity(m) for m in res.scalars()]
+
+    async def query_timeline(
+        self,
+        name: str | None = None,
+        entity_type: EntityType | str | None = None,
+        days: int = 14,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Query chronological timeline of mentions across the freshness window (max 14 days)."""
+        safe_days = min(max(1, days), 14)
+        since_date = datetime.now(UTC) - timedelta(days=safe_days)
+
+        stmt = (
+            select(EntryEntityModel, EntryModel)
+            .join(EntryModel, EntryEntityModel.entry_id == EntryModel.id)
+            .where(EntryModel.published_at >= since_date)
+            .order_by(EntryModel.published_at.desc())
+            .limit(min(limit, 100))
+        )
+
+        if name:
+            clean_name = name.strip().lower()
+            stmt = stmt.where(
+                or_(
+                    EntryEntityModel.name == clean_name,
+                    EntryEntityModel.name.contains(clean_name),
+                    EntryEntityModel.display_name.contains(name.strip()),
+                )
+            )
+
+        if entity_type:
+            type_val = (
+                entity_type.value if hasattr(entity_type, "value") else str(entity_type)
+            )
+            stmt = stmt.where(EntryEntityModel.entity_type == type_val)
+
+        res = await self._session.execute(stmt)
+        timeline: list[dict[str, Any]] = []
+        for ent_m, entry_m in res.all():
+            timeline.append(
+                {
+                    "entity_id": ent_m.id,
+                    "entry_id": entry_m.id,
+                    "entity_type": ent_m.entity_type,
+                    "name": ent_m.name,
+                    "display_name": ent_m.display_name,
+                    "metric_value": ent_m.metric_value,
+                    "context": ent_m.context,
+                    "confidence": ent_m.confidence,
+                    "entry_title": entry_m.title,
+                    "entry_url": entry_m.url,
+                    "category": entry_m.category,
+                    "published_at": entry_m.published_at.isoformat()
+                    if entry_m.published_at
+                    else None,
+                }
+            )
+        return timeline
+
+    async def get_top_entities(
+        self,
+        entity_type: EntityType | str | None = None,
+        days: int = 14,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """Retrieve top referenced entities grouped by name within the freshness window."""
+        safe_days = min(max(1, days), 14)
+        since_date = datetime.now(UTC) - timedelta(days=safe_days)
+
+        stmt = (
+            select(
+                EntryEntityModel.name,
+                EntryEntityModel.display_name,
+                EntryEntityModel.entity_type,
+                func.count(EntryEntityModel.id).label("mention_count"),
+                func.max(EntryEntityModel.created_at).label("latest_mention_at"),
+            )
+            .join(EntryModel, EntryEntityModel.entry_id == EntryModel.id)
+            .where(EntryModel.published_at >= since_date)
+            .group_by(
+                EntryEntityModel.name,
+                EntryEntityModel.display_name,
+                EntryEntityModel.entity_type,
+            )
+            .order_by(desc("mention_count"))
+            .limit(min(limit, 50))
+        )
+
+        if entity_type:
+            type_val = (
+                entity_type.value if hasattr(entity_type, "value") else str(entity_type)
+            )
+            stmt = stmt.where(EntryEntityModel.entity_type == type_val)
+
+        res = await self._session.execute(stmt)
+        top_list: list[dict[str, Any]] = []
+        for row in res.all():
+            top_list.append(
+                {
+                    "name": row[0],
+                    "display_name": row[1],
+                    "entity_type": row[2],
+                    "mention_count": int(row[3]),
+                    "latest_mention_at": row[4].isoformat() if row[4] else None,
+                }
+            )
+        return top_list
