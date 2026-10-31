@@ -35,6 +35,13 @@ class EmbeddingService:
         self._model: Any = None
         self._initialized = False
 
+    @property
+    def is_fallback(self) -> bool:
+        """True if operating in deterministic fallback mode (FastEmbed ONNX model unavailable)."""
+        if self.use_fallback_only:
+            return True
+        return self._get_model() is None
+
     def _get_model(self) -> Any:
         if self.use_fallback_only:
             return None

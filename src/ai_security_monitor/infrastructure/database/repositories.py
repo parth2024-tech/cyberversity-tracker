@@ -467,6 +467,19 @@ class SQLAlchemyEntryRepository(EntryRepository):
         self._session.expire_all()
         return getattr(del_result, "rowcount", 0) or 0
 
+    async def restore_entry(self, entry_id: UUID) -> bool:
+        """Restore a single soft-purged entry back to active visibility."""
+        from sqlalchemy import update as sa_update
+
+        result = await self._session.execute(
+            sa_update(EntryModel)
+            .where(EntryModel.id == _uuid_to_str(entry_id))
+            .values(is_purged=False, purged_at=None)
+            .execution_options(synchronize_session=False)
+        )
+        self._session.expire_all()
+        return bool(getattr(result, "rowcount", 0) > 0)
+
     async def restore_purged_entries(self) -> int:
         """Restore all soft-purged entries back to active visibility (mark is_purged=False).
 
@@ -1178,6 +1191,29 @@ class SQLAlchemySourceRepository(SourceRepository):
 
         await self._session.delete(model)
         return True
+
+    async def toggle_enabled(self, source_id_or_name: str, enabled: bool) -> bool:
+        """Enable or disable a source by UUID or name slug."""
+        from sqlalchemy import update as sa_update
+
+        # Try by UUID if valid
+        try:
+            uid_str = _uuid_to_str(UUID(source_id_or_name))
+            cond = SourceModel.id == uid_str
+        except ValueError:
+            cond = or_(
+                SourceModel.name == source_id_or_name,
+                SourceModel.id.like(f"{source_id_or_name}%"),
+            )
+
+        result = await self._session.execute(
+            sa_update(SourceModel)
+            .where(cond)
+            .values(enabled=enabled, updated_at=datetime.now(UTC))
+            .execution_options(synchronize_session=False)
+        )
+        self._session.expire_all()
+        return bool(getattr(result, "rowcount", 0) > 0)
 
     def _model_to_entity(self, model: SourceModel) -> Source:
         try:

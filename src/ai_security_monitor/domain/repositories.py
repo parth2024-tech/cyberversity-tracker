@@ -165,6 +165,11 @@ class EntryRepository(ABC):
         ...
 
     @abstractmethod
+    async def restore_entry(self, entry_id: UUID) -> bool:
+        """Restore a single soft-purged entry back to active state. Returns True if restored."""
+        ...
+
+    @abstractmethod
     async def restore_purged_entries(self) -> int:
         """Restore all soft-purged entries back to active state. Returns count."""
         ...
@@ -256,6 +261,10 @@ class SourceRepository(ABC):
     async def delete(self, source_id: UUID) -> bool:
         """Delete source by ID."""
         ...
+
+    async def toggle_enabled(self, source_id_or_name: str, enabled: bool) -> bool:
+        """Enable or disable source by UUID or name slug."""
+        return False
 
 
 class FetchLogRepository(ABC):
