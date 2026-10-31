@@ -20,6 +20,11 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema - create entry_entities knowledge graph table."""
+    conn = op.get_bind()
+    insp = sa.inspect(conn)
+    if "entry_entities" in insp.get_table_names():
+        return
+
     op.create_table(
         "entry_entities",
         sa.Column("id", sa.String(length=36), nullable=False),

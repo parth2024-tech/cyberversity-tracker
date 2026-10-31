@@ -89,6 +89,17 @@ class SchedulerService:
                     f"{results.get('success', 0)}/{results.get('total_sources', 0)} sources."
                 )
 
+                # Workstream B1: Background entity daily rollup aggregation
+                try:
+                    from ai_security_monitor.application.services.entity_rollup_service import (
+                        EntityRollupService,
+                    )
+                    rollup_svc = EntityRollupService()
+                    await rollup_svc.aggregate_daily_counts(days=3)
+                    logger.info("Entity daily count rollup successfully updated after sweep.")
+                except Exception as rollup_err:
+                    logger.warning(f"Entity daily rollup update failed: {rollup_err}")
+
                 # Rolling Data Retention Purge:
                 # Disabled by default: data is preserved indefinitely until the user manually triggers a cleanup.
                 if getattr(settings.database, "auto_purge_enabled", False):

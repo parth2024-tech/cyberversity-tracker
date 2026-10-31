@@ -20,25 +20,41 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema - add quarantine columns to sources table."""
+    conn = op.get_bind()
+    insp = sa.inspect(conn)
+    existing_columns = {c["name"] for c in insp.get_columns("sources")}
+
+    cols_to_add = [
+        col for col in ["is_quarantined", "consecutive_failures", "quarantined_at", "quarantine_reason"]
+        if col not in existing_columns
+    ]
+
+    if not cols_to_add:
+        return
+
     with op.batch_alter_table("sources", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "is_quarantined",
-                sa.Boolean(),
-                nullable=False,
-                server_default=sa.text("0"),
+        if "is_quarantined" in cols_to_add:
+            batch_op.add_column(
+                sa.Column(
+                    "is_quarantined",
+                    sa.Boolean(),
+                    nullable=False,
+                    server_default=sa.text("0"),
+                )
             )
-        )
-        batch_op.add_column(
-            sa.Column(
-                "consecutive_failures",
-                sa.Integer(),
-                nullable=False,
-                server_default=sa.text("0"),
+        if "consecutive_failures" in cols_to_add:
+            batch_op.add_column(
+                sa.Column(
+                    "consecutive_failures",
+                    sa.Integer(),
+                    nullable=False,
+                    server_default=sa.text("0"),
+                )
             )
-        )
-        batch_op.add_column(sa.Column("quarantined_at", sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column("quarantine_reason", sa.Text(), nullable=True))
+        if "quarantined_at" in cols_to_add:
+            batch_op.add_column(sa.Column("quarantined_at", sa.DateTime(), nullable=True))
+        if "quarantine_reason" in cols_to_add:
+            batch_op.add_column(sa.Column("quarantine_reason", sa.Text(), nullable=True))
 
 
 def downgrade() -> None:
