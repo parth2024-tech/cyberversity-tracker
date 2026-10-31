@@ -896,6 +896,50 @@ class SQLAlchemyEntryRepository(EntryRepository):
                     )
                 )
 
+        if filters.subject_region and filters.subject_region != "all":
+            clean_sreg = re.sub(r"[^a-zA-Z0-9_\-]", "", filters.subject_region.lower())
+            if clean_sreg:
+                if not source_joined:
+                    stmt = stmt.join(
+                        SourceModel, EntryModel.source_id == SourceModel.id
+                    )
+                    source_joined = True
+                stmt = stmt.where(
+                    or_(
+                        EntryModel.extra_metadata.like(
+                            f'%"subject_region": "{clean_sreg}"%'
+                        ),
+                        EntryModel.extra_metadata.like(f'%"region": "{clean_sreg}"%'),
+                        SourceModel.config.like(f'%"region": "{clean_sreg}"%'),
+                    )
+                )
+
+        if filters.lab and filters.lab != "all":
+            clean_lab = filters.lab.strip()
+            if clean_lab:
+                stmt = stmt.where(
+                    or_(
+                        EntryModel.extra_metadata.like(f'%"lab": "{clean_lab}"%'),
+                        EntryModel.extra_metadata.like(f'%"author": "{clean_lab}"%'),
+                        EntryModel.title.ilike(f"%{clean_lab}%"),
+                        EntryModel.summary.ilike(f"%{clean_lab}%"),
+                    )
+                )
+
+        if filters.tier is not None:
+            if not source_joined:
+                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id)
+                source_joined = True
+            tier_num = float(filters.tier)
+            stmt = stmt.where(
+                or_(
+                    SourceModel.config.like(f'%"tier": {tier_num}%'),
+                    SourceModel.config.like(f'%"tier": {int(tier_num)}%')
+                    if tier_num.is_integer()
+                    else false(),
+                )
+            )
+
         return stmt, analysis_joined
 
     def _model_to_entity(self, model: EntryModel) -> Entry:
@@ -1556,4 +1600,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-
