@@ -181,15 +181,18 @@ class DatabaseManager:
                     await conn.execute(
                         text(
                             "CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5("
-                            "title, summary, category, entry_id UNINDEXED"
+                            "title, summary, category, translated_text, entry_id UNINDEXED, tokenize='trigram'"
                             ")"
                         )
                     )
                     await conn.execute(
                         text(
                             "CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN "
-                            "INSERT INTO entries_fts(entry_id, title, summary, category) "
-                            "VALUES (new.id, new.title, new.summary, new.category); "
+                            "INSERT INTO entries_fts(entry_id, title, summary, category, translated_text) "
+                            "VALUES ("
+                            "new.id, new.title, new.summary, new.category, "
+                            "coalesce(json_extract(new.metadata_json, '$.translated_text'), '')"
+                            "); "
                             "END;"
                         )
                     )
@@ -204,16 +207,21 @@ class DatabaseManager:
                         text(
                             "CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN "
                             "DELETE FROM entries_fts WHERE entry_id = old.id; "
-                            "INSERT INTO entries_fts(entry_id, title, summary, category) "
-                            "VALUES (new.id, new.title, new.summary, new.category); "
+                            "INSERT INTO entries_fts(entry_id, title, summary, category, translated_text) "
+                            "VALUES ("
+                            "new.id, new.title, new.summary, new.category, "
+                            "coalesce(json_extract(new.metadata_json, '$.translated_text'), '')"
+                            "); "
                             "END;"
                         )
                     )
                     # Backfill existing entries into FTS5 index if table was newly created
                     await conn.execute(
                         text(
-                            "INSERT OR IGNORE INTO entries_fts(entry_id, title, summary, category) "
-                            "SELECT id, title, summary, category FROM entries "
+                            "INSERT OR IGNORE INTO entries_fts(entry_id, title, summary, category, translated_text) "
+                            "SELECT id, title, summary, category, "
+                            "coalesce(json_extract(metadata_json, '$.translated_text'), '') "
+                            "FROM entries "
                             "WHERE is_purged = 0"
                         )
                     )

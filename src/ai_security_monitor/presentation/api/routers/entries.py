@@ -227,6 +227,12 @@ def interleave_impartial(items: list[dict], max_consecutive: int = 2) -> list[di
 async def query_serialized_entries(
     category: str | None = None,
     search: str | None = None,
+    q: str | None = None,
+    subject_region: str | None = None,
+    lab: str | None = None,
+    tier: float | int | None = None,
+    from_date: datetime | str | None = None,
+    to_date: datetime | str | None = None,
     pre_cve: bool = False,
     high_velocity: bool = False,
     watchlist_only: bool = False,
@@ -239,9 +245,29 @@ async def query_serialized_entries(
     offset: int = 0,
 ) -> tuple[list[dict], int]:
     """Internal helper to retrieve and serialize filtered entries."""
+    effective_search = (search or q or "").strip() or None
+
     since = None
-    if hours and isinstance(hours, int):
+    if from_date:
+        if isinstance(from_date, str):
+            try:
+                since = datetime.fromisoformat(from_date)
+            except ValueError:
+                pass
+        elif isinstance(from_date, datetime):
+            since = from_date
+    elif hours and isinstance(hours, int):
         since = datetime.now(UTC) - timedelta(hours=hours)
+
+    until = None
+    if to_date:
+        if isinstance(to_date, str):
+            try:
+                until = datetime.fromisoformat(to_date)
+            except ValueError:
+                pass
+        elif isinstance(to_date, datetime):
+            until = to_date
 
     cat_enum = None
     categories_filter = None
@@ -279,13 +305,14 @@ async def query_serialized_entries(
     filters = EntryFilters(
         category=cat_enum,
         categories=categories_filter,
-        search=search if isinstance(search, str) else None,
+        search=effective_search,
         keywords=None,
         watchlist_rules=active_rules if watchlist_only else None,
         pre_cve_only=bool(pre_cve),
         high_velocity_only=bool(high_velocity),
         important_only=bool(important_only),
         since=since,
+        until=until,
         sort_by=sort_by if isinstance(sort_by, str) else "top",
         region=region
         if region and region != "all" and isinstance(region, str)
@@ -293,32 +320,48 @@ async def query_serialized_entries(
         country=country
         if country and country != "all" and isinstance(country, str)
         else None,
+        subject_region=subject_region
+        if subject_region
+        and subject_region != "all"
+        and isinstance(subject_region, str)
+        else None,
+        lab=lab if lab and lab != "all" and isinstance(lab, str) else None,
+        tier=float(tier) if tier is not None else None,
     )
     pagination = PaginationParams(limit=limit, offset=offset)
 
     # Cache total count when query has no filters
     has_custom_filters = bool(
         cat_enum
-        or search
+        or effective_search
         or pre_cve
         or high_velocity
         or watchlist_only
         or important_only
         or since
+        or until
         or (region and region != "all")
         or (country and country != "all")
+        or (subject_region and subject_region != "all")
+        or (lab and lab != "all")
+        or tier is not None
     )
 
     async def _list_entries():
         async with SqlAlchemyUnitOfWork() as uow:
             if (
-                search
+                effective_search
                 and not pre_cve
                 and not high_velocity
                 and not watchlist_only
                 and not important_only
+                and not lab
+                and tier is None
+                and not until
             ):
-                fts_results = await uow.entries.search_fts(search, limit=limit * 2)
+                fts_results = await uow.entries.search_fts(
+                    effective_search, limit=limit * 2
+                )
                 if fts_results:
                     if cat_enum:
                         fts_results = [e for e in fts_results if e.category == cat_enum]
@@ -327,6 +370,14 @@ async def query_serialized_entries(
                             e
                             for e in fts_results
                             if (e.metadata or {}).get("region") == region
+                        ]
+                    if subject_region and subject_region != "all":
+                        fts_results = [
+                            e
+                            for e in fts_results
+                            if (e.metadata or {}).get("subject_region")
+                            == subject_region
+                            or (e.metadata or {}).get("region") == subject_region
                         ]
                     if fts_results:
                         return fts_results[:limit]
@@ -450,6 +501,15 @@ async def query_serialized_entries(
         cleaned_summary = _clean_entry_summary(e.summary, e, cleaned_title)
 
         meta_dict = e.metadata or {}
+        first_reported_by = meta_dict.get("first_reported_by") or (
+            src_name
+            if (
+                getattr(e, "is_primary", False)
+                or meta_dict.get("is_primary")
+                or meta_dict.get("is_primary_source")
+            )
+            else None
+        )
         is_imp = bool(
             meta_dict.get("is_important", False)
             or meta_dict.get("is_saved", False)
@@ -471,6 +531,7 @@ async def query_serialized_entries(
                 "source_id": str(e.source_id),
                 "source_name": src_name,
                 "source": src_name,
+                "first_reported_by": first_reported_by,
                 "region": src_region,
                 "country": src_country,
                 "title": cleaned_title,
@@ -484,7 +545,9 @@ async def query_serialized_entries(
                 "metadata": e.metadata,
                 "heat_score": heat_val,
                 "heat_badge": heat_bdg,
-                "story_id": str(e.story_id) if getattr(e, "story_id", None) else meta_dict.get("story_id"),
+                "story_id": str(e.story_id)
+                if getattr(e, "story_id", None)
+                else meta_dict.get("story_id"),
                 "is_important": is_imp,
                 "importance_reason": meta_dict.get("importance_reason"),
                 "user_notes": meta_dict.get("user_notes", ""),
@@ -521,7 +584,9 @@ async def query_serialized_entries(
         )
 
     if sort_by == "heat":
-        serialized_entries.sort(key=lambda item: float(item.get("heat_score", 0.0)), reverse=True)
+        serialized_entries.sort(
+            key=lambda item: float(item.get("heat_score", 0.0)), reverse=True
+        )
 
     # Enforce source diversity and impartiality across entries
     serialized_entries = interleave_impartial(serialized_entries, max_consecutive=2)
@@ -541,6 +606,12 @@ async def list_entries(
     request: Request,
     category: str | None = Query(None),
     search: str | None = Query(None),
+    q: str | None = Query(None),
+    subject_region: str | None = Query(None),
+    lab: str | None = Query(None),
+    tier: float | None = Query(None),
+    from_: str | None = Query(None, alias="from"),
+    to: str | None = Query(None, alias="to"),
     pre_cve: bool | None = Query(False),
     high_velocity: bool | None = Query(False),
     watchlist_only: bool | None = Query(False),
@@ -555,13 +626,20 @@ async def list_entries(
 ):
     """Query intelligence entries with pagination, search, watchlist, vault, and feature filters — cached 60s."""
     effective_sort = sort or sort_by
+    effective_search = search or q
     is_vault = bool(important_only or category in ("important", "vault"))
-    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{is_vault}_{hours}_{region}_{country}_{effective_sort}_{limit}_{offset}"
+    cache_key = f"entries_{category}_{effective_search}_{subject_region}_{lab}_{tier}_{from_}_{to}_{pre_cve}_{high_velocity}_{watchlist_only}_{is_vault}_{hours}_{region}_{country}_{effective_sort}_{limit}_{offset}"
 
     async def _fetch():
         serialized_entries, total = await query_serialized_entries(
             category=category,
-            search=search,
+            search=effective_search,
+            q=q,
+            subject_region=subject_region,
+            lab=lab,
+            tier=tier,
+            from_date=from_,
+            to_date=to,
             pre_cve=bool(pre_cve),
             high_velocity=bool(high_velocity),
             watchlist_only=bool(watchlist_only),
