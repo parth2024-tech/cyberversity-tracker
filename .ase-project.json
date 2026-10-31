@@ -105,7 +105,9 @@
     "Rocchio personalization centroids require dual-query retrieval of positive (vaulted) and negative (purged/dismissed) entries, and mock UOWs in tests must accommodate both list calls.",
     "Telegram inline keyboard callback_data payloads must strictly stay below 64 UTF-8 bytes; long source slugs should be hashed to 16-hex prefixes, and entry UUIDs should use 32-hex characters.",
     "Telegram long-polling (getUpdates) throws HTTP 409 Conflict if a webhook was previously active; calling deleteWebhook(drop_pending_updates=False) during startup eliminates this conflict.",
-    "FastAPI background tasks executed from webhook or callback routes must instantiate fresh UnitOfWork sessions, as request-scoped sessions close immediately upon returning the HTTP response.",
-    "Telegram delivery instances in service constructors should be lazy-loaded to prevent DeliveryConfigError when testing or running unconfigured environments."
+    "Telegram delivery instances in service constructors should be lazy-loaded to prevent DeliveryConfigError when testing or running unconfigured environments.",
+    "Local SLM Fast-Fail Circuit Breaker: Use short (<=500ms) connection timeout and an active cooldown (300s) on connection failures so when the daemon is offline, requests immediately fail fast to cloud frontier or heuristic synthesis without network latency.",
+    "Small Model (SLM) Structured Output Resilience: Small 3B-7B models often wrap JSON in markdown code blocks or leave trailing commas before brackets; combining multi-pass regex fence stripping, comma repair, and balanced bracket extraction prevents json.loads failures.",
+    "Prompt Caching Prefix Isolation: Static system prompts must strictly sit at index 0 isolated from dynamic runtime variables to trigger automatic prefix caching in OpenAI/Gemini/Groq and ephemeral block caching in Anthropic."
   ]
 }

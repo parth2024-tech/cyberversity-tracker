@@ -1,4 +1,7 @@
-# LLM-based analyzer with Ollama, Groq, and local gateway support.
+# LLM-based analyzer with Tiered SLM routing, Fast-Fail Circuit Breaker,
+# Ephemeral Prompt Caching, and Resilient Small-Model Output Parsing.
+
+from __future__ import annotations
 
 import json
 import os
@@ -13,12 +16,23 @@ from ai_security_monitor.infrastructure.analyzers.base import (
     BaseAnalyzer,
     analyzer_registry,
 )
+from ai_security_monitor.infrastructure.analyzers.prompt_cache import (
+    STATIC_ANALYZER_SYSTEM_PROMPT,
+    build_cached_prompt_messages,
+)
+from ai_security_monitor.infrastructure.analyzers.slm_circuit_breaker import (
+    slm_circuit_breaker,
+)
+from ai_security_monitor.infrastructure.analyzers.structured_output_parser import (
+    normalize_slm_analysis_payload,
+    parse_slm_json,
+)
 
 logger = get_logger(__name__)
 
 
 class LLMAnalyzer(BaseAnalyzer):
-    """LLM-based analyzer supporting Ollama, Groq, and local gateway (auto/offline)."""
+    """Tiered LLM/SLM analyzer with prompt caching, circuit breaker, and receipts."""
 
     def __init__(
         self,
@@ -31,11 +45,18 @@ class LLMAnalyzer(BaseAnalyzer):
         self.provider = cfg.get("provider") or (
             "groq"
             if (settings.analyzer.groq_api_key and cfg.get("provider") == "groq")
-            else "ollama"
+            else (
+                settings.analyzer.default_model
+                if settings.analyzer.default_model != "heuristic"
+                else "tiered"
+            )
         )
-        self.max_tokens = cfg.get("max_tokens", 250)
+        self.tier = cfg.get("tier", "tiered")  # "tiered", "local_slm", "cloud_frontier"
+        self.max_tokens = cfg.get("max_tokens", 400)
         self.temperature = cfg.get("temperature", settings.analyzer.temperature)
         self.enable_receipts = enable_receipts
+        self._last_cache_read_tokens: int = 0
+        self._last_cache_creation_tokens: int = 0
 
         if receipt_service is not None:
             self.receipt_service = receipt_service
@@ -51,45 +72,48 @@ class LLMAnalyzer(BaseAnalyzer):
         else:
             self.receipt_service = None
 
-        # Route to Groq if explicitly requested, otherwise use local Ollama
-        if self.provider == "groq":
-            self._init_groq()
-        else:
-            self._init_ollama()
+        self._init_ollama()
+        if settings.analyzer.groq_api_key or cfg.get("provider") == "groq":
+            try:
+                self._init_groq()
+            except Exception as e:
+                logger.debug(f"Groq initialization notice: {e}")
 
-    def _init_ollama(self):
-        """Initialize Ollama client."""
+    def _init_ollama(self) -> None:
+        """Initialize Ollama / Local SLM configuration."""
         cfg = self.config or {}
-        self.ollama_host = cfg.get("ollama_host", settings.analyzer.ollama_host)
-        # Use qwen2:0.5b (fast local GPU) or specified model
-        self.ollama_model = cfg.get("ollama_model") or "qwen2:0.5b"
+        self.ollama_host = cfg.get(
+            "ollama_host",
+            settings.analyzer.slm_endpoint or settings.analyzer.ollama_host,
+        )
+        self.ollama_model = cfg.get(
+            "ollama_model",
+            settings.analyzer.slm_model or settings.analyzer.ollama_model,
+        )
         self._use_gateway = False
 
-    def _init_groq(self):
+    def _init_groq(self) -> None:
         """Initialize Groq client."""
         try:
-            try:
-                from groq import AsyncGroq
+            from groq import AsyncGroq
 
-                api_key = settings.analyzer.groq_api_key or os.getenv("GROQ_API_KEY")
-                if not api_key:
-                    raise ValueError("Groq API key not configured")
-                self.client = AsyncGroq(api_key=api_key)
-            except ImportError:
-                from groq import Groq
-
-                api_key = settings.analyzer.groq_api_key or os.getenv("GROQ_API_KEY")
-                if not api_key:
-                    raise ValueError("Groq API key not configured")
-                self.client = Groq(api_key=api_key)
-            self.groq_model = settings.analyzer.groq_model
-            self._use_gateway = False
+            api_key = settings.analyzer.groq_api_key or os.getenv("GROQ_API_KEY")
+            if not api_key:
+                raise ValueError("Groq API key not configured")
+            self.client = AsyncGroq(api_key=api_key)
         except ImportError:
-            raise ValueError(
-                "Groq package not installed. Install with: pip install groq"
-            )
+            from groq import Groq
 
-    def _init_gateway(self):
+            api_key = settings.analyzer.groq_api_key or os.getenv("GROQ_API_KEY")
+            if not api_key:
+                raise ValueError("Groq API key not configured")
+            self.client = Groq(api_key=api_key)  # type: ignore[assignment]
+        self.groq_model = (
+            settings.analyzer.cloud_fast_model or settings.analyzer.groq_model
+        )
+        self._use_gateway = False
+
+    def _init_gateway(self) -> None:
         """Initialize local gateway (Hermes omniroute) client."""
         self.gateway_host = "http://localhost:20128/v1"
         self.gateway_model = settings.analyzer.local_model
@@ -97,7 +121,7 @@ class LLMAnalyzer(BaseAnalyzer):
 
     @property
     def analyzer_type(self) -> str:
-        if self.provider in ("ollama", "heuristic"):
+        if self.provider in ("ollama", "heuristic", "local_slm", "tiered"):
             return f"llm_{self.provider}"
         elif self.provider == "groq":
             return "llm_groq"
@@ -108,90 +132,130 @@ class LLMAnalyzer(BaseAnalyzer):
     def model(self) -> AnalysisModel:
         if self.provider == "groq":
             return AnalysisModel.GROQ
-        elif self.provider == "ollama":
+        elif self.provider in ("ollama", "local_slm", "tiered"):
             return AnalysisModel.OLLAMA
         else:
             return AnalysisModel.LOCAL
 
-    def _build_prompt(self, entry: Entry) -> str:
-        """Build publication-grade worldwide AI analysis prompt for LLM."""
+    def _build_user_prompt(self, entry: Entry) -> str:
+        """Build dynamic entry payload isolated from static rubric and schema."""
         safe_title = sanitizer.sanitize_text(entry.title)
         safe_summary = sanitizer.sanitize_text(entry.summary)
         safe_tags = [sanitizer.sanitize_text(t) for t in (entry.tags or [])]
+        cat_str = (
+            entry.category.value
+            if hasattr(entry.category, "value")
+            else str(entry.category)
+        )
 
-        return f"""Analyze this Artificial Intelligence / Machine Learning ecosystem release and provide structured JSON telemetry.
+        return (
+            f"Title: {safe_title}\n"
+            f"Summary: {safe_summary}\n"
+            f"Category: {cat_str}\n"
+            f"Tags: {', '.join(safe_tags)}\n"
+            f"URL: {entry.url}"
+        )
 
-Title: {safe_title}
-Summary: {safe_summary}
-Category: {entry.category.value if hasattr(entry.category, "value") else str(entry.category)}
-Tags: {", ".join(safe_tags)}
-URL: {entry.url}
+    def _build_prompt(self, entry: Entry) -> str:
+        """Legacy combined prompt for backward compatibility."""
+        user_part = self._build_user_prompt(entry)
+        return f"{STATIC_ANALYZER_SYSTEM_PROMPT}\n\n{user_part}"
 
-Strict JSON format required with these fields:
-- attack_vector: Technical description of novel architecture, algorithmic mechanism, or developer runtime optimization (e.g. 'Test-Time Compute Scaling via GRPO', 'Paged Attention CUDA Kernels', 'Mixture-of-Experts Sparse Routing')
-- risk_assessment: Strategic capability assessment and ecosystem impact (e.g. 'Frontier open-weights milestone: Outperforms baseline models on MATH & AIME benchmarks; democratizes local reasoning on consumer hardware')
-- mitigation: Actionable developer deployment recommendations (e.g. 'Deploy via vLLM with BF16 or FP8 quantization', 'Requires minimum 24GB VRAM for unquantized inference', 'Integrate with LangChain/LlamaIndex agents')
-- threat_velocity: 1-100 (Adoption and release impact velocity across AI developer communities)
-- severity_index: 1-100 (Capability breakthrough significance: 85-100 for seminal foundation models, 60-84 for major tooling/libraries)
-- blast_radius_score: 1-100 (Ecosystem adoption breadth across PyTorch, vLLM, HuggingFace, CUDA, Ollama)
-- affected_ecosystem: List of compatible/relevant AI frameworks (e.g. ['vLLM', 'Ollama', 'PyTorch', 'HuggingFace', 'DeepSeek', 'SGLang'])
-- is_pre_cve_warning: false
-- attack_archetype: One of ['Frontier Foundation Model', 'Inference Runtime', 'arXiv Algorithmic Breakthrough', 'Agentic Workflow Engine', 'Fine-Tuning & Alignment', 'Hardware Acceleration', 'Ecosystem Library']
-- weaponization_potential: One of ['Production Ready', 'Experimental Checkpoint', 'Research Paper Only']
-
-Respond with raw JSON only. Do not include markdown codeblocks or conversational filler."""
-
-    async def _call_ollama(self, prompt: str) -> dict:
-        """Call Ollama API with guaranteed JSON format."""
-        import re
+    async def _call_ollama(
+        self, prompt: str, user_prompt: str | None = None
+    ) -> dict[str, Any]:
+        """Call Ollama / Local SLM with circuit breaker and resilient parsing."""
+        if slm_circuit_breaker.is_tripped:
+            raise RuntimeError(
+                f"Local SLM circuit breaker is OPEN (cooldown active {slm_circuit_breaker.cooldown_remaining:.1f}s)"
+            )
 
         import httpx
 
-        payload = {
-            "model": self.ollama_model,
-            "prompt": prompt,
-            "stream": False,
-            "format": "json",
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": self.max_tokens,
-            },
-        }
+        endpoint = getattr(self, "ollama_host", settings.analyzer.slm_endpoint).rstrip(
+            "/"
+        )
+        model = getattr(self, "ollama_model", settings.analyzer.slm_model)
 
-        async with httpx.AsyncClient(timeout=12) as client:
-            try:
-                response = await client.post(
-                    f"{self.ollama_host}/api/generate", json=payload
-                )
-                response.raise_for_status()
-            except Exception as first_err:
-                # If primary model fails or times out, fallback to ultra-fast qwen2:0.5b
+        timeout = httpx.Timeout(
+            connect=settings.analyzer.slm_timeout_seconds,
+            read=20.0,
+            write=10.0,
+            pool=5.0,
+        )
+
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 try:
-                    payload["model"] = "qwen2:0.5b"
-                    response = await client.post(
-                        f"{self.ollama_host}/api/generate", json=payload
+                    # 1. Try generate API endpoint
+                    resp = await client.post(
+                        f"{endpoint}/api/generate",
+                        json={
+                            "model": model,
+                            "system": STATIC_ANALYZER_SYSTEM_PROMPT,
+                            "prompt": user_prompt or prompt,
+                            "stream": False,
+                            "format": "json",
+                            "options": {
+                                "temperature": self.temperature,
+                                "num_predict": self.max_tokens,
+                            },
+                        },
                     )
-                    response.raise_for_status()
-                except Exception:
-                    raise first_err
+                    resp.raise_for_status()
+                except Exception as first_err:
+                    # Fallback to fast qwen2:0.5b on primary failure
+                    try:
+                        resp = await client.post(
+                            f"{endpoint}/api/generate",
+                            json={
+                                "model": "qwen2:0.5b",
+                                "prompt": user_prompt or prompt,
+                                "stream": False,
+                                "format": "json",
+                                "options": {
+                                    "temperature": self.temperature,
+                                    "num_predict": self.max_tokens,
+                                },
+                            },
+                        )
+                        resp.raise_for_status()
+                    except Exception:
+                        raise first_err
 
-            data = response.json()
-            raw_content = data.get("response", "{}")
-            try:
-                return json.loads(raw_content)
-            except json.JSONDecodeError:
-                json_match = re.search(r"\{.*\}", raw_content, re.DOTALL)
-                if json_match:
-                    return json.loads(json_match.group())
-                raise
+                data = resp.json()
+                content = data.get("response", "") or (
+                    data.get("message", {}).get("content", "")
+                    if isinstance(data.get("message"), dict)
+                    else ""
+                )
 
-    async def _call_groq(self, prompt: str) -> dict:
-        """Call Groq API."""
+                parsed = parse_slm_json(content)
+                if parsed:
+                    slm_circuit_breaker.record_success()
+                    return parsed
+                raise ValueError("Could not parse structured JSON from SLM response")
+
+        except (httpx.ConnectError, httpx.ConnectTimeout) as net_err:
+            slm_circuit_breaker.record_failure(net_err)
+            raise net_err
+
+    async def _call_groq(
+        self, prompt: str, user_prompt: str | None = None
+    ) -> dict[str, Any]:
+        """Call Groq API with prompt caching support."""
         import inspect
 
-        create_res = self.client.chat.completions.create(
+        messages = build_cached_prompt_messages(
+            STATIC_ANALYZER_SYSTEM_PROMPT,
+            user_prompt or prompt,
+            provider="groq",
+            enable_caching=settings.analyzer.enable_prompt_caching,
+        )
+
+        create_res = self.client.chat.completions.create(  # type: ignore[call-overload]
             model=self.groq_model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,  # type: ignore[arg-type]
             temperature=self.temperature,
             max_tokens=self.max_tokens,
             response_format={"type": "json_object"},
@@ -200,9 +264,23 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
             response = await create_res
         else:
             response = create_res
-        return json.loads(response.choices[0].message.content)
 
-    async def _call_gateway(self, prompt: str) -> dict:
+        content = response.choices[0].message.content
+        data = parse_slm_json(content) or json.loads(content)
+
+        usage = getattr(response, "usage", None)
+        cache_read = 0
+        cache_create = 0
+        if usage:
+            details = getattr(usage, "prompt_tokens_details", None)
+            if details:
+                cache_read = getattr(details, "cached_tokens", 0) or 0
+
+        self._last_cache_read_tokens = cache_read
+        self._last_cache_creation_tokens = cache_create
+        return data
+
+    async def _call_gateway(self, prompt: str) -> dict[str, Any]:
         """Call local gateway (Hermes omniroute) API."""
         import httpx
 
@@ -210,7 +288,7 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
             response = await client.post(
                 f"{self.gateway_host}/chat/completions",
                 json={
-                    "model": self.gateway_model,
+                    "model": getattr(self, "gateway_model", "auto/offline"),
                     "messages": [{"role": "user", "content": prompt}],
                     "stream": False,
                     "temperature": self.temperature,
@@ -220,23 +298,16 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
             response.raise_for_status()
             data = response.json()
             content = data["choices"][0]["message"]["content"]
-            # Extract JSON from response (may have reasoning content)
-            try:
-                return json.loads(content)
-            except json.JSONDecodeError:
-                # Try to find JSON in the response
-                import re
-
-                json_match = re.search(r"\{.*\}", content, re.DOTALL)
-                if json_match:
-                    return json.loads(json_match.group())
-                raise
+            parsed = parse_slm_json(content)
+            if parsed:
+                return parsed
+            return json.loads(content)
 
     def _get_active_model_name(self) -> str:
         if self.provider == "groq":
             return getattr(self, "groq_model", "groq")
-        elif self.provider == "ollama":
-            return getattr(self, "ollama_model", "ollama")
+        elif self.provider in ("ollama", "local_slm", "tiered"):
+            return getattr(self, "ollama_model", settings.analyzer.slm_model)
         else:
             return getattr(self, "gateway_model", "local")
 
@@ -247,81 +318,48 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
         active_model: AnalysisModel,
         reused_receipt: bool = False,
     ) -> AnalysisResult:
-        # Validate and normalize string fields
-        raw_risk = result.get("risk_assessment")
-        if isinstance(raw_risk, dict):
-            risk_str = f"{raw_risk.get('risk_level', 'High')} impact: {raw_risk.get('impact_description', '')}"
-        elif isinstance(raw_risk, list):
-            risk_str = "; ".join(str(x) for x in raw_risk)
-        else:
-            risk_str = str(raw_risk or "Frontier AI capability verified")
+        normalized = normalize_slm_analysis_payload(result, default_title=entry.title)
 
-        raw_mit = result.get("mitigation")
-        if isinstance(raw_mit, list):
-            mit_str = "; ".join(str(m) for m in raw_mit)
-        elif isinstance(raw_mit, dict):
-            mit_str = "; ".join(f"{k}: {v}" for k, v in raw_mit.items())
-        else:
-            mit_str = str(raw_mit or "Deploy with optimized inference runtime")
-
-        raw_vector = result.get("attack_vector")
-        if isinstance(raw_vector, (dict, list)):
-            vector_str = str(raw_vector)
-        else:
-            vector_str = str(raw_vector or "Novel Architecture & Compute Mechanism")
-
-        # Strip conversational AI introductory slop
-        risk_str = sanitizer.strip_introductory_phrases(risk_str)
-        mit_str = sanitizer.strip_introductory_phrases(mit_str)
-        vector_str = sanitizer.strip_introductory_phrases(vector_str)
-
-        raw_eco = result.get("affected_ecosystem", [])
-        if isinstance(raw_eco, str):
-            raw_eco = [raw_eco]
-
-        # Calculate balanced velocity & severity
-        vel = max(1, min(100, int(result.get("threat_velocity", 75))))
-        sev = max(1, min(100, int(result.get("severity_index", 75))))
-        blast = max(0, min(100, int(result.get("blast_radius_score", 60))))
+        risk_str = sanitizer.strip_introductory_phrases(normalized["risk_assessment"])
+        mit_str = sanitizer.strip_introductory_phrases(normalized["mitigation"])
+        vector_str = sanitizer.strip_introductory_phrases(normalized["attack_vector"])
 
         return AnalysisResult(
             entry_id=entry.id,
             attack_vector=vector_str,
             risk_assessment=risk_str,
             mitigation=mit_str,
-            threat_velocity=vel,
-            severity_index=sev,
-            blast_radius_score=blast,
-            affected_ecosystem=raw_eco if isinstance(raw_eco, list) else [],
-            is_pre_cve_warning=bool(result.get("is_pre_cve_warning", False)),
-            attack_archetype=str(
-                result.get("attack_archetype", "Frontier Foundation Model")
-            ),
-            weaponization_potential=str(
-                result.get("weaponization_potential", "Production Ready")
-            ),
+            threat_velocity=normalized["threat_velocity"],
+            severity_index=normalized["severity_index"],
+            blast_radius_score=normalized["blast_radius_score"],
+            affected_ecosystem=normalized["affected_ecosystem"],
+            is_pre_cve_warning=False,
+            attack_archetype=normalized["attack_archetype"],
+            weaponization_potential=normalized["weaponization_potential"],
             model=active_model,
             confidence=0.95,
         )
 
     async def analyze(self, entry: Entry) -> AnalysisResult:
-        """Analyze entry using multi-tier resilient LLM with automatic graceful fallback and receipts."""
+        """Analyze entry using Tiered SLM routing with prompt caching and circuit breaker."""
         model_name = self._get_active_model_name()
         logical_key: str | None = None
 
         # Check idempotent receipts and poison entry retry cap
         if self.receipt_service:
             try:
-                logical_key, receipt, should_call = (
-                    await self.receipt_service.check_or_record_attempt(
-                        entry=entry,
-                        provider=self.provider,
-                        model=model_name,
-                    )
+                (
+                    logical_key,
+                    receipt,
+                    should_call,
+                ) = await self.receipt_service.check_or_record_attempt(
+                    entry=entry,
+                    provider=self.provider,
+                    model=model_name,
                 )
                 if receipt.status == "succeeded" and receipt.response_json:
                     logger.info(
-                        f"⚡ Idempotent receipt hit ({logical_key[:10]}...): reusing cached LLM analysis for {entry.title[:45]}"
+                        f"⚡ Idempotent receipt hit ({logical_key[:10]}...): reusing cached analysis for {entry.title[:45]}"
                     )
                     return self._build_analysis_result(
                         entry, receipt.response_json, self.model, reused_receipt=True
@@ -338,34 +376,84 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
             except Exception as rc_err:
                 logger.debug(f"Receipt attempt check non-blocking error: {rc_err}")
 
-        prompt = self._build_prompt(entry)
+        user_prompt = self._build_user_prompt(entry)
+        combined_prompt = self._build_prompt(entry)
 
-        result: dict | None = None
+        result: dict[str, Any] | None = None
         active_model = self.model
+        execution_tier = "local_slm"
+        cache_read_tokens = 0
+        cache_creation_tokens = 0
 
-        # Multi-Tier Routing: Try preferred provider, then fallback gracefully
+        # High-signal check: items with high velocity, user-vaulted status, or explicit frontier override
+        is_high_signal = bool(
+            (entry.metadata or {}).get("force_frontier")
+            or (entry.metadata or {}).get("is_high_priority")
+            or self.tier == "cloud_frontier"
+        )
+
+        def _extract_groq_res(raw_res: Any) -> tuple[dict[str, Any], int, int]:
+            if isinstance(raw_res, tuple) and len(raw_res) == 3:
+                return raw_res[0], int(raw_res[1]), int(raw_res[2])
+            return (
+                raw_res,
+                int(getattr(self, "_last_cache_read_tokens", 0)),
+                int(getattr(self, "_last_cache_creation_tokens", 0)),
+            )
+
         try:
-            if self.provider == "groq":
-                result = await self._call_groq(prompt)
+            # 1. Tier 2 Cloud Frontier (for high-signal items or when provider is groq)
+            if (is_high_signal or self.provider == "groq") and hasattr(self, "client"):
+                raw_res = await self._call_groq(combined_prompt, user_prompt=user_prompt)
+                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
                 active_model = AnalysisModel.GROQ
-            elif self.provider in ("ollama", "local"):
-                # Try Ollama first
+                execution_tier = (
+                    "cloud_cached" if cache_read_tokens > 0 else "cloud_uncached"
+                )
+
+            # 2. Tier 1 Local SLM (Ollama / Qwen2.5 / Llama3.2)
+            elif not slm_circuit_breaker.is_tripped and getattr(
+                settings.analyzer, "slm_enabled", True
+            ):
                 try:
-                    result = await self._call_ollama(prompt)
+                    result = await self._call_ollama(
+                        combined_prompt, user_prompt=user_prompt
+                    )
                     active_model = AnalysisModel.OLLAMA
-                except Exception as ollama_err:
-                    # If gateway host is configured, try gateway
-                    if getattr(self, "gateway_host", None):
-                        try:
-                            result = await self._call_gateway(prompt)
-                            active_model = AnalysisModel.LOCAL
-                        except Exception:
-                            raise ollama_err
+                    execution_tier = "local_slm"
+                except Exception as slm_err:
+                    logger.info(
+                        f"Local SLM unavailable ({slm_err}); degrading to cloud/heuristic fallback"
+                    )
+                    # Circuit breaker tripped or errored: try cloud fast model if client available
+                    if hasattr(self, "client"):
+                        raw_res = await self._call_groq(
+                            combined_prompt, user_prompt=user_prompt
+                        )
+                        result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                        active_model = AnalysisModel.GROQ
+                        execution_tier = (
+                            "cloud_cached"
+                            if cache_read_tokens > 0
+                            else "cloud_uncached"
+                        )
                     else:
-                        raise ollama_err
+                        raise slm_err
+
+            # 3. Circuit breaker OPEN or SLM disabled: route directly to cloud fast model if available
+            elif hasattr(self, "client"):
+                raw_res = await self._call_groq(combined_prompt, user_prompt=user_prompt)
+                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                active_model = AnalysisModel.GROQ
+                execution_tier = (
+                    "cloud_cached" if cache_read_tokens > 0 else "cloud_uncached"
+                )
+
             else:
-                result = await self._call_gateway(prompt)
-                active_model = AnalysisModel.LOCAL
+                raise RuntimeError(
+                    "No LLM/SLM transport available; circuit breaker is OPEN"
+                )
+
         except Exception as llm_err:
             if self.receipt_service and logical_key:
                 try:
@@ -399,10 +487,16 @@ Respond with raw JSON only. Do not include markdown codeblocks or conversational
             fallback = HeuristicAnalyzer()
             return await fallback.analyze(entry)
 
-        # Successful call: record receipt for 0 repeat spend
+        # Successful call: record receipt with execution tier and prompt cache savings
         if self.receipt_service and logical_key:
             try:
-                await self.receipt_service.record_success(logical_key, result)
+                await self.receipt_service.record_success(
+                    logical_key=logical_key,
+                    response_json=result,
+                    execution_tier=execution_tier,
+                    cache_read_input_tokens=cache_read_tokens,
+                    cache_creation_input_tokens=cache_creation_tokens,
+                )
             except Exception as rs_err:
                 logger.debug(f"Failed to record receipt success: {rs_err}")
 
@@ -413,5 +507,8 @@ analyzer_registry.register("ollama", LLMAnalyzer)
 analyzer_registry.register("groq", LLMAnalyzer)
 analyzer_registry.register("local", LLMAnalyzer)
 analyzer_registry.register("local_llm", LLMAnalyzer)
+analyzer_registry.register("local_slm", LLMAnalyzer)
+analyzer_registry.register("tiered", LLMAnalyzer)
+analyzer_registry.register("slm", LLMAnalyzer)
 analyzer_registry.register("gateway", LLMAnalyzer)
 analyzer_registry.register("auto/offline", LLMAnalyzer)

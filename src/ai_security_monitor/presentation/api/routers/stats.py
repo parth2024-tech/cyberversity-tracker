@@ -172,3 +172,14 @@ async def get_source_yield(
         "overall_articles_per_day": round(total_articles / max(1, days), 2),
         "sources": yield_data,
     }
+
+
+@stats_router.get("/token-savings")
+async def get_token_savings_telemetry():
+    """Retrieve Pillar 3 Local SLM vs Cloud Prompt Caching token and cost savings."""
+    from ai_security_monitor.application.services.llm_receipt_service import (
+        LLMReceiptService,
+    )
+
+    receipt_service = LLMReceiptService()
+    return await receipt_service.get_cost_savings_telemetry()

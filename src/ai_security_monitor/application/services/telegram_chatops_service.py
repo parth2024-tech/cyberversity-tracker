@@ -294,11 +294,11 @@ class TelegramChatOpsService:
                     return
 
                 # Check if analysis exists or generate heuristic analysis
-                from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
-                    HeuristicAnalyzer,
+                from ai_security_monitor.infrastructure.analyzers.llm_analyzer import (
+                    LLMAnalyzer,
                 )
 
-                analyzer = HeuristicAnalyzer()
+                analyzer = LLMAnalyzer(config={"tier": "cloud_frontier"})
                 result = await analyzer.analyze(entry)
 
                 analysis = Analysis(

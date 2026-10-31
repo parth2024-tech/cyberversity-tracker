@@ -185,6 +185,22 @@ class DatabaseManager:
             except Exception:
                 pass
 
+            # Pillar 3 Telemetry Columns on llm_receipts
+            for col, col_type in [
+                ("execution_tier", "VARCHAR(30)"),
+                ("cache_read_input_tokens", "INTEGER DEFAULT 0"),
+                ("cache_creation_input_tokens", "INTEGER DEFAULT 0"),
+            ]:
+                try:
+                    async with self.engine.begin() as conn:
+                        await conn.execute(
+                            text(
+                                f"ALTER TABLE llm_receipts ADD COLUMN {col} {col_type}"
+                            )
+                        )
+                except Exception:
+                    pass
+
             # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
             try:
                 async with self.engine.begin() as conn:
