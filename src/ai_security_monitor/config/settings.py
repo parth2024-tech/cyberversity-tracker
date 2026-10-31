@@ -219,6 +219,17 @@ class DeliverySettings(BaseSettings):
         default=None, description="Telegram bot token"
     )
     telegram_chat_id: str | None = Field(default=None, description="Telegram chat ID")
+    telegram_mode: str = Field(
+        default="webhook", description="Telegram transport mode: 'webhook' or 'poll'"
+    )
+    telegram_webhook_secret: str | None = Field(
+        default=None,
+        description="Secret token for X-Telegram-Bot-Api-Secret-Token validation",
+    )
+    telegram_allowed_user_id: int | None = Field(
+        default=None,
+        description="Authorized Telegram user ID for ChatOps action execution",
+    )
 
     model_config = SettingsConfigDict(env_prefix="DELIVERY_")
 

@@ -12,6 +12,7 @@ from ai_security_monitor.presentation.api.routers.feed import feed_router
 from ai_security_monitor.presentation.api.routers.newspaper import newspaper_router
 from ai_security_monitor.presentation.api.routers.sources import sources_router
 from ai_security_monitor.presentation.api.routers.stats import stats_router
+from ai_security_monitor.presentation.api.routers.telegram import telegram_router
 from ai_security_monitor.presentation.api.routers.translation import translation_router
 from ai_security_monitor.presentation.api.routers.triage import triage_router
 from ai_security_monitor.presentation.api.routers.vault import vault_router
@@ -32,4 +33,5 @@ __all__ = [
     "vault_router",
     "china_router",
     "feed_router",
+    "telegram_router",
 ]

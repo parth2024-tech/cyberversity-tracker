@@ -124,17 +124,17 @@ async def test_vault_feedback_ttl_cache(mock_uow, sample_vault_entries):
     mock_uow.entries.list = AsyncMock(return_value=sample_vault_entries)
     service = VaultFeedbackService(uow_factory=lambda: mock_uow, cache_ttl_seconds=300)
 
-    # First refresh calls list
+    # First refresh queries both positive (vaulted) and negative (dismissed) entries
     await service.refresh_profile(force=False)
-    assert mock_uow.entries.list.call_count == 1
+    assert mock_uow.entries.list.call_count == 2
 
     # Second refresh within TTL does nothing
     await service.refresh_profile(force=False)
-    assert mock_uow.entries.list.call_count == 1
+    assert mock_uow.entries.list.call_count == 2
 
     # Force bypasses TTL
     await service.refresh_profile(force=True)
-    assert mock_uow.entries.list.call_count == 2
+    assert mock_uow.entries.list.call_count == 4
 
 
 @pytest.mark.asyncio

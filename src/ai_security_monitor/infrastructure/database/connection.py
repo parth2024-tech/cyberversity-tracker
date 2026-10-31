@@ -105,6 +105,16 @@ class DatabaseManager:
                     pass
                 cursor.close()
 
+                # Zero-Daemon In-Process Vector Memory: sqlite-vec extension (Pillar 1)
+                try:
+                    import sqlite_vec
+
+                    dbapi_connection.enable_load_extension(True)
+                    sqlite_vec.load(dbapi_connection)
+                    dbapi_connection.enable_load_extension(False)
+                except Exception:
+                    pass
+
         return engine
 
     @asynccontextmanager
@@ -210,11 +220,29 @@ class DatabaseManager:
                         )
                     )
                     # Backfill existing entries into FTS5 index if table was newly created
+                    fts_count_res = await conn.execute(
+                        text("SELECT count(*) FROM entries_fts")
+                    )
+                    if fts_count_res.scalar() == 0:
+                        await conn.execute(
+                            text(
+                                "INSERT INTO entries_fts(entry_id, title, summary, category) "
+                                "SELECT id, title, summary, category FROM entries "
+                                "WHERE is_purged = 0"
+                            )
+                        )
+            except Exception:
+                pass
+
+            # Zero-Daemon Vector Memory: sqlite-vec vec0 Virtual Table (Pillar 1)
+            try:
+                async with self.engine.begin() as conn:
                     await conn.execute(
                         text(
-                            "INSERT OR IGNORE INTO entries_fts(entry_id, title, summary, category) "
-                            "SELECT id, title, summary, category FROM entries "
-                            "WHERE is_purged = 0"
+                            "CREATE VIRTUAL TABLE IF NOT EXISTS entries_vec USING vec0("
+                            "entry_id text primary key, "
+                            "embedding float[384]"
+                            ")"
                         )
                     )
             except Exception:
