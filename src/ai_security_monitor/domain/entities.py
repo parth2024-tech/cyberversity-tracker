@@ -39,6 +39,7 @@ class SourceType(str, Enum):
     MODELSCOPE = "modelscope"
     HUGGINGFACE_CHINA = "huggingface_china"
     HUGGINGFACE_DAILY_PAPERS = "huggingface_daily_papers"
+    BRIDGE_FEED = "bridge_feed"
 
 
 class FetchStatus(str, Enum):
