@@ -83,6 +83,57 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
             "required": ["text"],
         },
     },
+    {
+        "name": "query_ai_entity_timeline",
+        "description": "Query exact chronological timelines of an AI model, codebase repository, benchmark, or paper across the 14-day freshness window.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Entity name or keyword to query (e.g. 'vLLM', 'DeepSeek-R1', 'SWE-bench', 'MMLU')",
+                },
+                "entity_type": {
+                    "type": "string",
+                    "description": "Optional entity type: 'model', 'repository', 'benchmark', 'organization', 'hardware', 'arxiv', 'cve'",
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Freshness window in days (max 14, default: 14)",
+                    "default": 14,
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum number of entries to return (default: 30)",
+                    "default": 30,
+                },
+            },
+            "required": ["name"],
+        },
+    },
+    {
+        "name": "get_top_ai_entities",
+        "description": "Retrieve top referenced AI models, benchmarks, repositories, and organizations ranked by frequency in the past 14 days.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "entity_type": {
+                    "type": "string",
+                    "description": "Optional filter: 'model', 'benchmark', 'repository', 'organization', 'hardware'",
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Freshness window in days (max 14, default: 14)",
+                    "default": 14,
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum number of entities to return (default: 20)",
+                    "default": 20,
+                },
+            },
+        },
+    },
 ]
 
 
@@ -204,6 +255,35 @@ class MCPServer:
                         for r in rows
                     ]
                     return json.dumps(entries, indent=2)
+
+            elif name == "query_ai_entity_timeline":
+                entity_name = str(args.get("name", ""))
+                e_type = args.get("entity_type")
+                days = int(args.get("days", 14))
+                limit = int(args.get("limit", 30))
+                from ai_security_monitor.infrastructure.database.unit_of_work import (
+                    SqlAlchemyUnitOfWork,
+                )
+
+                async with SqlAlchemyUnitOfWork() as uow:
+                    timeline = await uow.entities.query_timeline(
+                        name=entity_name, entity_type=e_type, days=days, limit=limit
+                    )
+                    return json.dumps(timeline, indent=2, default=str)
+
+            elif name == "get_top_ai_entities":
+                e_type = args.get("entity_type")
+                days = int(args.get("days", 14))
+                limit = int(args.get("limit", 20))
+                from ai_security_monitor.infrastructure.database.unit_of_work import (
+                    SqlAlchemyUnitOfWork,
+                )
+
+                async with SqlAlchemyUnitOfWork() as uow:
+                    top_entities = await uow.entities.get_top_entities(
+                        entity_type=e_type, days=days, limit=limit
+                    )
+                    return json.dumps(top_entities, indent=2, default=str)
 
             else:
                 return f"Error: Unknown tool {name!r}"

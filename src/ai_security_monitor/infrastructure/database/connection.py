@@ -226,6 +226,45 @@ class DatabaseManager:
                 except Exception:
                     pass
 
+            # Pillar 4: AI Entity & Benchmark Knowledge Graph Table
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "CREATE TABLE IF NOT EXISTS entry_entities ("
+                            "id VARCHAR(36) PRIMARY KEY, "
+                            "entry_id VARCHAR(36) NOT NULL REFERENCES entries(id) ON DELETE CASCADE, "
+                            "entity_type VARCHAR(32) NOT NULL, "
+                            "name VARCHAR(128) NOT NULL, "
+                            "display_name VARCHAR(128) NOT NULL, "
+                            "metric_value VARCHAR(64), "
+                            "context TEXT, "
+                            "confidence FLOAT DEFAULT 1.0, "
+                            "created_at DATETIME NOT NULL"
+                            ")"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_entry_entities_entry_id "
+                            "ON entry_entities(entry_id)"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_entry_entities_type_name "
+                            "ON entry_entities(entity_type, name)"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_entry_entities_created_type "
+                            "ON entry_entities(created_at, entity_type)"
+                        )
+                    )
+            except Exception:
+                pass
+
             # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
             try:
                 async with self.engine.begin() as conn:

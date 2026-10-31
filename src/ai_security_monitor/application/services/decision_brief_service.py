@@ -635,6 +635,16 @@ class DecisionBriefService:
             return
 
         try:
+            # Pillar 4: Extract and persist structured AI entities to knowledge graph
+            from ai_security_monitor.application.services.ai_entity_extractor import (
+                ai_entity_extractor,
+            )
+
+            extracted_entities = ai_entity_extractor.extract_entities(entry)
+            if extracted_entities and hasattr(uow, "entities"):
+                await uow.entities.add_all(extracted_entities)
+                entry.entities = extracted_entities
+
             brief_dict = brief.to_dict()
             existing_analysis = await uow.analysis.get_by_entry(entry.id)
             if existing_analysis:
