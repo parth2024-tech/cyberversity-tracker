@@ -32,6 +32,7 @@ from ai_security_monitor.presentation.api.routers import (
     newspaper_router,
     sources_router,
     stats_router,
+    telegram_router,
     translation_router,
     triage_router,
     vault_router,
@@ -133,10 +134,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.triage_service = triage_service
         logger.info("Autonomous High-Priority LLM Triage Worker started in background")
 
+    # Start Telegram ChatOps long-polling worker (if enabled and mode is 'poll')
+    if settings.delivery.telegram_enabled and settings.delivery.telegram_mode == "poll":
+        from ai_security_monitor.application.services.telegram_chatops_service import (
+            telegram_chatops_service,
+        )
+
+        await telegram_chatops_service.start_polling()
+        app.state.telegram_chatops = telegram_chatops_service
+        logger.info("Telegram ChatOps long-polling worker started in background")
+
     yield
 
     # Shutdown
     logger.info("Shutting down AI Security Monitor API")
+
+    # Stop Telegram ChatOps polling worker
+    if hasattr(app.state, "telegram_chatops"):
+        await app.state.telegram_chatops.stop_polling()
+        logger.info("Telegram ChatOps polling worker stopped")
 
     # Stop triage worker
     if hasattr(app.state, "triage_service"):
@@ -241,9 +257,14 @@ def create_app() -> FastAPI:
         )
         app.include_router(china_router, prefix=api_prefix, tags=["China Corridor"])
         app.include_router(feed_router, prefix=api_prefix, tags=["Syndication Feeds"])
+        app.include_router(
+            telegram_router, prefix=api_prefix, tags=["Telegram ChatOps"]
+        )
 
     # Top-level syndication feed route for standard RSS reader auto-discovery
     app.include_router(feed_router, tags=["Syndication Feeds"])
+    # Top-level Telegram webhook route
+    app.include_router(telegram_router, tags=["Telegram ChatOps"])
 
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 

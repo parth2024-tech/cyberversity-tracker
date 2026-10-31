@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import html
 from pathlib import Path
+from uuid import UUID
 
 import httpx
 
@@ -14,8 +16,69 @@ from ai_security_monitor.infrastructure.delivery.base import (
 )
 
 
+def build_entry_inline_keyboard(
+    entry_id: UUID | str,
+    source_id: UUID | str | None = None,
+    is_vaulted: bool = False,
+    is_dismissed: bool = False,
+    is_muted: bool = False,
+    is_analyzing: bool = False,
+) -> dict:
+    """Build compact, bi-directional inline action keyboard (< 64 bytes callback_data).
+
+    Prefixes:
+    - v:<hex32>  -> Star to Vault
+    - uv:<hex32> -> Undo Vault
+    - d:<hex32>  -> Enqueue for Deep LLM Triage
+    - x:<hex32>  -> Soft-purge / Dismiss
+    - ux:<hex32> -> Undo Dismiss
+    - m:<slug>   -> Mute source feed
+    - um:<slug>  -> Unmute source feed
+    """
+    hex32 = (
+        entry_id.hex if isinstance(entry_id, UUID) else str(entry_id).replace("-", "")
+    )[:32]
+
+    # Row 1: Vault & Deep Triage
+    vault_btn = (
+        {"text": "✅ Vaulted (Undo)", "callback_data": f"uv:{hex32}"}
+        if is_vaulted
+        else {"text": "⭐ Vault", "callback_data": f"v:{hex32}"}
+    )
+    if is_analyzing:
+        triage_btn = {"text": "⏳ Analyzing...", "callback_data": f"noop:{hex32}"}
+    else:
+        triage_btn = {"text": "📊 Deep Triage", "callback_data": f"d:{hex32}"}
+
+    row1 = [vault_btn, triage_btn]
+
+    # Row 2: Dismiss & Source Mute
+    dismiss_btn = (
+        {"text": "↩️ Dismissed (Undo)", "callback_data": f"ux:{hex32}"}
+        if is_dismissed
+        else {"text": "❌ Dismiss", "callback_data": f"x:{hex32}"}
+    )
+    row2 = [dismiss_btn]
+
+    if source_id:
+        src_str = (
+            source_id.hex
+            if isinstance(source_id, UUID)
+            else str(source_id).replace("-", "")
+        )
+        src_slug = src_str[:32]
+        mute_btn = (
+            {"text": "🔈 Unmute Source", "callback_data": f"um:{src_slug}"}
+            if is_muted
+            else {"text": "🔇 Mute Source", "callback_data": f"m:{src_slug}"}
+        )
+        row2.append(mute_btn)
+
+    return {"inline_keyboard": [row1, row2]}
+
+
 class TelegramDelivery(BaseDelivery):
-    """Telegram delivery via Bot API."""
+    """Telegram delivery via Bot API supporting two-way inline ChatOps callbacks."""
 
     @property
     def channel_name(self) -> str:
@@ -47,19 +110,20 @@ class TelegramDelivery(BaseDelivery):
             )
 
     async def send_alert(self, entry: Entry, analysis: Analysis) -> DeliveryResult:
-        """Send alert to Telegram."""
+        """Send high-priority alert with interactive ChatOps inline keyboard."""
         try:
             message = (
-                f"🚨 <b>High-Velocity Threat Alert</b>\n\n"
-                f"<b>Title:</b> {entry.title}\n"
+                f"🚨 <b>Worldwide AI Intelligence Alert</b>\n\n"
+                f"<b>Title:</b> {self._escape_html(entry.title)}\n"
                 f'<b>URL:</b> <a href="{entry.url}">Link</a>\n'
                 f"<b>Velocity:</b> {analysis.threat_velocity}/100\n"
                 f"<b>Severity:</b> {analysis.severity_index}/100\n"
-                f"<b>Archetype:</b> {analysis.attack_archetype} ({analysis.weaponization_potential})\n"
-                f"<b>Vector:</b> {analysis.attack_vector}\n"
-                f"<b>Mitigation:</b> {analysis.mitigation}"
+                f"<b>Archetype:</b> {self._escape_html(analysis.attack_archetype)} ({self._escape_html(analysis.weaponization_potential)})\n"
+                f"<b>Vector:</b> {self._escape_html(analysis.attack_vector)}\n"
+                f"<b>Summary:</b> {self._escape_html(entry.summary[:280])}"
             )
-            await self._send_message(message)
+            keyboard = build_entry_inline_keyboard(entry.id, entry.source_id)
+            await self._send_message(message, reply_markup=keyboard)
             return DeliveryResult(
                 success=True, channel=self.channel_name, message="Telegram alert sent"
             )
@@ -67,6 +131,156 @@ class TelegramDelivery(BaseDelivery):
             return DeliveryResult(
                 success=False, channel=self.channel_name, error=str(e)
             )
+
+    async def send_entry_dispatch(
+        self, entry: Entry, analysis: Analysis | None = None
+    ) -> DeliveryResult:
+        """Send single intelligence entry dispatch with interactive ChatOps inline keyboard."""
+        try:
+            text = (
+                f"🌐 <b>AI Ecosystem Intelligence Dispatch</b>\n\n"
+                f"<b>Title:</b> {self._escape_html(entry.title)}\n"
+                f'<b>URL:</b> <a href="{entry.url}">{self._escape_html(entry.url)}</a>\n'
+                f"<b>Category:</b> {entry.category.value if hasattr(entry.category, 'value') else str(entry.category)}\n"
+                f"<b>Summary:</b> {self._escape_html(entry.summary[:320])}"
+            )
+            keyboard = build_entry_inline_keyboard(entry.id, entry.source_id)
+            await self._send_message(text, reply_markup=keyboard)
+            return DeliveryResult(
+                success=True,
+                channel=self.channel_name,
+                message="Telegram entry dispatch sent",
+            )
+        except Exception as e:
+            return DeliveryResult(
+                success=False, channel=self.channel_name, error=str(e)
+            )
+
+    async def answer_callback_query(
+        self, callback_query_id: str, text: str | None = None, show_alert: bool = False
+    ) -> bool:
+        """Immediately acknowledge Telegram callback query to dismiss mobile spinner."""
+        bot_token = self.config.get("bot_token")
+        if not bot_token:
+            return False
+
+        url = f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery"
+        payload: dict = {"callback_query_id": callback_query_id}
+        if text:
+            payload["text"] = text
+        if show_alert:
+            payload["show_alert"] = True
+
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                res = await client.post(url, json=payload)
+                return res.status_code == 200
+        except Exception:
+            return False
+
+    async def edit_message_reply_markup(
+        self, chat_id: int | str, message_id: int, reply_markup: dict
+    ) -> bool:
+        """Update inline keyboard on an existing message in-place (e.g. toggle undo state)."""
+        bot_token = self.config.get("bot_token")
+        if not bot_token:
+            return False
+
+        url = f"https://api.telegram.org/bot{bot_token}/editMessageReplyMarkup"
+        payload = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "reply_markup": reply_markup,
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                res = await client.post(url, json=payload)
+                if res.status_code == 400 and "message is not modified" in res.text:
+                    return True  # Idempotent no-op
+                res.raise_for_status()
+                return True
+        except Exception:
+            return False
+
+    async def edit_message_text(
+        self,
+        chat_id: int | str,
+        message_id: int,
+        text: str,
+        reply_markup: dict | None = None,
+    ) -> bool:
+        """Update message text and optionally inline keyboard (e.g. append deep triage verdict)."""
+        bot_token = self.config.get("bot_token")
+        if not bot_token:
+            return False
+
+        # Guard against Telegram 4096-char message length limit
+        if len(text) > 4000:
+            text = text[:3950] + "\n\n<i>...[truncated to Telegram 4096-char limit]</i>"
+
+        url = f"https://api.telegram.org/bot{bot_token}/editMessageText"
+        payload: dict = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                res = await client.post(url, json=payload)
+                if res.status_code == 400 and "message is not modified" in res.text:
+                    return True
+                res.raise_for_status()
+                return True
+        except Exception:
+            return False
+
+    async def delete_webhook(self, drop_pending_updates: bool = False) -> bool:
+        """Remove any active webhook to prevent 409 Conflict during long-polling."""
+        bot_token = self.config.get("bot_token")
+        if not bot_token:
+            return False
+
+        url = f"https://api.telegram.org/bot{bot_token}/deleteWebhook"
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                res = await client.post(
+                    url, json={"drop_pending_updates": drop_pending_updates}
+                )
+                return res.status_code == 200
+        except Exception:
+            return False
+
+    async def get_updates(
+        self, offset: int | None = None, timeout: int = 20
+    ) -> list[dict]:
+        """Fetch incoming updates via long-polling (getUpdates)."""
+        bot_token = self.config.get("bot_token")
+        if not bot_token:
+            return []
+
+        url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
+        payload: dict = {
+            "timeout": timeout,
+            "allowed_updates": ["callback_query", "message"],
+        }
+        if offset is not None:
+            payload["offset"] = offset
+
+        try:
+            async with httpx.AsyncClient(timeout=timeout + 10) as client:
+                res = await client.post(url, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    return data.get("result", [])
+                return []
+        except Exception:
+            return []
 
     async def send_newspaper_document(
         self,
@@ -88,7 +302,6 @@ class TelegramDelivery(BaseDelivery):
                 )
 
             p_path = Path(pdf_path)
-            # Use asyncio.to_thread for blocking filesystem operations
             pdf_exists = await asyncio.to_thread(p_path.exists)
             if not pdf_exists:
                 return DeliveryResult(
@@ -132,19 +345,24 @@ class TelegramDelivery(BaseDelivery):
                 success=False, channel=self.channel_name, error=str(e)
             )
 
-    async def _send_message(self, text: str) -> None:
-        """Send message via Telegram Bot API."""
+    async def _send_message(
+        self, text: str, reply_markup: dict | None = None
+    ) -> dict | None:
+        """Send message via Telegram Bot API with optional reply_markup."""
         url = f"https://api.telegram.org/bot{self.config['bot_token']}/sendMessage"
-        payload = {
+        payload: dict = {
             "chat_id": self.config["chat_id"],
             "text": text,
             "parse_mode": "HTML",
             "disable_web_page_preview": True,
         }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
 
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
+            return response.json()
 
     def _build_message(
         self, digest: Digest, entries_with_analysis: list[tuple[Entry, Analysis | None]]
@@ -172,13 +390,13 @@ class TelegramDelivery(BaseDelivery):
             )
             cat_parts = [cat_header]
 
-            for entry, analysis in cat_entries[:3]:  # Limit per category
+            for entry, analysis in cat_entries[:3]:
                 item = f'• <a href="{entry.url}">{self._escape_html(entry.title)}</a>'
                 if analysis:
                     item += f"\n  ⚡ {analysis.threat_velocity}/100 | ⚠️ {analysis.severity_index}/100"
                     if analysis.is_pre_cve_warning:
                         item += " 🚨 <b>PRE-CVE</b>"
-                    item += f"\n  🎯 {analysis.attack_archetype} ({analysis.weaponization_potential})"
+                    item += f"\n  🎯 {self._escape_html(analysis.attack_archetype)} ({self._escape_html(analysis.weaponization_potential)})"
                     item += (
                         f"\n  💥 {', '.join(analysis.affected_ecosystem[:3]) or 'N/A'}"
                     )
@@ -190,16 +408,12 @@ class TelegramDelivery(BaseDelivery):
             parts.append("\n".join(cat_parts) + "\n")
 
         full_message = "\n".join(parts)
-
-        # Truncate if too long (Telegram limit 4096)
         if len(full_message) > 4000:
             full_message = full_message[:3950] + "\n\n<i>...truncated</i>"
 
         return full_message
 
     def _escape_html(self, text: str) -> str:
-        import html
-
         return html.escape(str(text or ""), quote=False)
 
 
