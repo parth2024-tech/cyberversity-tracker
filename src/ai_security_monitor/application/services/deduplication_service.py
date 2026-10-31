@@ -14,6 +14,9 @@ from uuid import UUID
 
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry, Story
+from ai_security_monitor.infrastructure.analyzers.embedding_service import (
+    embedding_service,
+)
 
 logger = get_logger(__name__)
 
@@ -298,11 +301,13 @@ class DeduplicationService:
         similarity_threshold: float = 0.60,
         minhash_threshold: float = 0.35,
         simhash_hamming_threshold: int = 4,
+        semantic_threshold: float = 0.82,
     ):
         self.max_window_days = max_window_days
         self.similarity_threshold = similarity_threshold
         self.minhash_threshold = minhash_threshold
         self.simhash_hamming_threshold = simhash_hamming_threshold
+        self.semantic_threshold = semantic_threshold
 
         # In-memory index of active stories: story_id -> Story
         self._stories: dict[UUID, Story] = {}
@@ -312,6 +317,8 @@ class DeduplicationService:
         # Dual-tier signatures
         self._story_simhashes: dict[UUID, int] = {}
         self._story_minhashes: dict[UUID, list[int]] = {}
+        # Semantic vector memory (Pillar 1)
+        self._story_embeddings: dict[UUID, list[float]] = {}
 
     def _evict_stale_stories(self) -> None:
         """Evict stories older than max_window_days (14-day freshness guard)."""
@@ -325,6 +332,7 @@ class DeduplicationService:
                     self._canonical_url_to_story.pop(story.canonical_url, None)
                 self._story_simhashes.pop(sid, None)
                 self._story_minhashes.pop(sid, None)
+                self._story_embeddings.pop(sid, None)
 
     def find_matching_story(self, entry: Entry) -> Story | None:
         """Find an existing Story matching the candidate entry within the active window."""
@@ -378,6 +386,37 @@ class DeduplicationService:
             if similarity >= self.similarity_threshold:
                 return story
 
+        # 4. Semantic Vector Memory (Pillar 1):
+        # Cross-platform concept deduplication (e.g. arXiv paper + HN discussion + Reddit release)
+        entry_text = f"{entry.title} {entry.summary}".strip()
+        if entry_text and self._story_embeddings:
+            entry_vec = embedding_service.embed_text(entry_text)
+            for story_id, story_vec in self._story_embeddings.items():
+                sim = embedding_service.cosine_similarity(entry_vec, story_vec)
+                if sim >= self.semantic_threshold:
+                    matched = self._stories.get(story_id)
+                    if matched:
+                        logger.info(
+                            f"Semantic vector deduplication match (cosine sim: {sim:.3f} >= {self.semantic_threshold}): "
+                            f"'{entry.title[:35]}...' -> '{matched.title[:35]}...'"
+                        )
+                        return matched
+
+        return None
+
+    def find_semantic_duplicate(
+        self, entry: Entry, threshold: float | None = None
+    ) -> Story | None:
+        """Find an existing Story matching entry purely via semantic vector similarity."""
+        cutoff_thresh = threshold if threshold is not None else self.semantic_threshold
+        entry_text = f"{entry.title} {entry.summary}".strip()
+        if not entry_text or not self._story_embeddings:
+            return None
+        entry_vec = embedding_service.embed_text(entry_text)
+        for story_id, story_vec in self._story_embeddings.items():
+            sim = embedding_service.cosine_similarity(entry_vec, story_vec)
+            if sim >= cutoff_thresh:
+                return self._stories.get(story_id)
         return None
 
     def process_candidate(
@@ -450,6 +489,8 @@ class DeduplicationService:
         self._story_minhashes[new_story.id] = compute_minhash64(
             extract_title_tokens(new_story.title)
         )
+        # Register Semantic Vector Memory (Pillar 1)
+        self._story_embeddings[new_story.id] = embedding_service.embed_text(story_text)
 
         return entry, new_story, True
 
