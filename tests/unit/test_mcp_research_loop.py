@@ -166,6 +166,7 @@ async def test_hybrid_retrieval_semantic_and_entity_fusion(sample_entry_fresh: E
     mock_uow.session.execute = AsyncMock(return_value=mock_result)
     mock_uow.entries.get = AsyncMock(return_value=sample_entry_fresh)
     mock_uow.entries.list = AsyncMock(return_value=[sample_entry_fresh])
+    mock_uow.entries.search_fts = AsyncMock(return_value=[sample_entry_fresh])
 
     # Mock entity timeline match
     mock_uow.entities.query_timeline = AsyncMock(
@@ -195,10 +196,9 @@ async def test_hybrid_retrieval_semantic_and_entity_fusion(sample_entry_fresh: E
     assert len(retrieval["matched_entities"]) >= 1
 
     scores = retrieval["scores"][str(sample_entry_fresh.id)]
-    assert scores["semantic"] > 0.0
-    assert scores["entity"] > 0.0
-    assert scores["velocity"] > 0.0
+    assert scores["rrf_score"] > 0.0
     assert scores["combined"] > 0.0
+    assert scores["semantic_rank"] >= 1
 
 
 # ==============================================================================
@@ -231,6 +231,7 @@ async def test_freshness_window_strictly_enforced(
 
     mock_uow.entries.get = AsyncMock(side_effect=mock_get)
     mock_uow.entries.list = AsyncMock(return_value=[sample_entry_fresh, sample_entry_stale])
+    mock_uow.entries.search_fts = AsyncMock(return_value=[])
     mock_uow.entities.query_timeline = AsyncMock(return_value=[])
 
     retrieval = await service.retrieve_hybrid_context(
@@ -259,8 +260,11 @@ async def test_dossier_synthesis_all_four_sections(sample_entry_fresh: Entry):
     mock_result = MagicMock()
     mock_result.fetchall.return_value = [(str(sample_entry_fresh.id), 0.2)]
     mock_uow.session.execute = AsyncMock(return_value=mock_result)
+    mock_uow.session.add = MagicMock()
+    mock_uow.commit = AsyncMock()
     mock_uow.entries.get = AsyncMock(return_value=sample_entry_fresh)
     mock_uow.entries.list = AsyncMock(return_value=[sample_entry_fresh])
+    mock_uow.entries.search_fts = AsyncMock(return_value=[sample_entry_fresh])
     mock_uow.entities.query_timeline = AsyncMock(return_value=[])
 
     report = await service.run_research_loop(
