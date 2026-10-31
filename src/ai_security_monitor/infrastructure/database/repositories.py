@@ -656,8 +656,11 @@ class SQLAlchemyEntryRepository(EntryRepository):
         return [self._model_to_entity(m) for m in models]
 
     def _apply_filters(self, stmt, filters: EntryFilters):
-        # Exclude soft-deleted entries by default
-        stmt = stmt.where(EntryModel.is_purged.is_(False))
+        # Exclude soft-deleted entries by default unless purged_only requested
+        if getattr(filters, "purged_only", False):
+            stmt = stmt.where(EntryModel.is_purged.is_(True))
+        else:
+            stmt = stmt.where(EntryModel.is_purged.is_(False))
 
         if filters.category:
             stmt = stmt.where(EntryModel.category == filters.category.value)
@@ -1556,4 +1559,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-

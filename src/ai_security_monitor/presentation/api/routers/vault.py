@@ -166,3 +166,28 @@ async def unpin_from_vault(entry_id: str):
         "is_vaulted": False,
         "message": "Entry removed from Vault",
     }
+
+
+@vault_router.get("/profile")
+async def get_vault_profile():
+    """Get active Rocchio personalization vector centroid telemetry and interest profile."""
+    from ai_security_monitor.application.services.vault_feedback_service import (
+        vault_feedback_service,
+    )
+
+    return vault_feedback_service.get_centroid_summary()
+
+
+@vault_router.post("/profile/refresh")
+async def refresh_vault_profile():
+    """Manually trigger a refresh of the Rocchio personalization vector centroid."""
+    from ai_security_monitor.application.services.vault_feedback_service import (
+        vault_feedback_service,
+    )
+
+    await vault_feedback_service.refresh_profile(force=True)
+    return {
+        "status": "success",
+        "profile": vault_feedback_service.get_centroid_summary(),
+        "message": "Successfully refreshed personalization vector centroid.",
+    }
