@@ -11,6 +11,9 @@ from typing import Any
 import httpx
 
 from ai_security_monitor.core.logging import get_logger
+from ai_security_monitor.infrastructure.scrapers.config.headers import (
+    get_rotating_headers,
+)
 from ai_security_monitor.infrastructure.scrapers.core.rate_limiter import RateLimiter
 from ai_security_monitor.infrastructure.scrapers.core.session_pool import (
     SessionPool,
@@ -18,6 +21,29 @@ from ai_security_monitor.infrastructure.scrapers.core.session_pool import (
 )
 
 logger = get_logger(__name__)
+
+
+def is_anti_bot_challenge(resp: httpx.Response) -> bool:
+    """Detect if response is an anti-bot or Cloudflare challenge."""
+    if resp.status_code in (403, 429):
+        return True
+    if resp.status_code in (503, 400):
+        try:
+            text_lower = resp.text.lower()
+            return any(
+                indicator in text_lower
+                for indicator in (
+                    "cf-browser-verification",
+                    "challenge-platform",
+                    "just a moment...",
+                    "attention required! | cloudflare",
+                    "security check",
+                    "ddos-guard",
+                )
+            )
+        except Exception:
+            pass
+    return False
 
 
 class ResilientScraperClient:
@@ -65,6 +91,50 @@ class ResilientScraperClient:
             )
         return self._client
 
+    async def _try_curl_cffi(
+        self,
+        method: str,
+        url: str,
+        headers: dict[str, str] | None = None,
+        cookies: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        json_body: dict[str, Any] | None = None,
+    ) -> httpx.Response | None:
+        """Attempt request using curl_cffi Chrome TLS/JA3 impersonation if installed."""
+        try:
+            from curl_cffi.requests import AsyncSession  # type: ignore[import-untyped]
+        except (ImportError, Exception):
+            return None
+
+        try:
+            logger.info(
+                f"Retrying request with curl_cffi Chrome TLS impersonation: {url}"
+            )
+            async with AsyncSession(impersonate="chrome131") as s:
+                curl_resp = await s.request(
+                    method=method.upper(),
+                    url=url,
+                    headers=headers,
+                    cookies=cookies,
+                    params=params,
+                    json=json_body,
+                    timeout=self.timeout,
+                )
+                req = httpx.Request(
+                    method=method.upper(),
+                    url=url,
+                    headers=headers,
+                )
+                return httpx.Response(
+                    status_code=curl_resp.status_code,
+                    headers=dict(curl_resp.headers),
+                    content=curl_resp.content,
+                    request=req,
+                )
+        except Exception as e:
+            logger.warning(f"curl_cffi TLS impersonation attempt error for {url}: {e}")
+            return None
+
     async def request(
         self,
         method: str,
@@ -102,22 +172,10 @@ class ResilientScraperClient:
                 if resp.status_code == 200:
                     return resp
 
-                if resp.status_code in (429, 503):
-                    retry_wait = self.rate_limiter.extract_retry_delay(resp.headers)
-                    if not retry_wait:
-                        retry_wait = self.rate_limiter.compute_backoff(attempt)
-                    logger.warning(
-                        f"Rate limit / error HTTP {resp.status_code} for {domain}. Backing off {retry_wait:.2f}s (attempt {attempt + 1}/{max_retries})"
-                    )
-                    await asyncio.sleep(retry_wait)
-                    continue
-
-                if (
-                    resp.status_code in (401, 403)
-                    and "twitter.com" in domain
-                    or "x.com" in domain
+                # Handle Twitter guest token rotation on 401/403
+                if resp.status_code in (401, 403) and (
+                    "twitter.com" in domain or "x.com" in domain
                 ):
-                    # Invalidate cached guest token and refresh credentials
                     self.session_pool.guest_token = None
                     (
                         new_headers,
@@ -131,7 +189,52 @@ class ResilientScraperClient:
                     )
                     continue
 
-                # Other HTTP errors: return response immediately
+                # Anti-bot detection: 403, 429, or Cloudflare challenge pages
+                if is_anti_bot_challenge(resp):
+                    logger.warning(
+                        f"Anti-bot challenge HTTP {resp.status_code} detected on {domain}. "
+                        "Attempting browser TLS impersonation fallback..."
+                    )
+                    # 1. Try curl_cffi Chrome TLS/JA3 impersonation
+                    curl_resp = await self._try_curl_cffi(
+                        method=method,
+                        url=url,
+                        headers=req_headers,
+                        cookies=req_cookies,
+                        params=params,
+                        json_body=json_body,
+                    )
+                    if curl_resp and curl_resp.status_code == 200:
+                        logger.info(f"curl_cffi bypass succeeded for {domain}")
+                        return curl_resp
+                    elif curl_resp:
+                        last_resp = curl_resp
+
+                    # 2. Graceful fallback to rotating browser profiles
+                    logger.info(
+                        f"curl_cffi unavailable or challenged; rotating User-Agent & header profile for {domain}"
+                    )
+                    rotating_hdrs = get_rotating_headers(domain, attempt=attempt + 1)
+                    req_headers.update(rotating_hdrs)
+
+                    retry_wait = self.rate_limiter.extract_retry_delay(resp.headers)
+                    if not retry_wait:
+                        retry_wait = self.rate_limiter.compute_backoff(attempt)
+                    await asyncio.sleep(retry_wait)
+                    continue
+
+                if resp.status_code in (429, 503):
+                    retry_wait = self.rate_limiter.extract_retry_delay(resp.headers)
+                    if not retry_wait:
+                        retry_wait = self.rate_limiter.compute_backoff(attempt)
+                    logger.warning(
+                        f"Rate limit / error HTTP {resp.status_code} for {domain}. "
+                        f"Backing off {retry_wait:.2f}s (attempt {attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(retry_wait)
+                    continue
+
+                # Other HTTP responses
                 return resp
 
             except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.NetworkError) as e:

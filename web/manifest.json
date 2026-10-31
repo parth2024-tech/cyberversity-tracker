@@ -1,0 +1,47 @@
+{
+  "name": "AETHERGUARD // Global AI Intelligence Radar",
+  "short_name": "AETHERGUARD",
+  "description": "Autonomous real-time intelligence radar monitoring global AI ecosystem developments: trending codebases, foundation models, research preprints, and inference infrastructure.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#08090C",
+  "theme_color": "#08090C",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Radar",
+      "short_name": "Radar",
+      "description": "View real-time worldwide AI intelligence stream",
+      "url": "/",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "The Global AI Gazette",
+      "short_name": "Gazette",
+      "description": "Read autonomous daily editorial broadsheet",
+      "url": "/gazette",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ],
+  "categories": ["utilities", "productivity", "news"]
+}

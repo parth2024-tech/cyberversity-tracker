@@ -26,6 +26,10 @@ class SourceHealthMetrics:
     success_count: int = 0
     error_count: int = 0
     consecutive_failures: int = 0
+    is_quarantined: bool = False
+    quarantined_at: datetime | None = None
+    quarantine_reason: str | None = None
+    source_id: str | None = None
     last_run_at: datetime | None = None
     last_success_at: datetime | None = None
     last_error_at: datetime | None = None
@@ -77,7 +81,9 @@ class SourceHealthMetrics:
 
     @property
     def status(self) -> str:
-        """Health classification: healthy, degraded, or failing."""
+        """Health classification: healthy, degraded, failing, or quarantined."""
+        if self.consecutive_failures >= 5 or self.is_quarantined:
+            return "quarantined"
         if self.consecutive_failures >= 3:
             return "failing"
         if self.consecutive_failures >= 1 or self.success_rate < 80.0:
@@ -86,21 +92,28 @@ class SourceHealthMetrics:
 
     @property
     def cooldown_remaining_seconds(self) -> int:
-        """Remaining exponential backoff cooldown seconds when consecutive_failures >= 3."""
-        if self.consecutive_failures < 3 or not self.last_error_at:
+        """Remaining cooldown seconds. For quarantined sources: 12-hour probe (43,200s). For failing: exponential up to 3,600s."""
+        if not self.last_error_at:
             return 0
-        cooldown = min(3600, 60 * (2 ** (self.consecutive_failures - 3)))
         last_err = (
             self.last_error_at
             if self.last_error_at.tzinfo
             else self.last_error_at.replace(tzinfo=UTC)
         )
         elapsed = (datetime.now(UTC) - last_err).total_seconds()
+        if self.status == "quarantined":
+            # 12-hour exponential backoff probe
+            return max(0, int(43200 - elapsed))
+        if self.consecutive_failures < 3:
+            return 0
+        cooldown = min(3600, 60 * (2 ** (self.consecutive_failures - 3)))
         return max(0, int(cooldown - elapsed))
 
     @property
     def circuit_state(self) -> str:
         """Circuit breaker state: closed, open, or half_open."""
+        if self.status == "quarantined":
+            return "open" if self.cooldown_remaining_seconds > 0 else "half_open"
         if self.consecutive_failures < 3:
             return "closed"
         return "open" if self.cooldown_remaining_seconds > 0 else "half_open"
@@ -108,10 +121,16 @@ class SourceHealthMetrics:
     def to_dict(self) -> dict:
         return {
             "source_name": self.source_name,
+            "source_id": self.source_id,
             "source_type": self.source_type,
             "category": self.category,
             "region": self.region,
             "status": self.status,
+            "is_quarantined": self.is_quarantined or self.status == "quarantined",
+            "quarantined_at": self.quarantined_at.isoformat()
+            if self.quarantined_at
+            else None,
+            "quarantine_reason": self.quarantine_reason,
             "circuit_state": self.circuit_state,
             "cooldown_remaining_seconds": self.cooldown_remaining_seconds,
             "success_rate": self.success_rate,
@@ -179,6 +198,9 @@ class SourceHealthService:
         metrics.total_runs += 1
         metrics.success_count += 1
         metrics.consecutive_failures = 0
+        metrics.is_quarantined = False
+        metrics.quarantined_at = None
+        metrics.quarantine_reason = None
         metrics.last_run_at = now
         metrics.last_success_at = now
         metrics.last_latency_ms = duration_ms
@@ -203,9 +225,12 @@ class SourceHealthService:
         source_type: str = "unknown",
         category: str = "unknown",
         region: str = "global",
+        source_id: str | None = None,
     ) -> None:
-        """Record a failed fetch attempt for a source."""
+        """Record a failed fetch attempt for a source and auto-quarantine on >= 5 consecutive failures."""
         metrics = self._get_or_create(source_name, source_type, category, region)
+        if source_id:
+            metrics.source_id = source_id
         now = datetime.now(UTC)
         metrics.total_runs += 1
         metrics.error_count += 1
@@ -214,6 +239,18 @@ class SourceHealthService:
         metrics.last_error_at = now
         metrics.last_latency_ms = duration_ms
         metrics.last_error_message = error_message[:500]
+
+        # Auto-Quarantine Circuit Breaker: Trip on >= 5 consecutive sweep failures
+        just_quarantined = False
+        if metrics.consecutive_failures >= 5 and not metrics.is_quarantined:
+            metrics.is_quarantined = True
+            metrics.quarantined_at = now
+            metrics.quarantine_reason = error_message[:500]
+            just_quarantined = True
+            logger.critical(
+                f"🚨 Auto-quarantine triggered: Source '{source_name}' tripped circuit breaker "
+                f"after {metrics.consecutive_failures} consecutive failures. Polling suspended for 12 hours."
+            )
 
         # Record 0 entries on failure to reflect dormant/failing frequency
         metrics.recent_entry_counts.append(0)
@@ -228,6 +265,75 @@ class SourceHealthService:
             f"Source '{source_name}' health degraded: {metrics.consecutive_failures} "
             f"consecutive failures (status: {metrics.status})"
         )
+
+        if just_quarantined:
+            self._emit_quarantine_telegram_alert(
+                source_name=source_name,
+                consecutive_failures=metrics.consecutive_failures,
+                error_message=error_message,
+                source_id=metrics.source_id,
+            )
+
+    def unquarantine(self, source_name: str) -> bool:
+        """Manually restore and reset a quarantined source back to healthy state."""
+        m = self._sources.get(source_name)
+        if not m:
+            for s in self._sources.values():
+                if s.source_id and (
+                    s.source_id == source_name or s.source_id.startswith(source_name)
+                ):
+                    m = s
+                    break
+                if s.source_name.lower() == source_name.lower():
+                    m = s
+                    break
+
+        if m:
+            m.is_quarantined = False
+            m.consecutive_failures = 0
+            m.quarantined_at = None
+            m.quarantine_reason = None
+            m.last_error_message = None
+            m.error_count = 0
+            m.total_runs = 0
+            m.success_count = 0
+            logger.info(f"Source '{m.source_name}' manually unquarantined and reset.")
+            return True
+        return False
+
+    def is_source_quarantined(self, source_name: str) -> bool:
+        """Return True if source is quarantined and its 12-hour backoff probe has not elapsed."""
+        m = self._sources.get(source_name)
+        return bool(m and m.status == "quarantined" and m.circuit_state == "open")
+
+    def _emit_quarantine_telegram_alert(
+        self,
+        source_name: str,
+        consecutive_failures: int,
+        error_message: str,
+        source_id: str | None = None,
+    ) -> None:
+        """Emit a diagnostic notification via TelegramChatOpsService when quarantined."""
+        try:
+            import asyncio
+
+            from ai_security_monitor.application.services.telegram_chatops_service import (
+                telegram_chatops_service,
+            )
+
+            coro = telegram_chatops_service.notify_source_quarantined(
+                source_name=source_name,
+                consecutive_failures=consecutive_failures,
+                error_message=error_message,
+                source_id=source_id,
+            )
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(coro)
+            except RuntimeError:
+                asyncio.run(coro)
+        except Exception as e:
+            logger.debug(f"Telegram quarantine alert suppressed: {e}")
 
     def get_source_health(self, source_name: str) -> dict | None:
         """Get health data for a specific source."""
@@ -244,7 +350,7 @@ class SourceHealthService:
         return fallback_seconds
 
     def is_circuit_open(self, source_name: str) -> bool:
-        """Return True if the circuit breaker for this source is currently open (cooling down)."""
+        """Return True if the circuit breaker for this source is currently open (cooling down or quarantined)."""
         m = self._sources.get(source_name)
         return m.circuit_state == "open" if m else False
 
@@ -255,23 +361,32 @@ class SourceHealthService:
         healthy_count = sum(1 for s in sources_list if s["status"] == "healthy")
         degraded_count = sum(1 for s in sources_list if s["status"] == "degraded")
         failing_count = sum(1 for s in sources_list if s["status"] == "failing")
+        quarantined_count = sum(1 for s in sources_list if s["status"] == "quarantined")
 
         # Regional health rollups
         by_region: dict[str, dict] = {}
         for s in sources_list:
             reg = s["region"]
             if reg not in by_region:
-                by_region[reg] = {"total": 0, "healthy": 0, "failing": 0}
+                by_region[reg] = {
+                    "total": 0,
+                    "healthy": 0,
+                    "failing": 0,
+                    "quarantined": 0,
+                }
             by_region[reg]["total"] += 1
             if s["status"] == "healthy":
                 by_region[reg]["healthy"] += 1
             elif s["status"] == "failing":
                 by_region[reg]["failing"] += 1
+            elif s["status"] == "quarantined":
+                by_region[reg]["quarantined"] += 1
 
         overall_status = "healthy"
-        if failing_count > 0:
+        if quarantined_count > 0 or failing_count > 0:
+            unhealthy_count = quarantined_count + failing_count
             overall_status = (
-                "degraded" if failing_count < total_sources * 0.3 else "critical"
+                "degraded" if unhealthy_count < total_sources * 0.3 else "critical"
             )
 
         from ai_security_monitor.infrastructure.fetchers.throttle import (
@@ -284,11 +399,12 @@ class SourceHealthService:
             "healthy_count": healthy_count,
             "degraded_count": degraded_count,
             "failing_count": failing_count,
+            "quarantined_count": quarantined_count,
             "regional_rollups": by_region,
             "domain_throttle": domain_throttle.get_stats(),
             "sources": sorted(
                 sources_list,
-                key=lambda x: (x["status"] != "failing", x["source_name"]),
+                key=lambda x: (x["status"] == "healthy", x["source_name"]),
             ),
         }
 

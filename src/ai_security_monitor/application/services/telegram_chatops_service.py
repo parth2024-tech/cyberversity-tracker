@@ -24,6 +24,7 @@ from ai_security_monitor.infrastructure.database.unit_of_work import (
 from ai_security_monitor.infrastructure.delivery.telegram_delivery import (
     TelegramDelivery,
     build_entry_inline_keyboard,
+    build_quarantine_inline_keyboard,
 )
 
 logger = get_logger(__name__)
@@ -271,9 +272,91 @@ class TelegramChatOpsService:
                 "found": success,
             }
 
+        # 6. Unquarantine Source Action (uq:)
+        if action == "uq":
+            source_slug = target[:40]
+            from ai_security_monitor.application.services.source_health_service import (
+                source_health_service,
+            )
+
+            source_health_service.unquarantine(source_slug)
+
+            async with SqlAlchemyUnitOfWork() as uow:
+                try:
+                    await uow.sources.toggle_enabled(source_slug, enabled=True)
+                    await uow.commit()
+                except Exception:
+                    pass
+
+            toast = f"🔄 Source '{source_slug}' unquarantined & restored!"
+            await self.delivery.answer_callback_query(query_id, text=toast)
+
+            if chat_id and message_id:
+                new_text = (
+                    original_text
+                    + "\n\n✅ <b>RESOLVED:</b> Source unquarantined and sweep schedule restored."
+                )
+                await self.delivery.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    text=new_text,
+                    reply_markup={"inline_keyboard": []},
+                )
+
+            return {
+                "status": "success",
+                "action": "unquarantine",
+                "source": source_slug,
+                "source_id": source_slug,
+            }
+
         # Default no-op
         await self.delivery.answer_callback_query(query_id)
         return {"status": "noop"}
+
+    async def notify_source_quarantined(
+        self,
+        source_name: str,
+        consecutive_failures: int,
+        error_message: str,
+        source_id: str | None = None,
+    ) -> bool:
+        """Emit a diagnostic notification with an unquarantine button when a source enters quarantine."""
+        bot_token = self.delivery.config.get("bot_token")
+        chat_id = self.delivery.config.get("chat_id")
+        if (
+            not bot_token
+            or not chat_id
+            or bot_token == "unconfigured"
+            or chat_id == "unconfigured"
+        ):
+            return False
+
+        source_target = source_id or source_name
+        err_clean = (
+            html.escape(error_message[:200])
+            if error_message
+            else "Persistent network errors / non-200 responses"
+        )
+        text = (
+            f"🚨 <b>SOURCE QUARANTINED:</b> <code>{html.escape(source_name)}</code>\n"
+            f"• <b>Consecutive Failures:</b> {consecutive_failures}\n"
+            f"• <b>Last Error:</b> {err_clean}\n"
+            f"• <b>Circuit Breaker:</b> Polling halted. 12-hour probe active.\n"
+            f"• <b>Action:</b> Tap below to manually restore and re-enable."
+        )
+        kb = build_quarantine_inline_keyboard(source_target)
+        try:
+            res = await self.delivery.send_message(
+                text=text,
+                reply_markup=kb,
+            )
+            return bool(res)
+        except Exception as e:
+            logger.error(
+                f"Failed to send quarantine notification for {source_name}: {e}"
+            )
+            return False
 
     async def _run_deep_triage_background(
         self,
@@ -311,7 +394,8 @@ class TelegramChatOpsService:
                         threat_velocity=75,
                         severity_index=70,
                         blast_radius_score=65,
-                        affected_ecosystem=brief.stack_relevance.matched_technologies or ["AI Ecosystem"],
+                        affected_ecosystem=brief.stack_relevance.matched_technologies
+                        or ["AI Ecosystem"],
                         attack_archetype="Decision Intelligence",
                         weaponization_potential="Production Ready",
                         decision_brief=brief.to_dict(),
@@ -337,7 +421,10 @@ class TelegramChatOpsService:
             }.get(brief.evidence_assessment.confidence.value, "🔍")
 
             impact_badge = brief.stack_relevance.impact_level.value
-            tech_str = ", ".join(brief.stack_relevance.matched_technologies[:3]) or "General Ecosystem"
+            tech_str = (
+                ", ".join(brief.stack_relevance.matched_technologies[:3])
+                or "General Ecosystem"
+            )
             event_clean = html.escape(brief.event_summary[:200])
             sig_clean = html.escape(brief.significance[:160])
             novel_clean = html.escape(brief.novelty_assessment.summary[:130])

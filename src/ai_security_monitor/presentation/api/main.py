@@ -333,6 +333,26 @@ def create_app() -> FastAPI:
                 return FileResponse(png_path, media_type="image/png")
             return Response(status_code=404)
 
+        @app.get("/manifest.json", include_in_schema=False)
+        async def serve_manifest():
+            manifest_path = os.path.join(web_dir, "manifest.json")
+            if os.path.exists(manifest_path):
+                return FileResponse(
+                    manifest_path, media_type="application/manifest+json"
+                )
+            return Response(status_code=404)
+
+        @app.get("/sw.js", include_in_schema=False)
+        async def serve_service_worker():
+            sw_path = os.path.join(web_dir, "sw.js")
+            if os.path.exists(sw_path):
+                return FileResponse(
+                    sw_path,
+                    media_type="application/javascript",
+                    headers={"Service-Worker-Allowed": "/"},
+                )
+            return Response(status_code=404)
+
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 
     return app

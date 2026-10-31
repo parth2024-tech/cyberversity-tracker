@@ -518,3 +518,42 @@ def test_embedding_service_is_fallback_property():
     emb_default = EmbeddingService()
     assert hasattr(emb_default, "is_fallback")
     assert isinstance(emb_default.is_fallback, bool)
+
+
+@pytest.mark.asyncio
+async def test_unquarantine_source_callback():
+    """Ensure uq: callback unquarantines source, updates database, and edits Telegram message."""
+    mock_delivery = MagicMock(spec=TelegramDelivery)
+    mock_delivery.answer_callback_query = AsyncMock(return_value=True)
+    mock_delivery.edit_message_text = AsyncMock(return_value=True)
+
+    service = TelegramChatOpsService(delivery=mock_delivery)
+
+    cb_query = {
+        "id": "q_uq_1",
+        "from": {"id": 12345},
+        "data": "uq:arxiv_ai_papers",
+        "message": {
+            "message_id": 999,
+            "chat": {"id": 12345},
+            "text": "⚠️ <b>SOURCE QUARANTINED:</b> arxiv_ai_papers",
+        },
+    }
+
+    with (
+        patch.object(settings.delivery, "telegram_allowed_user_id", 12345),
+        patch(
+            "ai_security_monitor.application.services.source_health_service.source_health_service.unquarantine"
+        ) as mock_unquar,
+    ):
+        res = await service.handle_callback_query(cb_query)
+
+        assert res["status"] == "success"
+        assert res["action"] == "unquarantine"
+        assert res["source"] == "arxiv_ai_papers"
+
+        mock_unquar.assert_called_once_with("arxiv_ai_papers")
+        mock_delivery.answer_callback_query.assert_called_once()
+        mock_delivery.edit_message_text.assert_called_once()
+        call_kwargs = mock_delivery.edit_message_text.call_args.kwargs
+        assert "RESOLVED" in call_kwargs["text"]
