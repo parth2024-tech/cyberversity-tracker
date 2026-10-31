@@ -87,6 +87,11 @@ class DeepAnalysisService:
             "tags": entry.tags or [],
             "region": meta.get("region", "global").upper(),
             "country": meta.get("country", "GLOBAL"),
+            "decision_brief": (
+                entry.analysis.decision_brief
+                if entry.analysis and entry.analysis.decision_brief
+                else None
+            ),
         }
 
     def _infer_importance_reason(self, entry: Entry) -> str:

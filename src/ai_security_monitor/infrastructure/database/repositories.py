@@ -936,6 +936,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 if model.analysis.model in [m.value for m in AnalysisModel]
                 else AnalysisModel.HEURISTIC,
                 confidence=model.analysis.confidence,
+                decision_brief=getattr(model.analysis, "decision_brief", None),
                 created_at=model.analysis.created_at,
                 updated_at=model.analysis.updated_at,
             )
@@ -990,6 +991,7 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             mitre_technique=analysis.mitre_technique,
             model=analysis.model.value,
             confidence=analysis.confidence,
+            decision_brief=analysis.decision_brief,
             created_at=analysis.created_at,
             updated_at=analysis.updated_at,
         )
@@ -1042,6 +1044,7 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
         model.mitre_technique = analysis.mitre_technique
         model.model = analysis.model.value
         model.confidence = analysis.confidence
+        model.decision_brief = analysis.decision_brief
         model.updated_at = datetime.now(UTC)
 
         await self._session.flush()
@@ -1094,6 +1097,7 @@ class SQLAlchemyAnalysisRepository(AnalysisRepository):
             if model.model in [m.value for m in AnalysisModel]
             else AnalysisModel.HEURISTIC,
             confidence=model.confidence,
+            decision_brief=getattr(model, "decision_brief", None),
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

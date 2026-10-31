@@ -30,6 +30,7 @@ class AnalysisResult:
     mitre_technique: str | None = None
     model: AnalysisModel = AnalysisModel.HEURISTIC
     confidence: float = 1.0
+    decision_brief: dict | None = None
 
     def __post_init__(self):
         if self.affected_ecosystem is None:

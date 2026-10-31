@@ -469,6 +469,19 @@ class NewspaperRenderer:
             else ""
         )
 
+        lead_db = lead.analysis.decision_brief if (lead and lead.analysis) else None
+        lead_db_block = ""
+        if lead_db and isinstance(lead_db, dict):
+            lead_db_block = (
+                f"\n> **🎯 Five-Question Decision Brief:**\n"
+                f"> 1. **What Happened:** {lead_db.get('event_summary')}\n"
+                f"> 2. **Why It Matters:** {lead_db.get('significance')}\n"
+                f"> 3. **What's New:** [{lead_db.get('novelty_assessment', {}).get('novelty_type', '')}] {lead_db.get('novelty_assessment', {}).get('summary', '')}\n"
+                f"> 4. **Stack Impact:** [{lead_db.get('stack_relevance', {}).get('impact_level', 'NO_MATCH')}] {', '.join(lead_db.get('stack_relevance', {}).get('matched_technologies', [])) or 'General Ecosystem'}\n"
+                f"> 5. **Recommended Action:** `{lead_db.get('recommended_action', 'MONITOR_CLAIMS')}` — {lead_db.get('action_rationale', '')}\n"
+                f"> • *Evidence Confidence*: `{lead_db.get('evidence_assessment', {}).get('confidence', 'PRELIMINARY')}`\n"
+            )
+
         md = f"""# 📰 THE GLOBAL AI GAZETTE
 **Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #{edition_num}**
 *{date_str} • Coverage Window: {window_hours}h • {len(entries)} verified AI stories analyzed*
@@ -481,7 +494,7 @@ class NewspaperRenderer:
 - **Velocity**: `{lead_vel}/100` | **Impact Score**: `{lead_sev}/100` | **Source**: `{lead_src}`
 
 {lead_summary}
-
+{lead_db_block}
 """
         if secondary:
             md += f"""### ⚡ {sec_title}
@@ -747,12 +760,32 @@ class NewspaperRenderer:
             title_text = html.escape(self._clean_title(item.title))
             url = item.url or "#"
             src = html.escape(self._get_source_name(item))
+
+            db_block = ""
+            if item.analysis and getattr(item.analysis, "decision_brief", None):
+                db = item.analysis.decision_brief
+                if isinstance(db, dict):
+                    act = html.escape(str(db.get("recommended_action", "MONITOR_CLAIMS")))
+                    conf = html.escape(str(db.get("evidence_assessment", {}).get("confidence", "PRELIMINARY")))
+                    stack_impact = html.escape(str(db.get("stack_relevance", {}).get("impact_level", "NO_MATCH")))
+                    act_rat = html.escape(str(db.get("action_rationale", ""))[:120])
+                    db_block = f"""
+          <div class="mt-2 pt-2 border-t border-[#e2dccd] text-[10px]">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-bold text-[#1c3a5e]">🎯 DECISION:</span>
+              <span class="px-1 py-0.2 bg-[#e0f2fe] text-[#0369a1] font-mono rounded font-bold">{act}</span>
+              <span class="px-1 py-0.2 bg-[#f1f5f9] text-[#475569] font-mono rounded">Conf: {conf}</span>
+              <span class="px-1 py-0.2 bg-[#fef3c7] text-[#92400e] font-mono rounded">Stack: {stack_impact}</span>
+            </div>
+            <p class="text-[#4b5563] mt-1 italic leading-snug">{act_rat}</p>
+          </div>"""
+
             return f"""
         <div class="p-3.5 bg-white/80 border border-[#d1cbba]">
           <span class="text-[9.5px] font-mono font-bold" style="color:{badge_color}">{badge} • {stat} {stat_val}/100</span>
           <h4 class="font-serif font-bold text-xs mt-1 text-[#0f172a]"><a href="{html.escape(url)}" target="_blank" class="hover:underline">{title_text}</a></h4>
           <p class="text-[9.5px] text-[#6b7280] font-mono mt-0.5">SOURCE: {src}</p>
-          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{summary_text}</p>
+          <p class="text-[11px] text-[#4b5563] mt-1.5 leading-relaxed">{summary_text}</p>{db_block}
         </div>"""
 
         def section_grid(

@@ -293,51 +293,68 @@ class TelegramChatOpsService:
                     )
                     return
 
-                # Check if analysis exists or generate heuristic analysis
-                from ai_security_monitor.infrastructure.analyzers.llm_analyzer import (
-                    LLMAnalyzer,
+                from ai_security_monitor.application.services.decision_brief_service import (
+                    decision_brief_service,
                 )
 
-                analyzer = LLMAnalyzer(config={"tier": "cloud_frontier"})
-                result = await analyzer.analyze(entry)
-
-                analysis = Analysis(
-                    entry_id=entry.id,
-                    attack_vector=result.attack_vector or "Ecosystem Innovation",
-                    risk_assessment=result.risk_assessment
-                    or "Significant AI advancement",
-                    mitigation=result.mitigation or "Review architecture",
-                    threat_velocity=result.threat_velocity or 75,
-                    severity_index=result.severity_index or 70,
-                    blast_radius_score=result.blast_radius_score or 65,
-                    affected_ecosystem=result.affected_ecosystem or ["AI Ecosystem"],
-                    attack_archetype=result.attack_archetype
-                    or "Foundation Model Advancement",
-                    weaponization_potential=result.weaponization_potential
-                    or "Production Ready",
+                brief = await decision_brief_service.get_or_generate_brief(
+                    entry, uow=uow, force=True
                 )
 
                 existing_analysis = await uow.analysis.get_by_entry(entry.id)
-                if existing_analysis:
-                    await uow.analysis.update(analysis)
-                else:
+                if not existing_analysis:
+                    analysis = Analysis(
+                        entry_id=entry.id,
+                        attack_vector=entry.title[:100],
+                        risk_assessment=brief.significance[:250],
+                        mitigation=brief.action_rationale[:250],
+                        threat_velocity=75,
+                        severity_index=70,
+                        blast_radius_score=65,
+                        affected_ecosystem=brief.stack_relevance.matched_technologies or ["AI Ecosystem"],
+                        attack_archetype="Decision Intelligence",
+                        weaponization_potential="Production Ready",
+                        decision_brief=brief.to_dict(),
+                    )
                     await uow.analysis.add(analysis)
-                await uow.commit()
+                    await uow.commit()
 
-            # Append analysis verdict to message text with HTML escaping & length clamp
-            escaped_archetype = html.escape(analysis.attack_archetype)
-            escaped_risk = html.escape(analysis.risk_assessment[:220])
-            escaped_vector = html.escape(analysis.attack_vector[:150])
+            # Append structured decision brief to message text with HTML escaping & length clamp
+            action_icon = {
+                "TEST_IN_SANDBOX": "🧪",
+                "UPGRADE_DEPENDENCY": "⚡",
+                "READ_PAPER": "📄",
+                "MONITOR_CLAIMS": "🔭",
+                "IGNORE_HYPE": "💤",
+            }.get(brief.recommended_action.value, "📌")
 
-            verdict_block = (
-                f"\n\n<b>📊 Epistemic Analysis Verdict:</b>\n"
-                f"• <b>Velocity:</b> {analysis.threat_velocity}/100 | <b>Severity:</b> {analysis.severity_index}/100\n"
-                f"• <b>Archetype:</b> {escaped_archetype}\n"
-                f"• <b>Impact:</b> {escaped_risk}\n"
-                f"• <b>Vector:</b> {escaped_vector}"
+            conf_icon = {
+                "VERIFIED": "✅",
+                "SUPPORTED": "🔹",
+                "PRELIMINARY": "⚠️",
+                "CONTRADICTED": "❌",
+                "INSUFFICIENT_EVIDENCE": "❓",
+            }.get(brief.evidence_assessment.confidence.value, "🔍")
+
+            impact_badge = brief.stack_relevance.impact_level.value
+            tech_str = ", ".join(brief.stack_relevance.matched_technologies[:3]) or "General Ecosystem"
+            event_clean = html.escape(brief.event_summary[:200])
+            sig_clean = html.escape(brief.significance[:160])
+            novel_clean = html.escape(brief.novelty_assessment.summary[:130])
+            rationale_clean = html.escape(brief.action_rationale[:140])
+
+            decision_block = (
+                f"\n\n<b>🎯 DECISION BRIEF:</b>\n"
+                f"• <b>What Happened:</b> {event_clean}\n"
+                f"• <b>Why It Matters:</b> {sig_clean}\n"
+                f"• <b>What's New:</b> [{brief.novelty_assessment.novelty_type.value}] {novel_clean}\n"
+                f"• <b>My Stack Impact:</b> [{impact_badge}] {tech_str}\n"
+                f"• <b>Next Action:</b> {action_icon} <code>{brief.recommended_action.value}</code>\n"
+                f"  <i>↳ {rationale_clean}</i>\n"
+                f"• <b>Evidence:</b> {conf_icon} {brief.evidence_assessment.confidence.value}"
             )
 
-            new_text = original_text + verdict_block
+            new_text = original_text + decision_block
             final_kb = build_entry_inline_keyboard(
                 entry_id, entry.source_id, is_analyzing=False
             )

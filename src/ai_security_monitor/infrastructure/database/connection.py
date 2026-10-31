@@ -201,6 +201,15 @@ class DatabaseManager:
                 except Exception:
                     pass
 
+            # Epistemic Decision Brief column on entry_analysis
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text("ALTER TABLE entry_analysis ADD COLUMN decision_brief JSON")
+                    )
+            except Exception:
+                pass
+
             # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
             try:
                 async with self.engine.begin() as conn:

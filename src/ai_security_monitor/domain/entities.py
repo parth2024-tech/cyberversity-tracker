@@ -233,6 +233,7 @@ class Analysis(Entity):
     mitre_technique: str | None = None  # e.g., "Exploit Public-Facing Application"
     model: AnalysisModel = AnalysisModel.HEURISTIC
     confidence: float = 1.0
+    decision_brief: dict | None = None
 
     # Domain language aliases for Worldwide AI Ecosystem context
     @property

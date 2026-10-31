@@ -462,13 +462,14 @@ async def test_telegram_deep_triage_immediate_answer_and_background_worker(
         # Allow background task to complete
         await asyncio.sleep(0.05)
 
-        # Verify in-place edit was called with epistemic verdict
+        # Verify in-place edit was called with decision brief verdict
         assert mock_delivery.edit_message_text.called
         call_kwargs = mock_delivery.edit_message_text.call_args[1]
         assert call_kwargs["chat_id"] == -100123
         assert call_kwargs["message_id"] == 204
-        assert "Epistemic Analysis Verdict" in call_kwargs["text"]
-        assert "High market disruption" in call_kwargs["text"]
+        assert "DECISION BRIEF" in call_kwargs["text"]
+        assert "What Happened" in call_kwargs["text"]
+        assert "Next Action" in call_kwargs["text"]
 
 
 @pytest.mark.asyncio

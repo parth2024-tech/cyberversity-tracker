@@ -144,6 +144,7 @@ class AnalysisModel(Base):
     confidence: Mapped[float] = mapped_column(default=1.0)
     overall_confidence: Mapped[float] = mapped_column(default=0.7)
     evidence_version: Mapped[str] = mapped_column(String(20), default="v1")
+    decision_brief: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)
     )
