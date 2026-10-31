@@ -39,4 +39,5 @@ build/
 .antigravitycli/
 data/backups/
 data/*.db-journal
+data/briefs/
 

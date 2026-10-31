@@ -210,13 +210,19 @@ class SQLAlchemyEntryRepository(EntryRepository):
         return result.scalar() or 0
 
     async def search_fts(self, query: str, limit: int = 50) -> builtins.list[Entry]:
-        """Sub-millisecond BM25 full-text search using SQLite FTS5 table."""
+        """Sub-millisecond BM25 full-text search using SQLite FTS5 table with Chinese/CJK support."""
         import re
 
-        tokens = re.findall(r"\w+", query)
+        clean_q = query.strip()
+        if not clean_q:
+            return []
+
+        tokens = re.findall(r"[\w\u4e00-\u9fff]+", clean_q)
         if not tokens:
             return []
-        safe_q = " ".join(f'"{t}"' for t in tokens)
+
+        # If query has at least 3 characters, trigram FTS5 index can match
+        safe_q = " ".join(f'"{t.replace(chr(34), "")}"' for t in tokens if len(t) > 0)
 
         try:
             sql = text(
@@ -226,35 +232,38 @@ class SQLAlchemyEntryRepository(EntryRepository):
             )
             result = await self._session.execute(sql, {"query": safe_q, "limit": limit})
             rows = result.fetchall()
-            if not rows:
-                return []
-
-            entry_ids = [r[0] for r in rows]
-            stmt = select(EntryModel).where(
-                EntryModel.id.in_(entry_ids),
-                EntryModel.is_purged.is_(False),
-            )
-            models_result = await self._session.execute(stmt)
-            models_by_id = {m.id: m for m in models_result.scalars().all()}
-            ordered = [models_by_id[eid] for eid in entry_ids if eid in models_by_id]
-            return [self._model_to_entity(m) for m in ordered]
-        except Exception:
-            # Fallback to ILIKE if FTS5 table is uninitialized
-            raw_fallback = " ".join(tokens)
-            stmt = (
-                select(EntryModel)
-                .where(
-                    or_(
-                        EntryModel.title.ilike(f"%{raw_fallback}%"),
-                        EntryModel.summary.ilike(f"%{raw_fallback}%"),
-                    ),
+            if rows:
+                entry_ids = [r[0] for r in rows]
+                stmt = select(EntryModel).where(
+                    EntryModel.id.in_(entry_ids),
                     EntryModel.is_purged.is_(False),
                 )
-                .order_by(desc(EntryModel.published_at))
-                .limit(limit)
+                models_result = await self._session.execute(stmt)
+                models_by_id = {m.id: m for m in models_result.scalars().all()}
+                ordered = [
+                    models_by_id[eid] for eid in entry_ids if eid in models_by_id
+                ]
+                return [self._model_to_entity(m) for m in ordered]
+        except Exception:
+            pass
+
+        # Fallback to ILIKE if FTS5 query returned 0 rows or syntax/length error
+        raw_fallback = " ".join(tokens)
+        stmt = (
+            select(EntryModel)
+            .where(
+                or_(
+                    EntryModel.title.ilike(f"%{raw_fallback}%"),
+                    EntryModel.summary.ilike(f"%{raw_fallback}%"),
+                    EntryModel.extra_metadata.like(f"%{raw_fallback}%"),
+                ),
+                EntryModel.is_purged.is_(False),
             )
-            models_res = await self._session.execute(stmt)
-            return [self._model_to_entity(m) for m in models_res.scalars().all()]
+            .order_by(desc(EntryModel.published_at))
+            .limit(limit)
+        )
+        models_res = await self._session.execute(stmt)
+        return [self._model_to_entity(m) for m in models_res.scalars().all()]
 
     async def update(self, entry: Entry) -> Entry:
         stmt = select(EntryModel).where(EntryModel.id == _uuid_to_str(entry.id))
@@ -895,6 +904,49 @@ class SQLAlchemyEntryRepository(EntryRepository):
                         ),
                     )
                 )
+        if filters.subject_region and filters.subject_region != "all":
+            clean_sreg = re.sub(r"[^a-zA-Z0-9_\-]", "", filters.subject_region.lower())
+            if clean_sreg:
+                if not source_joined:
+                    stmt = stmt.join(
+                        SourceModel, EntryModel.source_id == SourceModel.id
+                    )
+                    source_joined = True
+                stmt = stmt.where(
+                    or_(
+                        EntryModel.extra_metadata.like(
+                            f'%"subject_region": "{clean_sreg}"%'
+                        ),
+                        EntryModel.extra_metadata.like(f'%"region": "{clean_sreg}"%'),
+                        SourceModel.config.like(f'%"region": "{clean_sreg}"%'),
+                    )
+                )
+
+        if filters.lab and filters.lab != "all":
+            clean_lab = filters.lab.strip()
+            if clean_lab:
+                stmt = stmt.where(
+                    or_(
+                        EntryModel.extra_metadata.like(f'%"lab": "{clean_lab}"%'),
+                        EntryModel.extra_metadata.like(f'%"author": "{clean_lab}"%'),
+                        EntryModel.title.ilike(f"%{clean_lab}%"),
+                        EntryModel.summary.ilike(f"%{clean_lab}%"),
+                    )
+                )
+
+        if filters.tier is not None:
+            if not source_joined:
+                stmt = stmt.join(SourceModel, EntryModel.source_id == SourceModel.id)
+                source_joined = True
+            tier_num = float(filters.tier)
+            stmt = stmt.where(
+                or_(
+                    SourceModel.config.like(f'%"tier": {tier_num}%'),
+                    SourceModel.config.like(f'%"tier": {int(tier_num)}%')
+                    if tier_num.is_integer()
+                    else false(),
+                )
+            )
 
         return stmt, analysis_joined
 
@@ -1556,4 +1608,3 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
-
