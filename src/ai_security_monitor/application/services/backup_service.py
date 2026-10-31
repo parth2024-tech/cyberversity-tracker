@@ -1,8 +1,8 @@
 """
 Encrypted Offsite Backup & Verifiable Restore Drill Service (Pillar 7 / Workstream C1).
 Handles hot SQLite online backups via VACUUM INTO, PRAGMA integrity verification,
-asymmetric age (pyrage X25519) encryption, SHA-256 checksumming, grandfather-father-son
-retention pruning (7 daily, 4 weekly, 6 monthly), and verifiable restore drills.
+asymmetric age (pyrage X25519) encryption, SHA-256 checksumming, S3/Cloudflare R2 offsite upload,
+grandfather-father-son retention pruning (7 daily, 4 weekly, 6 monthly), and verifiable restore drills.
 """
 
 from __future__ import annotations
@@ -26,6 +26,11 @@ import structlog
 from ai_security_monitor.config.settings import settings
 
 logger = structlog.get_logger(__name__)
+
+# Strict regex matching AetherGuard backup filenames
+BACKUP_FILENAME_REGEX = re.compile(
+    r"^aetherguard_backup_(\d{8})_(\d{6})_[a-zA-Z0-9_-]+\.db\.gz\.age$"
+)
 
 
 class BackupError(Exception):
@@ -68,6 +73,7 @@ class BackupResult:
     integrity_check_passed: bool
     uploaded_to_remote: bool
     remote_key: str | None = None
+    table_counts: dict[str, int] = field(default_factory=dict)
     duration_seconds: float = 0.0
     error_message: str | None = None
 
@@ -122,12 +128,14 @@ class BackupService:
     """
     Automated Encrypted Offsite Backup & Restore Drill Engine.
     Implements:
-      1. Native SQLite point-in-time hot backup via VACUUM INTO.
+      1. Native SQLite point-in-time hot backup via VACUUM INTO with sqlite-vec support.
       2. PRAGMA integrity_check before compression and encryption.
-      3. Gzip compression with dual SHA-256 integrity fingerprints.
-      4. Asymmetric X25519 public-key encryption with pyrage (age).
-      5. Grandfather-father-son retention pruning (7 daily, 4 weekly, 6 monthly).
-      6. Verifiable restore drill validating schema, integrity, and row count parity.
+      3. Streaming Gzip compression with dual SHA-256 integrity fingerprints.
+      4. Disk-headroom optimization (immediate unlinking of raw snapshot before encryption).
+      5. Streaming asymmetric X25519 public-key encryption via pyrage.encrypt_file.
+      6. Offsite S3/Cloudflare R2 push with remote GFS pruning.
+      7. Grandfather-father-son retention pruning (7 daily, 4 weekly, 6 monthly).
+      8. Verifiable restore drill validating schema, integrity, and row count parity.
     """
 
     def __init__(
@@ -145,6 +153,25 @@ class BackupService:
         )
 
     @staticmethod
+    def _connect_sqlite(db_path: Path | str, readonly: bool = False) -> sqlite3.Connection:
+        """
+        Open SQLite connection with sqlite-vec extension loaded when available.
+        Ensures virtual tables (entries_vec, entries_fts) are correctly parsed.
+        """
+        p = Path(db_path).resolve()
+        uri = f"file:{p}?mode=ro" if readonly else str(p)
+        conn = sqlite3.connect(uri, uri=readonly)
+        try:
+            import sqlite_vec
+
+            conn.enable_load_extension(True)
+            sqlite_vec.load(conn)
+            conn.enable_load_extension(False)
+        except Exception:
+            pass
+        return conn
+
+    @staticmethod
     def resolve_db_path(db_url: str | None = None) -> Path:
         """Resolve absolute filesystem path to SQLite database from connection URL."""
         url = db_url or settings.database.url
@@ -156,23 +183,17 @@ class BackupService:
         return Path(clean).resolve()
 
     @staticmethod
-    def calculate_sha256(data: bytes) -> str:
-        """Compute SHA-256 digest of binary payload."""
-        return hashlib.sha256(data).hexdigest()
-
-    @staticmethod
     def calculate_file_sha256(file_path: Path) -> str:
-        """Compute SHA-256 digest of a file in chunks."""
+        """Compute SHA-256 digest of a file in 64KB stream chunks (memory < 1MB)."""
         hasher = hashlib.sha256()
         with open(file_path, "rb") as f:
             while chunk := f.read(65536):
                 hasher.update(chunk)
         return hasher.hexdigest()
 
-    @staticmethod
-    def verify_integrity(db_path: Path) -> bool:
+    def verify_integrity(self, db_path: Path) -> bool:
         """Execute PRAGMA integrity_check on SQLite database."""
-        conn = sqlite3.connect(f"file:{db_path.resolve()}?mode=ro", uri=True)
+        conn = self._connect_sqlite(db_path, readonly=True)
         try:
             cursor = conn.cursor()
             cursor.execute("PRAGMA integrity_check;")
@@ -192,7 +213,7 @@ class BackupService:
         if target_snapshot.exists():
             target_snapshot.unlink()
 
-        conn = sqlite3.connect(str(source_db.resolve()))
+        conn = self._connect_sqlite(source_db, readonly=True)
         try:
             conn.execute("VACUUM INTO ?", (str(target_snapshot.resolve()),))
         except Exception as exc:
@@ -200,7 +221,7 @@ class BackupService:
                 "VACUUM INTO failed, falling back to sqlite3 backup API",
                 error=str(exc),
             )
-            dest_conn = sqlite3.connect(str(target_snapshot.resolve()))
+            dest_conn = self._connect_sqlite(target_snapshot, readonly=False)
             try:
                 conn.backup(dest_conn)
             finally:
@@ -208,16 +229,38 @@ class BackupService:
         finally:
             conn.close()
 
-    def encrypt_payload(self, data: bytes, public_key: str) -> bytes:
-        """Encrypt payload using asymmetric age X25519 public key."""
-        recipient = pyrage.x25519.Recipient.from_str(public_key.strip())
-        return pyrage.encrypt(data, [recipient])
+    @staticmethod
+    def compress_file_stream(input_file: Path, output_gz_file: Path) -> int:
+        """
+        Stream-compress file into gzip in 1MB chunks (memory < 10MB).
+        Returns compressed file size in bytes.
+        """
+        with open(input_file, "rb") as f_in, gzip.open(output_gz_file, "wb", compresslevel=6) as f_out:
+            while chunk := f_in.read(1024 * 1024):
+                f_out.write(chunk)
+        return output_gz_file.stat().st_size
 
-    def decrypt_payload(self, encrypted_data: bytes, secret_key: str) -> bytes:
-        """Decrypt age payload using asymmetric X25519 secret identity."""
+    @staticmethod
+    def decompress_file_stream(input_gz_file: Path, output_file: Path) -> int:
+        """
+        Stream-decompress gzip file into destination in 1MB chunks.
+        Returns decompressed file size in bytes.
+        """
+        with gzip.open(input_gz_file, "rb") as f_in, open(output_file, "wb") as f_out:
+            while chunk := f_in.read(1024 * 1024):
+                f_out.write(chunk)
+        return output_file.stat().st_size
+
+    def encrypt_file(self, input_file: Path, output_age_file: Path, public_key: str) -> None:
+        """Stream-encrypt file using asymmetric age X25519 public key."""
+        recipient = pyrage.x25519.Recipient.from_str(public_key.strip())
+        pyrage.encrypt_file(str(input_file), str(output_age_file), [recipient])
+
+    def decrypt_file(self, input_age_file: Path, output_file: Path, secret_key: str) -> None:
+        """Stream-decrypt age file using asymmetric X25519 secret identity."""
         try:
             identity = pyrage.x25519.Identity.from_str(secret_key.strip())
-            return pyrage.decrypt(encrypted_data, [identity])
+            pyrage.decrypt_file(str(input_age_file), str(output_file), [identity])
         except Exception as exc:
             raise DecryptionError(f"Age payload decryption failed: {exc}") from exc
 
@@ -229,9 +272,19 @@ class BackupService:
         record_in_db: bool = True,
     ) -> BackupResult:
         """
-        Execute full backup pipeline:
-        Lock -> VACUUM INTO -> PRAGMA integrity_check -> SHA-256 raw ->
-        Gzip -> pyrage age encryption -> SHA-256 encrypted -> Write -> Prune -> Record.
+        Execute full backup pipeline with strict memory & disk headroom optimization:
+        1. Acquire single-run lock (BackupLock).
+        2. VACUUM INTO -> point-in-time snapshot.
+        3. PRAGMA integrity_check.
+        4. Inspect table row counts.
+        5. Stream gzip compression.
+        6. IMMEDIATELY unlink raw snapshot (prevents disk usage from tripling).
+        7. Stream age asymmetric encryption.
+        8. IMMEDIATELY unlink intermediate gzip file.
+        9. Compute SHA-256 checksums.
+        10. Optional S3/R2 remote upload with remote GFS pruning.
+        11. Local GFS retention pruning.
+        12. Record execution in backup_runs table.
         """
         start_time = time.monotonic()
         run_id = str(uuid4())
@@ -258,6 +311,7 @@ class BackupService:
         with BackupLock(lock_file):
             timestamp_str = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
             raw_temp_snapshot = self.backup_dir / f"temp_snapshot_{run_id}.db"
+            temp_gz_file = self.backup_dir / f"temp_snapshot_{run_id}.db.gz"
             final_filename = f"aetherguard_backup_{timestamp_str}_{run_id[:8]}.db.gz.age"
             final_filepath = self.backup_dir / final_filename
 
@@ -271,34 +325,37 @@ class BackupService:
                         f"Database snapshot {raw_temp_snapshot} failed PRAGMA integrity_check!"
                     )
 
-                # 3. Size and raw checksum
+                # 3. Size and raw checksum (streamed)
                 raw_size = raw_temp_snapshot.stat().st_size
                 sha256_raw = self.calculate_file_sha256(raw_temp_snapshot)
+                table_counts = self._query_table_counts(raw_temp_snapshot)
 
-                # 4. Gzip compression
-                with open(raw_temp_snapshot, "rb") as f:
-                    raw_bytes = f.read()
-                compressed_bytes = gzip.compress(raw_bytes, compresslevel=6)
-                compressed_size = len(compressed_bytes)
+                # 4. Stream gzip compression
+                compressed_size = self.compress_file_stream(raw_temp_snapshot, temp_gz_file)
 
-                # 5. Age Asymmetric Encryption
-                encrypted_bytes = self.encrypt_payload(compressed_bytes, resolved_pubkey)
-                encrypted_size = len(encrypted_bytes)
-                sha256_encrypted = self.calculate_sha256(encrypted_bytes)
+                # 5. DISK HEADROOM OPTIMIZATION: delete raw snapshot immediately
+                if raw_temp_snapshot.exists():
+                    raw_temp_snapshot.unlink()
 
-                # 6. Write final encrypted snapshot
-                with open(final_filepath, "wb") as f:
-                    f.write(encrypted_bytes)
+                # 6. Stream Age Asymmetric Encryption
+                self.encrypt_file(temp_gz_file, final_filepath, resolved_pubkey)
+                encrypted_size = final_filepath.stat().st_size
+                sha256_encrypted = self.calculate_file_sha256(final_filepath)
 
-                # 7. Optional remote S3/R2 upload
+                # 7. DISK HEADROOM OPTIMIZATION: delete intermediate gzip immediately
+                if temp_gz_file.exists():
+                    temp_gz_file.unlink()
+
+                # 8. Optional remote S3/R2 upload & remote GFS pruning
                 uploaded_remote = False
                 remote_key: str | None = None
                 if upload_remote and settings.backup.s3_bucket_name:
                     uploaded_remote, remote_key = await self._upload_to_remote(
-                        final_filepath, final_filename
+                        final_filepath, final_filename, sha256_raw, sha256_encrypted
                     )
+                    await self._prune_remote_backups()
 
-                # 8. Grandfather-Father-Son Retention Pruning
+                # 9. Local Grandfather-Father-Son Retention Pruning
                 self.prune_backups()
 
                 duration = time.monotonic() - start_time
@@ -315,6 +372,7 @@ class BackupService:
                     integrity_check_passed=True,
                     uploaded_to_remote=uploaded_remote,
                     remote_key=remote_key,
+                    table_counts=table_counts,
                     duration_seconds=round(duration, 3),
                 )
 
@@ -326,7 +384,9 @@ class BackupService:
                     filename=final_filename,
                     raw_mb=round(raw_size / (1024 * 1024), 2),
                     enc_mb=round(encrypted_size / (1024 * 1024), 2),
+                    compression_ratio=round((1 - (encrypted_size / max(1, raw_size))) * 100, 1),
                     duration_s=result.duration_seconds,
+                    uploaded_remote=uploaded_remote,
                 )
                 return result
 
@@ -356,40 +416,43 @@ class BackupService:
                         pass
                 raise
             finally:
-                if raw_temp_snapshot.exists():
-                    try:
-                        raw_temp_snapshot.unlink()
-                    except OSError:
-                        pass
+                for temp_p in (raw_temp_snapshot, temp_gz_file):
+                    if temp_p.exists():
+                        try:
+                            temp_p.unlink()
+                        except OSError:
+                            pass
 
     def prune_backups(self, backup_dir: Path | None = None) -> list[Path]:
         """
-        Enforce Grandfather-Father-Son (GFS) archival retention policy:
+        Enforce Grandfather-Father-Son (GFS) archival retention policy locally:
           - Daily: 1 backup per day for the last 7 days.
           - Weekly: 1 backup per week for the last 4 weeks.
           - Monthly: 1 backup per month for the last 6 months.
-        Never purges the single most recent backup.
+        STRICT SAFETY INVARIANTS:
+          1. ONLY deletes files strictly matching BACKUP_FILENAME_REGEX.
+          2. Never touches manual backups (e.g. monitor_backup_*.db, *.tar.gz).
+          3. Never purges the single most recent backup regardless of age.
         Returns list of pruned file paths.
         """
         target_dir = backup_dir or self.backup_dir
         if not target_dir.exists():
             return []
 
-        pattern = re.compile(r"aetherguard_backup_(\d{8})_(\d{6})_.*\.db\.gz\.age$")
         backups: list[tuple[datetime, Path]] = []
 
+        # Only examine files starting with aetherguard_backup_ and ending with .db.gz.age
         for p in target_dir.glob("aetherguard_backup_*.db.gz.age"):
-            m = pattern.match(p.name)
-            if m:
-                try:
-                    dt = datetime.strptime(f"{m.group(1)}_{m.group(2)}", "%Y%m%d_%H%M%S").replace(
-                        tzinfo=UTC
-                    )
-                    backups.append((dt, p))
-                except ValueError:
-                    dt = datetime.fromtimestamp(p.stat().st_mtime, tz=UTC)
-                    backups.append((dt, p))
-            else:
+            m = BACKUP_FILENAME_REGEX.match(p.name)
+            if not m:
+                # Strictly skip any file not adhering to standard naming
+                continue
+            try:
+                dt = datetime.strptime(f"{m.group(1)}_{m.group(2)}", "%Y%m%d_%H%M%S").replace(
+                    tzinfo=UTC
+                )
+                backups.append((dt, p))
+            except ValueError:
                 dt = datetime.fromtimestamp(p.stat().st_mtime, tz=UTC)
                 backups.append((dt, p))
 
@@ -411,21 +474,21 @@ class BackupService:
         seen_months: set[str] = set()
 
         for dt, path in backups:
-            # 1. Daily rule
+            # 1. Daily rule (last 7 days)
             if dt >= cutoff_daily:
                 day_key = dt.strftime("%Y-%m-%d")
                 if day_key not in seen_days:
                     seen_days.add(day_key)
                     retained.add(path)
 
-            # 2. Weekly rule
+            # 2. Weekly rule (last 4 weeks)
             if dt >= cutoff_weekly:
                 week_key = f"{dt.year}-W{dt.isocalendar().week:02d}"
                 if week_key not in seen_weeks:
                     seen_weeks.add(week_key)
                     retained.add(path)
 
-            # 3. Monthly rule
+            # 3. Monthly rule (last 6 months)
             if dt >= cutoff_monthly:
                 month_key = dt.strftime("%Y-%m")
                 if month_key not in seen_months:
@@ -450,14 +513,15 @@ class BackupService:
         secret_key: str,
         target_db_path: Path | str,
         reference_db_path: Path | str | None = None,
+        expected_table_counts: dict[str, int] | None = None,
     ) -> RestoreResult:
         """
         Execute verifiable restore drill:
-          1. Decrypt using age secret key (identity).
-          2. Decompress gzip payload.
-          3. Write target SQLite file.
-          4. Execute PRAGMA integrity_check.
-          5. Verify table row count parity against reference database.
+          1. Stream-decrypt age file to temporary gzip.
+          2. Stream-decompress gzip to target SQLite DB.
+          3. Verify PRAGMA integrity_check (with sqlite-vec loaded).
+          4. Inspect ALL table counts across entire database schema.
+          5. Verify exact parity against reference DB or expected snapshot counts.
         """
         start_time = time.monotonic()
         enc_file = Path(encrypted_path).resolve()
@@ -475,17 +539,20 @@ class BackupService:
             target_path.unlink()
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
+        temp_gz = target_path.parent / f"restore_temp_{uuid4().hex[:8]}.db.gz"
+
         try:
-            with open(enc_file, "rb") as f:
-                encrypted_bytes = f.read()
+            # 1. Stream decrypt
+            self.decrypt_file(enc_file, temp_gz, secret_key)
 
-            compressed_bytes = self.decrypt_payload(encrypted_bytes, secret_key)
-            raw_bytes = gzip.decompress(compressed_bytes)
+            # 2. Stream decompress
+            self.decompress_file_stream(temp_gz, target_path)
 
-            with open(target_path, "wb") as f:
-                f.write(raw_bytes)
+            # 3. Clean up intermediate gzip immediately
+            if temp_gz.exists():
+                temp_gz.unlink()
 
-            # Check integrity
+            # 4. Check integrity with sqlite-vec loaded
             integrity_ok = self.verify_integrity(target_path)
             if not integrity_ok:
                 return RestoreResult(
@@ -495,25 +562,29 @@ class BackupService:
                     error_message="PRAGMA integrity_check failed on restored database!",
                 )
 
-            # Query row counts
+            # 5. Query table counts across all logical tables
             table_counts = self._query_table_counts(target_path)
             parity_verified = True
             parity_details: dict[str, Any] = {}
 
-            if reference_db_path:
+            # Check parity against expected counts (e.g. from backup metadata) or reference DB
+            ref_counts = expected_table_counts
+            if not ref_counts and reference_db_path:
                 ref_path = Path(reference_db_path).resolve()
                 if ref_path.exists():
                     ref_counts = self._query_table_counts(ref_path)
-                    parity_details["reference"] = ref_counts
-                    parity_details["restored"] = table_counts
-                    for tbl, ref_cnt in ref_counts.items():
-                        tgt_cnt = table_counts.get(tbl, 0)
-                        if tgt_cnt != ref_cnt:
-                            parity_verified = False
-                            parity_details[f"{tbl}_mismatch"] = {
-                                "reference": ref_cnt,
-                                "restored": tgt_cnt,
-                            }
+
+            if ref_counts:
+                parity_details["reference"] = ref_counts
+                parity_details["restored"] = table_counts
+                for tbl, ref_cnt in ref_counts.items():
+                    tgt_cnt = table_counts.get(tbl, 0)
+                    if tgt_cnt != ref_cnt:
+                        parity_verified = False
+                        parity_details[f"{tbl}_mismatch"] = {
+                            "reference": ref_cnt,
+                            "restored": tgt_cnt,
+                        }
 
             duration = round(time.monotonic() - start_time, 3)
             return RestoreResult(
@@ -535,21 +606,36 @@ class BackupService:
                 duration_seconds=duration,
                 error_message=str(exc),
             )
+        finally:
+            if temp_gz.exists():
+                try:
+                    temp_gz.unlink()
+                except OSError:
+                    pass
 
-    @staticmethod
-    def _query_table_counts(db_path: Path) -> dict[str, int]:
-        """Inspect table row counts on SQLite database."""
+    def _query_table_counts(self, db_path: Path) -> dict[str, int]:
+        """
+        Inspect row counts across all logical tables and virtual tables in SQLite DB.
+        Excludes SQLite internal tables and FTS shadow tables (_data, _idx, _docsize, _config).
+        """
         counts: dict[str, int] = {}
-        conn = sqlite3.connect(f"file:{db_path.resolve()}?mode=ro", uri=True)
+        conn = self._connect_sqlite(db_path, readonly=True)
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' "
+                "  AND name NOT LIKE 'sqlite_%' "
+                "  AND name NOT LIKE '%_data' "
+                "  AND name NOT LIKE '%_idx' "
+                "  AND name NOT LIKE '%_content' "
+                "  AND name NOT LIKE '%_docsize' "
+                "  AND name NOT LIKE '%_config'"
             )
             tables = [row[0] for row in cursor.fetchall()]
             for tbl in tables:
                 try:
-                    cursor.execute(f"SELECT count(*) FROM {tbl}")
+                    cursor.execute(f'SELECT count(*) FROM "{tbl}"')
                     counts[tbl] = cursor.fetchone()[0]
                 except Exception:
                     pass
@@ -557,8 +643,10 @@ class BackupService:
         finally:
             conn.close()
 
-    async def _upload_to_remote(self, file_path: Path, filename: str) -> tuple[bool, str]:
-        """Upload backup snapshot to S3 or Cloudflare R2 if configured."""
+    async def _upload_to_remote(
+        self, file_path: Path, filename: str, sha256_raw: str, sha256_encrypted: str
+    ) -> tuple[bool, str]:
+        """Upload backup snapshot to S3 or Cloudflare R2 with metadata checksums."""
         try:
             import boto3  # type: ignore
 
@@ -570,17 +658,116 @@ class BackupService:
                 region_name=settings.backup.s3_region_name,
             )
             remote_key = f"backups/{filename}"
-            s3_client.upload_file(str(file_path), settings.backup.s3_bucket_name, remote_key)
+            extra_args = {
+                "ContentType": "application/octet-stream",
+                "Metadata": {
+                    "sha256_raw": sha256_raw,
+                    "sha256_encrypted": sha256_encrypted,
+                },
+            }
+            s3_client.upload_file(
+                str(file_path),
+                settings.backup.s3_bucket_name,
+                remote_key,
+                ExtraArgs=extra_args,
+            )
             logger.info("Uploaded backup to remote S3/R2", remote_key=remote_key)
             return True, remote_key
-        except ImportError:
-            logger.warning(
-                "boto3 package not installed; skipping offsite S3/R2 push, local encrypted backup preserved."
-            )
-            return False, ""
         except Exception as exc:
             logger.warning("Remote offsite backup upload failed", error=str(exc))
             return False, ""
+
+    async def _prune_remote_backups(self) -> list[str]:
+        """
+        Enforce GFS retention policy on remote S3/R2 storage:
+        Lists remote backups, calculates 7 daily, 4 weekly, 6 monthly, and deletes expired.
+        """
+        if not settings.backup.s3_bucket_name:
+            return []
+
+        try:
+            import boto3
+
+            s3_client = boto3.client(
+                "s3",
+                endpoint_url=settings.backup.s3_endpoint_url,
+                aws_access_key_id=settings.backup.s3_access_key_id,
+                aws_secret_access_key=settings.backup.s3_secret_access_key,
+                region_name=settings.backup.s3_region_name,
+            )
+            paginator = s3_client.get_paginator("list_objects_v2")
+            pages = paginator.paginate(
+                Bucket=settings.backup.s3_bucket_name,
+                Prefix="backups/aetherguard_backup_",
+            )
+
+            backups: list[tuple[datetime, str]] = []
+            for page in pages:
+                for obj in page.get("Contents", []):
+                    key = obj.get("Key", "")
+                    base_name = os.path.basename(key)
+                    m = BACKUP_FILENAME_REGEX.match(base_name)
+                    if not m:
+                        continue
+                    try:
+                        dt = datetime.strptime(
+                            f"{m.group(1)}_{m.group(2)}", "%Y%m%d_%H%M%S"
+                        ).replace(tzinfo=UTC)
+                        backups.append((dt, key))
+                    except ValueError:
+                        continue
+
+            if not backups:
+                return []
+
+            backups.sort(key=lambda x: x[0], reverse=True)
+            most_recent_key = backups[0][1]
+
+            now = datetime.now(UTC)
+            cutoff_daily = now - timedelta(days=settings.backup.retention_daily)
+            cutoff_weekly = now - timedelta(weeks=settings.backup.retention_weekly)
+            cutoff_monthly = now - timedelta(days=settings.backup.retention_monthly * 30)
+
+            retained: set[str] = {most_recent_key}
+            seen_days: set[str] = set()
+            seen_weeks: set[str] = set()
+            seen_months: set[str] = set()
+
+            for dt, key in backups:
+                if dt >= cutoff_daily:
+                    day_key = dt.strftime("%Y-%m-%d")
+                    if day_key not in seen_days:
+                        seen_days.add(day_key)
+                        retained.add(key)
+                if dt >= cutoff_weekly:
+                    week_key = f"{dt.year}-W{dt.isocalendar().week:02d}"
+                    if week_key not in seen_weeks:
+                        seen_weeks.add(week_key)
+                        retained.add(key)
+                if dt >= cutoff_monthly:
+                    month_key = dt.strftime("%Y-%m")
+                    if month_key not in seen_months:
+                        seen_months.add(month_key)
+                        retained.add(key)
+
+            to_delete = [
+                {"Key": key}
+                for _, key in backups
+                if key not in retained
+            ]
+
+            if to_delete:
+                s3_client.delete_objects(
+                    Bucket=settings.backup.s3_bucket_name,
+                    Delete={"Objects": to_delete},
+                )
+                logger.info(f"Pruned {len(to_delete)} expired remote backups from S3/R2")
+                return [d["Key"] for d in to_delete]
+            return []
+
+        except Exception as exc:
+            logger.warning("Remote S3/R2 backup pruning failed", error=str(exc))
+            return []
 
     async def _record_run(self, result: BackupResult) -> None:
         """Persist backup execution telemetry to backup_runs table."""

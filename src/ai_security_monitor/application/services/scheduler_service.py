@@ -5,7 +5,9 @@ Application scheduler service for periodic intelligence sweeps.
 from __future__ import annotations
 
 import asyncio
+import os
 from datetime import UTC, datetime
+from typing import Any
 
 from ai_security_monitor.application.services.monitor_service import MonitorService
 from ai_security_monitor.application.services.newspaper_delivery_tracker import (
@@ -20,6 +22,7 @@ logger = get_logger(__name__)
 # Module-level: last sweep timestamp and count accessible to MonitorService.get_sweep_status()
 _last_sweep_at: datetime | None = None
 _sweep_count: int = 0
+_last_backup_at: datetime | None = None
 _server_started_at: datetime = datetime.now(UTC)
 
 
@@ -255,67 +258,128 @@ class SchedulerService:
             await asyncio.sleep(five_hours_seconds)
 
     async def _backup_loop(self) -> None:
-        """Automated SQLite database backup every 12 hours with 7-version retention."""
+        """Automated SQLite database backup loop with age encryption, offsite S3/R2 push and missed-run alerting."""
+        import html
+        import os
         from pathlib import Path
 
-        # Initial delay before first backup to let server start and database populate
+        from ai_security_monitor.application.services.backup_service import (
+            BackupService,
+        )
+        from ai_security_monitor.core.diagnostics import diagnostics
+
+        global _last_backup_at
+
+        # Initial delay before first backup to let server start cleanly
         await asyncio.sleep(120)
         interval = getattr(settings.database, "backup_interval_hours", 12) * 3600
-        retention_limit = getattr(settings.database, "backup_retention_copies", 60)
 
         while self._running:
             try:
-                db_url = settings.database.url
-                db_path_str = (
-                    db_url.replace("sqlite+aiosqlite:///", "")
-                    .replace("sqlite:///", "")
-                    .split("?")[0]
-                )
-                db_file = Path(db_path_str)
-                if db_file.exists() and db_file.is_file():
-                    backup_dir = db_file.parent / "backups"
-                    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-                    dest_file = backup_dir / f"monitor_backup_{timestamp}.db"
+                pub_key = settings.backup.age_public_key or os.environ.get("BACKUP_AGE_PUBLIC_KEY")
+                if pub_key:
+                    service = BackupService(public_key=pub_key)
+                    upload_remote = bool(settings.backup.s3_bucket_name)
+                    result = await service.create_backup(upload_remote=upload_remote, record_in_db=True)
+                    _last_backup_at = datetime.now(UTC)
 
-                    # Perform safe SQLite online backup capturing all WAL pages with zero page tearing
-                    def _safe_sqlite_backup(src_p: Path, dst_p: Path) -> None:
-                        import sqlite3
-
-                        with sqlite3.connect(str(src_p)) as src_conn:
-                            with sqlite3.connect(str(dst_p)) as dst_conn:
-                                src_conn.backup(dst_conn)
-
-                    await asyncio.to_thread(_safe_sqlite_backup, db_file, dest_file)
-                    size_kb = dest_file.stat().st_size / 1024.0
-                    logger.info(
-                        f"Automated SQLite backup created: {dest_file.name} "
-                        f"({size_kb:.1f} KB)"
-                    )
-
-                    # Retain rolling backups according to retention policy
-                    existing_backups = sorted(
-                        backup_dir.glob("monitor_backup_*.db"),
-                        key=lambda p: p.stat().st_mtime,
-                        reverse=True,
-                    )
-                    from ai_security_monitor.core.diagnostics import diagnostics
-
+                    size_kb = result.encrypted_size_bytes / 1024.0
                     diagnostics.record_backup_completed(
-                        filename=dest_file.name,
+                        filename=result.filename,
                         size_kb=size_kb,
-                        retained_count=min(len(existing_backups), retention_limit),
+                        retained_count=7,
                     )
-                    for old_backup in existing_backups[retention_limit:]:
-                        try:
-                            old_backup.unlink()
-                            logger.debug(
-                                f"Pruned older database backup: {old_backup.name}"
-                            )
-                        except Exception:
-                            pass
+                    logger.info(
+                        "Automated encrypted backup cycle completed",
+                        filename=result.filename,
+                        encrypted_kb=round(size_kb, 1),
+                        uploaded_remote=result.uploaded_to_remote,
+                    )
+                else:
+                    # Fallback unencrypted backup if age public key not yet provisioned by human
+                    db_url = settings.database.url
+                    db_path_str = (
+                        db_url.replace("sqlite+aiosqlite:///", "")
+                        .replace("sqlite:///", "")
+                        .split("?")[0]
+                    )
+                    db_file = Path(db_path_str)
+                    if db_file.exists() and db_file.is_file():
+                        backup_dir = db_file.parent / "backups"
+                        backup_dir.mkdir(parents=True, exist_ok=True)
+                        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+                        dest_file = backup_dir / f"monitor_backup_{timestamp}.db"
+
+                        def _safe_sqlite_backup(src_p: Path, dst_p: Path) -> None:
+                            import sqlite3
+
+                            with sqlite3.connect(str(src_p)) as src_conn:
+                                with sqlite3.connect(str(dst_p)) as dst_conn:
+                                    src_conn.backup(dst_conn)
+
+                        await asyncio.to_thread(_safe_sqlite_backup, db_file, dest_file)
+                        _last_backup_at = datetime.now(UTC)
+                        size_kb = dest_file.stat().st_size / 1024.0
+                        logger.info(
+                            f"Automated SQLite backup created (unencrypted fallback): {dest_file.name} "
+                            f"({size_kb:.1f} KB). Notice: configure BACKUP_AGE_PUBLIC_KEY for zero-knowledge encryption."
+                        )
+
+                        # Retain rolling unencrypted backups
+                        retention_limit = getattr(settings.database, "backup_retention_copies", 60)
+                        existing_backups = sorted(
+                            backup_dir.glob("monitor_backup_*.db"),
+                            key=lambda p: p.stat().st_mtime,
+                            reverse=True,
+                        )
+                        for old_backup in existing_backups[retention_limit:]:
+                            try:
+                                old_backup.unlink()
+                            except Exception:
+                                pass
             except asyncio.CancelledError:
                 break
             except Exception as backup_err:
-                logger.warning(f"Automated database backup error: {backup_err}")
+                logger.error("Automated database backup failed", error=str(backup_err))
+                # Dispatch immediate operator failure alert via Telegram
+                if getattr(settings.delivery, "telegram_enabled", False):
+                    try:
+                        from ai_security_monitor.infrastructure.delivery.telegram_delivery import (
+                            TelegramDelivery,
+                        )
+
+                        tg = TelegramDelivery({
+                            "bot_token": settings.delivery.telegram_bot_token or "",
+                            "chat_id": settings.delivery.telegram_chat_id or "",
+                        })
+                        await tg.send_message(
+                            f"🚨 <b>AETHERGUARD BACKUP FAILED</b>\n\n"
+                            f"Automated scheduled backup encountered an error:\n"
+                            f"<code>{html.escape(str(backup_err))}</code>\n\n"
+                            f"Time: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+                            f"Immediate operator inspection advised."
+                        )
+                    except Exception as tg_err:
+                        logger.warning("Failed to dispatch backup failure alert to Telegram", error=str(tg_err))
 
             await asyncio.sleep(interval)
+
+    @classmethod
+    def get_backup_status(cls) -> dict[str, Any]:
+        """Telemetry on background backup health and freshness."""
+        global _last_backup_at
+        interval_hours = getattr(settings.database, "backup_interval_hours", 12)
+        is_overdue = False
+        if _last_backup_at:
+            age_hours = (datetime.now(UTC) - _last_backup_at).total_seconds() / 3600.0
+            if age_hours > (interval_hours * 1.5):
+                is_overdue = True
+        return {
+            "last_backup_at": _last_backup_at.isoformat() if _last_backup_at else None,
+            "interval_hours": interval_hours,
+            "is_overdue": is_overdue,
+            "age_encryption_enabled": bool(
+                settings.backup.age_public_key or os.environ.get("BACKUP_AGE_PUBLIC_KEY")
+            ),
+            "remote_s3_enabled": bool(settings.backup.s3_bucket_name),
+        }
