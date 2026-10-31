@@ -77,6 +77,27 @@ def build_entry_inline_keyboard(
     return {"inline_keyboard": [row1, row2]}
 
 
+def build_quarantine_inline_keyboard(source_id: str | UUID) -> dict:
+    """Build inline keyboard for a quarantined source diagnostic alert.
+
+    Prefix:
+    - uq:<slug> -> Unquarantine and reset source failure count
+    """
+    slug = (
+        source_id.hex if isinstance(source_id, UUID) else str(source_id).strip()
+    )[:40]
+    return {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "🔄 Retry & Unquarantine Source",
+                    "callback_data": f"uq:{slug}",
+                }
+            ]
+        ]
+    }
+
+
 class TelegramDelivery(BaseDelivery):
     """Telegram delivery via Bot API supporting two-way inline ChatOps callbacks."""
 
@@ -344,6 +365,12 @@ class TelegramDelivery(BaseDelivery):
             return DeliveryResult(
                 success=False, channel=self.channel_name, error=str(e)
             )
+
+    async def send_message(
+        self, text: str, reply_markup: dict | None = None
+    ) -> dict | None:
+        """Send message via Telegram Bot API with optional reply_markup."""
+        return await self._send_message(text=text, reply_markup=reply_markup)
 
     async def _send_message(
         self, text: str, reply_markup: dict | None = None

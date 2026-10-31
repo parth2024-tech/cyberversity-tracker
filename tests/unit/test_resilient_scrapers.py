@@ -212,3 +212,89 @@ def test_reddit_endpoints_extractor():
     assert c.id == "comm_1"
     assert c.author == "perf_engineer"
     assert "2x faster" in c.body
+
+
+def test_rotating_headers_profiles():
+    """Verify modern desktop browser profiles and cycle on retry attempts."""
+    from ai_security_monitor.infrastructure.scrapers.config.headers import (
+        BROWSER_PROFILES,
+        get_rotating_headers,
+    )
+
+    h0 = get_rotating_headers("huggingface.co", attempt=0)
+    h1 = get_rotating_headers("huggingface.co", attempt=1)
+
+    assert "user-agent" in h0
+    assert "user-agent" in h1
+    assert h0["user-agent"] != h1["user-agent"]
+    assert len(BROWSER_PROFILES) >= 5
+    assert "sec-ch-ua" in h0 or "sec-fetch-dest" in h0
+
+
+def test_is_anti_bot_challenge():
+    """Verify detection of anti-bot challenge signatures and HTTP error codes."""
+    import httpx
+
+    from ai_security_monitor.infrastructure.scrapers.core.client import (
+        is_anti_bot_challenge,
+    )
+
+    r403 = httpx.Response(403, request=httpx.Request("GET", "https://example.com"))
+    assert is_anti_bot_challenge(r403) is True
+
+    r429 = httpx.Response(429, request=httpx.Request("GET", "https://example.com"))
+    assert is_anti_bot_challenge(r429) is True
+
+    r503_cf = httpx.Response(
+        503,
+        text="<title>Just a moment...</title>Attention Required! | Cloudflare",
+        request=httpx.Request("GET", "https://example.com"),
+    )
+    assert is_anti_bot_challenge(r503_cf) is True
+
+    r200 = httpx.Response(
+        200,
+        text="<html><body>Valid AI Research Paper</body></html>",
+        request=httpx.Request("GET", "https://example.com"),
+    )
+    assert is_anti_bot_challenge(r200) is False
+
+
+@pytest.mark.asyncio
+async def test_curl_cffi_impersonation_fallback():
+    """Verify curl_cffi Chrome TLS impersonation when present and clean fallback when absent."""
+    import sys
+    from unittest.mock import patch
+
+    from ai_security_monitor.infrastructure.scrapers.core.client import (
+        ResilientScraperClient,
+    )
+
+    client = ResilientScraperClient()
+
+    # 1. When curl_cffi is missing or raises ImportError
+    with patch.dict(sys.modules, {"curl_cffi": None, "curl_cffi.requests": None}):
+        resp = await client._try_curl_cffi("GET", "https://example.com")
+        assert resp is None
+
+    # 2. When curl_cffi is mocked to succeed
+    mock_session_cls = MagicMock()
+    mock_session_inst = AsyncMock()
+    mock_curl_resp = MagicMock()
+    mock_curl_resp.status_code = 200
+    mock_curl_resp.content = b"<html>Success from curl_cffi Chrome impersonation</html>"
+    mock_curl_resp.headers = {"content-type": "text/html"}
+    mock_session_inst.request.return_value = mock_curl_resp
+    mock_session_cls.return_value.__aenter__.return_value = mock_session_inst
+
+    with patch.dict(
+        "sys.modules",
+        {
+            "curl_cffi": MagicMock(),
+            "curl_cffi.requests": MagicMock(AsyncSession=mock_session_cls),
+        },
+    ):
+        resp = await client._try_curl_cffi("GET", "https://example.com")
+        assert resp is not None
+        assert resp.status_code == 200
+        assert b"Success from curl_cffi" in resp.content

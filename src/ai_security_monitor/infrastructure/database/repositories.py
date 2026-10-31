@@ -1119,6 +1119,10 @@ class SQLAlchemySourceRepository(SourceRepository):
             query=source.query,
             rate_limit_seconds=source.rate_limit_seconds,
             enabled=source.enabled,
+            is_quarantined=source.is_quarantined,
+            consecutive_failures=source.consecutive_failures,
+            quarantined_at=source.quarantined_at,
+            quarantine_reason=source.quarantine_reason,
             last_fetched_at=source.last_fetched_at,
             last_status=source.last_status.value if source.last_status else None,
             last_entries_new=source.last_entries_new,
@@ -1176,6 +1180,10 @@ class SQLAlchemySourceRepository(SourceRepository):
         model.query = source.query
         model.rate_limit_seconds = source.rate_limit_seconds
         model.enabled = source.enabled
+        model.is_quarantined = source.is_quarantined
+        model.consecutive_failures = source.consecutive_failures
+        model.quarantined_at = source.quarantined_at
+        model.quarantine_reason = source.quarantine_reason
         model.last_fetched_at = source.last_fetched_at
         model.last_status = source.last_status.value if source.last_status else None
         model.last_entries_new = source.last_entries_new
@@ -1239,6 +1247,10 @@ class SQLAlchemySourceRepository(SourceRepository):
             query=model.query,
             rate_limit_seconds=model.rate_limit_seconds,
             enabled=model.enabled,
+            is_quarantined=getattr(model, "is_quarantined", False) or False,
+            consecutive_failures=getattr(model, "consecutive_failures", 0) or 0,
+            quarantined_at=getattr(model, "quarantined_at", None),
+            quarantine_reason=getattr(model, "quarantine_reason", None),
             last_fetched_at=model.last_fetched_at,
             last_status=FetchStatus(model.last_status) if model.last_status else None,
             last_entries_new=model.last_entries_new,

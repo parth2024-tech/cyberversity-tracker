@@ -201,14 +201,30 @@ class DatabaseManager:
                 except Exception:
                     pass
 
-            # Epistemic Decision Brief column on entry_analysis
-            try:
-                async with self.engine.begin() as conn:
-                    await conn.execute(
-                        text("ALTER TABLE entry_analysis ADD COLUMN decision_brief JSON")
-                    )
-            except Exception:
-                pass
+            # Decision Brief column on entry_analysis and entry_analyses
+            for tbl in ("entry_analysis", "entry_analyses"):
+                try:
+                    async with self.engine.begin() as conn:
+                        await conn.execute(
+                            text(f"ALTER TABLE {tbl} ADD COLUMN decision_brief JSON")
+                        )
+                except Exception:
+                    pass
+
+            # Source auto-quarantine metadata columns
+            for col, col_type in [
+                ("is_quarantined", "BOOLEAN DEFAULT 0"),
+                ("consecutive_failures", "INTEGER DEFAULT 0"),
+                ("quarantined_at", "DATETIME"),
+                ("quarantine_reason", "TEXT"),
+            ]:
+                try:
+                    async with self.engine.begin() as conn:
+                        await conn.execute(
+                            text(f"ALTER TABLE sources ADD COLUMN {col} {col_type}")
+                        )
+                except Exception:
+                    pass
 
             # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
             try:

@@ -84,6 +84,10 @@ class Source(Entity):
     last_entries_new: int = 0
     tier: float = 2.0
     config: dict = field(default_factory=dict)
+    is_quarantined: bool = False
+    consecutive_failures: int = 0
+    quarantined_at: datetime | None = None
+    quarantine_reason: str | None = None
 
 
 @dataclass(kw_only=True)

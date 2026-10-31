@@ -9,6 +9,7 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
 <meta property="og:title" content="The Global AI Gazette · Autonomous Worldwide AI Broadsheet">
 <meta property="og:description" content="Authentic 10-page autonomous editorial broadsheet tracking breakthroughs, open-source models, developer tools, and sovereign AI globally.">
 <meta property="og:type" content="article">
@@ -1328,6 +1329,14 @@ function connectWS() {
       if (statusEl) statusEl.textContent = 'WIRE RECONNECTING';
     };
   } catch (e) {}
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((reg) => console.log('[PWA] Gazette Service Worker registered:', reg.scope))
+      .catch((err) => console.warn('[PWA] Gazette Service Worker registration failed:', err));
+  });
 }
 
 loadFeed();
