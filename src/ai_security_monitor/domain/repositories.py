@@ -54,6 +54,7 @@ class EntryFilters:
     region: str | None = None
     country: str | None = None
     important_only: bool = False
+    purged_only: bool = False
     watchlist_rules: list[Any] | None = None
 
 
@@ -356,4 +357,3 @@ class LLMReceiptRepository(ABC):
     ) -> LLMReceipt:
         """Record failed execution."""
         ...
-
