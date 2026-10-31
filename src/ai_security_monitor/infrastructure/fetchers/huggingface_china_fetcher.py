@@ -39,10 +39,15 @@ class HuggingFaceChinaFetcher(BaseFetcher):
         "deepseek-ai",
         "Qwen",
         "internlm",
+        "zai-org",
         "THUDM",
+        "moonshotai",
+        "MiniMaxAI",
+        "stepfun-ai",
         "01-ai",
         "baichuan-inc",
-        "MoonshotAI",
+        "ByteDance-Seed",
+        "Alibaba-NLP",
     ]
 
     def __init__(
@@ -54,12 +59,45 @@ class HuggingFaceChinaFetcher(BaseFetcher):
     def fetcher_type(self) -> str:
         return "huggingface_china"
 
+    @staticmethod
+    def _is_derivative_or_quantization(model_id: str) -> bool:
+        """Detect if model repository is a quantization/adapter/format derivative."""
+        low = model_id.lower()
+        quant_suffixes = (
+            "-gguf",
+            "-awq",
+            "-gptq",
+            "-fp8",
+            "-int4",
+            "-int8",
+            "-nf4",
+            "-bnb-4bit",
+            "-bnb-8bit",
+            "-exl2",
+            "-mlx",
+            "-onnx",
+            "-openvino",
+            "-diffusers",
+        )
+        return any(
+            low.endswith(s) or f"{s}-" in low or f"{s}." in low for s in quant_suffixes
+        )
+
     async def _fetch_raw(self) -> list[dict[str, Any]]:
         """Fetch models for target Chinese authors from Hugging Face public Hub API."""
         cfg = self.source.config or {}
         configured_author = cfg.get("author")
-        authors = [configured_author] if configured_author else self.DEFAULT_AUTHORS
+        configured_authors = cfg.get("authors")
+
+        if configured_author:
+            authors = [configured_author]
+        elif configured_authors and isinstance(configured_authors, list):
+            authors = configured_authors
+        else:
+            authors = self.DEFAULT_AUTHORS
+
         limit_per_author = min(int(cfg.get("limit_per_author", 5)), 15)
+        filter_quantizations = bool(cfg.get("filter_quantizations", True))
 
         headers = {
             "User-Agent": settings.fetch.user_agent,
@@ -86,8 +124,14 @@ class HuggingFaceChinaFetcher(BaseFetcher):
                         items = resp.json()
                         if isinstance(items, list):
                             for it in items:
+                                m_id = it.get("id") or it.get("modelId") or ""
+                                if (
+                                    filter_quantizations
+                                    and self._is_derivative_or_quantization(m_id)
+                                ):
+                                    continue
                                 it["_tracked_author"] = author
-                            all_models.extend(items)
+                                all_models.append(it)
                 except Exception as e:
                     logger.debug(
                         f"Failed to fetch models for Chinese lab {author}: {e}"

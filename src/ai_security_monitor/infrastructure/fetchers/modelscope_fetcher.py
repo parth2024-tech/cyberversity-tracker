@@ -60,40 +60,86 @@ class ModelScopeFetcher(BaseFetcher):
         except (ValueError, TypeError):
             return str(param_val)
 
+    DEFAULT_OWNERS: list[str] = [
+        "deepseek-ai",
+        "Qwen",
+        "Shanghai_AI_Laboratory",
+        "ZhipuAI",
+        "01ai",
+        "baichuan-inc",
+        "moonshotai",
+    ]
+
     async def _fetch_raw(self) -> list[dict[str, Any]]:
         """Fetch models from ModelScope OpenAPI."""
         cfg = self.source.config or {}
         search_query = cfg.get("search", "")
+        configured_owner = cfg.get("owner") or cfg.get("author")
+        configured_owners = cfg.get("owners") or cfg.get("authors")
         page_size = min(int(cfg.get("limit", 15)), 25)
         sort_by = cfg.get("sort", "last_modified")
 
-        params: dict[str, Any] = {
-            "page_size": page_size,
-        }
-        if search_query:
-            params["search"] = search_query
-        if sort_by:
-            params["sort"] = sort_by
+        if configured_owner:
+            target_owners = [configured_owner]
+        elif configured_owners and isinstance(configured_owners, list):
+            target_owners = configured_owners
+        elif not search_query:
+            target_owners = self.DEFAULT_OWNERS
+        else:
+            target_owners = []
 
         headers = {
             "User-Agent": settings.fetch.user_agent,
             "Accept": "application/json",
         }
 
+        all_models: list[dict[str, Any]] = []
+
         async with httpx.AsyncClient(
             timeout=self.timeout or 25.0,
             headers=headers,
             follow_redirects=True,
         ) as client:
-            resp = await client.get(self.BASE_URL, params=params)
-            resp.raise_for_status()
-            data = resp.json()
+            if target_owners:
+                limit_per_owner = max(2, page_size // len(target_owners))
+                for owner in target_owners:
+                    params: dict[str, Any] = {
+                        "owner": owner,
+                        "page_size": limit_per_owner,
+                        "sort": sort_by,
+                    }
+                    try:
+                        resp = await client.get(self.BASE_URL, params=params)
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            models_list = data.get("data", {}).get("models", [])
+                            if not models_list and isinstance(data.get("models"), list):
+                                models_list = data["models"]
+                            for m in models_list:
+                                m["_tracked_owner"] = owner
+                            all_models.extend(models_list)
+                    except Exception as e:
+                        logger.debug(
+                            f"Failed to fetch ModelScope models for owner {owner}: {e}"
+                        )
+                        continue
+            else:
+                params = {
+                    "page_size": page_size,
+                    "sort": sort_by,
+                }
+                if search_query:
+                    params["search"] = search_query
+                resp = await client.get(self.BASE_URL, params=params)
+                resp.raise_for_status()
+                data = resp.json()
 
-        models_list = data.get("data", {}).get("models", [])
-        if not models_list and isinstance(data.get("models"), list):
-            models_list = data["models"]
+                models_list = data.get("data", {}).get("models", [])
+                if not models_list and isinstance(data.get("models"), list):
+                    models_list = data["models"]
+                all_models.extend(models_list)
 
-        return models_list
+        return all_models
 
     def _parse_entry(self, raw: dict[str, Any]) -> Entry:
         """Parse ModelScope model entry into domain Entry entity."""

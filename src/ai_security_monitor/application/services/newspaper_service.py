@@ -157,6 +157,9 @@ class NewspaperService:
             return True
 
         async with self._uow_factory() as uow:
+            active_sources = await uow.sources.list(enabled_only=True)
+            active_source_ids = {s.id for s in active_sources}
+
             # Query comprehensive recent entries from the AI monitoring horizon
             recent_filters = EntryFilters(since=cutoff, sort_by="velocity")
             raw_entries = await uow.entries.list(
@@ -321,11 +324,12 @@ class NewspaperService:
                     re.search(rf"\b{re.escape(k)}\b", combined) for k in ai_keywords
                 )
 
-            # Strict AI isolation: purge all CVE/vulnerability/exploit entries and non-AI general news
+            # Strict AI isolation: purge all CVE/vulnerability/exploit entries, disabled/retired sources, and non-AI general news
             entries = [
                 e
                 for e in raw_entries
-                if not is_security_item(e)
+                if (not active_source_ids or e.source_id in active_source_ids)
+                and not is_security_item(e)
                 and is_ai_relevant(e)
                 and calculate_content_quality(e)
             ]
@@ -353,6 +357,10 @@ class NewspaperService:
                     for item in fallback_items:
                         if (
                             item.id not in existing_ids
+                            and (
+                                not active_source_ids
+                                or item.source_id in active_source_ids
+                            )
                             and not is_security_item(item)
                             and is_ai_relevant(item)
                             and calculate_content_quality(item)
@@ -906,8 +914,23 @@ class NewspaperService:
             if e.analysis:
                 score += e.analysis.threat_velocity * 2
                 score += e.analysis.severity_index
-            if cat in ("ai_models", "github_trending", "ai_research", "cyber_tools"):
+            if cat in (
+                "ai_tech",
+                "ai_models",
+                "github_trending",
+                "ai_research",
+                "cyber_tools",
+            ):
                 score += 260
+            if (e.metadata or {}).get("region") in (
+                "south_asia",
+                "middle_east",
+                "apac",
+                "china",
+                "europe",
+                "nordic",
+            ):
+                score += 100
             if any(
                 k in t_lower
                 for k in (
@@ -979,6 +1002,12 @@ class NewspaperService:
                 score += 200
             return score
 
+        for e in filtered_entries:
+            if e.metadata is None:
+                e.metadata = {}
+            if "priority_score" not in e.metadata:
+                e.metadata["priority_score"] = int(priority_score(e))
+
         sorted_entries = sorted(filtered_entries, key=priority_score, reverse=True)
 
         from ai_security_monitor.application.services.balanced_digest import (
@@ -996,13 +1025,15 @@ class NewspaperService:
             max_total_items=120,
             default_limit=15,
         ).balance(sorted_entries)
-        balanced_pool = (
-            balanced_res.items if len(balanced_res.items) >= 20 else sorted_entries
-        )
+        balanced_pool = balanced_res.items if balanced_res.items else sorted_entries
 
         lead = balanced_pool[0] if balanced_pool else None
         secondary_anchor = balanced_pool[1] if len(balanced_pool) > 1 else None
-        remaining = balanced_pool[2:] if len(balanced_pool) > 2 else []
+        remaining = (
+            balanced_pool
+            if len(balanced_pool) <= 3
+            else (balanced_pool[2:] if len(balanced_pool) > 2 else [])
+        )
 
         front_page_briefs: list[Entry] = []
         ciso_briefs: list[Entry] = []
@@ -1128,7 +1159,7 @@ class NewspaperService:
                     "EU",
                 )
                 or any(
-                    k in t_lower or k in s_lower
+                    bool(re.search(rf"\b{re.escape(k)}\b", f"{t_lower} {s_lower}"))
                     for k in (
                         "deepseek",
                         "qwen",
@@ -1272,25 +1303,148 @@ class NewspaperService:
                 ai_models_list.append(e)
             elif len(ai_research_list) < 12 and cat in ("ai_research", "ai_tech"):
                 ai_research_list.append(e)
-            elif len(ai_tools_list) < 12:
+            elif len(ai_tools_list) < 12 and cat in ("cyber_tools", "ai_tech"):
                 ai_tools_list.append(e)
-            elif len(autonomous_agents) < 12:
-                autonomous_agents.append(e)
-            elif len(ai_hardware) < 12:
-                ai_hardware.append(e)
-            elif len(sovereign_ai) < 12:
-                sovereign_ai.append(e)
 
         # Backfill any sparsely populated categories from remaining pool
         pool = remaining[:]
 
-        def fill_section(target_list, min_count, predicate):
+        def fill_section(
+            target_list, min_count, predicate, allow_generic_fallback=False
+        ):
             if len(target_list) < min_count:
                 candidates = [e for e in pool if predicate(e) and e not in target_list]
                 target_list.extend(candidates[: min_count - len(target_list)])
-            if len(target_list) < min_count:
+            if (
+                allow_generic_fallback
+                and len(pool) >= 15
+                and len(target_list) < min_count
+            ):
                 fallback_candidates = [e for e in pool if e not in target_list]
                 target_list.extend(fallback_candidates[: min_count - len(target_list)])
+
+        def is_sov_predicate(e):
+            r = (e.metadata.get("region") if e.metadata else "") or ""
+            c = (e.metadata.get("country") if e.metadata else "") or ""
+            t = (e.title or "").lower()
+            s = (e.summary or "").lower()
+            return (
+                r
+                in (
+                    "china",
+                    "apac",
+                    "south_asia",
+                    "middle_east",
+                    "europe",
+                    "latam",
+                    "africa",
+                )
+                or c
+                in (
+                    "CN",
+                    "JP",
+                    "KR",
+                    "TW",
+                    "SG",
+                    "IN",
+                    "AE",
+                    "SA",
+                    "DE",
+                    "FR",
+                    "NL",
+                    "FI",
+                    "SE",
+                    "CH",
+                    "CA",
+                    "AU",
+                    "GB",
+                    "EU",
+                )
+                or any(
+                    bool(re.search(rf"\b{re.escape(k)}\b", f"{t} {s}"))
+                    for k in (
+                        "deepseek",
+                        "qwen",
+                        "falcon",
+                        "mistral",
+                        "kyutai",
+                        "glm",
+                        "baichuan",
+                        "internlm",
+                        "tii",
+                        "sarvam",
+                        "krutrim",
+                        "sovereign",
+                        "national ai",
+                        "alicloud",
+                        "alibaba",
+                        "tsmc",
+                        "asml",
+                        "dfki",
+                        "inria",
+                        "kaist",
+                        "riken",
+                        "turing institute",
+                        "iisc",
+                    )
+                )
+            )
+
+        def is_hw_predicate(e):
+            t = (e.title or "").lower()
+            s = (e.summary or "").lower()
+            return any(
+                k in t or k in s
+                for k in (
+                    "nvidia",
+                    "gpu",
+                    "tpu",
+                    "npu",
+                    "h100",
+                    "b200",
+                    "blackwell",
+                    "semiconductor",
+                    "wafer",
+                    "foundry",
+                    "tsmc",
+                    "asml",
+                    "cerebras",
+                    "groq",
+                    "sambanova",
+                    "habana",
+                    "asic",
+                    "fpga",
+                    "accelerator",
+                    "interconnect",
+                    "cuda",
+                    "rocm",
+                )
+            )
+
+        def is_agent_predicate(e):
+            t = (e.title or "").lower()
+            s = (e.summary or "").lower()
+            tags = [tg.lower() for tg in (e.tags or [])]
+            return (
+                (e.category.value if hasattr(e.category, "value") else str(e.category))
+                in ("ai_agents", "autonomous_agents")
+                or any(
+                    k in t or k in s
+                    for k in (
+                        "agentic",
+                        "agent runtime",
+                        "multi-agent",
+                        "swarm",
+                        "autonomous agent",
+                        "open-source agent",
+                        "robotics",
+                        "embodied",
+                        "humanoid",
+                        "actuator",
+                    )
+                )
+                or any("agent" in tg for tg in tags)
+            )
 
         fill_section(
             trending_repos,
@@ -1324,9 +1478,9 @@ class NewspaperService:
                 in ("cyber_tools", "ai_tech")
             ),
         )
-        fill_section(sovereign_ai, 6, lambda e: True)
-        fill_section(ai_hardware, 6, lambda e: True)
-        fill_section(autonomous_agents, 6, lambda e: True)
+        fill_section(sovereign_ai, 6, is_sov_predicate)
+        fill_section(ai_hardware, 6, is_hw_predicate)
+        fill_section(autonomous_agents, 6, is_agent_predicate)
 
         front_page_briefs = remaining[:6]
         ciso_briefs = remaining[6:12] if len(remaining) >= 12 else remaining[:6]

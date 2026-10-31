@@ -95,11 +95,57 @@ class RSSFetcher(BaseFetcher):
                             f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
                             "Feed unchanged; skipping body payload."
                         )
+                        self._last_http_status = 304
                         return []
                     resp.raise_for_status()
+                    self._last_http_status = resp.status_code
                     response = resp
+
+                    # Host redirection check with robust canonical normalization
+                    from urllib.parse import urlparse
+
+                    orig_raw = urlparse(target_url).netloc.lower().split(":")[0].strip()
+                    final_raw = (
+                        urlparse(str(resp.url)).netloc.lower().split(":")[0].strip()
+                    )
+                    orig_clean = (
+                        orig_raw[4:] if orig_raw.startswith("www.") else orig_raw
+                    )
+                    final_clean = (
+                        final_raw[4:] if final_raw.startswith("www.") else final_raw
+                    )
+
+                    # Check for genuine host change (ignoring www prefixes, ports, and feed proxies)
+                    is_redir = False
+                    if orig_clean and final_clean and orig_clean != final_clean:
+                        proxy_hosts = ("feedburner.com", "feedproxy.google.com")
+                        if not any(p in orig_clean for p in proxy_hosts):
+                            orig_parts = orig_clean.split(".")
+                            final_parts = final_clean.split(".")
+                            # Check if root domain differs
+                            if len(orig_parts) >= 2 and len(final_parts) >= 2:
+                                orig_root = ".".join(orig_parts[-2:])
+                                final_root = ".".join(final_parts[-2:])
+                                if orig_root != final_root:
+                                    is_redir = True
+                            else:
+                                is_redir = True
+
+                    if is_redir:
+                        logger.warning(
+                            f"Source {self.source.name!r} REDIRECTED: host changed from {orig_raw} to {final_raw}"
+                        )
+                        self._is_redirected = True
+                        self._redirect_info = (
+                            f"REDIRECTED: host changed from {orig_raw} to {final_raw}"
+                        )
                     break
                 except Exception as req_err:
+                    if (
+                        hasattr(req_err, "response")
+                        and getattr(req_err, "response", None) is not None
+                    ):
+                        self._last_http_status = req_err.response.status_code
                     last_error = req_err
                     response = None
                     continue
@@ -125,23 +171,28 @@ class RSSFetcher(BaseFetcher):
                 f"Source {self.source.name!r} returned an empty response body."
             )
 
-        # ── Content-type guard ──────────────────────────────────────────────
+        # ── Content-type & HTML response guard ──────────────────────────────
         # If the server returned an HTML page (SPA redirect, Cloudflare WAF,
-        # cookie-gate, etc.) there is no point trying to parse it as XML.
+        # cookie-gate, landing page redirect, etc.) there is no point trying
+        # to parse it as XML.
         # Raise immediately so the caller records a proper error rather than
         # silently reporting 0 entries + status: success.
         ct_header = (
             response.headers.get("content-type", "").lower().split(";")[0].strip()
         )
-        first_bytes = raw_bytes[:100].lower().replace(b" ", b"")
-        is_html_response = ct_header in ("text/html",) and (
-            first_bytes.startswith((b"<!doctype", b"<html"))
+        first_1000 = raw_bytes[:1000].strip().lower()
+        has_feed_marker = any(
+            marker in first_1000 for marker in (b"<rss", b"<feed", b"<rdf:rdf")
         )
-        if is_html_response:
+        is_html_markup = first_1000.startswith(
+            (b"<!doctype html", b"<html", b"<!doctypehtml")
+        ) or (b"<html" in first_1000 and not has_feed_marker)
+        is_html_type = ct_header in ("text/html", "application/xhtml+xml")
+        if (is_html_type or is_html_markup) and not has_feed_marker:
             raise RuntimeError(
                 f"Source {self.source.name!r} returned HTML instead of RSS/Atom "
-                f"(content-type: {ct_header}). Feed URL may be dead, behind a "
-                "login wall, or serving a JavaScript SPA."
+                f"(content-type: {ct_header or 'unknown'}). Feed URL may be dead, behind a "
+                "login wall, redirecting to a landing page, or serving a JavaScript SPA."
             )
 
         # ── Primary parse: raw bytes ────────────────────────────────────────
@@ -361,8 +412,10 @@ class RSSFetcher(BaseFetcher):
             entry_meta = {
                 "feed_title": feed.feed.get("title", ""),
                 "feed_link": feed.feed.get("link", ""),
-                "region": (self.source.config or {}).get("region", "global"),
-                "country": (self.source.config or {}).get("country", "GLOBAL"),
+                "region": getattr(self.source, "region", None)
+                or (self.source.config or {}).get("region", "global"),
+                "country": getattr(self.source, "country", None)
+                or (self.source.config or {}).get("country", "GLOBAL"),
                 "provenance_type": "trending_repo"
                 if extracted_repo_url
                 else (self.source.config or {}).get("provenance_type", "rss_feed"),

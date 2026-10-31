@@ -1,6 +1,7 @@
 {
   "name": "ai-security-monitor",
   "version": "1.0.0",
+  "validation_timeout_ms": 120000,
   "description": "Enterprise-grade real-time AI security intelligence, zero-day threat monitoring, and autonomous LLM triage system.",
   "tech_stack": [
     "Python 3.12",
@@ -39,6 +40,7 @@
       "tests/unit",
       "tests/test_high_recall_architecture.py"
     ],
+    "validation_timeout_ms": 120000,
     "patterns": [
       "Unit tests for heuristic and blast radius analyzers",
       "Unit tests for delivery channels (email, telegram, slack, console)",
@@ -100,6 +102,9 @@
     "URL tracking parameter stripping on incoming feeds ensures canonical deduplication across disparate social/syndication channels.",
     "Fetcher parsing: variables like content_hash and metadata must never be defined inside iterative item loops to avoid UnboundLocalError when collections are empty.",
     "SlowAPI rate limiter should be disabled under pytest execution to prevent rate limit accumulation and cross-test 429 interference.",
-    "MinHash 64-permutation Jaccard estimation must guard against all-zero signatures to prevent empty token sets from erroneously matching as 1.0 duplicates."
+    "MinHash 64-permutation Jaccard estimation must guard against all-zero signatures to prevent empty token sets from erroneously matching as 1.0 duplicates.",
+    "arXiv and RSS fetchers must stamp source-level region and country into entry metadata to enable downstream geographic quota enforcement.",
+    "HTTP 304 Not Modified responses indicate server health and caching efficiency, and must not increment zero-entry dormant streaks or trigger alerts.",
+    "Newspaper dossier generation must filter out entries from disabled or retired sources to prevent legacy CVE telemetry from re-surfacing."
   ]
 }

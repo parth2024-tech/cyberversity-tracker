@@ -413,7 +413,67 @@
         </div>
       </div>
 
-      <div id="sources-list" class="overflow-y-auto mt-4 pr-1 space-y-2.5 flex-1">
+      <!-- Tabs: Health Telemetry & Configured Sources -->
+      <div class="flex items-center justify-between gap-3 pt-3 pb-2 border-b border-white/[0.06] flex-wrap">
+        <div class="flex items-center gap-2">
+          <button id="tab-sources-health" onclick="switchSourcesTab('health')" class="px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 font-mono text-xs flex items-center gap-1.5 font-medium transition">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+            <span>Health Telemetry</span>
+          </button>
+          <button id="tab-sources-config" onclick="switchSourcesTab('config')" class="px-3 py-1.5 rounded-lg bg-white/[0.04] text-slate-400 hover:text-white border border-white/[0.08] font-mono text-xs flex items-center gap-1.5 transition">
+            <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+            <span>Configured Sources</span>
+          </button>
+        </div>
+
+        <!-- Filter bar for Health tab -->
+        <div id="sources-health-filters" class="flex items-center gap-2">
+          <select id="health-filter-state" onchange="loadSourceHealthDashboard()" class="glass-input bg-black/60 border border-white/[0.1] rounded-lg px-2.5 py-1 text-xs font-mono text-slate-300 focus:outline-none focus:border-sky-400">
+            <option value="">All States</option>
+            <option value="BLOCKED">BLOCKED</option>
+            <option value="REDIRECTED">REDIRECTED</option>
+            <option value="DEAD">DEAD</option>
+            <option value="STALE">STALE</option>
+            <option value="PENDING">PENDING</option>
+            <option value="OK">OK</option>
+          </select>
+          <select id="health-filter-region" onchange="loadSourceHealthDashboard()" class="glass-input bg-black/60 border border-white/[0.1] rounded-lg px-2.5 py-1 text-xs font-mono text-slate-300 focus:outline-none focus:border-sky-400">
+            <option value="">All Regions</option>
+            <option value="china">China</option>
+            <option value="global">Global</option>
+            <option value="north_america">North America</option>
+            <option value="europe">Europe</option>
+            <option value="apac">APAC</option>
+          </select>
+          <button onclick="syncSourceHealthNow()" class="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08] text-xs font-mono flex items-center gap-1 transition" title="Sync from database fetch logs">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+            <span>Sync</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Health Table Container -->
+      <div id="sources-health-container" class="overflow-y-auto mt-3 pr-1 flex-1">
+        <table class="w-full text-left font-mono text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-white/[0.08] text-slate-400 bg-white/[0.02]">
+              <th class="py-2 px-3">State</th>
+              <th class="py-2 px-3">Source</th>
+              <th class="py-2 px-3">Region</th>
+              <th class="py-2 px-3 text-right">Tier</th>
+              <th class="py-2 px-3">Last New Entry</th>
+              <th class="py-2 px-3 text-center">Last Status</th>
+              <th class="py-2 px-3 text-right">7d Yield</th>
+            </tr>
+          </thead>
+          <tbody id="sources-health-tbody" class="divide-y divide-white/[0.04]">
+            <!-- Injected via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Configured Sources List Container -->
+      <div id="sources-list" class="overflow-y-auto mt-3 pr-1 space-y-2.5 flex-1 hidden">
         <!-- Injected via JS -->
       </div>
     </div>
@@ -2964,12 +3024,124 @@
       }
     }
 
-    // Sources Modal Management
+    // Sources Modal Management & Health Telemetry
+    let currentSourcesTab = 'health';
+
+    function switchSourcesTab(tab) {
+      currentSourcesTab = tab;
+      const btnHealth = document.getElementById('tab-sources-health');
+      const btnConfig = document.getElementById('tab-sources-config');
+      const containerHealth = document.getElementById('sources-health-container');
+      const filterBar = document.getElementById('sources-health-filters');
+      const listConfig = document.getElementById('sources-list');
+
+      if (tab === 'health') {
+        if (btnHealth) btnHealth.className = 'px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 font-mono text-xs flex items-center gap-1.5 font-medium transition';
+        if (btnConfig) btnConfig.className = 'px-3 py-1.5 rounded-lg bg-white/[0.04] text-slate-400 hover:text-white border border-white/[0.08] font-mono text-xs flex items-center gap-1.5 transition';
+        if (containerHealth) containerHealth.classList.remove('hidden');
+        if (filterBar) filterBar.classList.remove('hidden');
+        if (listConfig) listConfig.classList.add('hidden');
+        loadSourceHealthDashboard();
+      } else {
+        if (btnConfig) btnConfig.className = 'px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 font-mono text-xs flex items-center gap-1.5 font-medium transition';
+        if (btnHealth) btnHealth.className = 'px-3 py-1.5 rounded-lg bg-white/[0.04] text-slate-400 hover:text-white border border-white/[0.08] font-mono text-xs flex items-center gap-1.5 transition';
+        if (containerHealth) containerHealth.classList.add('hidden');
+        if (filterBar) filterBar.classList.add('hidden');
+        if (listConfig) listConfig.classList.remove('hidden');
+        loadConfiguredSources();
+      }
+      lucide.createIcons();
+    }
+
+    async function loadSourceHealthDashboard() {
+      const tbody = document.getElementById('sources-health-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center font-mono text-xs text-slate-400 py-6">Loading source health telemetry...</td></tr>`;
+
+      const stateFilter = document.getElementById('health-filter-state')?.value || '';
+      const regionFilter = document.getElementById('health-filter-region')?.value || '';
+
+      const params = new URLSearchParams();
+      if (stateFilter) params.set('state', stateFilter);
+      if (regionFilter) params.set('region', regionFilter);
+
+      try {
+        const res = await fetch(`/api/health/sources?${params.toString()}`);
+        const data = await res.json();
+        const sources = data.sources || [];
+
+        if (sources.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center font-mono text-xs text-slate-500 py-6">No sources matching active filters.</td></tr>`;
+          return;
+        }
+
+        const stateBadges = {
+          'BLOCKED': '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">BLOCKED</span>',
+          'REDIRECTED': '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">REDIRECTED</span>',
+          'DEAD': '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-900/40 text-red-300 border border-red-500/40">DEAD</span>',
+          'STALE': '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">STALE</span>',
+          'PENDING': '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">PENDING</span>',
+          'OK': '<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">OK</span>',
+        };
+
+        tbody.innerHTML = sources.map(s => {
+          const badge = stateBadges[s.state] || `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">${escapeHtml(s.state)}</span>`;
+          const lastEntry = s.last_new_entry_at ? s.last_new_entry_at.substring(0, 10) : '<span class="text-slate-600">Never</span>';
+          const lastStatus = s.last_http_status ? `<span class="${s.last_http_status === 200 || s.last_http_status === 304 ? 'text-emerald-400' : 'text-rose-400'}">${s.last_http_status}</span>` : '<span class="text-slate-600">—</span>';
+          const yieldColor = s.seven_day_yield > 0 ? 'text-emerald-300' : 'text-slate-500';
+
+          return `
+            <tr class="hover:bg-white/[0.02] transition">
+              <td class="py-2.5 px-3">${badge}</td>
+              <td class="py-2.5 px-3 text-white font-medium">
+                <div>${escapeHtml(s.source_name)}</div>
+                ${s.error_message ? `<div class="text-[10px] text-rose-400/80 truncate max-w-xs" title="${escapeHtml(s.error_message)}">${escapeHtml(s.error_message)}</div>` : ''}
+              </td>
+              <td class="py-2.5 px-3 uppercase text-slate-300">${escapeHtml(s.region || 'global')}</td>
+              <td class="py-2.5 px-3 text-right text-slate-400">T${Number(s.tier || 2).toFixed(1)}</td>
+              <td class="py-2.5 px-3 text-slate-300">${lastEntry}</td>
+              <td class="py-2.5 px-3 text-center">${lastStatus}</td>
+              <td class="py-2.5 px-3 text-right font-bold ${yieldColor}">${s.seven_day_yield}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center font-mono text-xs text-rose-400 py-6">Failed to load health telemetry.</td></tr>`;
+      }
+    }
+
+    async function syncSourceHealthNow() {
+      const tbody = document.getElementById('sources-health-tbody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center font-mono text-xs text-cyan-300 py-6">Syncing all source health states from database history...</td></tr>`;
+      }
+      try {
+        const headers = {};
+        const adminKey = localStorage.getItem('admin_api_key');
+        if (adminKey) headers['X-Admin-Key'] = adminKey;
+        const res = await fetch('/api/health/sources/sync', { method: 'POST', headers });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `HTTP ${res.status}`);
+        }
+        await loadSourceHealthDashboard();
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center font-mono text-xs text-rose-400 py-6">Sync failed: ${escapeHtml(String(err))}</td></tr>`;
+        }
+      }
+    }
+
     async function openSourcesModal() {
       const modal = document.getElementById('sources-modal');
-      const list = document.getElementById('sources-list');
       modal.classList.remove('hidden');
       playBeep('click');
+      switchSourcesTab('health');
+    }
+
+    async function loadConfiguredSources() {
+      const list = document.getElementById('sources-list');
+      if (!list) return;
       list.innerHTML = `<p class="text-center font-mono text-xs text-cyber-muted py-6">Loading configured AI ecosystem intelligence feeds...</p>`;
 
       try {

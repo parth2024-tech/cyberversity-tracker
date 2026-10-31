@@ -40,6 +40,7 @@ class FetchResult:
     status: FetchStatus
     error_message: str | None = None
     duration_ms: int = 0
+    http_status: int | None = None
 
 
 class BaseFetcher(ABC):
@@ -60,6 +61,10 @@ class BaseFetcher(ABC):
             else settings.fetch.rate_limit_default
         )
         self._last_fetch_time: datetime | None = None
+        self._last_http_status: int | None = None
+        self._is_html_error: bool = False
+        self._is_redirected: bool = False
+        self._redirect_info: str | None = None
 
     @property
     @abstractmethod
@@ -124,6 +129,11 @@ class BaseFetcher(ABC):
                     floor=self._rate_limit_seconds,
                 )
 
+                http_status = getattr(self, "_last_http_status", None) or (
+                    (self.source.config or {}).get("last_http_status")
+                    if self.source
+                    else None
+                )
                 return FetchResult(
                     entries=entries,
                     entries_new=len(
@@ -132,6 +142,7 @@ class BaseFetcher(ABC):
                     entries_total=len(raw_entries),
                     status=FetchStatus.SUCCESS,
                     duration_ms=duration_ms,
+                    http_status=http_status,
                 )
 
             except TimeoutError:
@@ -179,6 +190,7 @@ class BaseFetcher(ABC):
             )
         )
 
+        http_status = getattr(self, "_last_http_status", None)
         return FetchResult(
             entries=[],
             entries_new=0,
@@ -186,6 +198,7 @@ class BaseFetcher(ABC):
             status=FetchStatus.ERROR,
             error_message=error_msg,
             duration_ms=duration_ms,
+            http_status=http_status,
         )
 
     async def fetch_stream(self) -> AsyncGenerator[Entry, None]:

@@ -20,6 +20,8 @@ from ai_security_monitor.domain.entities import (
     FetchLog,
     LLMReceipt,
     Source,
+    SourceHealth,
+    SourceHealthState,
 )
 
 
@@ -279,6 +281,10 @@ class FetchLogRepository(ABC):
         """Purge fetch logs older than retention window."""
         return 0
 
+    async def get_last_productive_at(self, source_id: UUID) -> datetime | None:
+        """Get the timestamp of the most recent sweep that produced entries_new > 0."""
+        return None
+
 
 class DigestRepository(ABC):
     """Repository for Digest entities."""
@@ -357,3 +363,25 @@ class LLMReceiptRepository(ABC):
         """Record failed execution."""
         ...
 
+
+class SourceHealthRepository(ABC):
+    """Repository for SourceHealth persistence."""
+
+    @abstractmethod
+    async def get_by_source(self, source_id: UUID) -> SourceHealth | None:
+        """Get source health record by source ID."""
+        ...
+
+    @abstractmethod
+    async def upsert(self, health: SourceHealth) -> SourceHealth:
+        """Insert or update source health record."""
+        ...
+
+    @abstractmethod
+    async def list(
+        self,
+        state: SourceHealthState | str | None = None,
+        region: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List source health records sorted worst-first."""
+        ...

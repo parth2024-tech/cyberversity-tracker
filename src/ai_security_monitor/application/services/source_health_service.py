@@ -1,22 +1,93 @@
 """
-Source Health Telemetry Service.
-Maintains operational telemetry (success rates, latencies, error states)
-separated cleanly from content ingestion.
+Source Health Telemetry & Dashboard Service.
+Maintains deterministic, database-backed source health states (OK, STALE, DEAD, BLOCKED, REDIRECTED)
+derived from fetch_log and entry history, with alerting on degradation.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from sqlalchemy import desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai_security_monitor.core.logging import get_logger
+from ai_security_monitor.domain.entities import SourceHealthState
+from ai_security_monitor.infrastructure.database.models import (
+    EntryModel,
+    FetchLogModel,
+    SourceHealthModel,
+    SourceModel,
+)
 
 logger = get_logger(__name__)
 
 
+def compute_source_state(
+    *,
+    last_http_status: int | None = None,
+    last_new_entry_at: datetime | None = None,
+    last_fetch_at: datetime | None = None,
+    consecutive_failures: int = 0,
+    consecutive_zero_runs: int = 0,
+    is_html_error: bool = False,
+    is_redirected: bool = False,
+    now: datetime | None = None,
+    source_created_at: datetime | None = None,
+) -> SourceHealthState:
+    """Compute deterministic health state according to AetherGuard specification:
+    - BLOCKED: HTTP 403/429, or HTML returned instead of XML/JSON feed
+    - REDIRECTED: final URL host differs from configured host
+    - DEAD: no new entry for >14 days OR 5+ consecutive failures
+    - STALE: no new entry for 7-14 days
+    - PENDING: never polled / pending initial sweep
+    - OK: new entry within 7 days (and not BLOCKED/DEAD)
+    """
+    ref_now = now or datetime.now(UTC)
+    if ref_now.tzinfo is None:
+        ref_now = ref_now.replace(tzinfo=UTC)
+
+    # 1. BLOCKED check (HTTP 403/429 or HTML returned instead of feed)
+    if last_http_status in (403, 429) or is_html_error:
+        return SourceHealthState.BLOCKED
+
+    # 2. REDIRECTED check
+    if is_redirected:
+        return SourceHealthState.REDIRECTED
+
+    # 3. DEAD check (5+ consecutive failures)
+    if consecutive_failures >= 5:
+        return SourceHealthState.DEAD
+
+    # 4. Productive entry freshness check (when last_new_entry_at is known)
+    if last_new_entry_at is not None:
+        if last_new_entry_at.tzinfo is None:
+            last_new_entry_at = last_new_entry_at.replace(tzinfo=UTC)
+        age_days = (ref_now - last_new_entry_at).total_seconds() / 86400.0
+        if age_days > 14.0:
+            return SourceHealthState.DEAD
+        elif age_days > 7.0:
+            return SourceHealthState.STALE
+        else:
+            return SourceHealthState.OK
+
+    # 5. Never yielded an entry (last_new_entry_at is None)
+    if last_fetch_at is None:
+        return SourceHealthState.PENDING
+
+    if consecutive_zero_runs >= 5:
+        return SourceHealthState.DEAD
+    elif consecutive_zero_runs >= 3:
+        return SourceHealthState.STALE
+
+    return SourceHealthState.PENDING
+
+
 @dataclass
 class SourceHealthMetrics:
-    """Operational telemetry for a single intelligence source."""
+    """In-memory telemetry helper for fast runtime frequency & circuit breaker."""
 
     source_name: str
     source_type: str = "unknown"
@@ -34,6 +105,8 @@ class SourceHealthMetrics:
     last_error_message: str | None = None
     last_entries_new: int = 0
     recent_entry_counts: list[int] = field(default_factory=list)
+    zero_entry_streak: int = 0
+    last_productive_at: datetime | None = None
 
     @property
     def entry_frequency(self) -> float:
@@ -44,11 +117,6 @@ class SourceHealthMetrics:
 
     @property
     def adaptive_polling_interval_seconds(self) -> int:
-        """Adaptive dynamic polling interval (entry_frequency from Miniflux):
-        - High-velocity (> 5 entries/run): 180s - 300s (3-5 minutes)
-        - Medium-velocity (1-5 entries/run): 900s - 1800s (15-30 minutes)
-        - Low-velocity / dormant (0 entries across recent runs): 7200s - 43200s (2-12 hours)
-        """
         freq = self.entry_frequency
         if freq >= 5.0:
             return 180  # 3 minutes
@@ -59,7 +127,6 @@ class SourceHealthMetrics:
         elif freq > 0.0:
             return 1800  # 30 minutes
         else:
-            # Low-frequency / dormant feed: scale out based on consecutive empty runs
             empty_runs = max(1, self.total_runs - self.success_count)
             return min(43200, 7200 + min(36000, empty_runs * 3600))
 
@@ -77,16 +144,18 @@ class SourceHealthMetrics:
 
     @property
     def status(self) -> str:
-        """Health classification: healthy, degraded, or failing."""
         if self.consecutive_failures >= 3:
             return "failing"
-        if self.consecutive_failures >= 1 or self.success_rate < 80.0:
+        if (
+            self.consecutive_failures >= 1
+            or self.zero_entry_streak >= 5
+            or self.success_rate < 80.0
+        ):
             return "degraded"
         return "healthy"
 
     @property
     def cooldown_remaining_seconds(self) -> int:
-        """Remaining exponential backoff cooldown seconds when consecutive_failures >= 3."""
         if self.consecutive_failures < 3 or not self.last_error_at:
             return 0
         cooldown = min(3600, 60 * (2 ** (self.consecutive_failures - 3)))
@@ -100,7 +169,6 @@ class SourceHealthMetrics:
 
     @property
     def circuit_state(self) -> str:
-        """Circuit breaker state: closed, open, or half_open."""
         if self.consecutive_failures < 3:
             return "closed"
         return "open" if self.cooldown_remaining_seconds > 0 else "half_open"
@@ -118,6 +186,7 @@ class SourceHealthMetrics:
             "entry_frequency": self.entry_frequency,
             "adaptive_polling_interval_seconds": self.adaptive_polling_interval_seconds,
             "consecutive_failures": self.consecutive_failures,
+            "zero_entry_streak": self.zero_entry_streak,
             "total_runs": self.total_runs,
             "success_count": self.success_count,
             "error_count": self.error_count,
@@ -132,11 +201,14 @@ class SourceHealthMetrics:
             else None,
             "last_error_message": self.last_error_message,
             "last_entries_new": self.last_entries_new,
+            "last_productive_at": self.last_productive_at.isoformat()
+            if self.last_productive_at
+            else None,
         }
 
 
 class SourceHealthService:
-    """Manages source health telemetry, adaptive scheduling, and diagnostics."""
+    """Manages database-backed source health, state transitions, and alerting."""
 
     def __init__(self):
         self._sources: dict[str, SourceHealthMetrics] = {}
@@ -172,8 +244,9 @@ class SourceHealthService:
         source_type: str = "unknown",
         category: str = "unknown",
         region: str = "global",
+        is_not_modified: bool = False,
     ) -> None:
-        """Record a successful fetch sweep for a source."""
+        """Record a successful fetch sweep for in-memory telemetry."""
         metrics = self._get_or_create(source_name, source_type, category, region)
         now = datetime.now(UTC)
         metrics.total_runs += 1
@@ -185,12 +258,16 @@ class SourceHealthService:
         metrics.last_entries_new = entries_new
         metrics.last_error_message = None
 
-        # Keep rolling window of last 10 entry counts for adaptive frequency
+        if entries_new > 0:
+            metrics.zero_entry_streak = 0
+            metrics.last_productive_at = now
+        elif not is_not_modified:
+            metrics.zero_entry_streak += 1
+
         metrics.recent_entry_counts.append(entries_new)
         if len(metrics.recent_entry_counts) > 10:
             metrics.recent_entry_counts.pop(0)
 
-        # Keep rolling window of last 20 latencies
         metrics.latencies.append(duration_ms)
         if len(metrics.latencies) > 20:
             metrics.latencies.pop(0)
@@ -204,18 +281,18 @@ class SourceHealthService:
         category: str = "unknown",
         region: str = "global",
     ) -> None:
-        """Record a failed fetch attempt for a source."""
+        """Record a failed fetch attempt for in-memory telemetry."""
         metrics = self._get_or_create(source_name, source_type, category, region)
         now = datetime.now(UTC)
         metrics.total_runs += 1
         metrics.error_count += 1
         metrics.consecutive_failures += 1
+        metrics.zero_entry_streak += 1
         metrics.last_run_at = now
         metrics.last_error_at = now
         metrics.last_latency_ms = duration_ms
         metrics.last_error_message = error_message[:500]
 
-        # Record 0 entries on failure to reflect dormant/failing frequency
         metrics.recent_entry_counts.append(0)
         if len(metrics.recent_entry_counts) > 10:
             metrics.recent_entry_counts.pop(0)
@@ -224,39 +301,33 @@ class SourceHealthService:
         if len(metrics.latencies) > 20:
             metrics.latencies.pop(0)
 
-        logger.warning(
-            f"Source '{source_name}' health degraded: {metrics.consecutive_failures} "
-            f"consecutive failures (status: {metrics.status})"
-        )
+    def is_stale(self, source_name: str, threshold: int = 5) -> bool:
+        m = self._sources.get(source_name)
+        return m.zero_entry_streak >= threshold if m else False
 
     def get_source_health(self, source_name: str) -> dict | None:
-        """Get health data for a specific source."""
         m = self._sources.get(source_name)
         return m.to_dict() if m else None
 
     def get_adaptive_interval(
         self, source_name: str, fallback_seconds: int = 3600
     ) -> int:
-        """Retrieve dynamic polling interval based on historical entry_frequency."""
         m = self._sources.get(source_name)
         if m:
             return m.adaptive_polling_interval_seconds
         return fallback_seconds
 
     def is_circuit_open(self, source_name: str) -> bool:
-        """Return True if the circuit breaker for this source is currently open (cooling down)."""
         m = self._sources.get(source_name)
         return m.circuit_state == "open" if m else False
 
     def get_health_report(self) -> dict:
-        """Compile comprehensive system-wide source health report."""
         sources_list = [m.to_dict() for m in self._sources.values()]
         total_sources = len(sources_list)
         healthy_count = sum(1 for s in sources_list if s["status"] == "healthy")
         degraded_count = sum(1 for s in sources_list if s["status"] == "degraded")
         failing_count = sum(1 for s in sources_list if s["status"] == "failing")
 
-        # Regional health rollups
         by_region: dict[str, dict] = {}
         for s in sources_list:
             reg = s["region"]
@@ -292,6 +363,208 @@ class SourceHealthService:
             ),
         }
 
+    # ── Database-Backed Source Health Synchronization ─────────────────────────
 
-# Global singleton source health service
+    async def sync_source_from_db(
+        self,
+        session: AsyncSession,
+        source: SourceModel,
+        *,
+        now: datetime | None = None,
+    ) -> SourceHealthModel:
+        """Derive source health from fetch_log and entries for a single source and persist to source_health."""
+        ref_now = now or datetime.now(UTC)
+        if ref_now.tzinfo is None:
+            ref_now = ref_now.replace(tzinfo=UTC)
+
+        source_id = str(source.id)
+
+        # 1. Query recent fetch_logs (last 20) ordered by fetched_at DESC
+        logs_stmt = (
+            select(FetchLogModel)
+            .where(FetchLogModel.source_id == source_id)
+            .order_by(desc(FetchLogModel.fetched_at))
+            .limit(20)
+        )
+        logs_res = await session.execute(logs_stmt)
+        recent_logs = list(logs_res.scalars().all())
+
+        last_log = recent_logs[0] if recent_logs else None
+        last_fetch_at = last_log.fetched_at if last_log else source.last_fetched_at
+        last_http_status = getattr(last_log, "http_status", None) if last_log else None
+        error_msg = last_log.error_message if last_log else None
+        entries_filtered_last = (
+            getattr(last_log, "entries_filtered", 0) if last_log else 0
+        )
+
+        # Calculate consecutive failures from latest fetch backwards
+        consecutive_failures = 0
+        for log_entry in recent_logs:
+            if log_entry.status != "success":
+                consecutive_failures += 1
+            else:
+                break
+
+        # Calculate consecutive zero runs
+        consecutive_zero_runs = 0
+        for log_entry in recent_logs:
+            if log_entry.status == "success":
+                # 304 does not touch zero runs counter
+                if getattr(log_entry, "http_status", None) == 304:
+                    continue
+                if log_entry.entries_new == 0:
+                    consecutive_zero_runs += 1
+                else:
+                    break
+            else:
+                consecutive_zero_runs += 1
+
+        # 2. Query last_new_entry_at from entries table
+        last_entry_stmt = select(func.max(EntryModel.published_at)).where(
+            EntryModel.source_id == source_id
+        )
+        last_entry_res = await session.execute(last_entry_stmt)
+        last_new_entry_at = last_entry_res.scalar()
+
+        # If entries table has no published_at, fallback to last productive fetch_log
+        if not last_new_entry_at:
+            prod_log_stmt = select(func.max(FetchLogModel.fetched_at)).where(
+                FetchLogModel.source_id == source_id,
+                FetchLogModel.entries_new > 0,
+            )
+            prod_log_res = await session.execute(prod_log_stmt)
+            last_new_entry_at = prod_log_res.scalar()
+
+        # 3. Query 7-day yield
+        seven_days_ago = ref_now - timedelta(days=7)
+        yield_stmt = select(func.count(EntryModel.id)).where(
+            EntryModel.source_id == source_id,
+            EntryModel.published_at >= seven_days_ago,
+        )
+        yield_res = await session.execute(yield_stmt)
+        seven_day_yield = yield_res.scalar() or 0
+
+        # 4. Check for HTML error or host redirection
+        is_html_error = False
+        if error_msg:
+            err_lower = error_msg.lower()
+            if "html instead of" in err_lower or "content-type: text/html" in err_lower:
+                is_html_error = True
+
+        is_redirected = False
+        if error_msg and "redirected: host changed" in error_msg.lower():
+            is_redirected = True
+
+        # 5. Compute deterministic state
+        new_state = compute_source_state(
+            last_http_status=last_http_status,
+            last_new_entry_at=last_new_entry_at,
+            last_fetch_at=last_fetch_at,
+            consecutive_failures=consecutive_failures,
+            consecutive_zero_runs=consecutive_zero_runs,
+            is_html_error=is_html_error,
+            is_redirected=is_redirected,
+            now=ref_now,
+            source_created_at=source.created_at,
+        )
+
+        # 6. Upsert into source_health table
+        health_stmt = select(SourceHealthModel).where(
+            SourceHealthModel.source_id == source_id
+        )
+        health_res = await session.execute(health_stmt)
+        health_model = health_res.scalar_one_or_none()
+
+        prev_state = health_model.state if health_model else None
+
+        if not health_model:
+            health_model = SourceHealthModel(
+                source_id=source_id,
+                last_fetch_at=last_fetch_at,
+                last_http_status=last_http_status,
+                last_new_entry_at=last_new_entry_at,
+                consecutive_failures=consecutive_failures,
+                consecutive_zero_runs=consecutive_zero_runs,
+                state=new_state.value,
+                error_message=error_msg,
+                seven_day_yield=seven_day_yield,
+                entries_filtered_last=entries_filtered_last,
+                updated_at=ref_now,
+            )
+            session.add(health_model)
+        else:
+            health_model.last_fetch_at = last_fetch_at
+            health_model.last_http_status = last_http_status
+            health_model.last_new_entry_at = last_new_entry_at
+            health_model.consecutive_failures = consecutive_failures
+            health_model.consecutive_zero_runs = consecutive_zero_runs
+            health_model.state = new_state.value
+            health_model.error_message = error_msg
+            health_model.seven_day_yield = seven_day_yield
+            health_model.entries_filtered_last = entries_filtered_last
+            health_model.updated_at = ref_now
+
+        # 7. Alert notification on state transition OK/PENDING -> STALE or DEAD
+        if (
+            prev_state
+            and prev_state in ("OK", "PENDING")
+            and new_state.value in ("STALE", "DEAD")
+            and prev_state != new_state.value
+        ):
+            logger.warning(
+                f"[HEALTH ALERT] Source '{source.name}' transitioned from {prev_state} -> {new_state.value} "
+                f"(failures={consecutive_failures}, zero_runs={consecutive_zero_runs}, "
+                f"last_new_entry={last_new_entry_at}, status={last_http_status})"
+            )
+
+        return health_model
+
+    async def sync_all_from_db(
+        self,
+        session: AsyncSession,
+        *,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Sweep all sources in the database and synchronize their source_health records."""
+        sources_stmt = select(SourceModel)
+        sources_res = await session.execute(sources_stmt)
+        sources = list(sources_res.scalars().all())
+
+        counts = {
+            "OK": 0,
+            "STALE": 0,
+            "DEAD": 0,
+            "BLOCKED": 0,
+            "REDIRECTED": 0,
+            "PENDING": 0,
+        }
+
+        for src in sources:
+            h = await self.sync_source_from_db(session, src, now=now)
+            counts[h.state] = counts.get(h.state, 0) + 1
+
+        await session.flush()
+        return {
+            "total_sources": len(sources),
+            "state_counts": counts,
+            "counts": counts,
+        }
+
+    async def get_dashboard(
+        self,
+        session: AsyncSession,
+        state: str | None = None,
+        region: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """Query persistent source_health table joined with sources, sorted worst-first."""
+        from ai_security_monitor.infrastructure.database.repositories import (
+            SQLAlchemySourceHealthRepository,
+        )
+
+        repo = SQLAlchemySourceHealthRepository(session)
+        items = await repo.list(state=state, region=region)
+        return items[:limit]
+
+
 source_health_service = SourceHealthService()

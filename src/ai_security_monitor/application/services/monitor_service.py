@@ -38,6 +38,47 @@ from ai_security_monitor.infrastructure.fetchers.base import fetcher_registry
 logger = get_logger(__name__)
 
 _consecutive_failures: dict[str, int] = {}
+_zero_entry_streaks: dict[str, int] = {}
+
+
+async def send_source_zero_yield_alert(source_name: str, count: int) -> bool:
+    """Send alert via Telegram when an intelligence source produces 0 entries across consecutive sweeps."""
+    try:
+        tg_token = (
+            getattr(settings.delivery, "telegram_bot_token", None)
+            or getattr(settings, "telegram_bot_token", None)
+            or os.getenv("TELEGRAM_BOT_TOKEN")
+        )
+        tg_chat = (
+            getattr(settings.delivery, "telegram_chat_id", None)
+            or getattr(settings, "telegram_chat_id", None)
+            or os.getenv("TELEGRAM_CHAT_ID")
+        )
+        if not tg_token or not tg_chat:
+            return False
+
+        text = (
+            f"⚠️ <b>AETHERGUARD SOURCE DORMANT ALERT</b>\n\n"
+            f"Source: <b>{source_name}</b>\n"
+            f"Status: Produced <b>0 entries</b> for <b>{count}</b> consecutive sweeps (possible silent breakdown or stale URL)\n\n"
+            f"<i>Timestamp: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}</i>"
+        )
+        import httpx
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"https://api.telegram.org/bot{tg_token}/sendMessage",
+                json={
+                    "chat_id": tg_chat,
+                    "text": text,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": True,
+                },
+            )
+        return resp.status_code == 200
+    except Exception as e:
+        logger.warning(f"Failed to dispatch Telegram zero-yield alert: {e}")
+        return False
 
 
 async def send_source_failure_alert(
@@ -241,7 +282,9 @@ class MonitorService:
             # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
             retired_cfg = load_retired_sources_from_yaml(config_path)
             retired_names = {
-                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+                r["name"].strip().lower()
+                for r in retired_cfg
+                if "name" in r and r["name"]
             }
             retired_urls = {
                 r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
@@ -315,6 +358,7 @@ class MonitorService:
         entries_total = 0
         status = FetchStatus.SUCCESS
         error_msg = None
+        fetch_result = None
 
         logger.info(f"Fetching from {source.name} ({source.type.value})")
 
@@ -870,6 +914,11 @@ class MonitorService:
         )
 
         if status == FetchStatus.SUCCESS:
+            is_304 = (
+                getattr(fetch_result, "http_status", None) == 304
+                if fetch_result is not None
+                else False
+            )
             source_health_service.record_success(
                 source_name=source.name,
                 duration_ms=duration_ms,
@@ -878,7 +927,8 @@ class MonitorService:
                 category=source.category.value
                 if hasattr(source.category, "value")
                 else str(source.category),
-                region=source.config.get("region", "global"),
+                region=source.region,
+                is_not_modified=is_304,
             )
         else:
             source_health_service.record_failure(
@@ -889,7 +939,30 @@ class MonitorService:
                 category=source.category.value
                 if hasattr(source.category, "value")
                 else str(source.category),
-                region=source.config.get("region", "global"),
+                region=source.region,
+            )
+
+        entries_filtered = max(0, entries_total - new_entries_count)
+        raw_http_code = (
+            getattr(fetch_result, "http_status", None)
+            if fetch_result is not None
+            else None
+        )
+        if hasattr(fetcher, "_last_http_status"):
+            cand = getattr(fetcher, "_last_http_status", None)
+            if isinstance(cand, int):
+                raw_http_code = cand
+        http_code = raw_http_code if isinstance(raw_http_code, int) else None
+
+        if getattr(fetcher, "_is_redirected", False) is True:
+            redir_info = getattr(fetcher, "_redirect_info", "REDIRECTED: host changed")
+            redir_info_str = (
+                str(redir_info)
+                if isinstance(redir_info, str)
+                else "REDIRECTED: host changed"
+            )
+            error_msg = (
+                f"{redir_info_str}; {error_msg}" if error_msg else redir_info_str
             )
 
         log = FetchLog(
@@ -898,9 +971,11 @@ class MonitorService:
             status=status,
             entries_new=new_entries_count,
             entries_total=entries_total,
+            entries_filtered=entries_filtered,
             error_message=error_msg,
             duration_ms=duration_ms,
             fetched_at=datetime.now(UTC),
+            http_status=http_code,
         )
 
         source.last_fetched_at = log.fetched_at
@@ -913,6 +988,18 @@ class MonitorService:
             except Exception as update_err:
                 logger.debug(f"Failed to update source telemetry: {update_err}")
             await uow.fetch_logs.add(log)
+            try:
+                from ai_security_monitor.infrastructure.database.models import (
+                    SourceModel,
+                )
+
+                src_model = await uow.session.get(SourceModel, str(source.id))
+                if src_model:
+                    await source_health_service.sync_source_from_db(
+                        uow.session, src_model
+                    )
+            except Exception as health_err:
+                logger.debug(f"Failed to sync source health in DB: {health_err}")
             await uow.commit()
 
         return log
@@ -1013,10 +1100,31 @@ class MonitorService:
                             success += 1
                             total_new += log.entries_new
                             _consecutive_failures[src.name] = 0
+                            is_304 = getattr(log, "http_status", None) == 304
+                            if log.entries_total == 0 and not is_304:
+                                streak = _zero_entry_streaks.get(src.name, 0) + 1
+                                _zero_entry_streaks[src.name] = streak
+                                zero_threshold = getattr(
+                                    settings.fetch, "zero_entry_streak_threshold", 5
+                                )
+                                if streak == zero_threshold or (
+                                    streak > zero_threshold and streak % 5 == 0
+                                ):
+                                    logger.warning(
+                                        f"Source {src.name} produced 0 entries for {streak} consecutive sweeps. Alerting."
+                                    )
+                                    asyncio.create_task(
+                                        send_source_zero_yield_alert(src.name, streak)
+                                    )
+                            elif log.entries_total > 0:
+                                _zero_entry_streaks[src.name] = 0
                         else:
                             error += 1
                             failures = _consecutive_failures.get(src.name, 0) + 1
                             _consecutive_failures[src.name] = failures
+                            _zero_entry_streaks[src.name] = (
+                                _zero_entry_streaks.get(src.name, 0) + 1
+                            )
                             threshold = settings.fetch.consecutive_failure_threshold
                             if failures == threshold or (
                                 failures > threshold and failures % 5 == 0
@@ -1034,6 +1142,9 @@ class MonitorService:
                         error += 1
                         failures = _consecutive_failures.get(src.name, 0) + 1
                         _consecutive_failures[src.name] = failures
+                        _zero_entry_streaks[src.name] = (
+                            _zero_entry_streaks.get(src.name, 0) + 1
+                        )
                         threshold = settings.fetch.consecutive_failure_threshold
                         if failures == threshold or (
                             failures > threshold and failures % 5 == 0
@@ -1051,6 +1162,20 @@ class MonitorService:
 
         # Execute all sources concurrently across the worker pool
         await asyncio.gather(*[_worker(src) for src in sources], return_exceptions=True)
+
+        # Database-backed health state synchronization for all sources
+        try:
+            from ai_security_monitor.application.services.source_health_service import (
+                source_health_service,
+            )
+
+            async with self._uow_factory() as uow:
+                await source_health_service.sync_all_from_db(uow.session)
+                await uow.commit()
+        except Exception as sync_all_err:
+            logger.warning(
+                f"Failed to sync all source health states in sweep: {sync_all_err}"
+            )
 
         # Invalidate response caches so freshly ingested entries and updated stats are immediately visible on website
         from ai_security_monitor.infrastructure.cache import response_cache

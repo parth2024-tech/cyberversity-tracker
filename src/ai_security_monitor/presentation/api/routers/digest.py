@@ -152,7 +152,9 @@ async def get_markdown_digest(
         BalancedDigestService,
     )
 
-    balanced_result = BalancedDigestService(max_total_items=40).balance(filtered_entries)
+    balanced_result = BalancedDigestService(max_total_items=40).balance(
+        filtered_entries
+    )
     balanced_entries = balanced_result.items
 
     date_str = datetime.now(UTC).strftime("%Y-%m-%d")

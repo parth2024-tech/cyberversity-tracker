@@ -113,4 +113,3 @@ MultiAgentDebateEngine = HeuristicKeywordScorer
 
 heuristic_scorer = HeuristicKeywordScorer()
 multi_agent_council = heuristic_scorer
-

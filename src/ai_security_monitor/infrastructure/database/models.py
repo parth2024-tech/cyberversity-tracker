@@ -57,6 +57,9 @@ class SourceModel(Base):
     fetch_logs: Mapped[list[FetchLogModel]] = relationship(
         back_populates="source", lazy="select"
     )
+    health: Mapped[SourceHealthModel | None] = relationship(
+        back_populates="source", uselist=False, lazy="selectin"
+    )
 
     __table_args__ = (Index("ix_sources_category_enabled", "category", "enabled"),)
 
@@ -179,6 +182,10 @@ class FetchLogModel(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     entries_new: Mapped[int] = mapped_column(Integer, default=0)
     entries_total: Mapped[int] = mapped_column(Integer, default=0)
+    entries_filtered: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
     fetched_at: Mapped[datetime] = mapped_column(
@@ -191,6 +198,50 @@ class FetchLogModel(Base):
     __table_args__ = (
         Index("ix_fetch_log_source_fetched", "source_id", "fetched_at"),
         Index("ix_fetch_log_status", "status"),
+    )
+
+
+class SourceHealthModel(Base):
+    """Source health state and operational telemetry persistent model."""
+
+    __tablename__ = "source_health"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    source_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("sources.id"), unique=True, nullable=False, index=True
+    )
+    last_fetch_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_new_entry_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    consecutive_failures: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    consecutive_zero_runs: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    state: Mapped[str] = mapped_column(
+        String(20), default="OK", server_default="OK", nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    seven_day_yield: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    entries_filtered_last: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+
+    # Relationships
+    source: Mapped[SourceModel] = relationship(back_populates="health", lazy="selectin")
+
+    __table_args__ = (
+        Index("ix_source_health_state", "state"),
+        Index("ix_source_health_updated", "updated_at"),
     )
 
 
@@ -301,4 +352,3 @@ class ReceiptModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
-
