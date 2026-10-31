@@ -292,10 +292,69 @@ class TranslationService:
         )
         return True
 
+    def _translate_via_slm(
+        self, text: str, source_lang: str, target: str
+    ) -> str | None:
+        """Route translation to Tier 1 Local SLM (e.g. Qwen2.5) if circuit breaker allows."""
+        from ai_security_monitor.infrastructure.analyzers.slm_circuit_breaker import (
+            slm_circuit_breaker,
+        )
+
+        if slm_circuit_breaker.is_tripped or not getattr(
+            settings.analyzer, "slm_enabled", True
+        ):
+            return None
+
+        import httpx
+
+        endpoint = getattr(
+            settings.analyzer, "slm_endpoint", "http://localhost:11434"
+        ).rstrip("/")
+        model = getattr(settings.analyzer, "slm_model", "qwen2.5:7b")
+
+        timeout = httpx.Timeout(
+            connect=settings.analyzer.slm_timeout_seconds,
+            read=8.0,
+            write=5.0,
+            pool=3.0,
+        )
+
+        payload = {
+            "model": model,
+            "system": "You are a professional technical translator. Translate the text into fluent English. Output ONLY the translated text without commentary or quotation marks.",
+            "prompt": f"Translate this from {source_lang} to {target}:\n\n{text}",
+            "stream": False,
+            "options": {"temperature": 0.1, "num_predict": 300},
+        }
+
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                resp = client.post(f"{endpoint}/api/generate", json=payload)
+                if resp.status_code == 200:
+                    raw = resp.json().get("response", "").strip()
+                    if raw and raw != text:
+                        slm_circuit_breaker.record_success()
+                        unescaped = html.unescape(raw)
+                        return self._refine_ai_translation(unescaped, source_lang)
+        except (httpx.ConnectError, httpx.ConnectTimeout) as net_err:
+            slm_circuit_breaker.record_failure(net_err)
+        except Exception as err:
+            logger.debug(f"Local SLM translation error: {err}")
+
+        return None
+
     def _execute_translation(
         self, text: str, source_lang: str, target: str
     ) -> str | None:
-        """Execute translation via deep_translator with fallback providers."""
+        """Execute translation via Tier 1 SLM or deep_translator with fallback providers."""
+        # 0. Tier 1: Local SLM (e.g. Qwen2.5:7b)
+        try:
+            slm_result = self._translate_via_slm(text, source_lang, target)
+            if slm_result:
+                return slm_result
+        except Exception as e:
+            logger.debug(f"Tier 1 SLM translation notice: {e}")
+
         # 1. Primary: GoogleTranslator
         try:
             from deep_translator import GoogleTranslator

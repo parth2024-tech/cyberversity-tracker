@@ -153,7 +153,9 @@ class Story(Entity):
         for ts in timestamps:
             ts_aware = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             ref_aware = (
-                ref_time if ref_time.tzinfo is not None else ref_time.replace(tzinfo=UTC)
+                ref_time
+                if ref_time.tzinfo is not None
+                else ref_time.replace(tzinfo=UTC)
             )
             delta_hours = max(0.0, (ref_aware - ts_aware).total_seconds() / 3600.0)
             total_heat += 0.5 ** (delta_hours / half_life_hours)
@@ -295,10 +297,12 @@ class LLMReceipt(Entity):
     max_attempts: int = 3
     response_json: dict[str, Any] | None = None
     error_message: str | None = None
+    execution_tier: str | None = None  # "local_slm" | "cloud_cached" | "cloud_uncached"
+    cache_read_input_tokens: int = 0
+    cache_creation_input_tokens: int = 0
 
     @property
     def is_retryable(self) -> bool:
         if self.status == "succeeded":
             return False
         return self.attempts < self.max_attempts
-

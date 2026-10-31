@@ -186,6 +186,40 @@ class AnalyzerSettings(BaseSettings):
         description="Maximum failed LLM attempts before an entry is marked poisoned and skipped on boot",
     )
 
+    # Pillar 3: Tiered Model Routing & Ephemeral Prompt Caching
+    slm_enabled: bool = Field(
+        default=True,
+        description="Enable Tier 1 Local SLM routing for high-volume tasks (translation, fast-pass triage)",
+    )
+    slm_endpoint: str = Field(
+        default="http://localhost:11434",
+        description="Ollama/OpenAI-compatible local SLM endpoint",
+    )
+    slm_model: str = Field(
+        default="qwen2.5:7b",
+        description="Local SLM model name (e.g. qwen2.5:7b, llama3.2:3b)",
+    )
+    slm_timeout_seconds: float = Field(
+        default=0.5,
+        description="Fast-fail timeout (seconds) for local SLM health & connect checks (<= 500ms)",
+    )
+    slm_cooldown_seconds: float = Field(
+        default=300.0,
+        description="Circuit breaker cooldown (seconds) on local SLM connection failure (5 minutes)",
+    )
+    cloud_frontier_model: str = Field(
+        default="claude-3-5-sonnet-20241022",
+        description="Tier 2 Cloud Frontier model for high-priority items & deep dossiers",
+    )
+    cloud_fast_model: str = Field(
+        default="llama-3.1-70b-versatile",
+        description="Fast cloud fallback model (Groq / Gemini / Haiku) when local SLM circuit breaker is open",
+    )
+    enable_prompt_caching: bool = Field(
+        default=True,
+        description="Enable ephemeral prompt caching headers and strict static prefix structuring",
+    )
+
     model_config = SettingsConfigDict(env_prefix="ANALYZER_")
 
 

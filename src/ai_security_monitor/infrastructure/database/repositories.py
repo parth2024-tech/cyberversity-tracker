@@ -1496,6 +1496,10 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
             max_attempts=model.max_attempts,
             response_json=model.response_json,
             error_message=model.error_message,
+            execution_tier=getattr(model, "execution_tier", None),
+            cache_read_input_tokens=getattr(model, "cache_read_input_tokens", 0) or 0,
+            cache_creation_input_tokens=getattr(model, "cache_creation_input_tokens", 0)
+            or 0,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -1565,6 +1569,9 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         self,
         logical_key: str,
         response_json: dict[str, Any],
+        execution_tier: str | None = None,
+        cache_read_input_tokens: int = 0,
+        cache_creation_input_tokens: int = 0,
     ) -> LLMReceipt:
         stmt = select(ReceiptModel).where(ReceiptModel.logical_key == logical_key)
         res = await self._session.execute(stmt)
@@ -1575,6 +1582,12 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.status = "succeeded"
         model.response_json = response_json
         model.error_message = None
+        if execution_tier is not None:
+            model.execution_tier = execution_tier
+        if cache_read_input_tokens:
+            model.cache_read_input_tokens = cache_read_input_tokens
+        if cache_creation_input_tokens:
+            model.cache_creation_input_tokens = cache_creation_input_tokens
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
@@ -1595,3 +1608,32 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         model.updated_at = datetime.now(UTC)
         await self._session.flush()
         return self._model_to_entity(model)
+
+    async def get_tier_stats(self) -> dict[str, Any]:
+        """Aggregate counts and token savings across SLM and prompt caching tiers."""
+        stmt = select(
+            ReceiptModel.execution_tier,
+            func.count(ReceiptModel.id),
+            func.sum(ReceiptModel.cache_read_input_tokens),
+            func.sum(ReceiptModel.cache_creation_input_tokens),
+        ).group_by(ReceiptModel.execution_tier)
+        res = await self._session.execute(stmt)
+
+        tier_counts: dict[str, int] = {}
+        total_cache_read = 0
+        total_cache_creation = 0
+
+        for tier, count, cache_read, cache_create in res.all():
+            t_key = tier or "unspecified"
+            tier_counts[t_key] = count
+            total_cache_read += int(cache_read or 0)
+            total_cache_creation += int(cache_create or 0)
+
+        return {
+            "tier_counts": tier_counts,
+            "local_slm_count": tier_counts.get("local_slm", 0),
+            "cloud_cached_count": tier_counts.get("cloud_cached", 0),
+            "cloud_uncached_count": tier_counts.get("cloud_uncached", 0),
+            "total_cache_read_tokens": total_cache_read,
+            "total_cache_creation_tokens": total_cache_creation,
+        }

@@ -432,7 +432,7 @@ async def test_telegram_deep_triage_immediate_answer_and_background_worker(
             return_value=mock_uow,
         ),
         patch(
-            "ai_security_monitor.infrastructure.analyzers.heuristic_analyzer.HeuristicAnalyzer.analyze",
+            "ai_security_monitor.infrastructure.analyzers.llm_analyzer.LLMAnalyzer.analyze",
             new_callable=AsyncMock,
             return_value=analysis_res,
         ),

@@ -770,3 +770,38 @@ class DeepAnalysisService:
 
 # Global singleton instance
 deep_analysis_service = DeepAnalysisService()
+
+STATIC_DOSSIER_SYSTEM_PROMPT = """You are a Principal AI Systems Architect and Epistemic Research Lead.
+Your mission is to compile exhaustive, publication-grade technical dossiers on major AI ecosystem milestones.
+
+Requirements:
+1. Conduct deep architectural breakdown: parameter counts, context window mechanics, quantization compatibility (FP8, AWQ, GGUF), and execution engines (vLLM, SGLang, Ollama).
+2. Profile compute and memory overhead: VRAM sizing, memory bandwidth constraints, KV-cache dynamics.
+3. Compare against peer models on standard benchmark suites (MMLU-Pro, HumanEval, MATH, AIME).
+4. Formulate actionable developer checklists for production deployment.
+5. Strict JSON structure with keys: executive_summary, architectural_deep_dive, compute_profile, benchmarks, actionable_checklist."""
+
+
+def build_deep_analysis_prompt_messages(
+    entry: Entry,
+    provider: str = "generic",
+    enable_caching: bool = True,
+) -> list[dict[str, Any]]:
+    """Build structured messages with prompt caching for deep dossier generation."""
+    from ai_security_monitor.infrastructure.analyzers.prompt_cache import (
+        build_cached_prompt_messages,
+    )
+
+    user_payload = (
+        f"Title: {entry.title}\n"
+        f"Summary: {entry.summary}\n"
+        f"Category: {entry.category.value if hasattr(entry.category, 'value') else str(entry.category)}\n"
+        f"Tags: {', '.join(entry.tags or [])}\n"
+        f"URL: {entry.url}"
+    )
+    return build_cached_prompt_messages(
+        static_system=STATIC_DOSSIER_SYSTEM_PROMPT,
+        dynamic_user=user_payload,
+        provider=provider,
+        enable_caching=enable_caching,
+    )

@@ -354,8 +354,11 @@ class LLMReceiptRepository(ABC):
         self,
         logical_key: str,
         response_json: dict[str, Any],
+        execution_tier: str | None = None,
+        cache_read_input_tokens: int = 0,
+        cache_creation_input_tokens: int = 0,
     ) -> LLMReceipt:
-        """Record successful execution."""
+        """Record successful execution with tier and prompt cache telemetry."""
         ...
 
     @abstractmethod
@@ -366,3 +369,13 @@ class LLMReceiptRepository(ABC):
     ) -> LLMReceipt:
         """Record failed execution."""
         ...
+
+    async def get_tier_stats(self) -> dict[str, Any]:
+        """Get aggregate telemetry for SLM vs Cloud tiers and prompt cache savings."""
+        return {
+            "local_slm_count": 0,
+            "cloud_cached_count": 0,
+            "cloud_uncached_count": 0,
+            "total_cache_read_tokens": 0,
+            "total_cache_creation_tokens": 0,
+        }
