@@ -18,6 +18,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from ai_security_monitor.domain.entities import Category, Entry, Source, SourceType
+from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -27,6 +28,7 @@ from ai_security_monitor.presentation.api.main import app
 @pytest.fixture
 async def seed_test_entries():
     """Seed test sources and entries for export verification."""
+    response_cache.clear()
     now = datetime.now(UTC)
     uid_suffix = uuid4().hex[:6]
     src_tier1 = Source(
@@ -196,9 +198,14 @@ async def test_csv_export_rfc4180(seed_test_entries):
             ]
             assert rows[0] == expected_headers
 
-            # Stale entry (> 14 days) must be suppressed
-            stale_id = str(seed_test_entries["stale"].id)
-            assert not any(row[0] == stale_id for row in rows[1:])
+        # CSV export allows full historical data without forced 14-day rolling clamp
+        res_stale = await client.get(
+            "/api/export.csv", params={"search": "Legacy DeepSeek Math"}
+        )
+        assert res_stale.status_code == 200
+        rows_stale = list(csv.reader(io.StringIO(res_stale.text)))
+        stale_id = str(seed_test_entries["stale"].id)
+        assert any(row[0] == stale_id for row in rows_stale[1:])
 
 
 @pytest.mark.asyncio
@@ -226,3 +233,18 @@ async def test_export_filters(seed_test_entries):
         assert res_tier.status_code == 200
         feed_tier = feedparser.parse(res_tier.text)
         assert len(feed_tier.entries) >= 1
+
+
+@pytest.mark.asyncio
+async def test_csv_formula_injection_defense():
+    """Verify cells starting with =, +, -, @ are sanitized with single quote."""
+    from ai_security_monitor.presentation.api.routers.feed import _sanitize_csv_cell
+
+    assert _sanitize_csv_cell("=1+1") == "'=1+1"
+    assert _sanitize_csv_cell("+cmd|' /C calc'!A0") == "'+cmd|' /C calc'!A0"
+    assert _sanitize_csv_cell("-123") == "'-123"
+    assert _sanitize_csv_cell("@SUM(A1:A10)") == "'@SUM(A1:A10)"
+    assert _sanitize_csv_cell("DeepSeek-R1") == "DeepSeek-R1"
+    assert _sanitize_csv_cell("") == ""
+    assert _sanitize_csv_cell(None) == ""
+

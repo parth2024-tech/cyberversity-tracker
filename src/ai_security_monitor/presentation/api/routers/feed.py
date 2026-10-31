@@ -19,7 +19,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from xml.sax.saxutils import escape
 
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, Query, Request, Response
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.domain.entities import Category, Entry
@@ -28,6 +28,7 @@ from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
+from ai_security_monitor.presentation.api.limiter import limiter
 
 feed_router = APIRouter(prefix="/feed")
 export_router = APIRouter(tags=["Syndication & Export"])
@@ -50,6 +51,16 @@ def _format_rfc822(dt: datetime | None) -> str:
     return dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
 
+def _sanitize_csv_cell(val: Any) -> str:
+    """Neutralize spreadsheet formula injection characters (=, +, -, @, \\t, \\r)."""
+    if val is None:
+        return ""
+    s = str(val).strip()
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return f"'{s}"
+    return s
+
+
 async def _resolve_export_entries(
     category: str | None = None,
     search: str | None = None,
@@ -62,8 +73,9 @@ async def _resolve_export_entries(
     to: str | None = None,
     limit: int = 50,
     min_velocity: int = 0,
+    is_feed: bool = True,
 ) -> tuple[list[Entry], dict[str, Any]]:
-    """Retrieve entries and source metadata matching query filters with strict freshness guard."""
+    """Retrieve entries and source metadata matching query filters with freshness guard for feeds."""
     effective_search = (search or q or "").strip() or None
 
     cat_enum = None
@@ -73,19 +85,31 @@ async def _resolve_export_entries(
         except ValueError:
             pass
 
-    # Strictly enforce 14-day freshness window (never dump stale archives > 14 days old)
-    max_age_cutoff = datetime.now(UTC) - timedelta(
-        days=settings.database.max_ingest_age_days
-    )
-    since = max_age_cutoff
-    if from_:
-        try:
-            parsed_from = datetime.fromisoformat(from_)
-            if parsed_from.tzinfo is None:
-                parsed_from = parsed_from.replace(tzinfo=UTC)
-            since = max(parsed_from, max_age_cutoff)
-        except ValueError:
-            pass
+    since = None
+    if is_feed:
+        # Strictly enforce 14-day freshness window for external syndication readers (RSS, JSON Feed)
+        max_age_cutoff = datetime.now(UTC) - timedelta(
+            days=settings.database.max_ingest_age_days
+        )
+        since = max_age_cutoff
+        if from_:
+            try:
+                parsed_from = datetime.fromisoformat(from_)
+                if parsed_from.tzinfo is None:
+                    parsed_from = parsed_from.replace(tzinfo=UTC)
+                since = max(parsed_from, max_age_cutoff)
+            except ValueError:
+                pass
+    else:
+        # Full historical export for CSV (respects explicit date range without forced 14-day cutoff)
+        if from_:
+            try:
+                parsed_from = datetime.fromisoformat(from_)
+                if parsed_from.tzinfo is None:
+                    parsed_from = parsed_from.replace(tzinfo=UTC)
+                since = parsed_from
+            except ValueError:
+                pass
 
     until = None
     if to:
@@ -350,7 +374,9 @@ async def get_json_feed(
 @export_router.get("/api/entries/export.csv")
 @export_router.get("/entries/export.csv")
 @export_router.get("/feed.csv")
+@limiter.limit("30/minute")
 async def get_csv_export(
+    request: Request,
     category: str | None = Query(default=None, description="Optional category filter"),
     search: str | None = Query(default=None, description="Full-text search query"),
     q: str | None = Query(default=None, description="Search query alias"),
@@ -366,7 +392,7 @@ async def get_csv_export(
     to: str | None = Query(default=None, description="ISO-8601 end date"),
     limit: int = Query(default=500, ge=1, le=2000, description="Max entries to return"),
 ) -> Response:
-    """Generate RFC 4180 compliant CSV export of global AI ecosystem intelligence."""
+    """Generate RFC 4180 compliant CSV export with formula injection defense."""
     effective_q = search or q
     cache_key = f"export_csv_{category}_{effective_q}_{lab}_{region}_{subject_region}_{tier}_{from_}_{to}_{limit}"
 
@@ -382,6 +408,7 @@ async def get_csv_export(
             from_=from_,
             to=to,
             limit=limit,
+            is_feed=False,
         )
 
         output = io.StringIO()
@@ -433,21 +460,22 @@ async def get_csv_export(
             clean_title = re.sub(r"\s+", " ", e.title or "").strip()
             clean_summary = re.sub(r"\s+", " ", e.summary or "").strip()
 
+            # Neutralize potential spreadsheet formula injection on all user/feed text fields
             writer.writerow(
                 [
                     str(e.id),
-                    clean_title,
-                    e.url or "",
-                    cat_val,
+                    _sanitize_csv_cell(clean_title),
+                    _sanitize_csv_cell(e.url or ""),
+                    _sanitize_csv_cell(cat_val),
                     pub_str,
-                    src_name,
-                    reg,
-                    lab_val,
-                    tier_val,
+                    _sanitize_csv_cell(src_name),
+                    _sanitize_csv_cell(reg),
+                    _sanitize_csv_cell(lab_val),
+                    _sanitize_csv_cell(str(tier_val)),
                     heat_val,
-                    first_rep,
-                    clean_summary,
-                    tags_str,
+                    _sanitize_csv_cell(first_rep),
+                    _sanitize_csv_cell(clean_summary),
+                    _sanitize_csv_cell(tags_str),
                 ]
             )
 
