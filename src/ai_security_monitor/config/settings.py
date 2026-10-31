@@ -268,6 +268,40 @@ class DeliverySettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="DELIVERY_")
 
 
+class BackupSettings(BaseSettings):
+    """Encrypted offsite backup configuration."""
+
+    enabled: bool = Field(default=True, description="Enable automated backups")
+    backup_dir: Path = Field(
+        default=Path("data/backups"), description="Local directory for encrypted backups"
+    )
+    age_public_key: str | None = Field(
+        default=None,
+        description="X25519 age public key (age1...) for encrypting backups. Private key held offline.",
+    )
+    s3_endpoint_url: str | None = Field(
+        default=None, description="S3/R2 compatible endpoint URL"
+    )
+    s3_bucket_name: str | None = Field(
+        default=None, description="S3/R2 bucket name for offsite storage"
+    )
+    s3_access_key_id: str | None = Field(
+        default=None, description="S3/R2 access key ID"
+    )
+    s3_secret_access_key: str | None = Field(
+        default=None, description="S3/R2 secret access key"
+    )
+    s3_region_name: str = Field(
+        default="auto", description="S3/R2 region name"
+    )
+    # Retention policy: 7 daily, 4 weekly, 6 monthly
+    retention_daily: int = Field(default=7, description="Number of daily backups to keep")
+    retention_weekly: int = Field(default=4, description="Number of weekly backups to keep")
+    retention_monthly: int = Field(default=6, description="Number of monthly backups to keep")
+
+    model_config = SettingsConfigDict(env_prefix="BACKUP_")
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -288,6 +322,7 @@ class Settings(BaseSettings):
     fetch: FetchSettings = Field(default_factory=FetchSettings)
     analyzer: AnalyzerSettings = Field(default_factory=AnalyzerSettings)
     delivery: DeliverySettings = Field(default_factory=DeliverySettings)
+    backup: BackupSettings = Field(default_factory=BackupSettings)
 
     model_config = SettingsConfigDict(
         env_file=".env",

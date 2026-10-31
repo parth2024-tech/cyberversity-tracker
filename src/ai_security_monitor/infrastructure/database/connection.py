@@ -265,6 +265,44 @@ class DatabaseManager:
             except Exception:
                 pass
 
+            # Pillar 7 / Workstream C1: Encrypted Offsite Backup Runs Table
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "CREATE TABLE IF NOT EXISTS backup_runs ("
+                            "id VARCHAR(36) PRIMARY KEY, "
+                            "status VARCHAR(20) NOT NULL, "
+                            "filename VARCHAR(255) NOT NULL, "
+                            "raw_size_bytes INTEGER DEFAULT 0, "
+                            "compressed_size_bytes INTEGER DEFAULT 0, "
+                            "encrypted_size_bytes INTEGER DEFAULT 0, "
+                            "sha256_raw VARCHAR(64), "
+                            "sha256_encrypted VARCHAR(64), "
+                            "integrity_check_passed BOOLEAN DEFAULT 0, "
+                            "uploaded_to_remote BOOLEAN DEFAULT 0, "
+                            "remote_key VARCHAR(512), "
+                            "error_message TEXT, "
+                            "duration_seconds FLOAT DEFAULT 0.0, "
+                            "created_at DATETIME NOT NULL"
+                            ")"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_backup_runs_status "
+                            "ON backup_runs(status)"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_backup_runs_created_at "
+                            "ON backup_runs(created_at)"
+                        )
+                    )
+            except Exception:
+                pass
+
             # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
             try:
                 async with self.engine.begin() as conn:
