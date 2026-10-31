@@ -209,14 +209,18 @@ class DatabaseManager:
                             "END;"
                         )
                     )
-                    # Backfill existing entries into FTS5 index if table was newly created
-                    await conn.execute(
-                        text(
-                            "INSERT OR IGNORE INTO entries_fts(entry_id, title, summary, category) "
-                            "SELECT id, title, summary, category FROM entries "
-                            "WHERE is_purged = 0"
-                        )
+                    # Backfill existing entries into FTS5 index only if empty (prevent duplicate accumulation)
+                    fts_count_res = await conn.execute(
+                        text("SELECT count(*) FROM entries_fts")
                     )
+                    if fts_count_res.scalar() == 0:
+                        await conn.execute(
+                            text(
+                                "INSERT INTO entries_fts(entry_id, title, summary, category) "
+                                "SELECT id, title, summary, category FROM entries "
+                                "WHERE is_purged = 0"
+                            )
+                        )
             except Exception:
                 pass
 
