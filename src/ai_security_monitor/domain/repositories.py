@@ -55,6 +55,9 @@ class EntryFilters:
     country: str | None = None
     important_only: bool = False
     watchlist_rules: list[Any] | None = None
+    subject_region: str | None = None
+    lab: str | None = None
+    tier: float | int | None = None
 
 
 class EntryRepository(ABC):
@@ -356,4 +359,3 @@ class LLMReceiptRepository(ABC):
     ) -> LLMReceipt:
         """Record failed execution."""
         ...
-
