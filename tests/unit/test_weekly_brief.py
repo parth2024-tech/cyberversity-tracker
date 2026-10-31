@@ -275,3 +275,30 @@ def test_weekly_brief_api_endpoints(test_uow):
     assert gen_data["year"] == 2026
     assert gen_data["week"] == 42
     assert "2026-W42.md" in gen_data["markdown_file"]
+
+    # 4. POST Generate brief with admin authentication configured
+    from ai_security_monitor.config.settings import settings
+
+    orig_key = settings.api.admin_api_key
+    try:
+        settings.api.admin_api_key = "secret-admin-token"
+
+        # Missing token -> 401
+        res_unauth = client.post("/api/digest/weekly/generate?year=2026&week=42")
+        assert res_unauth.status_code == 401
+
+        # Wrong token -> 401
+        res_wrong = client.post(
+            "/api/digest/weekly/generate?year=2026&week=42",
+            headers={"X-Admin-Key": "wrong-key"},
+        )
+        assert res_wrong.status_code == 401
+
+        # Valid token -> 200
+        res_auth = client.post(
+            "/api/digest/weekly/generate?year=2026&week=42",
+            headers={"X-Admin-Key": "secret-admin-token"},
+        )
+        assert res_auth.status_code == 200
+    finally:
+        settings.api.admin_api_key = orig_key

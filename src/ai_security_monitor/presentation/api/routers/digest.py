@@ -8,13 +8,14 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import yaml
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 
 from ai_security_monitor.application.services.weekly_brief_service import (
     WeeklyBriefService,
 )
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.domain.entities import Digest, Entry
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -271,6 +272,7 @@ async def generate_weekly_brief(
     week: int | None = Query(
         default=None, ge=1, le=53, description="ISO Week number (1-53)"
     ),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Generate and persist Weekly Briefing to data/briefs/YYYY-WW.md & .json."""
     service = WeeklyBriefService()
