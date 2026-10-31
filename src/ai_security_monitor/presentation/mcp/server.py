@@ -134,6 +134,30 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "name": "run_autonomous_research_loop",
+        "description": "Execute an autonomous deep research loop aggregating hybrid semantic search, entity knowledge graph timelines, and heat velocity to synthesize an evidence-grounded research dossier.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The research topic or technical query (e.g. 'Analyze recent breakthroughs in test-time compute and vLLM')",
+                },
+                "max_sources": {
+                    "type": "integer",
+                    "description": "Maximum number of database items to aggregate (default: 10, max: 30)",
+                    "default": 10,
+                },
+                "include_entities": {
+                    "type": "boolean",
+                    "description": "Whether to query the entry_entities knowledge graph (Pillar 4) for matching models, repos, and benchmarks (default: true)",
+                    "default": True,
+                },
+            },
+            "required": ["query"],
+        },
+    },
 ]
 
 
@@ -284,6 +308,22 @@ class MCPServer:
                         entity_type=e_type, days=days, limit=limit
                     )
                     return json.dumps(top_entities, indent=2, default=str)
+
+            elif name == "run_autonomous_research_loop":
+                query_text = str(args.get("query", "")).strip()
+                if not query_text:
+                    return "Error: 'query' parameter is required for run_autonomous_research_loop."
+                max_sources = min(max(1, int(args.get("max_sources", 10))), 30)
+                include_entities = bool(args.get("include_entities", True))
+                from ai_security_monitor.application.services.autonomous_research_service import (
+                    autonomous_research_service,
+                )
+
+                return await autonomous_research_service.run_research_loop(
+                    query=query_text,
+                    max_sources=max_sources,
+                    include_entities=include_entities,
+                )
 
             else:
                 return f"Error: Unknown tool {name!r}"
