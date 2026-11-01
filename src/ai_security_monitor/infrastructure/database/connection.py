@@ -120,6 +120,10 @@ class DatabaseManager:
                     f"PRAGMA wal_autocheckpoint={settings.database.sqlite_wal_autocheckpoint}"
                 )  # checkpoint every 100 pages (400KB)
                 try:
+                    cursor.execute("PRAGMA auto_vacuum = INCREMENTAL")
+                except Exception:
+                    pass
+                try:
                     cursor.execute("PRAGMA optimize")
                 except Exception:
                     pass
@@ -340,9 +344,15 @@ class DatabaseManager:
                             ")"
                         )
                     )
+                    # Refresh triggers with idempotent duplicate-deletion on insert/replace
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_ai"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_au"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_ad"))
+
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN "
+                            "CREATE TRIGGER entries_ai AFTER INSERT ON entries BEGIN "
+                            "DELETE FROM entries_fts WHERE entry_id = new.id; "
                             "INSERT INTO entries_fts(entry_id, title, summary, category) "
                             "VALUES (new.id, new.title, new.summary, new.category); "
                             "END;"
@@ -350,25 +360,28 @@ class DatabaseManager:
                     )
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN "
+                            "CREATE TRIGGER entries_ad AFTER DELETE ON entries BEGIN "
                             "DELETE FROM entries_fts WHERE entry_id = old.id; "
                             "END;"
                         )
                     )
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN "
+                            "CREATE TRIGGER entries_au AFTER UPDATE ON entries BEGIN "
                             "DELETE FROM entries_fts WHERE entry_id = old.id; "
                             "INSERT INTO entries_fts(entry_id, title, summary, category) "
                             "VALUES (new.id, new.title, new.summary, new.category); "
                             "END;"
                         )
                     )
-                    # Backfill existing entries into FTS5 index if table was newly created
+                    # Backfill existing entries into FTS5 index only if FTS table is completely empty but entries exist
                     fts_count_res = await conn.execute(
                         text("SELECT count(*) FROM entries_fts")
                     )
-                    if fts_count_res.scalar() == 0:
+                    entries_count_res = await conn.execute(
+                        text("SELECT count(*) FROM entries WHERE is_purged = 0")
+                    )
+                    if (fts_count_res.scalar() or 0) == 0 and (entries_count_res.scalar() or 0) > 0:
                         await conn.execute(
                             text(
                                 "INSERT INTO entries_fts(entry_id, title, summary, category) "
@@ -390,6 +403,34 @@ class DatabaseManager:
                             ")"
                         )
                     )
+            except Exception:
+                pass
+
+    async def maintain_fts_and_storage(self) -> None:
+        """Run FTS rebuild, segment optimization, and incremental vacuum (Defect Ledger D2)."""
+        if not self._url.startswith("sqlite"):
+            return
+        async with self.engine.begin() as conn:
+            try:
+                # Rebuild FTS5 index to eliminate orphan or duplicate segments
+                await conn.execute(
+                    text("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
+                )
+            except Exception:
+                pass
+            try:
+                # Merge FTS5 b-tree index segments
+                await conn.execute(
+                    text("INSERT INTO entries_fts(entries_fts) VALUES('optimize')")
+                )
+            except Exception:
+                pass
+            try:
+                await conn.execute(text("PRAGMA incremental_vacuum"))
+            except Exception:
+                pass
+            try:
+                await conn.execute(text("PRAGMA optimize"))
             except Exception:
                 pass
 

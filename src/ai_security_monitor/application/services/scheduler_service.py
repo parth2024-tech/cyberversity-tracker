@@ -287,6 +287,18 @@ class SchedulerService:
 
         while self._running:
             try:
+                # Run FTS segment optimization and incremental vacuum before snapshot
+                try:
+                    from ai_security_monitor.infrastructure.database.connection import (
+                        db_manager,
+                    )
+
+                    await db_manager.maintain_fts_and_storage()
+                except Exception as maint_err:
+                    logger.warning(
+                        f"Storage maintenance before backup warning: {maint_err}"
+                    )
+
                 pub_key = settings.backup.age_public_key or os.environ.get("BACKUP_AGE_PUBLIC_KEY")
                 if pub_key:
                     service = BackupService(public_key=pub_key)
