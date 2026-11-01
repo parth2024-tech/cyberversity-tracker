@@ -6,6 +6,7 @@ Maps to database tables for persistent storage.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -363,3 +364,23 @@ class EntryEntityModel(Base):
         Index("ix_entry_entities_type_name", "entity_type", "name"),
         Index("ix_entry_entities_created_type", "created_at", "entity_type"),
     )
+
+class ResearchRunModel(Base):
+    """Audit and replay log for autonomous deep research loop executions."""
+
+    __tablename__ = "research_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    query: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
+    sources_count: Mapped[int] = mapped_column(Integer, default=0)
+    execution_steps: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    cost_estimate: Mapped[float] = mapped_column(Float, default=0.0)
+    coverage_score: Mapped[float] = mapped_column(Float, default=1.0)
+    output_markdown: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        index=True,
+    )
+

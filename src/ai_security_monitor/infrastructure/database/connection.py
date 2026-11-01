@@ -274,6 +274,38 @@ class DatabaseManager:
             except Exception:
                 pass
 
+            # Audit and Replay Log: research_runs Table (Workstream A1)
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "CREATE TABLE IF NOT EXISTS research_runs ("
+                            "id VARCHAR(36) PRIMARY KEY, "
+                            "query VARCHAR(512) NOT NULL, "
+                            "sources_count INTEGER DEFAULT 0, "
+                            "execution_steps JSON, "
+                            "cost_estimate FLOAT DEFAULT 0.0, "
+                            "coverage_score FLOAT DEFAULT 1.0, "
+                            "output_markdown TEXT NOT NULL, "
+                            "created_at DATETIME NOT NULL"
+                            ")"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_research_runs_query "
+                            "ON research_runs(query)"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_research_runs_created_at "
+                            "ON research_runs(created_at)"
+                        )
+                    )
+            except Exception:
+                pass
+
             # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
             try:
                 async with self.engine.begin() as conn:
