@@ -35,6 +35,7 @@ def twitter_source() -> Source:
 
 @pytest.mark.asyncio
 async def test_twitter_x_fetcher_parses_tweets(twitter_source: Source):
+    """TwitterXFetcher should fetch and parse live tweets, cleaning ' - X' and extracting handles."""
     recent_pub = (datetime.now(UTC) - timedelta(days=1)).strftime(
         "%a, %d %b %Y %H:%M:%S GMT"
     )

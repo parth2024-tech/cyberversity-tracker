@@ -44,8 +44,11 @@ def upgrade() -> None:
             sa.Column("created_at", sa.DateTime(), nullable=False),
             sa.Column("updated_at", sa.DateTime(), nullable=False),
         )
+        op.create_index("ix_sources_category", "sources", ["category"], unique=False)
+        op.create_index("ix_sources_enabled", "sources", ["enabled"], unique=False)
+        op.create_index("ix_sources_name", "sources", ["name"], unique=True)
         op.create_index(
-            "ix_sources_category_enabled", "sources", ["category", "enabled"]
+            "ix_sources_category_enabled", "sources", ["category", "enabled"], unique=False
         )
 
         op.create_table(
