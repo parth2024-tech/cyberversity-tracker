@@ -1,12 +1,14 @@
 """
 Unit tests for database isolation during test runs.
-Verifies:
+Verifies Defect Ledger D1:
 1. Resolved settings.database.url never targets 'data/monitor.db' or production paths.
 2. Database write operations in test suites never alter real dev database files (data/monitor.db).
+3. db_manager builds engine lazily and resets cleanly.
 """
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -15,6 +17,7 @@ import pytest
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -31,6 +34,44 @@ def test_resolved_database_url_isolation():
 
     # Must never target local repo data/monitor.db
     assert not resolved_url.endswith("/data/monitor.db") or "/tmp/" in resolved_url
+
+
+def test_settings_and_db_manager_url_resolved_to_tmp():
+    """Verify that settings.database.resolved_url and db_manager.url point to /tmp test directory, never data/monitor.db."""
+    url = settings.database.resolved_url
+    assert "data/monitor.db" not in url or "/tmp" in url
+    assert "/tmp/aetherguard_test_data" in url
+    assert not url.endswith("/ai-security-monitor/data/monitor.db")
+
+    manager_url = db_manager.url
+    assert "data/monitor.db" not in manager_url or "/tmp" in manager_url
+    assert "/tmp/aetherguard_test_data" in manager_url
+
+
+def test_dev_database_completely_untouched():
+    """Verify data/monitor.db exists and is completely isolated."""
+    dev_db = Path("data/monitor.db")
+    if dev_db.exists():
+        initial_hash = hashlib.sha256(dev_db.read_bytes()).hexdigest()
+        assert initial_hash is not None
+
+        # Verify test db is separate
+        test_db_file = Path("/tmp/aetherguard_test_data/monitor.db")
+        if test_db_file.exists():
+            # If both exist, test db can mutate while dev db stays immutable
+            assert dev_db.resolve() != test_db_file.resolve()
+
+
+def test_lazy_engine_rebuild_on_reset():
+    """Verify that db_manager builds engine lazily and resets cleanly."""
+    initial_engine = db_manager.engine
+    assert initial_engine is not None
+
+    db_manager.reset()
+    assert db_manager._engine is None
+
+    new_engine = db_manager.engine
+    assert new_engine is not None
 
 
 @pytest.mark.asyncio

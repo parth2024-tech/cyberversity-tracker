@@ -24,6 +24,18 @@ class DatabaseSettings(BaseSettings):
     url: str = Field(
         default_factory=_get_default_db_url, description="SQLAlchemy async database URL"
     )
+
+    @property
+    def resolved_url(self) -> str:
+        """Dynamically resolve database URL honoring runtime environment variables."""
+        env_url = os.environ.get("DATABASE__URL") or os.environ.get("DB_URL")
+        if env_url:
+            return env_url
+        data_dir = os.environ.get("DATA_DIR")
+        if data_dir:
+            clean_dir = data_dir.rstrip("/")
+            return f"sqlite+aiosqlite:///{clean_dir}/monitor.db"
+        return self.url
     retention_days: int = Field(
         default=7, description="Data retention period in days (1 week)"
     )

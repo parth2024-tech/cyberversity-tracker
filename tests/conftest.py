@@ -14,13 +14,54 @@ os.environ["DATABASE__URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
 os.environ["DB_URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
 os.makedirs(TEST_DATA_DIR, exist_ok=True)
 
+import hashlib
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
+
+
+@pytest.fixture(scope="session", autouse=True)
+def guard_dev_db_immutability():
+    """Session fixture that hashes data/monitor.db before and after the run and fails on any change;
+    plus an assertion on the resolved URL."""
+    from ai_security_monitor.config.settings import settings
+    from ai_security_monitor.infrastructure.database.connection import db_manager
+
+    # 1. Assert on the resolved URL
+    resolved_settings_url = settings.database.resolved_url
+    resolved_db_mgr_url = db_manager.url
+
+    assert (
+        "data/monitor.db" not in resolved_settings_url
+        or "/tmp" in resolved_settings_url
+    ), (
+        f"CRITICAL TEST ISOLATION FAILURE: settings.database.resolved_url must not point to data/monitor.db! Resolved: {resolved_settings_url}"
+    )
+    assert (
+        "data/monitor.db" not in resolved_db_mgr_url
+        or "/tmp" in resolved_db_mgr_url
+    ), (
+        f"CRITICAL TEST ISOLATION FAILURE: db_manager.url must not point to data/monitor.db! Resolved: {resolved_db_mgr_url}"
+    )
+
+    dev_db = Path("data/monitor.db")
+    initial_hash = None
+    if dev_db.exists():
+        initial_hash = hashlib.sha256(dev_db.read_bytes()).hexdigest()
+
+    yield
+
+    if dev_db.exists() and initial_hash is not None:
+        final_hash = hashlib.sha256(dev_db.read_bytes()).hexdigest()
+        assert final_hash == initial_hash, (
+            f"CRITICAL TEST ISOLATION FAILURE: data/monitor.db was modified during the test suite! "
+            f"Initial SHA256: {initial_hash}, Final SHA256: {final_hash}"
+        )
 
 from ai_security_monitor.domain.entities import (
     Category,
