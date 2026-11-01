@@ -467,3 +467,27 @@ class EntityDailyCountModel(Base):
         Index("ix_entity_daily_counts_date_type", "bucket_date", "entity_type"),
     )
 
+
+class BackupRunModel(Base):
+    """Execution log for encrypted offsite database backups and restore drills."""
+
+    __tablename__ = "backup_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    status: Mapped[str] = mapped_column(
+        String(20), default="in_progress", nullable=False, index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    raw_size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    compressed_size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    encrypted_size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    sha256_raw: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sha256_encrypted: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    integrity_check_passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    uploaded_to_remote: Mapped[bool] = mapped_column(Boolean, default=False)
+    remote_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_seconds: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )

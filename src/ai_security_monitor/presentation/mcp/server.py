@@ -204,7 +204,6 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
                 },
             },
         },
-        },
     },
 ]
 
@@ -357,7 +356,6 @@ class MCPServer:
                     )
                     return json.dumps(top_entities, indent=2, default=str)
 
-<<<<<<< HEAD
             elif name == "run_autonomous_research_loop":
                 query_text = str(args.get("query", "")).strip()
                 if not query_text:
