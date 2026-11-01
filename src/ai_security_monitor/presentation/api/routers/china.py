@@ -84,6 +84,28 @@ KEY_CHINA_LABS = [
 ]
 
 
+@china_router.get("/sources")
+@limiter.limit("60/minute")
+async def get_china_corridor_sources(request: Request, category: str | None = None):
+    """Retrieve the China Corridor 55+ Intelligence Ingestion Matrix grouped or filtered by category."""
+    from ai_security_monitor.config.china_source_catalog import (
+        CHINA_INGESTION_MATRIX,
+        get_sources_by_china_category,
+    )
+
+    if category:
+        sources = get_sources_by_china_category(category)
+    else:
+        sources = CHINA_INGESTION_MATRIX
+
+    return {
+        "status": "success",
+        "total": len(sources),
+        "filter_category": category,
+        "sources": [s.to_dict() for s in sources],
+    }
+
+
 @china_router.get("/overview")
 @limiter.limit("60/minute")
 async def get_china_corridor_overview(request: Request):

@@ -258,7 +258,7 @@ class RSSFetcher(BaseFetcher):
                 except Exception:
                     pass
 
-            # Fallback to dateutil fuzzy parser for non-standard RFC timestamps (e.g., VTT, European portals)
+            # Fallback to dateutil fuzzy parser for non-standard RFC timestamps (e.g. Chinese YYYY年MM月DD日, VTT, European portals)
             if not parsed_date:
                 raw_date_str = (
                     getattr(item, "published", None)
@@ -267,9 +267,48 @@ class RSSFetcher(BaseFetcher):
                 )
                 if raw_date_str and isinstance(raw_date_str, str):
                     try:
-                        parsed_dt = dt_parser.parse(raw_date_str, fuzzy=True)
+                        clean_date_str = raw_date_str
+                        # Normalize Chinese calendar formats: 2025年02月18日 -> 2025-02-18
+                        clean_date_str = re.sub(
+                            r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日?",
+                            r"\1-\2-\3 ",
+                            clean_date_str,
+                        )
+                        clean_date_str = re.sub(
+                            r"(\d{1,2})\s*时\s*(\d{1,2})\s*分(?:\s*(\d{1,2})\s*秒)?",
+                            lambda m: (
+                                f" {m.group(1)}:{m.group(2)}:{m.group(3)} "
+                                if m.group(3)
+                                else f" {m.group(1)}:{m.group(2)} "
+                            ),
+                            clean_date_str,
+                        )
+                        is_cst_utc8 = bool(
+                            re.search(
+                                r"(?:CST|UTC\+8|\+0800|\+08:00|北京时间)",
+                                raw_date_str,
+                                re.IGNORECASE,
+                            )
+                        )
+                        parsed_dt = dt_parser.parse(clean_date_str, fuzzy=True)
                         if parsed_dt.tzinfo is None:
-                            parsed_dt = parsed_dt.replace(tzinfo=UTC)
+                            is_cn_source = bool(
+                                self.source
+                                and (
+                                    getattr(self.source, "config", {}).get("country")
+                                    == "CN"
+                                    or getattr(self.source, "config", {}).get("region")
+                                    == "china"
+                                )
+                            )
+                            if is_cst_utc8 or is_cn_source:
+                                from datetime import timedelta, timezone
+
+                                parsed_dt = parsed_dt.replace(
+                                    tzinfo=timezone(timedelta(hours=8))
+                                )
+                            else:
+                                parsed_dt = parsed_dt.replace(tzinfo=UTC)
                         published_at = parsed_dt.astimezone(UTC)
                         parsed_date = True
                     except Exception:

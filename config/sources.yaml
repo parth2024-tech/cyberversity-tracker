@@ -1931,6 +1931,838 @@ sources:
   config:
     language: en
   tier: 1.5
+- name: Gitee (Open Source Platform China)
+  category: github_trending
+  type: rss
+  url: https://gitee.com/explore/ai.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-01-gitee
+    name_zh: 码云 Gitee
+    portal_url: https://gitee.com/explore
+    china_category: code_hosting_platform
+    language: zh
+    spoken_language_code: zh
+- name: AtomGit (OpenAtom Foundation)
+  category: github_trending
+  type: rss
+  url: https://atomgit.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-02-atomgit
+    name_zh: 开放原子开源基金会 AtomGit
+    portal_url: https://atomgit.com
+    china_category: code_hosting_platform
+    language: zh
+    spoken_language_code: zh
+- name: GitLink (CCF Open Source Platform)
+  category: github_trending
+  type: rss
+  url: https://www.gitlink.org.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-03-gitlink
+    name_zh: 中国计算机学会 GitLink
+    portal_url: https://www.gitlink.org.cn
+    china_category: code_hosting_platform
+    language: zh
+    spoken_language_code: zh
+- name: OpenI (Peng Cheng Laboratory)
+  category: github_trending
+  type: rss
+  url: https://openi.pcl.ac.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-05-openi
+    name_zh: 启智社区 OpenI (鹏城实验室)
+    portal_url: https://openi.pcl.ac.cn
+    china_category: code_hosting_platform
+    language: zh
+    spoken_language_code: zh
+- name: PaddlePaddle Ecosystem (Baidu CV/OCR/Detection)
+  category: github_trending
+  type: rss
+  url: https://github.com/PaddlePaddle/Paddle/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-06-paddlepaddle
+    name_zh: 飞桨星河社区 (百度 PaddlePaddle)
+    portal_url: https://aistudio.baidu.com
+    china_category: code_hosting_platform
+    language: zh
+    spoken_language_code: zh
+- name: MindSpore Community (Huawei AI Framework)
+  category: github_trending
+  type: rss
+  url: https://github.com/mindspore-ai/mindspore/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-07-mindspore
+    name_zh: 昇思 MindSpore 社区 (华为全场景AI)
+    portal_url: https://www.mindspore.cn
+    china_category: code_hosting_platform
+    language: zh
+    spoken_language_code: zh
+- name: AI Era (New Intelligence Era)
+  category: ai_tech
+  type: rss
+  url: https://www.ai-era.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-10-ai-era
+    name_zh: 新智元
+    portal_url: https://www.ai-era.com
+    china_category: ai_robotics_chip_media
+    language: zh
+    spoken_language_code: zh
+- name: Extreme Mart (Computer Vision & Edge AI)
+  category: ai_tech
+  type: rss
+  url: https://www.cvmart.net
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-11-cvmart
+    name_zh: 极市平台
+    portal_url: https://www.cvmart.net
+    china_category: ai_robotics_chip_media
+    language: zh
+    spoken_language_code: zh
+- name: Shenlan Academy (Robotics, SLAM & Autonomous Driving)
+  category: ai_research
+  type: rss
+  url: https://www.shenlanxueyuan.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-12-shenlanxueyuan
+    name_zh: 深蓝学院
+    portal_url: https://www.shenlanxueyuan.com
+    china_category: ai_robotics_chip_media
+    language: zh
+    spoken_language_code: zh
+- name: GGII Robotics (Embodied & Collaborative Robotics)
+  category: ai_tech
+  type: rss
+  url: https://www.gg-robot.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-13-gg-robot
+    name_zh: 高工机器人
+    portal_url: https://www.gg-robot.com
+    china_category: ai_robotics_chip_media
+    language: zh
+    spoken_language_code: zh
+- name: Semiconductor Industry Observation (Chip & EDA)
+  category: ai_tech
+  type: rss
+  url: https://www.icbank.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-14-icbank
+    name_zh: 半导体行业观察
+    portal_url: https://www.icbank.com
+    china_category: ai_robotics_chip_media
+    language: zh
+    spoken_language_code: zh
+- name: Zhidx (Smart Hardware, Chips & Embodied AI)
+  category: ai_tech
+  type: rss
+  url: https://www.zhidx.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-15-zhidx
+    name_zh: 智东西
+    portal_url: https://www.zhidx.com
+    china_category: ai_robotics_chip_media
+    language: zh
+    spoken_language_code: zh
+- name: Leiphone AI Tech Review
+  category: ai_tech
+  type: rss
+  url: https://www.leiphone.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-16-leiphone
+    name_zh: 雷峰网 - AI科技评论
+    portal_url: https://www.leiphone.com
+    china_category: ai_robotics_chip_media
+    language: zh
+    spoken_language_code: zh
+- name: FreeBuf (Cybersecurity & Vulnerability Intelligence)
+  category: cybersecurity
+  type: rss
+  url: https://www.freebuf.com/feed
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-17-freebuf
+    name_zh: FreeBuf 网络安全社区
+    portal_url: https://www.freebuf.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: Anquanke (Vulnerability Reproduction & Exploits)
+  category: cybersecurity
+  type: rss
+  url: https://api.anquanke.com/data/v1/rss
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-18-anquanke
+    name_zh: 安全客
+    portal_url: https://www.anquanke.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: QiAnXin Butian (Offensive & Defensive Security Forum)
+  category: cybersecurity
+  type: rss
+  url: https://forum.butian.net
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-19-butian
+    name_zh: 奇安信攻防社区 / 补天
+    portal_url: https://forum.butian.net
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: Alibaba XianZhi Security Community
+  category: vulnerabilities
+  type: rss
+  url: https://xz.aliyun.com/feed
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-20-xianzhi
+    name_zh: 先知社区 (阿里云安全)
+    portal_url: https://xz.aliyun.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: Tttang Security Community
+  category: cybersecurity
+  type: rss
+  url: https://tttang.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-21-tttang
+    name_zh: 跳跳糖安全社区
+    portal_url: https://tttang.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: Seebug Paper (Knownsec Vulnerability & PoC Analysis)
+  category: vulnerabilities
+  type: rss
+  url: https://paper.seebug.org/rss
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-22-seebug
+    name_zh: Seebug Paper (知道创宇)
+    portal_url: https://paper.seebug.org
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: Kanxue (Binary Reverse Engineering & Exploit Research)
+  category: vulnerabilities
+  type: rss
+  url: https://bbs.kanxue.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-23-kanxue
+    name_zh: 看雪学苑
+    portal_url: https://bbs.kanxue.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: SecPulse (Combat Security & Threat Intel)
+  category: cybersecurity
+  type: rss
+  url: https://www.secpulse.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-24-secpulse
+    name_zh: 安全脉搏
+    portal_url: https://www.secpulse.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: 4hou (Cyber Defense Frontier)
+  category: cybersecurity
+  type: rss
+  url: https://www.4hou.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-25-4hou
+    name_zh: 嘶吼 4hou
+    portal_url: https://www.4hou.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: NSFOCUS Tech Blog (Vulnerability Alerts & Research)
+  category: cybersecurity
+  type: rss
+  url: https://blog.nsfocus.net/feed/
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-26-nsfocus
+    name_zh: 绿盟科技技术博客
+    portal_url: https://blog.nsfocus.net
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: Tencent Xuanwu Lab (Zero-Day & Binary Defense)
+  category: cybersecurity
+  type: rss
+  url: https://xlab.tencent.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-27-xuanwu
+    name_zh: 腾讯安全玄武实验室
+    portal_url: https://xlab.tencent.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: 360 CERT / Netlab (National Incident Response)
+  category: cybersecurity
+  type: rss
+  url: https://cert.360.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-28-360cert
+    name_zh: 360 CERT / Netlab
+    portal_url: https://cert.360.cn
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: CNVD (China National Vulnerability Database)
+  category: vulnerabilities
+  type: rss
+  url: https://www.cnvd.org.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-29-cnvd
+    name_zh: 国家信息安全漏洞共享平台 CNVD
+    portal_url: https://www.cnvd.org.cn
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: CNNVD (China National Vulnerability Database)
+  category: vulnerabilities
+  type: rss
+  url: https://www.cnnvd.org.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-30-cnnvd
+    name_zh: 国家信息安全漏洞库 CNNVD
+    portal_url: https://www.cnnvd.org.cn
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: OSCS (Open Source Software Supply Chain Intel)
+  category: vulnerabilities
+  type: rss
+  url: https://www.oscs1024.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-31-oscs
+    name_zh: OSCS 开源软件供应链安全情报社区
+    portal_url: https://www.oscs1024.com
+    china_category: cybersecurity_vuln_intel
+    language: zh
+    spoken_language_code: zh
+- name: Juejin (Developer Engineering & AI Practices)
+  category: ai_tech
+  type: rss
+  url: https://juejin.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-32-juejin
+    name_zh: 稀土掘金
+    portal_url: https://juejin.cn
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: InfoQ China (Architecture & Frontier LLMs)
+  category: ai_tech
+  type: rss
+  url: https://www.infoq.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-33-infoq-cn
+    name_zh: InfoQ 中国
+    portal_url: https://www.infoq.cn
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: CSDN (China Software Developer Network - AI Hub)
+  category: ai_tech
+  type: rss
+  url: https://www.csdn.net
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-34-csdn
+    name_zh: CSDN 技术社区
+    portal_url: https://www.csdn.net
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: CNBlogs (Developer Engineering Blogs)
+  category: ai_tech
+  type: rss
+  url: https://feed.cnblogs.com/blog/sitehome/rss
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-35-cnblogs
+    name_zh: 博客园 CNBlogs
+    portal_url: https://www.cnblogs.com
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: OSCHINA (Open Source China News & Software)
+  category: ai_tech
+  type: rss
+  url: https://www.oschina.net/news/rss
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-36-oschina
+    name_zh: 开源中国 OSCHINA
+    portal_url: https://www.oschina.net
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: SegmentFault (Developer Q&A & AI Ecosystem)
+  category: ai_tech
+  type: rss
+  url: https://segmentfault.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-37-segmentfault
+    name_zh: 思否 SegmentFault
+    portal_url: https://segmentfault.com
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: V2EX (Technology & AI Nodes)
+  category: ai_tech
+  type: rss
+  url: https://www.v2ex.com/index.xml
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
+  config:
+    id: cn-src-38-v2ex
+    name_zh: V2EX 社区
+    portal_url: https://www.v2ex.com
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: Zhihu (Verified AI Research Columns)
+  category: ai_tech
+  type: rss
+  url: https://www.zhihu.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-39-zhihu
+    name_zh: 知乎 AI 与前沿技术专栏
+    portal_url: https://www.zhihu.com
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: Elecfans (Embedded, FPGA, RISC-V & Edge AI)
+  category: ai_tech
+  type: rss
+  url: https://www.elecfans.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 2.0
+  config:
+    id: cn-src-40-elecfans
+    name_zh: 电子发烧友
+    portal_url: https://www.elecfans.com
+    china_category: developer_community
+    language: zh
+    spoken_language_code: zh
+- name: Meituan Tech Team (Recommenders & Model Infra)
+  category: ai_tech
+  type: rss
+  url: https://tech.meituan.com/rss.xml
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-41-meituan
+    name_zh: 美团技术团队
+    portal_url: https://tech.meituan.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Alibaba DAMO Academy (Frontier AI & Science)
+  category: ai_research
+  type: rss
+  url: https://damo.alibaba.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-42-alibaba-damo
+    name_zh: 阿里巴巴达摩院
+    portal_url: https://damo.alibaba.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Tencent YouTu Lab (Computer Vision & AI Engineering)
+  category: ai_research
+  type: rss
+  url: https://open.youtu.qq.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-43-tencent-youtu
+    name_zh: 腾讯优图实验室
+    portal_url: https://open.youtu.qq.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: ByteDance Tech (Systems & Large Models)
+  category: ai_tech
+  type: rss
+  url: https://bytotech.bytedance.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-44-bytedance-tech
+    name_zh: 字节跳动技术团队
+    portal_url: https://bytotech.bytedance.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Baidu Research & Apollo Autonomous Driving
+  category: ai_research
+  type: rss
+  url: http://research.baidu.com
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-45-baidu-research
+    name_zh: 百度研究院与 Apollo 自动驾驶
+    portal_url: http://research.baidu.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Megvii Research (Computer Vision & YOLOX)
+  category: ai_research
+  type: rss
+  url: https://github.com/Megvii-BaseDetection/YOLOX/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-46-megvii
+    name_zh: 旷视研究院
+    portal_url: https://www.megvii.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: SenseTime OpenMMLab (CV Algorithms)
+  category: ai_models
+  type: rss
+  url: https://github.com/open-mmlab/mmdetection/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-47-openmmlab
+    name_zh: 商汤科技 OpenMMLab
+    portal_url: https://openmmlab.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: DJI Developer (Robotics & Flight Control SDK)
+  category: github_trending
+  type: rss
+  url: https://github.com/dji-sdk/Onboard-SDK/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-48-dji-developer
+    name_zh: 大疆创新开发者
+    portal_url: https://developer.dji.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Unitree Robotics (Quadruped & Humanoid Embodied AI)
+  category: github_trending
+  type: rss
+  url: https://github.com/unitreerobotics/unitree_sdk2/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-49-unitree
+    name_zh: 宇树科技机器人
+    portal_url: https://www.unitree.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Agibot (Embodied Humanoid Intelligence)
+  category: github_trending
+  type: rss
+  url: https://github.com/Agibot/Agibot/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-50-agibot
+    name_zh: 智元机器人 Agibot
+    portal_url: https://www.agibot.com
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: CASIA (Taichu Multimodal & Brain-Inspired AI)
+  category: ai_research
+  type: rss
+  url: http://www.ia.cas.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-51-casia
+    name_zh: 中国科学院自动化研究所 (中科院自动化所)
+    portal_url: http://www.ia.cas.cn
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: ICT CAS (XiangShan Open RISC-V Processor)
+  category: github_trending
+  type: rss
+  url: https://github.com/OpenXiangShan/XiangShan/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-52-ict-cas
+    name_zh: 中国科学院计算技术研究所 (香山RISC-V)
+    portal_url: http://www.ict.ac.cn
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Tsinghua AIR (Autonomous Systems & Embodied AI)
+  category: ai_research
+  type: rss
+  url: https://air.tsinghua.edu.cn
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-53-tsinghua-air
+    name_zh: 清华大学智能产业研究院 (Tsinghua AIR)
+    portal_url: https://air.tsinghua.edu.cn
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: BAAI (FlagOpen Open Source Foundation)
+  category: ai_models
+  type: rss
+  url: https://github.com/FlagOpen/FlagEmbedding/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-54-baai
+    name_zh: 北京智源人工智能研究院 BAAI
+    portal_url: https://www.baai.ac.cn
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
+- name: Shanghai AI Lab (InternVL & OpenGVLab)
+  category: ai_models
+  type: rss
+  url: https://github.com/OpenGVLab/InternVL/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+  config:
+    id: cn-src-55-shanghai-ai-lab
+    name_zh: 上海人工智能实验室 (书生大模型 / OpenGVLab)
+    portal_url: https://www.shlab.org.cn
+    china_category: corporate_academic_lab
+    language: zh
+    spoken_language_code: zh
 delivery:
   email:
     enabled: false
@@ -1973,56 +2805,53 @@ analyzer:
   timeout: 60
   max_tokens: 1000
   temperature: 0.1
-
 retired_sources:
-  # Purged cybersecurity, vulnerability, exploit, and threat intel feeds (Zero Cybersecurity directive)
-  - name: "CNNVD China Vulnerability Alerts (CNNVD安全动态)"
-    url: "https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "GovCERT China / Hong Kong Alerts"
-    url: "https://www.govcert.gov.hk/en/rss_security_alerts.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Qihoo 360 Threat Intelligence (360威胁情报中心)"
-    url: "https://wechat2rss.xlab.app/feed/920f171e3dae0c8eeb4c97b366b229ba19807732.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Qi-AnXin Threat Research (奇安信技术研究院)"
-    url: "https://wechat2rss.xlab.app/feed/77a8d89f12dcb0aa75a19731e474a63427089081.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Qi-AnXin XLab (奇安信XLab)"
-    url: "https://wechat2rss.xlab.app/feed/5c7b6eec254fbb0afac7abf4eae95573fc374555.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Cyber Kunlun CERT (赛博昆仑CERT)"
-    url: "https://wechat2rss.xlab.app/feed/fb14ec6353e6ebbeb470d35d633471d0bca583a0.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Antiy AVL Threat Intel (安天AVL威胁情报)"
-    url: "https://wechat2rss.xlab.app/feed/c17498223ad8f92e5434100b16f4894a3107a90b.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "DarkNavy Security Research"
-    url: "https://wechat2rss.xlab.app/feed/0d4ffa4a2127cb603c2da49daa678b0e780fd66b.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Tsinghua NISL Lab (清华大学网络与信息安全实验室)"
-    url: "https://wechat2rss.xlab.app/feed/9c5931fa813fd1a38149e52d5809ce9b19a48ec4.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Venustech ADLab (启明星辰积极防御实验室)"
-    url: "https://wechat2rss.xlab.app/feed/16f16b9f4eb45442a824a52e3ddb040941a49f68.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "0x727 Red Team (0x727开源安全团队)"
-    url: "https://wechat2rss.xlab.app/feed/fb95636ab2edd220c83bc38b7041bb8e0a723496.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Xmirror DevSecOps (悬镜安全技术研究)"
-    url: "https://wechat2rss.xlab.app/feed/59c134d2e41c3a0724d89cc6fa359bc1abedbc26.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "Hawkeye Threat Intelligence (鹰眼威胁情报)"
-    url: "https://wechat2rss.xlab.app/feed/6bdcd81fd3702868c913261790ec10ffb76df144.xml"
-    reason: "Zero cybersecurity focus policy"
-  - name: "NVD Recent CVEs (API)"
-    reason: "Zero cybersecurity focus policy"
-  - name: "CISA Known Exploited Vulnerabilities"
-    url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-    reason: "Zero cybersecurity focus policy"
-  - name: "GitHub Security Advisories"
-    reason: "Zero cybersecurity focus policy"
-  # Deduplicated feeds
-  - name: "DeepSeek-V3 Open Model Codebase"
-    url: "https://github.com/deepseek-ai/DeepSeek-V3/releases.atom"
-    reason: "Deduplicated with DeepSeek AI Official Releases"
+- name: CNNVD China Vulnerability Alerts (CNNVD安全动态)
+  url: https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml
+  reason: Zero cybersecurity focus policy
+- name: GovCERT China / Hong Kong Alerts
+  url: https://www.govcert.gov.hk/en/rss_security_alerts.xml
+  reason: Zero cybersecurity focus policy
+- name: Qihoo 360 Threat Intelligence (360威胁情报中心)
+  url: https://wechat2rss.xlab.app/feed/920f171e3dae0c8eeb4c97b366b229ba19807732.xml
+  reason: Zero cybersecurity focus policy
+- name: Qi-AnXin Threat Research (奇安信技术研究院)
+  url: https://wechat2rss.xlab.app/feed/77a8d89f12dcb0aa75a19731e474a63427089081.xml
+  reason: Zero cybersecurity focus policy
+- name: Qi-AnXin XLab (奇安信XLab)
+  url: https://wechat2rss.xlab.app/feed/5c7b6eec254fbb0afac7abf4eae95573fc374555.xml
+  reason: Zero cybersecurity focus policy
+- name: Cyber Kunlun CERT (赛博昆仑CERT)
+  url: https://wechat2rss.xlab.app/feed/fb14ec6353e6ebbeb470d35d633471d0bca583a0.xml
+  reason: Zero cybersecurity focus policy
+- name: Antiy AVL Threat Intel (安天AVL威胁情报)
+  url: https://wechat2rss.xlab.app/feed/c17498223ad8f92e5434100b16f4894a3107a90b.xml
+  reason: Zero cybersecurity focus policy
+- name: DarkNavy Security Research
+  url: https://wechat2rss.xlab.app/feed/0d4ffa4a2127cb603c2da49daa678b0e780fd66b.xml
+  reason: Zero cybersecurity focus policy
+- name: Tsinghua NISL Lab (清华大学网络与信息安全实验室)
+  url: https://wechat2rss.xlab.app/feed/9c5931fa813fd1a38149e52d5809ce9b19a48ec4.xml
+  reason: Zero cybersecurity focus policy
+- name: Venustech ADLab (启明星辰积极防御实验室)
+  url: https://wechat2rss.xlab.app/feed/16f16b9f4eb45442a824a52e3ddb040941a49f68.xml
+  reason: Zero cybersecurity focus policy
+- name: 0x727 Red Team (0x727开源安全团队)
+  url: https://wechat2rss.xlab.app/feed/fb95636ab2edd220c83bc38b7041bb8e0a723496.xml
+  reason: Zero cybersecurity focus policy
+- name: Xmirror DevSecOps (悬镜安全技术研究)
+  url: https://wechat2rss.xlab.app/feed/59c134d2e41c3a0724d89cc6fa359bc1abedbc26.xml
+  reason: Zero cybersecurity focus policy
+- name: Hawkeye Threat Intelligence (鹰眼威胁情报)
+  url: https://wechat2rss.xlab.app/feed/6bdcd81fd3702868c913261790ec10ffb76df144.xml
+  reason: Zero cybersecurity focus policy
+- name: NVD Recent CVEs (API)
+  reason: Zero cybersecurity focus policy
+- name: CISA Known Exploited Vulnerabilities
+  url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+  reason: Zero cybersecurity focus policy
+- name: GitHub Security Advisories
+  reason: Zero cybersecurity focus policy
+- name: DeepSeek-V3 Open Model Codebase
+  url: https://github.com/deepseek-ai/DeepSeek-V3/releases.atom
+  reason: Deduplicated with DeepSeek AI Official Releases

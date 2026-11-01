@@ -17,9 +17,17 @@ class ChinaTokenShield:
 
     PATTERNS: ClassVar[list[tuple[str, re.Pattern[str]]]] = [
         (
-            "CVE",
+            "VULN_ID",
             re.compile(
-                r"(?<![a-zA-Z0-9])CVE-\d{4}-\d{4,}(?![a-zA-Z0-9])", re.IGNORECASE
+                r"(?<![a-zA-Z0-9])(?:CVE-\d{4}-\d{4,}|CNVD-\d{4}-\d{4,}|CNVD-C-\d{4}-\d{4,}|CNNVD-\d{4,}-\d{3,})(?![a-zA-Z0-9])",
+                re.IGNORECASE,
+            ),
+        ),
+        (
+            "SEC_TAG",
+            re.compile(
+                r"(?<![a-zA-Z0-9])(?:POC|EXP|RCE|0-day|1-day|0day|1day)(?![a-zA-Z0-9])",
+                re.IGNORECASE,
             ),
         ),
         (
@@ -31,8 +39,10 @@ class ChinaTokenShield:
         (
             "MODEL",
             re.compile(
-                r"(?<![a-zA-Z0-9])(?:DeepSeek|Qwen|InternLM|GLM|ChatGLM|CogVideo|Kimi|Baichuan|"
+                r"(?<![a-zA-Z0-9])(?:DeepSeek|Qwen|InternLM|InternVL|GLM|ChatGLM|CogVideo|Kimi|Baichuan|"
                 r"Yi|MiniCPM|Step|Aquila|TeleChat|Skywork|Hunyuan|SenseChat|"
+                r"PaddlePaddle|Paddle|MindSpore|Ascend|XiangShan|YOLOX|MMDetection|"
+                r"Agibot|Unitree|FunAudioLLM|ChatTTS|FishAudio|"
                 r"LMDeploy|vLLM|SGLang|ModelScope)[a-zA-Z0-9_\.\-]*(?![a-zA-Z0-9])",
                 re.IGNORECASE,
             ),
@@ -116,3 +126,4 @@ class ChinaTokenShield:
 
 # Global singleton instance
 token_shield = ChinaTokenShield()
+china_token_shield = token_shield

@@ -25,6 +25,10 @@ class ChinaRepoArchetype(str, Enum):
     MULTIMODAL_VOICE = "multimodal_voice"
     EVAL_AND_BENCHMARK = "eval_and_benchmark"
     DEV_TOOL = "dev_tool"
+    EMBODIED_AI_ROBOTICS = "embodied_ai_robotics"
+    COMPUTER_VISION_EDGE = "computer_vision_edge"
+    SEMICONDUCTOR_RISCV = "semiconductor_riscv"
+    OFFENSIVE_SECURITY_VULN = "offensive_security_vuln"
 
 
 ARCHETYPE_LABELS = {
@@ -35,6 +39,10 @@ ARCHETYPE_LABELS = {
     ChinaRepoArchetype.MULTIMODAL_VOICE: "Multimodal & Audio (多模态与语音)",
     ChinaRepoArchetype.EVAL_AND_BENCHMARK: "Evaluation & Benchmarks (评测基准)",
     ChinaRepoArchetype.DEV_TOOL: "Developer Tooling (开发工具与生态)",
+    ChinaRepoArchetype.EMBODIED_AI_ROBOTICS: "Embodied AI & Robotics (具身智能与机器人)",
+    ChinaRepoArchetype.COMPUTER_VISION_EDGE: "Computer Vision & Edge AI (计算机视觉与边缘AI)",
+    ChinaRepoArchetype.SEMICONDUCTOR_RISCV: "Semiconductor & RISC-V Chips (半导体与RISC-V芯片)",
+    ChinaRepoArchetype.OFFENSIVE_SECURITY_VULN: "Offensive Security & Vulnerabilities (漏洞分析与实战攻防)",
 }
 
 # Known Chinese AI Laboratories & Open-Source Organizations
@@ -45,6 +53,8 @@ LAB_ORGANIZATION_MAP: dict[str, tuple[str, bool]] = {
     "qwenlm": ("Alibaba Qwen (通义千问)", True),
     "internlm": ("Shanghai AI Lab (上海人工智能实验室)", True),
     "opendatalab": ("Shanghai AI Lab (上海人工智能实验室)", True),
+    "opengvlab": ("Shanghai AI Lab (上海人工智能实验室 / OpenGVLab)", True),
+    "shlab": ("Shanghai AI Lab (上海人工智能实验室)", True),
     "thudm": ("Zhipu AI / Tsinghua KEG (智谱AI / 清华大学)", True),
     "zhipu": ("Zhipu AI (智谱AI)", True),
     "moonshot": ("Moonshot AI (月之暗面 Kimi)", True),
@@ -60,10 +70,45 @@ LAB_ORGANIZATION_MAP: dict[str, tuple[str, bool]] = {
     "fishaudio": ("Fish Audio", False),
     "tencent": ("Tencent (腾讯优图 / ARC)", True),
     "tencentarc": ("Tencent ARC (腾讯优图)", True),
-    "bytedance": ("ByteDance Seed (字节跳动)", True),
+    "youtu": ("Tencent YouTu Lab (腾讯优图实验室)", True),
+    "xuanwu": ("Tencent Xuanwu Lab (腾讯安全玄武实验室)", True),
+    "bytedance": ("ByteDance Seed / Tech (字节跳动)", True),
+    "bytetech": ("ByteDance Tech (字节跳动技术团队)", True),
     "paddlepaddle": ("Baidu PaddlePaddle (百度飞桨)", True),
+    "baidu": ("Baidu Research & Apollo (百度研究院)", True),
+    "apollo": ("Baidu Apollo (百度Apollo自动驾驶)", True),
     "pku-alignment": ("Peking University (北京大学对齐实验室)", True),
     "fudan": ("Fudan University CodeWisdom (复旦大学)", True),
+    "openi": ("Peng Cheng Laboratory (鹏城实验室 / OpenI启智)", True),
+    "pengcheng": ("Peng Cheng Laboratory (鹏城实验室)", True),
+    "mindspore": ("Huawei MindSpore (华为昇思开源社区)", True),
+    "ascend": ("Huawei Ascend (华为昇腾芯片算力)", True),
+    "huawei": ("Huawei AI Research (华为中央研究院)", True),
+    "meituan": ("Meituan Tech Team (美团技术团队)", True),
+    "damo": ("Alibaba DAMO Academy (阿里巴巴达摩院)", True),
+    "megvii": ("Megvii Research (旷视研究院)", True),
+    "megvii-basedetection": ("Megvii Research (旷视研究院)", True),
+    "openmmlab": ("SenseTime OpenMMLab (商汤科技)", True),
+    "open-mmlab": ("SenseTime OpenMMLab (商汤科技)", True),
+    "sensetime": ("SenseTime (商汤科技研究院)", True),
+    "dji": ("DJI Developer (大疆创新机器人研发)", True),
+    "dji-sdk": ("DJI Developer (大疆创新机器人研发)", True),
+    "unitree": ("Unitree Robotics (宇树科技具身智能机器人)", True),
+    "unitreerobotics": ("Unitree Robotics (宇树科技具身智能机器人)", True),
+    "agibot": ("Agibot (智元机器人具身世界模型)", True),
+    "casia": ("CASIA (中科院自动化所紫东太初)", True),
+    "xiangshan": ("ICT CAS (中科院计算所香山RISC-V处理器)", True),
+    "openxiangshan": ("ICT CAS (中科院计算所香山RISC-V处理器)", True),
+    "tsinghua-air": ("Tsinghua AIR (清华大学智能产业研究院)", True),
+    "baai": ("BAAI (北京智源人工智能研究院 / FlagOpen)", True),
+    "flagopen": ("BAAI (北京智源人工智能研究院 / FlagOpen)", True),
+    "flagembedding": ("BAAI (北京智源人工智能研究院 / FlagOpen)", True),
+    "seebug": ("Knownsec Seebug (知道创宇漏洞实验室)", True),
+    "knownsec": ("Knownsec (知道创宇安全团队)", True),
+    "qianxin": ("QiAnXin (奇安信攻防社区 / XLab)", True),
+    "butian": ("QiAnXin Butian (奇安信补天漏洞响应平台)", True),
+    "360cert": ("360 CERT (360网络安全应急响应中心)", True),
+    "netlab": ("360 Netlab (360网络安全研究实验室)", True),
 }
 
 
@@ -110,6 +155,11 @@ class ChinaRepoIntelligenceExtractor:
         r"([1-8]x\s*(?:A100|H100|H800|H20))|(Apple\s*Silicon|MPS)|(CPU\s*(?:only|推理|部署))",
         re.IGNORECASE,
     )
+
+    # Acronym patterns requiring word boundaries to avoid substring false positives
+    SEC_ACRONYMS = re.compile(r"\b(poc|exp|rce|cve|0day|zero-day)\b", re.IGNORECASE)
+    CV_ACRONYMS = re.compile(r"\b(cv|ocr)\b", re.IGNORECASE)
+    TTS_ACRONYMS = re.compile(r"\b(tts)\b", re.IGNORECASE)
 
     # 4. Quantization formats
     QUANT_PATTERNS = {
@@ -267,11 +317,130 @@ class ChinaRepoIntelligenceExtractor:
 
     def _classify_archetype(self, text: str) -> ChinaRepoArchetype:
         """Classify repository archetype by semantic signals."""
-        # Multimodal & Voice
+        # Offensive Security & Vulnerability Analysis
+        if self.SEC_ACRONYMS.search(text) or any(
+            w in text
+            for w in (
+                "vulnerability",
+                "vuln",
+                "exploit",
+                "cnvd",
+                "cnnvd",
+                "reverse engineering",
+                "binary exploitation",
+                "kernel exploit",
+                "seebug",
+                "freebuf",
+                "anquanke",
+                "kanxue",
+                "tttang",
+                "secpulse",
+                "4hou",
+                "xuanwu",
+                "butian",
+                "xianzhi",
+                "oscs",
+                "漏洞",
+                "利用代码",
+                "利用链",
+                "提权",
+                "攻防",
+                "逆向工程",
+                "免杀",
+                "供应链投毒",
+                "越权",
+                "任意代码执行",
+            )
+        ):
+            return ChinaRepoArchetype.OFFENSIVE_SECURITY_VULN
+
+        # Embodied AI & Robotics
         if any(
             w in text
             for w in (
-                "tts",
+                "robot",
+                "robotics",
+                "slam",
+                "quadruped",
+                "humanoid",
+                "locomotion",
+                "flight control",
+                "point cloud",
+                "lidar",
+                "unitree",
+                "agibot",
+                "dji",
+                "shenlan",
+                "具身智能",
+                "机器人",
+                "人形机器人",
+                "四足机器人",
+                "四足",
+                "激光雷达",
+                "点云",
+                "飞控",
+                "飞行控制",
+                "运动控制",
+                "视觉里程计",
+                "无人机",
+            )
+        ):
+            return ChinaRepoArchetype.EMBODIED_AI_ROBOTICS
+
+        # Semiconductor & RISC-V Chips
+        if any(
+            w in text
+            for w in (
+                "risc-v",
+                "riscv",
+                "xiangshan",
+                "fpga",
+                "chip",
+                "chips",
+                "semiconductor",
+                "eda",
+                "npu",
+                "ascend",
+                "icbank",
+                "elecfans",
+                "半导体",
+                "芯片",
+                "香山",
+                "昇腾",
+                "开源芯片",
+                "处理器核",
+                "处理器芯片",
+                "流片",
+                "光刻",
+            )
+        ):
+            return ChinaRepoArchetype.SEMICONDUCTOR_RISCV
+
+        # Computer Vision & Edge AI
+        if self.CV_ACRONYMS.search(text) or any(
+            w in text
+            for w in (
+                "computer vision",
+                "openmmlab",
+                "mmdetection",
+                "youtu",
+                "megvii",
+                "yolox",
+                "cvmart",
+                "extreme mart",
+                "目标检测",
+                "图像分割",
+                "边缘计算",
+                "边缘ai",
+                "文字识别",
+            )
+        ):
+            return ChinaRepoArchetype.COMPUTER_VISION_EDGE
+
+        # Multimodal & Voice
+        if self.TTS_ACRONYMS.search(text) or any(
+            w in text
+            for w in (
                 "speech",
                 "voice",
                 "audio",
@@ -281,7 +450,6 @@ class ChinaRepoIntelligenceExtractor:
                 "video",
                 "cogvideo",
                 "hunyuanvideo",
-                "ocr",
                 "mineru",
                 "pdfmathtranslate",
                 "vision",
