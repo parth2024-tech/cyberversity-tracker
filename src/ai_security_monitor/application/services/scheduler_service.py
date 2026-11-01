@@ -277,6 +277,18 @@ class SchedulerService:
                     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
                     dest_file = backup_dir / f"monitor_backup_{timestamp}.db"
 
+                    # Run FTS segment optimization and incremental vacuum before snapshot
+                    try:
+                        from ai_security_monitor.infrastructure.database.connection import (
+                            db_manager,
+                        )
+
+                        await db_manager.maintain_fts_and_storage()
+                    except Exception as maint_err:
+                        logger.warning(
+                            f"Storage maintenance before backup warning: {maint_err}"
+                        )
+
                     # Perform safe SQLite online backup capturing all WAL pages with zero page tearing
                     def _safe_sqlite_backup(src_p: Path, dst_p: Path) -> None:
                         import sqlite3
