@@ -91,7 +91,7 @@ class TranslationService:
 
     def __init__(
         self,
-        max_cache_size: int = 2000,
+        max_cache_size: int = 500,
         token_shield_instance: ChinaTokenShield | None = None,
     ):
         self._cache: dict[

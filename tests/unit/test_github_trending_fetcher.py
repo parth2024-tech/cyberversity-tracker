@@ -173,13 +173,32 @@ def test_github_trending_chinese_ai_filter():
     assert fetcher.country == "CN"
 
     # AI & developer tool repo descriptions in Chinese
-    assert fetcher._passes_filter("infiniflow/ragflow", "开源多模态深度文档理解与检索增强生成引擎") is True
-    assert fetcher._passes_filter("labring/FastGPT", "基于大模型的企业级智能体知识库问答系统") is True
-    assert fetcher._passes_filter("THUDM/ChatGLM3", "清华大学开源双语预训练对话大模型") is True
-    assert fetcher._passes_filter("2noise/ChatTTS", "针对对话场景优化的语音合成工具") is True
+    assert (
+        fetcher._passes_filter(
+            "infiniflow/ragflow", "开源多模态深度文档理解与检索增强生成引擎"
+        )
+        is True
+    )
+    assert (
+        fetcher._passes_filter(
+            "labring/FastGPT", "基于大模型的企业级智能体知识库问答系统"
+        )
+        is True
+    )
+    assert (
+        fetcher._passes_filter("THUDM/ChatGLM3", "清华大学开源双语预训练对话大模型")
+        is True
+    )
+    assert (
+        fetcher._passes_filter("2noise/ChatTTS", "针对对话场景优化的语音合成工具")
+        is True
+    )
 
     # Non-AI repo description in Chinese
-    assert fetcher._passes_filter("some-user/cookbook", "个人常用家常菜谱大全与烹饪笔记") is False
+    assert (
+        fetcher._passes_filter("some-user/cookbook", "个人常用家常菜谱大全与烹饪笔记")
+        is False
+    )
 
 
 @pytest.mark.asyncio

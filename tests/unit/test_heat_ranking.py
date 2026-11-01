@@ -120,7 +120,9 @@ def test_new_and_rising_badges_for_standalone_entries():
     """Standalone entries receive 'new' if <= 6h old, 'rising' if <= 12h old with good velocity."""
     now = datetime(2026, 10, 28, 12, 0, 0, tzinfo=UTC)
 
-    new_entry = make_test_entry("Fresh arXiv Paper", published_at=now - timedelta(hours=2))
+    new_entry = make_test_entry(
+        "Fresh arXiv Paper", published_at=now - timedelta(hours=2)
+    )
     h1, b1 = heat_ranking_service.compute_entry_heat(new_entry, now=now)
     assert b1 == "new"
     assert h1 > 0.9
@@ -129,7 +131,9 @@ def test_new_and_rising_badges_for_standalone_entries():
     h2, b2 = heat_ranking_service.compute_entry_heat(rising_entry, now=now)
     assert b2 == "rising"
 
-    older_entry = make_test_entry("Older Blog Post", published_at=now - timedelta(hours=36))
+    older_entry = make_test_entry(
+        "Older Blog Post", published_at=now - timedelta(hours=36)
+    )
     h3, b3 = heat_ranking_service.compute_entry_heat(older_entry, now=now)
     assert b3 is None
     assert h3 < 0.4
@@ -159,7 +163,9 @@ def test_deduplication_service_elevates_cluster_to_surge():
         source_name="Hacker News Trending",
         url="https://github.com/deepseek-ai/DeepSeek-R1",
     )
-    e2, story2, is_new2 = dedup.process_candidate(entry2, source_name="Hacker News Trending")
+    e2, story2, is_new2 = dedup.process_candidate(
+        entry2, source_name="Hacker News Trending"
+    )
     assert is_new2 is False
     assert story2.id == story1.id
     assert story2.source_count == 2

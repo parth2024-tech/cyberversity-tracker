@@ -425,22 +425,37 @@ class NewspaperService:
 
         await asyncio.to_thread(_write_edition_files)
 
-        # Generate 10-Page PDF Document in worker thread to prevent event loop stalls
-        try:
-            await asyncio.to_thread(
-                self._render_pdf,
-                pdf_path=pdf_file,
-                entries=entries,
-                categorized=categorized,
-                edition_num=edition_num,
-                generated_at=now,
-                window_hours=window_hours,
+        # Check host memory before generating heavy ReportLab PDF
+        from ai_security_monitor.infrastructure.fetchers.autoscaled_pool import (
+            get_system_resource_metrics,
+        )
+
+        res_metrics = get_system_resource_metrics()
+        if (
+            res_metrics.get("available_mb", 1000.0) < 70.0
+            or res_metrics.get("process_rss_mb", 0.0) > 420.0
+        ):
+            logger.warning(
+                f"Skipping PDF compilation to preserve memory (available: {res_metrics.get('available_mb')}MB, RSS: {res_metrics.get('process_rss_mb')}MB)"
             )
-            await asyncio.to_thread(shutil.copyfile, pdf_file, latest_pdf)
-            has_pdf = True
-        except Exception as pdf_err:
-            logger.error(f"Failed to generate 10-page newspaper PDF: {pdf_err}")
             has_pdf = False
+        else:
+            # Generate 10-Page PDF Document in worker thread to prevent event loop stalls
+            try:
+                await asyncio.to_thread(
+                    self._render_pdf,
+                    pdf_path=pdf_file,
+                    entries=entries,
+                    categorized=categorized,
+                    edition_num=edition_num,
+                    generated_at=now,
+                    window_hours=window_hours,
+                )
+                await asyncio.to_thread(shutil.copyfile, pdf_file, latest_pdf)
+                has_pdf = True
+            except Exception as pdf_err:
+                logger.error(f"Failed to generate 10-page newspaper PDF: {pdf_err}")
+                has_pdf = False
 
         metadata = {
             "edition_id": edition_id,

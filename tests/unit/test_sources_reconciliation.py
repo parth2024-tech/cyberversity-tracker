@@ -34,7 +34,9 @@ class TestSourcesReconciliation:
         return uow_factory
 
     @pytest.mark.asyncio
-    async def test_reconciliation_soft_deactivates_orphaned_sources(self, test_uow_factory, monkeypatch):
+    async def test_reconciliation_soft_deactivates_orphaned_sources(
+        self, test_uow_factory, monkeypatch
+    ):
         """Verify that orphaned YAML-managed sources are soft-deactivated (enabled=False)."""
         uow_factory = test_uow_factory
 
@@ -127,7 +129,9 @@ class TestSourcesReconciliation:
             assert db_p0.enabled is True
 
     @pytest.mark.asyncio
-    async def test_reconciliation_guardrail_aborts_on_small_yaml(self, test_uow_factory, monkeypatch):
+    async def test_reconciliation_guardrail_aborts_on_small_yaml(
+        self, test_uow_factory, monkeypatch
+    ):
         """Verify that deactivation is skipped if YAML has fewer than 50 sources."""
         uow_factory = test_uow_factory
 
@@ -145,8 +149,18 @@ class TestSourcesReconciliation:
 
         # Mock YAML returning only 2 sources (< 50)
         mock_yaml_sources = [
-            SourceConfig(name="New Source 1", category="ai_models", type="rss", url="https://s1.org"),
-            SourceConfig(name="New Source 2", category="ai_models", type="rss", url="https://s2.org"),
+            SourceConfig(
+                name="New Source 1",
+                category="ai_models",
+                type="rss",
+                url="https://s1.org",
+            ),
+            SourceConfig(
+                name="New Source 2",
+                category="ai_models",
+                type="rss",
+                url="https://s2.org",
+            ),
         ]
 
         monkeypatch.setattr(
@@ -164,7 +178,9 @@ class TestSourcesReconciliation:
             assert db_src.enabled is True
 
     @pytest.mark.asyncio
-    async def test_stable_url_rename_reconciliation(self, test_uow_factory, monkeypatch):
+    async def test_stable_url_rename_reconciliation(
+        self, test_uow_factory, monkeypatch
+    ):
         """Verify that renaming a source in YAML updates its name by URL rather than duplicating."""
         uow_factory = test_uow_factory
 
@@ -202,7 +218,13 @@ class TestSourcesReconciliation:
                 tier=2.0,
             )
         ] + [
-            SourceConfig(name=f"Feed {i}", category="ai_models", type="rss", url=f"https://f{i}.org", enabled=True)
+            SourceConfig(
+                name=f"Feed {i}",
+                category="ai_models",
+                type="rss",
+                url=f"https://f{i}.org",
+                enabled=True,
+            )
             for i in range(55)
         ]
 
@@ -226,7 +248,9 @@ class TestSourcesReconciliation:
             assert new_db.enabled is True
 
     @pytest.mark.asyncio
-    async def test_get_by_url_and_name_handles_duplicates_gracefully(self, test_uow_factory):
+    async def test_get_by_url_and_name_handles_duplicates_gracefully(
+        self, test_uow_factory
+    ):
         """Verify that get_by_url safely handles duplicate rows without MultipleResultsFound."""
         uow_factory = test_uow_factory
         shared_url = "https://duplicate-feed.ai/rss"

@@ -302,12 +302,14 @@ class DeduplicationService:
         minhash_threshold: float = 0.35,
         simhash_hamming_threshold: int = 4,
         semantic_threshold: float = 0.82,
+        max_stories: int = 1000,
     ):
         self.max_window_days = max_window_days
         self.similarity_threshold = similarity_threshold
         self.minhash_threshold = minhash_threshold
         self.simhash_hamming_threshold = simhash_hamming_threshold
         self.semantic_threshold = semantic_threshold
+        self.max_stories = max_stories
 
         # In-memory index of active stories: story_id -> Story
         self._stories: dict[UUID, Story] = {}
@@ -321,12 +323,27 @@ class DeduplicationService:
         self._story_embeddings: dict[UUID, list[float]] = {}
 
     def _evict_stale_stories(self) -> None:
-        """Evict stories older than max_window_days (14-day freshness guard)."""
+        """Evict stories older than max_window_days or exceeding max_stories memory capacity."""
         cutoff = datetime.now(UTC) - timedelta(days=self.max_window_days)
         stale_ids = [sid for sid, s in self._stories.items() if s.last_seen_at < cutoff]
         for sid in stale_ids:
             story = self._stories.pop(sid, None)
             if story:
+                self._fingerprint_to_story.pop(story.fingerprint, None)
+                if story.canonical_url:
+                    self._canonical_url_to_story.pop(story.canonical_url, None)
+                self._story_simhashes.pop(sid, None)
+                self._story_minhashes.pop(sid, None)
+                self._story_embeddings.pop(sid, None)
+
+        # Capacity guard: prune oldest stories if exceeding max_stories budget
+        if len(self._stories) > self.max_stories:
+            excess = len(self._stories) - self.max_stories
+            sorted_by_age = sorted(
+                self._stories.items(), key=lambda item: item[1].last_seen_at
+            )
+            for sid, story in sorted_by_age[:excess]:
+                self._stories.pop(sid, None)
                 self._fingerprint_to_story.pop(story.fingerprint, None)
                 if story.canonical_url:
                     self._canonical_url_to_story.pop(story.canonical_url, None)

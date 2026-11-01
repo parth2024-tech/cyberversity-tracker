@@ -18,11 +18,13 @@ logger = get_logger(__name__)
 def get_system_resource_metrics() -> dict[str, Any]:
     """Inspect current system RAM, swap, and CPU load metrics.
 
-    Uses psutil with graceful fallback to /proc/meminfo and os.getloadavg.
+    Aware of container cgroup memory limits (Render, Docker, Kubernetes) and process RSS
+    to prevent out-of-memory container termination on 512MB hosts.
     """
     ram_percent = 50.0
     cpu_percent = 30.0
     available_mb = 4096.0
+    process_rss_mb = 0.0
 
     try:
         import psutil
@@ -31,6 +33,8 @@ def get_system_resource_metrics() -> dict[str, Any]:
         ram_percent = mem.percent
         available_mb = mem.available / (1024 * 1024)
         cpu_percent = psutil.cpu_percent(interval=None)
+        proc = psutil.Process()
+        process_rss_mb = proc.memory_info().rss / (1024 * 1024)
     except Exception:
         # Fallback to /proc/meminfo on Linux
         try:
@@ -52,10 +56,56 @@ def get_system_resource_metrics() -> dict[str, Any]:
         except Exception:
             pass
 
+    # Inspect container cgroup memory limit (Render 512MB free tier guard)
+    try:
+        cgroup_limit_mb: float | None = None
+        cgroup_usage_mb: float | None = None
+
+        # Check cgroup v2
+        if os.path.exists("/sys/fs/cgroup/memory.max"):
+            with open("/sys/fs/cgroup/memory.max") as f:
+                val = f.read().strip()
+                if val.isdigit():
+                    cgroup_limit_mb = int(val) / (1024 * 1024)
+            if os.path.exists("/sys/fs/cgroup/memory.current"):
+                with open("/sys/fs/cgroup/memory.current") as f:
+                    u_val = f.read().strip()
+                    if u_val.isdigit():
+                        cgroup_usage_mb = int(u_val) / (1024 * 1024)
+        # Check cgroup v1
+        elif os.path.exists("/sys/fs/cgroup/memory/memory.limit_in_bytes"):
+            with open("/sys/fs/cgroup/memory/memory.limit_in_bytes") as f:
+                val = f.read().strip()
+                if (
+                    val.isdigit() and int(val) < 10**14
+                ):  # unlimited is 9223372036854771712
+                    cgroup_limit_mb = int(val) / (1024 * 1024)
+            if os.path.exists("/sys/fs/cgroup/memory/memory.usage_in_bytes"):
+                with open("/sys/fs/cgroup/memory/memory.usage_in_bytes") as f:
+                    u_val = f.read().strip()
+                    if u_val.isdigit():
+                        cgroup_usage_mb = int(u_val) / (1024 * 1024)
+
+        # If running inside a container with a defined limit (<= 2048 MB)
+        if cgroup_limit_mb is not None and cgroup_limit_mb <= 2048.0:
+            used_mb = cgroup_usage_mb if cgroup_usage_mb is not None else process_rss_mb
+            cgroup_ram_percent = (used_mb / cgroup_limit_mb) * 100.0
+            ram_percent = max(ram_percent, min(100.0, cgroup_ram_percent))
+            available_mb = min(available_mb, max(0.0, cgroup_limit_mb - used_mb))
+
+        # Explicit safeguard: on 512MB Render instances, scale pressure from process RSS
+        if process_rss_mb > 380.0:
+            ram_percent = max(ram_percent, 92.0)
+        elif process_rss_mb > 300.0:
+            ram_percent = max(ram_percent, 78.0)
+    except Exception:
+        pass
+
     return {
         "ram_percent": round(ram_percent, 1),
         "cpu_percent": round(cpu_percent, 1),
         "available_mb": round(available_mb, 1),
+        "process_rss_mb": round(process_rss_mb, 1),
     }
 
 
@@ -68,10 +118,10 @@ class AutoscaledPool:
 
     def __init__(
         self,
-        max_concurrency: int = 8,
+        max_concurrency: int = 4,
         min_concurrency: int = 1,
-        ram_high_threshold: float = 80.0,
-        ram_critical_threshold: float = 90.0,
+        ram_high_threshold: float = 75.0,
+        ram_critical_threshold: float = 85.0,
     ):
         self.max_concurrency = max_concurrency
         self.min_concurrency = min_concurrency
@@ -85,11 +135,14 @@ class AutoscaledPool:
         metrics = get_system_resource_metrics()
         ram = metrics["ram_percent"]
 
-        # Critical RAM pressure: clamp to absolute minimum
+        # Critical RAM pressure: clamp to absolute minimum and force garbage collection
         if ram >= self.ram_critical_threshold:
             logger.warning(
-                f"Critical RAM pressure ({ram}%). Clamping concurrency to {self.min_concurrency}"
+                f"Critical RAM pressure ({ram}%). Clamping concurrency to {self.min_concurrency} and freeing heap."
             )
+            import gc
+
+            gc.collect()
             return self.min_concurrency
 
         # Elevated RAM pressure: scale down to 2 workers

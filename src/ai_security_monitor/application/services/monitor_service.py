@@ -241,7 +241,9 @@ class MonitorService:
             # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
             retired_cfg = load_retired_sources_from_yaml(config_path)
             retired_names = {
-                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+                r["name"].strip().lower()
+                for r in retired_cfg
+                if "name" in r and r["name"]
             }
             retired_urls = {
                 r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
@@ -385,29 +387,26 @@ class MonitorService:
                 or source.config.get("country") in ("CN", "HK")
                 or source.config.get("language") in ("zh", "zh-CN", "zh-TW")
             )
-            is_english_source = (
-                not is_chinese_source
-                and (
-                    source.type.value in ("arxiv", "hackernews")
-                    or (
-                        source.type.value == "github_trending"
-                        and source.config.get("spoken_language_code") != "zh"
-                        and source.config.get("region") != "china"
-                    )
-                    or source.config.get("country")
-                    in (
-                        "US",
-                        "GB",
-                        "CA",
-                        "AU",
-                        "IE",
-                        "IN",
-                        "SG",
-                        "GLOBAL",
-                        "EU",
-                    )
-                    or source.config.get("language") == "en"
+            is_english_source = not is_chinese_source and (
+                source.type.value in ("arxiv", "hackernews")
+                or (
+                    source.type.value == "github_trending"
+                    and source.config.get("spoken_language_code") != "zh"
+                    and source.config.get("region") != "china"
                 )
+                or source.config.get("country")
+                in (
+                    "US",
+                    "GB",
+                    "CA",
+                    "AU",
+                    "IE",
+                    "IN",
+                    "SG",
+                    "GLOBAL",
+                    "EU",
+                )
+                or source.config.get("language") == "en"
             )
 
             from ai_security_monitor.application.services.translation_service import (
@@ -1063,10 +1062,14 @@ class MonitorService:
                             asyncio.create_task(
                                 send_source_failure_alert(src.name, failures, err_msg)
                             )
-                    logger.warning(f"Concurrent sweep timeout for {src.name}: {err_msg}")
+                    logger.warning(
+                        f"Concurrent sweep timeout for {src.name}: {err_msg}"
+                    )
                 except Exception as e:
                     err_msg = (
-                        f"{type(e).__name__}: {e}" if str(e).strip() else type(e).__name__
+                        f"{type(e).__name__}: {e}"
+                        if str(e).strip()
+                        else type(e).__name__
                     )
                     async with lock:
                         error += 1
@@ -1115,6 +1118,11 @@ class MonitorService:
         if total_new > 0:
             self._broadcast({"type": "feed_updated", "data": {"count": total_new}})
             self._broadcast({"type": "stats_updated", "data": {}})
+
+        # Reclaim memory from temporary feed parsing buffers, XML trees, and HTTP payloads
+        import gc
+
+        gc.collect()
 
         return {
             "total_sources": len(sources),

@@ -282,7 +282,29 @@ mypy src/
 
 ---
 
-## 🛡️ Production Hardening Checklist
+## 💻 Local-First Setup ($0/Month Zero-Cloud Architecture)
+
+AETHERGUARD is engineered to run 100% locally on your machine with **zero cloud dependencies**, **zero subscriptions**, and **zero background daemons**:
+
+```bash
+# 1. Start the real-time command center locally (on-demand)
+./scripts/run_local.sh
+# or via python module directly:
+python -m ai_security_monitor server --port 8080
+
+# 2. Trigger an immediate local intelligence sweep across all 150+ sources
+python -m ai_security_monitor fetch
+
+# 3. View live database stats and telemetry
+python -m ai_security_monitor stats
+```
+
+- **Open Command Center**: Visit `http://127.0.0.1:8080` in your browser.
+- **On-Demand Lifecycle**: When you close the terminal (`Ctrl+C`), all processes and workers terminate immediately—no lingering background services.
+
+---
+
+## 🛡️ Production & Cloud Hardening (Optional)
 
 Before deploying AETHERGUARD to a public production environment:
 

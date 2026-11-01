@@ -47,6 +47,30 @@ class EmbeddingService:
             return None
         if not self._initialized:
             self._initialized = True
+            import os
+
+            from ai_security_monitor.config.settings import settings
+            from ai_security_monitor.infrastructure.fetchers.autoscaled_pool import (
+                get_system_resource_metrics,
+            )
+
+            # Auto-detect constrained host or explicit low-memory flag to preserve 512MB RAM budget
+            metrics = get_system_resource_metrics()
+            is_low_mem = (
+                getattr(settings.fetch, "low_memory_mode", False)
+                or os.environ.get("USE_LIGHTWEIGHT_EMBEDDINGS", "").lower()
+                in ("true", "1", "yes")
+                or metrics.get("available_mb", 4096.0) < 600.0
+            )
+
+            if is_low_mem:
+                logger.info(
+                    "Low memory budget detected (<600MB available or low_memory_mode). "
+                    "Operating with zero-daemon deterministic pseudo-vector fallback."
+                )
+                self._model = None
+                return None
+
             try:
                 from fastembed import TextEmbedding
 

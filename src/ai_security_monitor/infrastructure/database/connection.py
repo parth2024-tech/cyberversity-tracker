@@ -95,10 +95,19 @@ class DatabaseManager:
                 cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.execute("PRAGMA busy_timeout=30000")
                 cursor.execute("PRAGMA synchronous=NORMAL")
-                # Performance tuning
-                cursor.execute("PRAGMA cache_size=-16000")  # 16MB page cache
-                cursor.execute("PRAGMA temp_store=MEMORY")  # temp tables in RAM
-                cursor.execute("PRAGMA mmap_size=268435456")  # 256MB memory-mapped I/O
+                # Memory-optimized SQLite PRAGMAs for Render 512MB Free Tier
+                cursor.execute(
+                    f"PRAGMA cache_size={settings.database.sqlite_cache_size}"
+                )  # 4MB page cache
+                cursor.execute(
+                    "PRAGMA temp_store=FILE"
+                )  # spill temp tables to disk, preserving heap
+                cursor.execute(
+                    f"PRAGMA mmap_size={settings.database.sqlite_mmap_size}"
+                )  # 32MB mmap (down from 256MB)
+                cursor.execute(
+                    f"PRAGMA wal_autocheckpoint={settings.database.sqlite_wal_autocheckpoint}"
+                )  # checkpoint every 100 pages (400KB)
                 try:
                     cursor.execute("PRAGMA optimize")
                 except Exception:

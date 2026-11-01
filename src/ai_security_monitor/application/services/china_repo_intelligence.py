@@ -141,7 +141,10 @@ class ChinaRepoIntelligenceExtractor:
         ("MIT", re.compile(r"\bMIT(?:\s+License)?\b", re.IGNORECASE)),
         ("GPL-3.0", re.compile(r"GPL[- ]?3(?:\.0)?", re.IGNORECASE)),
         ("DeepSeek License", re.compile(r"DeepSeek[- ]License", re.IGNORECASE)),
-        ("Tongyi Qianwen License", re.compile(r"Tongyi|Qwen[- ]License", re.IGNORECASE)),
+        (
+            "Tongyi Qianwen License",
+            re.compile(r"Tongyi|Qwen[- ]License", re.IGNORECASE),
+        ),
         ("OpenRAIL", re.compile(r"OpenRAIL", re.IGNORECASE)),
     ]
 
@@ -167,7 +170,11 @@ class ChinaRepoIntelligenceExtractor:
                 repo_owner = parts[0].lower()
 
         for key, (name, official) in LAB_ORGANIZATION_MAP.items():
-            if key == repo_owner or f"{key}/" in lower_combined or f"@{key}" in lower_combined:
+            if (
+                key == repo_owner
+                or f"{key}/" in lower_combined
+                or f"@{key}" in lower_combined
+            ):
                 lab_name = name
                 is_official = official
                 break
@@ -232,7 +239,11 @@ class ChinaRepoIntelligenceExtractor:
             highlights.append(f"License: {detected_license}")
 
         # Check for link-farm / curated list
-        if "awesome" in lower_combined or "收藏" in lower_combined or "大全" in lower_combined:
+        if (
+            "awesome" in lower_combined
+            or "收藏" in lower_combined
+            or "大全" in lower_combined
+        ):
             if archetype != ChinaRepoArchetype.EVAL_AND_BENCHMARK:
                 score -= 0.15
 

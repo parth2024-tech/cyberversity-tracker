@@ -123,7 +123,9 @@ def test_decision_brief_serialization_and_deserialization():
     assert reconstructed.recommended_action == DecisionAction.TEST_IN_SANDBOX
     assert reconstructed.evidence_assessment.confidence == EvidenceConfidence.VERIFIED
     assert reconstructed.stack_relevance.impact_level == StackImpactLevel.DIRECT
-    assert reconstructed.historical_comparisons[0].title == "DeepSeek-V3 Technical Report"
+    assert (
+        reconstructed.historical_comparisons[0].title == "DeepSeek-V3 Technical Report"
+    )
 
 
 def test_pydantic_schema_validation_and_backward_compatibility(sample_entry: Entry):
@@ -180,7 +182,10 @@ def test_pydantic_schema_validation_and_backward_compatibility(sample_entry: Ent
         updated_at=datetime.now(UTC),
     )
     assert analysis_read_with_brief.decision_brief is not None
-    assert analysis_read_with_brief.decision_brief.recommended_action == DecisionAction.TEST_IN_SANDBOX
+    assert (
+        analysis_read_with_brief.decision_brief.recommended_action
+        == DecisionAction.TEST_IN_SANDBOX
+    )
 
     analysis_read_without_brief = AnalysisRead(
         id=uuid4(),
@@ -198,9 +203,16 @@ def test_pydantic_schema_validation_and_backward_compatibility(sample_entry: Ent
 
 def test_invalid_action_enum_fallback():
     """String parsing falls back to MONITOR_CLAIMS on unexpected action string."""
-    assert DecisionAction.from_string("INVALID_RANDOM_ACTION") == DecisionAction.MONITOR_CLAIMS
-    assert DecisionAction.from_string("test in sandbox") == DecisionAction.TEST_IN_SANDBOX
-    assert EvidenceConfidence.from_string("unknown_conf") == EvidenceConfidence.PRELIMINARY
+    assert (
+        DecisionAction.from_string("INVALID_RANDOM_ACTION")
+        == DecisionAction.MONITOR_CLAIMS
+    )
+    assert (
+        DecisionAction.from_string("test in sandbox") == DecisionAction.TEST_IN_SANDBOX
+    )
+    assert (
+        EvidenceConfidence.from_string("unknown_conf") == EvidenceConfidence.PRELIMINARY
+    )
     assert StackImpactLevel.from_string("non_existent") == StackImpactLevel.UNKNOWN
     assert NoveltyType.from_string("bogus_novelty") == NoveltyType.INSUFFICIENT_HISTORY
 
@@ -257,7 +269,9 @@ async def test_historical_retrieval_finds_similar_entries(sample_entry: Entry):
     mock_result.fetchall.return_value = []
     mock_uow.session.execute = AsyncMock(return_value=mock_result)
 
-    comparisons = await service.retrieve_historical_comparisons(sample_entry, uow=mock_uow)
+    comparisons = await service.retrieve_historical_comparisons(
+        sample_entry, uow=mock_uow
+    )
     assert len(comparisons) >= 1
     assert comparisons[0].title == hist_entry.title
     min_score = 0.15 if embedding_service.is_fallback else 0.40
@@ -270,7 +284,10 @@ async def test_historical_retrieval_finds_similar_entries(sample_entry: Entry):
         stack_relevance=StackRelevance(),
         evidence=EvidenceAssessment(),
     )
-    assert novelty.novelty_type in (NoveltyType.INCREMENTAL_UPDATE, NoveltyType.GENUINE_NOVELTY)
+    assert novelty.novelty_type in (
+        NoveltyType.INCREMENTAL_UPDATE,
+        NoveltyType.GENUINE_NOVELTY,
+    )
 
 
 # ==============================================================================
@@ -294,7 +311,9 @@ async def test_stack_relevance_direct_match(sample_entry: Entry):
     relevance = await service.evaluate_stack_relevance(sample_entry, uow=mock_uow)
     assert relevance.impact_level == StackImpactLevel.DIRECT
     assert "Reasoning Models" in relevance.matching_watchlist_rules
-    assert "DeepSeek" in relevance.matched_technologies or "deepseek" in [t.lower() for t in relevance.matched_technologies]
+    assert "DeepSeek" in relevance.matched_technologies or "deepseek" in [
+        t.lower() for t in relevance.matched_technologies
+    ]
     assert relevance.direct_impact is not None
     assert relevance.suggested_priority in ("P0", "P1")
 
@@ -391,7 +410,10 @@ def test_evidence_assessment_social_media_rumor():
     )
 
     ev = service.evaluate_evidence(entry)
-    assert ev.confidence in (EvidenceConfidence.INSUFFICIENT_EVIDENCE, EvidenceConfidence.PRELIMINARY)
+    assert ev.confidence in (
+        EvidenceConfidence.INSUFFICIENT_EVIDENCE,
+        EvidenceConfidence.PRELIMINARY,
+    )
     assert ev.primary_source_type == "social_media_discussion"
 
 
@@ -422,7 +444,9 @@ def test_action_determination_all_five_actions():
         affected_components=["vLLM"],
     )
     ev_verified = EvidenceAssessment(confidence=EvidenceConfidence.VERIFIED)
-    act, rat = service.determine_recommended_action(patch_entry, ev_verified, stack_direct)
+    act, rat = service.determine_recommended_action(
+        patch_entry, ev_verified, stack_direct
+    )
     assert act == DecisionAction.UPGRADE_DEPENDENCY
     assert "patch" in rat.lower() or "critical" in rat.lower()
 
@@ -437,7 +461,9 @@ def test_action_determination_all_five_actions():
         published_at=datetime.now(UTC),
         category=Category.AI_RESEARCH,
     )
-    act, rat = service.determine_recommended_action(paper_entry, ev_verified, StackRelevance())
+    act, rat = service.determine_recommended_action(
+        paper_entry, ev_verified, StackRelevance()
+    )
     assert act == DecisionAction.READ_PAPER
 
     # 3. TEST_IN_SANDBOX: Open source models or runtimes with artifacts
@@ -451,13 +477,19 @@ def test_action_determination_all_five_actions():
         published_at=datetime.now(UTC),
         category=Category.GITHUB_TRENDING,
     )
-    ev_artifact = EvidenceAssessment(confidence=EvidenceConfidence.SUPPORTED, has_reproducible_artifact=True)
-    act, rat = service.determine_recommended_action(tool_entry, ev_artifact, StackRelevance())
+    ev_artifact = EvidenceAssessment(
+        confidence=EvidenceConfidence.SUPPORTED, has_reproducible_artifact=True
+    )
+    act, rat = service.determine_recommended_action(
+        tool_entry, ev_artifact, StackRelevance()
+    )
     assert act == DecisionAction.TEST_IN_SANDBOX
 
     # 4. MONITOR_CLAIMS: Preliminary or unverified claims
     ev_prelim = EvidenceAssessment(confidence=EvidenceConfidence.PRELIMINARY)
-    act, rat = service.determine_recommended_action(tool_entry, ev_prelim, StackRelevance())
+    act, rat = service.determine_recommended_action(
+        tool_entry, ev_prelim, StackRelevance()
+    )
     assert act == DecisionAction.MONITOR_CLAIMS
 
     # 5. IGNORE_HYPE: Unrelated, low-priority marketing
@@ -471,7 +503,9 @@ def test_action_determination_all_five_actions():
         published_at=datetime.now(UTC),
         category=Category.AI_TECH,
     )
-    act, rat = service.determine_recommended_action(hype_entry, ev_prelim, StackRelevance(impact_level=StackImpactLevel.NO_MATCH))
+    act, rat = service.determine_recommended_action(
+        hype_entry, ev_prelim, StackRelevance(impact_level=StackImpactLevel.NO_MATCH)
+    )
     assert act == DecisionAction.IGNORE_HYPE
 
 
@@ -488,7 +522,9 @@ def test_safety_guard_no_upgrade_without_component():
         published_at=datetime.now(UTC),
         category=Category.VULNERABILITIES,
     )
-    relevance_empty = StackRelevance(impact_level=StackImpactLevel.DIRECT, affected_components=[])
+    relevance_empty = StackRelevance(
+        impact_level=StackImpactLevel.DIRECT, affected_components=[]
+    )
     ev = EvidenceAssessment(confidence=EvidenceConfidence.SUPPORTED)
 
     act, _ = service.determine_recommended_action(vague_patch, ev, relevance_empty)
@@ -516,7 +552,10 @@ async def test_telegram_chatops_formats_five_questions(sample_entry: Entry):
     mock_uow.analysis.add = AsyncMock()
     mock_uow.commit = AsyncMock()
 
-    with patch("ai_security_monitor.application.services.telegram_chatops_service.SqlAlchemyUnitOfWork", return_value=mock_uow):
+    with patch(
+        "ai_security_monitor.application.services.telegram_chatops_service.SqlAlchemyUnitOfWork",
+        return_value=mock_uow,
+    ):
         with patch.object(
             decision_brief_service,
             "get_or_generate_brief",
@@ -532,7 +571,9 @@ async def test_telegram_chatops_formats_five_questions(sample_entry: Entry):
                     impact_level=StackImpactLevel.DIRECT,
                     matched_technologies=["vLLM", "DeepSeek"],
                 ),
-                evidence_assessment=EvidenceAssessment(confidence=EvidenceConfidence.VERIFIED),
+                evidence_assessment=EvidenceAssessment(
+                    confidence=EvidenceConfidence.VERIFIED
+                ),
                 recommended_action=DecisionAction.TEST_IN_SANDBOX,
                 action_rationale="Benchmark in local sandbox container.",
             ),
@@ -567,10 +608,29 @@ async def test_decision_brief_caching_reuse(sample_entry: Entry):
     existing_brief_dict = {
         "event_summary": "Existing cached summary.",
         "significance": "Existing significance.",
-        "novelty_assessment": {"novelty_type": "GENUINE_NOVELTY", "summary": "Cached novelty", "comparison_notes": "", "uncertainties": []},
+        "novelty_assessment": {
+            "novelty_type": "GENUINE_NOVELTY",
+            "summary": "Cached novelty",
+            "comparison_notes": "",
+            "uncertainties": [],
+        },
         "historical_comparisons": [],
-        "stack_relevance": {"impact_level": "NO_MATCH", "matching_watchlist_rules": [], "matched_technologies": [], "suggested_priority": "P2", "reasons": []},
-        "evidence_assessment": {"confidence": "SUPPORTED", "primary_source_type": "arxiv", "corroboration_count": 1, "has_reproducible_artifact": True, "claim_verification_score": 1.0, "notes": "", "conflicting_signals": []},
+        "stack_relevance": {
+            "impact_level": "NO_MATCH",
+            "matching_watchlist_rules": [],
+            "matched_technologies": [],
+            "suggested_priority": "P2",
+            "reasons": [],
+        },
+        "evidence_assessment": {
+            "confidence": "SUPPORTED",
+            "primary_source_type": "arxiv",
+            "corroboration_count": 1,
+            "has_reproducible_artifact": True,
+            "claim_verification_score": 1.0,
+            "notes": "",
+            "conflicting_signals": [],
+        },
         "recommended_action": "READ_PAPER",
         "action_rationale": "Cached rationale.",
         "source_references": [],

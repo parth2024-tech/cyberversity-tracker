@@ -284,10 +284,11 @@ class TestForeignTextDetectionAndMultiTier:
         mock_trans_mod.translate = fake_argos
         mock_root = MagicMock()
         mock_root.translate = mock_trans_mod
-        with patch.dict("sys.modules", {"argostranslate": mock_root, "argostranslate.translate": mock_trans_mod}):
+        with patch.dict(
+            "sys.modules",
+            {"argostranslate": mock_root, "argostranslate.translate": mock_trans_mod},
+        ):
             res = svc._translate_via_argos("这是大模型的重要突破", "zh", "en")
             assert res is not None
             assert "Large Language Model" in res
             assert "⟦G_" not in res
-
-

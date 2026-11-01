@@ -196,7 +196,9 @@ async def get_china_corridor_overview(request: Request):
                 r_url = str(row[2] or "")
                 r_summary = str(row[3] or "")
                 raw_meta = row[4]
-                meta: dict[str, Any] = dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                meta: dict[str, Any] = (
+                    dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                )
                 r_pub = row[5]
 
                 repo_title = r_title
@@ -223,7 +225,9 @@ async def get_china_corridor_overview(request: Request):
                 arch = repo_intel.get("archetype", "dev_tool")
                 archetype_counts[arch] = archetype_counts.get(arch, 0) + 1
 
-                pub_iso = r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
+                pub_iso = (
+                    r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
+                )
                 trending_repos.append(
                     {
                         "id": r_id,
@@ -310,7 +314,9 @@ async def get_china_trending_repos(
                 r_summary = str(row[3] or "")
                 r_tags = row[4] or []
                 raw_meta = row[5]
-                meta: dict[str, Any] = dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                meta: dict[str, Any] = (
+                    dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                )
                 r_pub = row[6]
 
                 repo_title = r_title
@@ -347,10 +353,15 @@ async def get_china_trending_repos(
                 if lab:
                     lab_lower = lab.lower()
                     repo_lab = (repo_intel.get("lab_name") or "").lower()
-                    if lab_lower not in repo_lab and lab_lower not in repo_title.lower():
+                    if (
+                        lab_lower not in repo_lab
+                        and lab_lower not in repo_title.lower()
+                    ):
                         continue
 
-                pub_iso = r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
+                pub_iso = (
+                    r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
+                )
                 repos.append(
                     {
                         "id": r_id,

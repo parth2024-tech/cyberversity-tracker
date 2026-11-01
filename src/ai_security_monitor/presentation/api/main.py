@@ -261,9 +261,7 @@ def create_app() -> FastAPI:
         app.include_router(
             telegram_router, prefix=api_prefix, tags=["Telegram ChatOps"]
         )
-        app.include_router(
-            entities_router, prefix=api_prefix, tags=["Knowledge Graph"]
-        )
+        app.include_router(entities_router, prefix=api_prefix, tags=["Knowledge Graph"])
 
     # Top-level syndication feed route for standard RSS reader auto-discovery
     app.include_router(feed_router, tags=["Syndication Feeds"])

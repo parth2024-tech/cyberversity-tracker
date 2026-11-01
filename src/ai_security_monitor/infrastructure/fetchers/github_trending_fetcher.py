@@ -401,7 +401,10 @@ class GitHubTrendingFetcher(BaseFetcher):
         seen_urls: set[str] = set()
 
         scrape_params: dict[str, str] = {}
-        if self.spoken_language_code and self.spoken_language_code not in ("any", "all"):
+        if self.spoken_language_code and self.spoken_language_code not in (
+            "any",
+            "all",
+        ):
             scrape_params["spoken_language_code"] = self.spoken_language_code
         elif self.spoken_language_code is None:
             scrape_params["spoken_language_code"] = "en"

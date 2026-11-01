@@ -462,21 +462,29 @@ async def query_serialized_entries(
             translation_service,
         )
 
-        if translation_service.has_foreign_text(cleaned_title) or translation_service.has_foreign_text(cleaned_summary):
+        if translation_service.has_foreign_text(
+            cleaned_title
+        ) or translation_service.has_foreign_text(cleaned_summary):
             if not meta_dict.get("is_translated"):
                 meta_dict = dict(meta_dict)
                 if translation_service.has_foreign_text(cleaned_title):
-                    trans_title, lang_code, ok = translation_service.translate_text(cleaned_title)
+                    trans_title, lang_code, ok = translation_service.translate_text(
+                        cleaned_title
+                    )
                     if ok:
                         meta_dict["original_title"] = cleaned_title
                         meta_dict["is_translated"] = True
                         meta_dict["detected_language"] = lang_code
-                        friendly_name, flag = LANGUAGE_NAMES.get(lang_code, (lang_code.upper(), "🌐"))
+                        friendly_name, flag = LANGUAGE_NAMES.get(
+                            lang_code, (lang_code.upper(), "🌐")
+                        )
                         meta_dict["detected_language_name"] = friendly_name
                         meta_dict["detected_language_flag"] = flag
                         cleaned_title = trans_title
                 if translation_service.has_foreign_text(cleaned_summary):
-                    trans_summary, lang_code, ok = translation_service.translate_text(cleaned_summary)
+                    trans_summary, lang_code, ok = translation_service.translate_text(
+                        cleaned_summary
+                    )
                     if ok:
                         meta_dict["original_summary"] = cleaned_summary
                         meta_dict["is_translated"] = True
@@ -537,7 +545,9 @@ async def query_serialized_entries(
                 "metadata": meta_dict,
                 "heat_score": heat_val,
                 "heat_badge": heat_bdg,
-                "story_id": str(e.story_id) if getattr(e, "story_id", None) else meta_dict.get("story_id"),
+                "story_id": str(e.story_id)
+                if getattr(e, "story_id", None)
+                else meta_dict.get("story_id"),
                 "is_important": is_imp,
                 "importance_reason": meta_dict.get("importance_reason"),
                 "user_notes": meta_dict.get("user_notes", ""),
@@ -574,7 +584,9 @@ async def query_serialized_entries(
         )
 
     if sort_by == "heat":
-        serialized_entries.sort(key=lambda item: float(item.get("heat_score", 0.0)), reverse=True)
+        serialized_entries.sort(
+            key=lambda item: float(item.get("heat_score", 0.0)), reverse=True
+        )
 
     # Enforce source diversity and impartiality across entries
     serialized_entries = interleave_impartial(serialized_entries, max_consecutive=2)

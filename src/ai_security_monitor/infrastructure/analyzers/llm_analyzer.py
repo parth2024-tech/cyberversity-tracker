@@ -404,8 +404,12 @@ class LLMAnalyzer(BaseAnalyzer):
         try:
             # 1. Tier 2 Cloud Frontier (for high-signal items or when provider is groq)
             if (is_high_signal or self.provider == "groq") and hasattr(self, "client"):
-                raw_res = await self._call_groq(combined_prompt, user_prompt=user_prompt)
-                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                raw_res = await self._call_groq(
+                    combined_prompt, user_prompt=user_prompt
+                )
+                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(
+                    raw_res
+                )
                 active_model = AnalysisModel.GROQ
                 execution_tier = (
                     "cloud_cached" if cache_read_tokens > 0 else "cloud_uncached"
@@ -430,7 +434,9 @@ class LLMAnalyzer(BaseAnalyzer):
                         raw_res = await self._call_groq(
                             combined_prompt, user_prompt=user_prompt
                         )
-                        result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                        result, cache_read_tokens, cache_creation_tokens = (
+                            _extract_groq_res(raw_res)
+                        )
                         active_model = AnalysisModel.GROQ
                         execution_tier = (
                             "cloud_cached"
@@ -442,8 +448,12 @@ class LLMAnalyzer(BaseAnalyzer):
 
             # 3. Circuit breaker OPEN or SLM disabled: route directly to cloud fast model if available
             elif hasattr(self, "client"):
-                raw_res = await self._call_groq(combined_prompt, user_prompt=user_prompt)
-                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                raw_res = await self._call_groq(
+                    combined_prompt, user_prompt=user_prompt
+                )
+                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(
+                    raw_res
+                )
                 active_model = AnalysisModel.GROQ
                 execution_tier = (
                     "cloud_cached" if cache_read_tokens > 0 else "cloud_uncached"

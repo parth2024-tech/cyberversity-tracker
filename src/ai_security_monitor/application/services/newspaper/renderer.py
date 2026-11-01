@@ -50,6 +50,7 @@ class NumberedCanvas(canvas.Canvas):
             self.draw_page_decorations(num_pages)
             canvas.Canvas.showPage(self)
         canvas.Canvas.save(self)
+        self._saved_page_states.clear()
 
     def draw_page_decorations(self, page_count):
         self.saveState()
@@ -765,9 +766,23 @@ class NewspaperRenderer:
             if item.analysis and getattr(item.analysis, "decision_brief", None):
                 db = item.analysis.decision_brief
                 if isinstance(db, dict):
-                    act = html.escape(str(db.get("recommended_action", "MONITOR_CLAIMS")))
-                    conf = html.escape(str(db.get("evidence_assessment", {}).get("confidence", "PRELIMINARY")))
-                    stack_impact = html.escape(str(db.get("stack_relevance", {}).get("impact_level", "NO_MATCH")))
+                    act = html.escape(
+                        str(db.get("recommended_action", "MONITOR_CLAIMS"))
+                    )
+                    conf = html.escape(
+                        str(
+                            db.get("evidence_assessment", {}).get(
+                                "confidence", "PRELIMINARY"
+                            )
+                        )
+                    )
+                    stack_impact = html.escape(
+                        str(
+                            db.get("stack_relevance", {}).get(
+                                "impact_level", "NO_MATCH"
+                            )
+                        )
+                    )
                     act_rat = html.escape(str(db.get("action_rationale", ""))[:120])
                     db_block = f"""
           <div class="mt-2 pt-2 border-t border-[#e2dccd] text-[10px]">
@@ -2089,7 +2104,13 @@ class NewspaperRenderer:
         )
 
         # Build PDF with NumberedCanvas for exact page count
-        doc.build(story, canvasmaker=NumberedCanvas)
+        try:
+            doc.build(story, canvasmaker=NumberedCanvas)
+        finally:
+            story.clear()
+            import gc
+
+            gc.collect()
 
     def render_markdown(self, *args, **kwargs) -> str:
         return self._render_markdown(*args, **kwargs)

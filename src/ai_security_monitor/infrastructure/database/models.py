@@ -357,12 +357,9 @@ class EntryEntityModel(Base):
         index=True,
     )
 
-    entry: Mapped[EntryModel] = relationship(
-        "EntryModel", back_populates="entities"
-    )
+    entry: Mapped[EntryModel] = relationship("EntryModel", back_populates="entities")
 
     __table_args__ = (
         Index("ix_entry_entities_type_name", "entity_type", "name"),
         Index("ix_entry_entities_created_type", "created_at", "entity_type"),
     )
-
