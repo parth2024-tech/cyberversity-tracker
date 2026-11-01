@@ -7,9 +7,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.domain.exceptions import EntityNotFoundError
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
 from ai_security_monitor.infrastructure.cache import response_cache
@@ -179,7 +180,7 @@ async def get_vault_profile():
 
 
 @vault_router.post("/profile/refresh")
-async def refresh_vault_profile():
+async def refresh_vault_profile(_admin: bool = Depends(require_admin_auth)):
     """Manually trigger a refresh of the Rocchio personalization vector centroid."""
     from ai_security_monitor.application.services.vault_feedback_service import (
         vault_feedback_service,

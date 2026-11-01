@@ -329,9 +329,28 @@ class ReceiptModel(Base):
     cache_creation_input_tokens: Mapped[int] = mapped_column(
         Integer, default=0, nullable=False
     )
+    estimated_cost_usd: Mapped[float] = mapped_column(
+        Float, default=0.0, nullable=False
+    )
+    total_tokens: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), index=True
     )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+
+
+class LLMBudgetModel(Base):
+    """System LLM daily budget configuration stored in database."""
+
+    __tablename__ = "llm_budgets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    daily_budget_usd: Mapped[float] = mapped_column(Float, default=5.0, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )

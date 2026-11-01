@@ -227,6 +227,8 @@ class DatabaseManager:
                 ("execution_tier", "VARCHAR(30)"),
                 ("cache_read_input_tokens", "INTEGER DEFAULT 0"),
                 ("cache_creation_input_tokens", "INTEGER DEFAULT 0"),
+                ("estimated_cost_usd", "REAL DEFAULT 0.0"),
+                ("total_tokens", "INTEGER DEFAULT 0"),
             ]:
                 try:
                     async with self.engine.begin() as conn:

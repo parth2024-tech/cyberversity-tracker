@@ -39,6 +39,7 @@ class LLMAnalyzer(BaseAnalyzer):
         config: dict | None = None,
         receipt_service: Any | None = None,
         enable_receipts: bool = True,
+        budget_service: Any | None = None,
     ):
         super().__init__(config)
         cfg = config or {}
@@ -57,6 +58,18 @@ class LLMAnalyzer(BaseAnalyzer):
         self.enable_receipts = enable_receipts
         self._last_cache_read_tokens: int = 0
         self._last_cache_creation_tokens: int = 0
+
+        if budget_service is not None:
+            self.budget_service = budget_service
+        else:
+            try:
+                from ai_security_monitor.application.services.llm_budget_service import (
+                    llm_budget_service,
+                )
+
+                self.budget_service = llm_budget_service
+            except Exception:
+                self.budget_service = None
 
         if receipt_service is not None:
             self.receipt_service = receipt_service
@@ -342,6 +355,23 @@ class LLMAnalyzer(BaseAnalyzer):
 
     async def analyze(self, entry: Entry) -> AnalysisResult:
         """Analyze entry using Tiered SLM routing with prompt caching and circuit breaker."""
+        # Check database-backed daily LLM budget before any execution
+        if getattr(self, "budget_service", None):
+            try:
+                is_available = await self.budget_service.is_budget_available()
+                if not is_available:
+                    logger.warning(
+                        "🛑 Daily LLM budget exceeded; gracefully degrading to heuristic analyzer for %s",
+                        entry.title[:45],
+                    )
+                    from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
+                        HeuristicAnalyzer,
+                    )
+
+                    return await HeuristicAnalyzer().analyze(entry)
+            except Exception as b_err:
+                logger.debug(f"Budget check non-blocking error: {b_err}")
+
         model_name = self._get_active_model_name()
         logical_key: str | None = None
 

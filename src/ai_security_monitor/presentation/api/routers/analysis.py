@@ -7,9 +7,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.domain.entities import Category, Entry
 from ai_security_monitor.infrastructure.analyzers.base import analyzer_registry
 
@@ -176,6 +177,7 @@ async def run_batch_analysis(
         le=200,
         description="Maximum number of unanalyzed database entries to analyze",
     ),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Analyze unanalyzed entries in the database without running a network sweep."""
     analyzed_count = await _execute_batch_analysis(limit=limit)

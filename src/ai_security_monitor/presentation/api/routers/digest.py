@@ -8,10 +8,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import yaml
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.domain.entities import Digest, Entry
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -49,7 +50,10 @@ def _get_telegram_credentials(req: TelegramDigestRequest) -> tuple[str, str]:
 @digest_router.post("")
 @digest_router.post("/")
 @digest_router.post("/telegram")
-async def dispatch_telegram_digest(req: TelegramDigestRequest):
+async def dispatch_telegram_digest(
+    req: TelegramDigestRequest,
+    _admin: bool = Depends(require_admin_auth),
+):
     """Dispatch compiled intelligence digest to Telegram."""
     bot_token, chat_id = _get_telegram_credentials(req)
 
