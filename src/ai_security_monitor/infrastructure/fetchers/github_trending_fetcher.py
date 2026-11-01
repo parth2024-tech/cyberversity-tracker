@@ -710,6 +710,33 @@ class GitHubTrendingFetcher(BaseFetcher):
         if "provenance_type" not in metadata:
             metadata["provenance_type"] = "trending_repo"
 
+        tags = [t for t in raw.get("tags", []) if t]
+        if (
+            metadata.get("region") == "china"
+            or self.region == "china"
+            or self.spoken_language_code == "zh"
+        ):
+            try:
+                from ai_security_monitor.application.services.china_repo_intelligence import (
+                    china_repo_intelligence,
+                )
+
+                profile = china_repo_intelligence.extract_profile(
+                    title=title_str,
+                    description=content,
+                    url=url_str,
+                    tags=tags,
+                    stars=metadata.get("stars", 0),
+                )
+                metadata["repo_intel"] = profile.to_dict()
+                metadata["archetype"] = profile.archetype
+                if profile.lab_name:
+                    metadata["lab_name"] = profile.lab_name
+                if profile.archetype not in tags:
+                    tags.append(profile.archetype)
+            except Exception as e:
+                logger.debug(f"Repo intelligence profiling skipped: {e}")
+
         return Entry(
             source_id=self.source.id,
             title=title_str,
@@ -718,7 +745,7 @@ class GitHubTrendingFetcher(BaseFetcher):
             summary=content[:500] if content else title_str,
             published_at=pub_at,
             category=self.source.category,
-            tags=[t for t in raw.get("tags", []) if t],
+            tags=list(dict.fromkeys(tags)),
             metadata=metadata,
         )
 

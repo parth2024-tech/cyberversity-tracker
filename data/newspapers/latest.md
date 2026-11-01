@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
 **Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2462**
-*Sunday, November 01, 2026 • 15:57 UTC • Coverage Window: 5h • 225 verified AI stories analyzed*
+*Sunday, November 01, 2026 • 16:14 UTC • Coverage Window: 5h • 227 verified AI stories analyzed*
 
 ---
 
@@ -116,9 +116,9 @@ Easy, fast, and cheap LLM serving for everyone | Documentation | Blog | Paper | 
 | **ISTA-DASLab/DeepSeek-V4.1-Flash-1017-GSQ-RCO-GGUF:** | `Hugging Face Trend` | `763B / 128K` | `68/100` | Non-uniform GGUF quantizations** of a 763B-parameter, 384-expert MoE, produced with **GSQ** and **RCO**. > **Update, October 27, 2026.** The files. |
 | **deepseek-ai/DeepSeek-V4.1-Flash-1017: Trending Ima** | `Hugging Face Trend` | `MoE / SOTA / 128K` | `68/100` | DeepSeek-V4.1-Flash-1017** is a minor update to **DeepSeek-V4.1-Flash**, delivering substantial improvements across reasoning, coding, agentic tasks, and visual benchmarks. |
 | **ALERT🚨: GB300 NVL72 @sgl_project can get close to ** | `X / Twitter: AI De` | `MoE / SOTA / 128K` | `68/100` | Source: Twitter/X | Author: @sgl_project ALERT🚨: GB300 NVL72 @sgl_project can get close to 1000 tok/s/user on DeepSeek Flash v4.1 by. |
-| **OpenAI MTS/math prof at UC-Berkeley, Tony Feng, de** | `Reddit r/Singulari` | `MoE / SOTA / 128K` | `68/100` | Community: r/Singularity | Score: 100 | Comments: 20 | Author: u/reddit_community OpenAI MTS/math prof at UC-Berkeley, Tony Feng, deleted tweet. |
-| **Anthropic to start blocking game recreations ?** | `Reddit r/Singulari` | `MoE / SOTA / 128K` | `68/100` | Anthropic to start blocking game recreations ? reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development.. |
+| **OpenAI is merging Chat and Work in December. Only ** | `Reddit r/Singulari` | `MoE / SOTA / 128K` | `68/100` | Community: r/Singularity | Score: 100 | Comments: 20 | Author: u/reddit_community OpenAI is merging Chat and Work in December. |
 | **Clef is available on Ollama's cloud** | `ollama.com` | `27B / 128K` | `68/100` | Clef, a 27B multimodal decision model from Cloudflare, is now available on Ollama . Users can run it locally or. |
+| **Latest open artifacts (#25): DeepSeek V4.1 Flash 1** | `interconnects.ai` | `MoE / SOTA / 128K` | `68/100` | The geopolitics of open-weight AI are accelerating again this fall, as we would expect with the risks of all AI. |
 
 ### Frontier Model Dispatches
 ### 🤖 MISTRAL 🔥: Le Chonk (Mistral Large 4) is now available on HuggingFace! > "The new model also features substantial gains in reasoning efficiency that give developers greater performance while lowering inference costs." > "Mistral Large 4 ranks as the best
@@ -146,10 +146,10 @@ DeepSeek-V4.1-Flash-1017** is a minor update to **DeepSeek-V4.1-Flash**, deliver
 
 Source: Twitter/X | Author: @sgl_project ALERT🚨: GB300 NVL72 @sgl_project can get close to 1000 tok/s/user on DeepSeek Flash v4.1 by aggressively fusing kernels together!! TileRT started this trend in the ecosystem of megakernel engines on OSS frontier models! Glad to see SGLang widely ad ALERT🚨: GB300 NVL72 @sgl_project can get close to 1000 tok/s/user on DeepSeek Flash v4.1 by aggressively fusing kernels together!! TileRT started this trend in the ecosystem of megakernel engines on OSS frontier models!
 
-### 🤖 OpenAI MTS/math prof at UC-Berkeley, Tony Feng, deleted tweet about how the results seen from upcoming model don’t represent the limits of its capabilities and world needs to prepare
+### 🤖 OpenAI is merging Chat and Work in December. Only Instant will be unlimited, and everything else will count toward your Codex limits
 - **Velocity**: `95/100` | **Architecture**: `MoE / SOTA • Native / FP16` | **Source**: `Reddit r/Singularity`
 
-Community: r/Singularity | Score: 100 | Comments: 20 | Author: u/reddit_community OpenAI MTS/math prof at UC-Berkeley, Tony Feng, deleted tweet about how the results seen from upcoming model don’t represent the limits of its capabilities and world needs to prepare Reddit.
+OpenAI is merging Chat and Work in December. Only Instant will be unlimited, and everything else will count toward your Codex limits reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
 
 ---
@@ -191,11 +191,6 @@ Large language models (LLMs) generally lack deep causal reasoning capabilities i
 
 ## 🛠️ [PAGE 6] DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE
 
-### 🛠️ Heretic 2.0 makes stripping AI safety guardrails even easier to automate - Startup Fortune
-- **Adoption Index**: `75/100` | **Engine**: `PyTorch / ONNX` | **Source**: `Reddit r/LocalLLaMA`
-
-Heretic 2.0 makes stripping AI safety guardrails even easier to automate - Startup Fortune reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
-
 ### 🛠️ SGLang Fast Serving Engine v0.5.22: Highlights 950 PRs from 245 contributors. New models Model Type Cookbook Clef / Clef Flash
 - **Adoption Index**: `98/100` | **Engine**: `SGLang` | **Source**: `github.com`
 
@@ -220,6 +215,11 @@ Source: Twitter/X | Author: X / Twitter Same kernels, different paths. vLLM and 
 - **Adoption Index**: `95/100` | **Engine**: `Ollama` | **Source**: `ollama.com`
 
 Clef, a 27B multimodal decision model from Cloudflare, is now available on Ollama . Users can run it locally or on Ollama’s cloud. Clef turns a state and a schema of typed questions into decisions. It supports text and image input and is compatible with the Jev and System One APIs. Clef is fine-tuned from Qwen3.8-27B and released under the Apache 2.0 license.
+
+### 🛠️ Donating Agent Skills to the Agentic AI Foundation
+- **Adoption Index**: `85/100` | **Engine**: `PyTorch / ONNX` | **Source**: `simonwillison.net`
+
+Donating Agent Skills to the Agentic AI Foundation News today from Anthropic: We're committed to keeping Agent Skills open, community-driven, and vendor-neutral. Today, we are donating the standard to the Agentic AI Foundation (AAIF) under the Linux Foundation, which we co-founded with Block and OpenAI last year, and to which we donated the Model Context Protocol (MCP).
 
 
 ---
@@ -311,8 +311,8 @@ langbot-app/LangBot: Production-grade platform for building agentic IM bots - Pr
 | **ThinkWorld: World Imagination Reinforces Chain-of-** | `arxiv.org` | `PyTorch / ONNX` | `90/100` | Vision-Language-Action (VLA) models have made substantial progress in robotic manipulation, but their generalization remains constrained by the diversity and coverage. |
 | **Evaluating DeepSeek V4.1 Flash-1017 for loss of co** | `huggingface.co` | `PyTorch / ONNX` | `90/100` | As frontier language models grow increasingly capable and autonomous, independent third-party evaluations are critical for characterizing their systemic safety risks.. |
 | **AgentProofBench: Benchmarking Reusable Verifiers f** | `arxiv.org` | `PyTorch / ONNX` | `90/100` | Reusable Web-agent verification requires a rule to follow changing requirements and support subsequent execution. We introduce AgentProofBench, which connects paired. |
+| **DeepSeek Harness team published the underlying arc** | `Reddit r/Singulari` | `PyTorch / ONNX` | `95/100` | Community: r/Singularity | Score: 100 | Comments: 20 | Author: u/reddit_community DeepSeek Harness team published the underlying architecture for their. |
 | **rohitg00/agentmemory: #1 Persistent memory for AI ** | `github.com` | `PyTorch / ONNX` | `91/100` | Persistent memory across coding sessions and agents. Persistent memory for Claude Code, GitHub Copilot CLI, Cursor, Gemini CLI, Codex CLI. |
-| **Donating Agent Skills to the Agentic AI Foundation** | `simonwillison.net` | `PyTorch / ONNX` | `85/100` | Donating Agent Skills to the Agentic AI Foundation News today from Anthropic: We're committed to keeping Agent Skills open, community-driven. |
 
 ### 🦾 From Document Layout to Causal Topology: An End-to-End Architecture for Temporal Causal Reasoning
 - **Source**: `arxiv.org`
@@ -334,15 +334,15 @@ As frontier language models grow increasingly capable and autonomous, independen
 
 Reusable Web-agent verification requires a rule to follow changing requirements and support subsequent execution. We introduce AgentProofBench, which connects paired tests of a frozen acceptance rule to execution from identical saved openings. The resource spans 97 tasks, 79 families, and four Web services. Experiments with DeepSeek Flash/Pro establish two linked measurements.
 
+### 🦾 DeepSeek Harness team published the underlying architecture for their Super-agent, an always-on autonomous agent, as an open-source prototype on GitHub.
+- **Source**: `Reddit r/Singularity`
+
+Community: r/Singularity | Score: 100 | Comments: 20 | Author: u/reddit_community DeepSeek Harness team published the underlying architecture for their Super-agent, an always-on autonomous agent, as an open-source prototype on GitHub.
+
 ### 🦾 rohitg00/agentmemory: #1 Persistent memory for AI coding agents based on real-world benchmarks...
 - **Source**: `github.com`
 
 Persistent memory across coding sessions and agents. Persistent memory for Claude Code, GitHub Copilot CLI, Cursor, Gemini CLI, Codex CLI, Hermes, OpenClaw, pi, Oh My Pi, OpenCode, DeepSeek Harness, and any MCP client.
-
-### 🦾 Donating Agent Skills to the Agentic AI Foundation
-- **Source**: `simonwillison.net`
-
-Donating Agent Skills to the Agentic AI Foundation News today from Anthropic: We're committed to keeping Agent Skills open, community-driven, and vendor-neutral. Today, we are donating the standard to the Agentic AI Foundation (AAIF) under the Linux Foundation, which we co-founded with Block and OpenAI last year, and to which we donated the Model Context Protocol (MCP).
 
 
 ---
@@ -353,4 +353,4 @@ Donating Agent Skills to the Agentic AI Foundation News today from Anthropic: We
 
 
 ---
-*Compiled autonomously • Sunday, November 01, 2026 • 15:57 UTC • Edition #2462 • 225 items processed from worldwide AI feeds*
+*Compiled autonomously • Sunday, November 01, 2026 • 16:14 UTC • Edition #2462 • 227 items processed from worldwide AI feeds*

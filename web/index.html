@@ -1258,6 +1258,32 @@
               📖 Researcher Glossary (专业词典)
             </button>
           </div>
+
+          <!-- China Open-Source Repo Archetype Pills -->
+          <div id="china-archetype-bar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs font-mono pt-2 border-t border-red-500/15">
+            <span class="text-slate-500 text-[10px] uppercase font-bold flex-shrink-0">Repo Archetype:</span>
+            <button onclick="setChinaArchetypeFilter('all')" id="china-arch-all" class="china-arch-btn px-2 py-0.5 rounded bg-red-500/20 text-red-200 border border-red-500/35 text-[10px] font-medium transition whitespace-nowrap">
+              All Archetypes (全部)
+            </button>
+            <button onclick="setChinaArchetypeFilter('foundation_model')" id="china-arch-foundation" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              🏛️ Foundations (基座模型)
+            </button>
+            <button onclick="setChinaArchetypeFilter('inference_runtime')" id="china-arch-inference" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              ⚡ Inference (推理加速)
+            </button>
+            <button onclick="setChinaArchetypeFilter('agentic_system')" id="china-arch-agents" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              🤖 Agents (智能体)
+            </button>
+            <button onclick="setChinaArchetypeFilter('rag_knowledge_base')" id="china-arch-rag" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              📚 RAG & Data (知识库)
+            </button>
+            <button onclick="setChinaArchetypeFilter('multimodal_voice')" id="china-arch-multimodal" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              🎙️ Multimodal (多模态)
+            </button>
+            <button onclick="setChinaArchetypeFilter('eval_and_benchmark')" id="china-arch-eval" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              📊 Benchmarks (评测基准)
+            </button>
+          </div>
         </div>
 
         <!-- Micro Feed Loading Indicator Bar (smooth in-place transition) -->
@@ -2008,6 +2034,9 @@
           if (typeof chinaSubCategory !== 'undefined' && chinaSubCategory && chinaSubCategory !== 'all') {
             url += `&category=${chinaSubCategory}`;
           }
+          if (typeof chinaArchetype !== 'undefined' && chinaArchetype && chinaArchetype !== 'all') {
+            url += `&archetype=${chinaArchetype}`;
+          }
         } else if (currentCategory === 'pinned') {
           url = `/api/entries?limit=150&offset=0&sort_by=${sortMode}`;
         } else if (currentCategory === 'only_new') {
@@ -2318,6 +2347,44 @@
 
       card.setAttribute('data-entry-id', entry.id);
 
+      const repoIntel = meta.repo_intel || null;
+      let repoIntelBadges = '';
+      let compactRepoPill = '';
+      if (repoIntel) {
+        const chips = [];
+        if (repoIntel.lab_name) {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 flex items-center gap-1 font-semibold" title="Laboratory / Organization"><i data-lucide="building-2" class="w-2.5 h-2.5"></i>${escapeHtml(repoIntel.lab_name)}</span>`);
+        }
+        if (repoIntel.archetype_label) {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 flex items-center gap-1" title="Archetype"><i data-lucide="layers" class="w-2.5 h-2.5"></i>${escapeHtml(repoIntel.archetype_label)}</span>`);
+        }
+        if (repoIntel.parameter_scale) {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/25 font-bold" title="Parameter Scale">⚡ ${escapeHtml(repoIntel.parameter_scale)}</span>`);
+        }
+        if (repoIntel.context_window) {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/25" title="Context Length">📜 ${escapeHtml(repoIntel.context_window)}</span>`);
+        }
+        if (repoIntel.vram_hardware) {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/25" title="Hardware / VRAM Requirement">💾 ${escapeHtml(repoIntel.vram_hardware)}</span>`);
+        }
+        if (repoIntel.license_type) {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-slate-500/15 text-slate-300 border border-slate-500/30" title="Open Source License">⚖️ ${escapeHtml(repoIntel.license_type)}</span>`);
+        }
+        if (repoIntel.serving_frameworks && repoIntel.serving_frameworks.length > 0) {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/25" title="Serving Frameworks">🚀 ${escapeHtml(repoIntel.serving_frameworks.slice(0, 2).join(', '))}</span>`);
+        }
+        if (typeof repoIntel.researcher_quality_score === 'number') {
+          chips.push(`<span class="px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-300 border border-yellow-500/25 font-semibold" title="Epistemic Quality Score">★ ${Math.round(repoIntel.researcher_quality_score * 100)}%</span>`);
+        }
+        if (chips.length > 0) {
+          repoIntelBadges = `<div class="mb-2.5 flex items-center gap-1.5 flex-wrap text-[9px] font-mono">${chips.join('')}</div>`;
+        }
+        if (repoIntel.parameter_scale || repoIntel.lab_name) {
+          const mainInfo = repoIntel.parameter_scale ? `${repoIntel.parameter_scale}` : (repoIntel.lab_name || '');
+          compactRepoPill = `<span class="text-[9px] font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded">${escapeHtml(mainInfo)}</span>`;
+        }
+      }
+
       // Render mode check: Compact List vs Grid
       if (currentViewMode === 'list') {
         card.className = `feed-card feed-card-compact ${accentClass} ${selectedEntryIds.has(eid) ? 'ring-1 ring-rose-500/60 bg-rose-500/[0.03]' : ''}`;
@@ -2332,6 +2399,7 @@
               ${vaultBadge}
               ${pinBadge}
               ${newBadge}
+              ${compactRepoPill}
               <span class="text-slate-500 text-[10px] font-mono">${flag} ${safeSource}</span>
               <span class="text-slate-600 text-[10px] font-mono ml-auto sm:ml-0">${safePub}</span>
             </div>
@@ -2404,6 +2472,8 @@
                 </button>
               </div>
             ` : '')}
+
+            ${repoIntelBadges}
 
             <!-- Summary -->
             <p id="card-summary-${eid}" class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-3">${safeSummary}</p>
@@ -2544,6 +2614,86 @@
             ` : ''}
           </div>
 
+          <!-- China AI Open-Source Technical Profiler Dossier -->
+          ${(entry.metadata && entry.metadata.repo_intel) ? (() => {
+            const ri = entry.metadata.repo_intel;
+            return `
+              <div class="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-red-950/30 via-slate-900/90 to-amber-950/20 border border-red-500/25 space-y-3 font-mono text-xs shadow-lg">
+                <div class="flex items-center justify-between border-b border-red-500/20 pb-2.5 flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">🇨🇳</span>
+                    <h4 class="text-xs uppercase text-red-200 font-bold tracking-wide">
+                      China Open-Source Architecture Profile
+                    </h4>
+                  </div>
+                  <div class="flex items-center gap-2 text-[10px]">
+                    <span class="px-2 py-0.5 rounded bg-red-500/15 border border-red-500/30 text-red-300 font-bold">${escapeHtml(ri.archetype_label || ri.archetype)}</span>
+                    ${typeof ri.researcher_quality_score === 'number' ? `<span class="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">★ Score: ${Math.round(ri.researcher_quality_score * 100)}%</span>` : ''}
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/[0.05]">
+                    <span class="text-slate-500 text-[10px] uppercase block mb-0.5">Laboratory Authority</span>
+                    <span class="text-emerald-300 font-semibold flex items-center gap-1">
+                      <i data-lucide="building-2" class="w-3 h-3 text-emerald-400"></i>
+                      ${escapeHtml(ri.lab_name || 'Independent / Community Lab')}
+                    </span>
+                  </div>
+
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/[0.05]">
+                    <span class="text-slate-500 text-[10px] uppercase block mb-0.5">Parameter Scale</span>
+                    <span class="text-amber-300 font-bold">
+                      ${escapeHtml(ri.parameter_scale || 'Modular / Framework')}
+                    </span>
+                  </div>
+
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/[0.05]">
+                    <span class="text-slate-500 text-[10px] uppercase block mb-0.5">Context Window</span>
+                    <span class="text-sky-300">
+                      ${escapeHtml(ri.context_window || 'Standard')}
+                    </span>
+                  </div>
+
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/[0.05]">
+                    <span class="text-slate-500 text-[10px] uppercase block mb-0.5">Hardware / VRAM Target</span>
+                    <span class="text-teal-300">
+                      ${escapeHtml(ri.vram_hardware || 'Standard GPU / CPU')}
+                    </span>
+                  </div>
+
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/[0.05]">
+                    <span class="text-slate-500 text-[10px] uppercase block mb-0.5">Quantization Formats</span>
+                    <span class="text-indigo-300">
+                      ${(ri.quantization_formats && ri.quantization_formats.length > 0) ? escapeHtml(ri.quantization_formats.join(', ')) : 'FP16 / BF16 Standard'}
+                    </span>
+                  </div>
+
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/[0.05]">
+                    <span class="text-slate-500 text-[10px] uppercase block mb-0.5">Serving & Runtime</span>
+                    <span class="text-cyan-300">
+                      ${(ri.serving_frameworks && ri.serving_frameworks.length > 0) ? escapeHtml(ri.serving_frameworks.join(', ')) : 'PyTorch / Transformers'}
+                    </span>
+                  </div>
+                </div>
+
+                ${(ri.key_highlights && ri.key_highlights.length > 0) ? `
+                  <div class="pt-2 border-t border-red-500/15">
+                    <span class="text-slate-500 text-[10px] uppercase block mb-1">Architecture Highlights</span>
+                    <ul class="space-y-1 text-slate-300 text-[11px]">
+                      ${ri.key_highlights.map(h => `<li class="flex items-start gap-1.5"><span class="text-amber-400 mt-0.5">›</span><span>${escapeHtml(h)}</span></li>`).join('')}
+                    </ul>
+                  </div>
+                ` : ''}
+
+                <div class="flex items-center justify-between pt-1 text-[10px] text-slate-500">
+                  <span>License: <strong class="text-slate-300 font-normal">${escapeHtml(ri.license_type || 'Open Source')}</strong></span>
+                  ${ri.is_official_lab ? '<span class="text-emerald-400 font-semibold flex items-center gap-1">✓ Verified Official Lab Repository</span>' : ''}
+                </div>
+              </div>
+            `;
+          })() : ''}
+
           <!-- Related Technologies & Ecosystem -->
           ${ecosystem.length > 0 ? `
             <div class="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2">
@@ -2639,6 +2789,32 @@
       if (targetBtn) {
         targetBtn.classList.add('bg-red-500/20', 'text-red-200', 'border-red-500/40');
         targetBtn.classList.remove('bg-white/[0.04]', 'text-slate-300', 'border-white/[0.08]');
+      }
+      playBeep('click');
+      loadFeed(true);
+    }
+
+    let chinaArchetype = 'all';
+
+    function setChinaArchetypeFilter(arch) {
+      chinaArchetype = arch;
+      document.querySelectorAll('.china-arch-btn').forEach(b => {
+        b.classList.remove('bg-red-500/20', 'text-red-200', 'border-red-500/35');
+        b.classList.add('bg-white/[0.03]', 'text-slate-300', 'border-white/[0.06]');
+      });
+      const idMap = {
+        'all': 'china-arch-all',
+        'foundation_model': 'china-arch-foundation',
+        'inference_runtime': 'china-arch-inference',
+        'agentic_system': 'china-arch-agents',
+        'rag_knowledge_base': 'china-arch-rag',
+        'multimodal_voice': 'china-arch-multimodal',
+        'eval_and_benchmark': 'china-arch-eval'
+      };
+      const targetBtn = document.getElementById(idMap[arch] || 'china-arch-all');
+      if (targetBtn) {
+        targetBtn.classList.add('bg-red-500/20', 'text-red-200', 'border-red-500/35');
+        targetBtn.classList.remove('bg-white/[0.03]', 'text-slate-300', 'border-white/[0.06]');
       }
       playBeep('click');
       loadFeed(true);

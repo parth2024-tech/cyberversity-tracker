@@ -234,6 +234,7 @@ async def query_serialized_entries(
     hours: int | None = None,
     region: str | None = None,
     country: str | None = None,
+    archetype: str | None = None,
     sort_by: str = "top",
     limit: int = 100,
     offset: int = 0,
@@ -293,6 +294,9 @@ async def query_serialized_entries(
         country=country
         if country and country != "all" and isinstance(country, str)
         else None,
+        archetype=archetype
+        if archetype and archetype != "all" and isinstance(archetype, str)
+        else None,
     )
     pagination = PaginationParams(limit=limit, offset=offset)
 
@@ -307,6 +311,7 @@ async def query_serialized_entries(
         or since
         or (region and region != "all")
         or (country and country != "all")
+        or (archetype and archetype != "all")
     )
 
     async def _list_entries():
@@ -450,6 +455,28 @@ async def query_serialized_entries(
         cleaned_summary = _clean_entry_summary(e.summary, e, cleaned_title)
 
         meta_dict = e.metadata or {}
+        if cat_val == "github_trending" and (
+            src_region == "china"
+            or src_country in ("CN", "HK")
+            or meta_dict.get("region") == "china"
+        ):
+            if "repo_intel" not in meta_dict:
+                from ai_security_monitor.application.services.china_repo_intelligence import (
+                    china_repo_intelligence,
+                )
+
+                profile = china_repo_intelligence.extract_profile(
+                    title=cleaned_title,
+                    description=cleaned_summary,
+                    url=e.url or "",
+                    tags=e.tags or [],
+                    stars=meta_dict.get("stars", 0),
+                )
+                meta_dict = dict(meta_dict)
+                meta_dict["repo_intel"] = profile.to_dict()
+                meta_dict["archetype"] = profile.archetype
+                meta_dict["lab_name"] = profile.lab_name
+
         is_imp = bool(
             meta_dict.get("is_important", False)
             or meta_dict.get("is_saved", False)
@@ -481,7 +508,7 @@ async def query_serialized_entries(
                 "fetched_at": e.fetched_at.isoformat() if e.fetched_at else None,
                 "category": cat_val,
                 "tags": e.tags,
-                "metadata": e.metadata,
+                "metadata": meta_dict,
                 "heat_score": heat_val,
                 "heat_badge": heat_bdg,
                 "story_id": str(e.story_id) if getattr(e, "story_id", None) else meta_dict.get("story_id"),
@@ -548,6 +575,7 @@ async def list_entries(
     hours: int | None = Query(None, ge=1, le=87600),
     region: str | None = Query(None),
     country: str | None = Query(None),
+    archetype: str | None = Query(None),
     sort: str | None = Query(None),
     sort_by: str = Query("top"),
     limit: int = Query(100, ge=1, le=200),
@@ -556,7 +584,7 @@ async def list_entries(
     """Query intelligence entries with pagination, search, watchlist, vault, and feature filters — cached 60s."""
     effective_sort = sort or sort_by
     is_vault = bool(important_only or category in ("important", "vault"))
-    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{is_vault}_{hours}_{region}_{country}_{effective_sort}_{limit}_{offset}"
+    cache_key = f"entries_{category}_{search}_{pre_cve}_{high_velocity}_{watchlist_only}_{is_vault}_{hours}_{region}_{country}_{archetype}_{effective_sort}_{limit}_{offset}"
 
     async def _fetch():
         serialized_entries, total = await query_serialized_entries(
@@ -569,6 +597,7 @@ async def list_entries(
             hours=hours,
             region=region,
             country=country,
+            archetype=archetype,
             sort_by=effective_sort,
             limit=limit,
             offset=offset,
