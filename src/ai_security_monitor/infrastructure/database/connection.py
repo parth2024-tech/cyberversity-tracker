@@ -95,10 +95,19 @@ class DatabaseManager:
                 cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.execute("PRAGMA busy_timeout=30000")
                 cursor.execute("PRAGMA synchronous=NORMAL")
-                # Performance tuning
-                cursor.execute("PRAGMA cache_size=-16000")  # 16MB page cache
-                cursor.execute("PRAGMA temp_store=MEMORY")  # temp tables in RAM
-                cursor.execute("PRAGMA mmap_size=268435456")  # 256MB memory-mapped I/O
+                # Memory-optimized SQLite PRAGMAs for Render 512MB Free Tier
+                cursor.execute(
+                    f"PRAGMA cache_size={settings.database.sqlite_cache_size}"
+                )  # 4MB page cache
+                cursor.execute(
+                    "PRAGMA temp_store=FILE"
+                )  # spill temp tables to disk, preserving heap
+                cursor.execute(
+                    f"PRAGMA mmap_size={settings.database.sqlite_mmap_size}"
+                )  # 32MB mmap (down from 256MB)
+                cursor.execute(
+                    f"PRAGMA wal_autocheckpoint={settings.database.sqlite_wal_autocheckpoint}"
+                )  # checkpoint every 100 pages (400KB)
                 try:
                     cursor.execute("PRAGMA optimize")
                 except Exception:
@@ -260,6 +269,38 @@ class DatabaseManager:
                         text(
                             "CREATE INDEX IF NOT EXISTS ix_entry_entities_created_type "
                             "ON entry_entities(created_at, entity_type)"
+                        )
+                    )
+            except Exception:
+                pass
+
+            # Audit and Replay Log: research_runs Table (Workstream A1)
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "CREATE TABLE IF NOT EXISTS research_runs ("
+                            "id VARCHAR(36) PRIMARY KEY, "
+                            "query VARCHAR(512) NOT NULL, "
+                            "sources_count INTEGER DEFAULT 0, "
+                            "execution_steps JSON, "
+                            "cost_estimate FLOAT DEFAULT 0.0, "
+                            "coverage_score FLOAT DEFAULT 1.0, "
+                            "output_markdown TEXT NOT NULL, "
+                            "created_at DATETIME NOT NULL"
+                            ")"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_research_runs_query "
+                            "ON research_runs(query)"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_research_runs_created_at "
+                            "ON research_runs(created_at)"
                         )
                     )
             except Exception:

@@ -58,6 +58,7 @@ class EntryFilters:
     important_only: bool = False
     purged_only: bool = False
     watchlist_rules: list[Any] | None = None
+    archetype: str | None = None
 
 
 class EntryRepository(ABC):

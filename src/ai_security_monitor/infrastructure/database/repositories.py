@@ -916,6 +916,13 @@ class SQLAlchemyEntryRepository(EntryRepository):
                     )
                 )
 
+        if filters.archetype and filters.archetype != "all":
+            clean_arch = re.sub(r"[^a-zA-Z0-9_\-]", "", filters.archetype.lower())
+            if clean_arch:
+                stmt = stmt.where(
+                    EntryModel.extra_metadata.like(f'%"archetype": "{clean_arch}"%')
+                )
+
         return stmt, analysis_joined
 
     def _model_to_entity(self, model: EntryModel) -> Entry:

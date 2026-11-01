@@ -50,6 +50,17 @@ class DatabaseSettings(BaseSettings):
     echo: bool = Field(default=False, description="Log SQL queries")
     pool_size: int = Field(default=5, description="Connection pool size")
     max_overflow: int = Field(default=10, description="Max pool overflow")
+    sqlite_cache_size: int = Field(
+        default=-4000,
+        description="SQLite page cache size in KB (-4000 = 4MB, optimized for 512MB host)",
+    )
+    sqlite_mmap_size: int = Field(
+        default=33554432,
+        description="SQLite memory-mapped I/O limit in bytes (32MB, down from 256MB)",
+    )
+    sqlite_wal_autocheckpoint: int = Field(
+        default=100, description="SQLite WAL autocheckpoint interval in pages"
+    )
 
     model_config = SettingsConfigDict(env_prefix="DB_")
 
@@ -116,8 +127,14 @@ class FetchSettings(BaseSettings):
         default=3600, description="Default rate limit (seconds)"
     )
     max_concurrency: int = Field(
-        default=12,
-        description="Maximum concurrent fetch workers (adaptive semaphore cap)",
+        default=4,
+        description="Maximum concurrent fetch workers (adaptive semaphore cap, defaults to 4 for 512MB RAM stability)",
+    )
+    low_memory_mode: bool = Field(
+        default_factory=lambda: (
+            os.environ.get("LOW_MEMORY_MODE", "").lower() in ("true", "1", "yes")
+        ),
+        description="Whether host operates in aggressive low-memory mode (512MB Render free tier)",
     )
     consecutive_failure_threshold: int = Field(
         default=3, description="Consecutive fetch failures before triggering alert"

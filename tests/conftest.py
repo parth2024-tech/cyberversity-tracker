@@ -8,8 +8,10 @@ import os
 
 # Guarantee that automated test sessions use an isolated throwaway SQLite DB
 # and never mutate a developer's real local database or production state.
-os.environ.setdefault("DATA_DIR", "/tmp/aetherguard_test_data")
-os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
+TEST_DATA_DIR = "/tmp/aetherguard_test_data"
+os.environ["DATA_DIR"] = TEST_DATA_DIR
+os.environ["DATABASE__URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
+os.makedirs(TEST_DATA_DIR, exist_ok=True)
 
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -19,6 +21,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from ai_security_monitor.config.settings import settings
 from ai_security_monitor.domain.entities import (
     Category,
     Entry,
@@ -34,6 +37,19 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     """Ensure database tables exist and initial sources are seeded before running test session."""
     import asyncio
     import os
+
+    # Assert on resolved database URL, not merely DATA_DIR
+    resolved_url = settings.database.url
+    assert (
+        "sqlite+aiosqlite:////tmp/" in resolved_url
+        or "memory" in resolved_url
+    ), (
+        f"CRITICAL TEST ISOLATION FAILURE: Database URL does not resolve to an isolated test path: {resolved_url}"
+    )
+    # Strict safeguard: never target real local data/monitor.db
+    assert not resolved_url.endswith("/data/monitor.db"), (
+        f"CRITICAL TEST ISOLATION FAILURE: Database URL targets real dev/prod DB: {resolved_url}"
+    )
 
     # Wipe stale test database file to guarantee a fresh state on each test session run
     data_dir = os.environ.get("DATA_DIR")

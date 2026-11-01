@@ -83,9 +83,9 @@ def build_quarantine_inline_keyboard(source_id: str | UUID) -> dict:
     Prefix:
     - uq:<slug> -> Unquarantine and reset source failure count
     """
-    slug = (
-        source_id.hex if isinstance(source_id, UUID) else str(source_id).strip()
-    )[:40]
+    slug = (source_id.hex if isinstance(source_id, UUID) else str(source_id).strip())[
+        :40
+    ]
     return {
         "inline_keyboard": [
             [

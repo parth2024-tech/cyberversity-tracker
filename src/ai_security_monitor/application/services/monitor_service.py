@@ -241,7 +241,9 @@ class MonitorService:
             # Phase 1: Unconditional deactivation of explicitly retired / decommissioned sources
             retired_cfg = load_retired_sources_from_yaml(config_path)
             retired_names = {
-                r["name"].strip().lower() for r in retired_cfg if "name" in r and r["name"]
+                r["name"].strip().lower()
+                for r in retired_cfg
+                if "name" in r and r["name"]
             }
             retired_urls = {
                 r["url"].strip().lower() for r in retired_cfg if "url" in r and r["url"]
@@ -379,8 +381,19 @@ class MonitorService:
 
             # 2. In-Memory Enrichment & Analysis (OUTSIDE write transaction)
             prepared_items: list[tuple[Entry, Analysis, bool, str, bool]] = []
-            is_english_source = (
-                source.type.value in ("arxiv", "hackernews", "github_trending")
+            is_chinese_source = (
+                source.config.get("spoken_language_code") == "zh"
+                or source.config.get("region") == "china"
+                or source.config.get("country") in ("CN", "HK")
+                or source.config.get("language") in ("zh", "zh-CN", "zh-TW")
+            )
+            is_english_source = not is_chinese_source and (
+                source.type.value in ("arxiv", "hackernews")
+                or (
+                    source.type.value == "github_trending"
+                    and source.config.get("spoken_language_code") != "zh"
+                    and source.config.get("region") != "china"
+                )
                 or source.config.get("country")
                 in (
                     "US",
@@ -396,13 +409,51 @@ class MonitorService:
                 or source.config.get("language") == "en"
             )
 
-            for entry in new_raw_entries:
-                if not is_english_source:
-                    try:
-                        from ai_security_monitor.application.services.translation_service import (
-                            translation_service,
-                        )
+            from ai_security_monitor.application.services.china_repo_intelligence import (
+                china_repo_intelligence,
+            )
+            from ai_security_monitor.application.services.translation_service import (
+                translation_service,
+            )
 
+            # Pre-Translation Community Noise Gate: Discard generic tutorials (入门教程, 面试题, 环境安装)
+            # from tier_3_community / developer_community sources at zero translation and embedding cost.
+            is_community_source = (
+                source.config.get("china_category") == "developer_community"
+                or source.config.get("trust_tier") == "tier_3_community"
+                or any(
+                    k in (source.name or "").lower()
+                    for k in (
+                        "csdn",
+                        "juejin",
+                        "cnblogs",
+                        "segmentfault",
+                        "v2ex",
+                        "oschina",
+                    )
+                )
+            )
+
+            if is_chinese_source and is_community_source:
+                filtered_entries: list[Entry] = []
+                for entry in new_raw_entries:
+                    if china_repo_intelligence.is_community_noise(
+                        entry.title or "", entry.summary or ""
+                    ):
+                        logger.debug(
+                            f"Pre-translation noise gate: Discarding generic tutorial {entry.title!r} from {source.name!r} at zero cost"
+                        )
+                        continue
+                    filtered_entries.append(entry)
+                new_raw_entries = filtered_entries
+
+            for entry in new_raw_entries:
+                if (
+                    not is_english_source
+                    or translation_service.has_foreign_text(entry.title)
+                    or translation_service.has_foreign_text(entry.summary)
+                ):
+                    try:
                         await translation_service.translate_entry_async(entry)
                     except Exception as trans_e:
                         logger.debug(f"Translation skipped: {trans_e}")
@@ -991,10 +1042,10 @@ class MonitorService:
             nonlocal total_new, success, error
             async with pool:
                 try:
-                    # arXiv and GitHub/HuggingFace trending sources require multi-step scraping
-                    # and search API fallbacks. Give them 90s so they complete cleanly.
+                    # arXiv, Reddit, and GitHub/HuggingFace trending sources require multi-step scraping
+                    # and search API fallbacks. Give them 150s so they complete cleanly.
                     source_timeout = (
-                        90.0
+                        150.0
                         if src.type.value
                         in (
                             "arxiv",
@@ -1003,7 +1054,7 @@ class MonitorService:
                             "twitter_x",
                             "reddit",
                         )
-                        else 30.0
+                        else 75.0
                     )
                     log = await asyncio.wait_for(
                         self.fetch_source(src), timeout=source_timeout
@@ -1029,7 +1080,8 @@ class MonitorService:
                                         src.name, failures, log.error_message
                                     )
                                 )
-                except Exception as e:
+                except TimeoutError:
+                    err_msg = f"Watchdog timeout exceeded ({source_timeout}s)"
                     async with lock:
                         error += 1
                         failures = _consecutive_failures.get(src.name, 0) + 1
@@ -1042,9 +1094,32 @@ class MonitorService:
                                 f"Source {src.name} has failed {failures} consecutive sweeps. Alerting."
                             )
                             asyncio.create_task(
-                                send_source_failure_alert(src.name, failures, str(e))
+                                send_source_failure_alert(src.name, failures, err_msg)
                             )
-                    logger.warning(f"Concurrent sweep error for {src.name}: {e}")
+                    logger.warning(
+                        f"Concurrent sweep timeout for {src.name}: {err_msg}"
+                    )
+                except Exception as e:
+                    err_msg = (
+                        f"{type(e).__name__}: {e}"
+                        if str(e).strip()
+                        else type(e).__name__
+                    )
+                    async with lock:
+                        error += 1
+                        failures = _consecutive_failures.get(src.name, 0) + 1
+                        _consecutive_failures[src.name] = failures
+                        threshold = settings.fetch.consecutive_failure_threshold
+                        if failures == threshold or (
+                            failures > threshold and failures % 5 == 0
+                        ):
+                            logger.warning(
+                                f"Source {src.name} has failed {failures} consecutive sweeps. Alerting."
+                            )
+                            asyncio.create_task(
+                                send_source_failure_alert(src.name, failures, err_msg)
+                            )
+                    logger.warning(f"Concurrent sweep error for {src.name}: {err_msg}")
                 finally:
                     # Balanced cooperative yield to keep SQLite and event loop fluid for user HTTP requests
                     await asyncio.sleep(0.02)
@@ -1077,6 +1152,11 @@ class MonitorService:
         if total_new > 0:
             self._broadcast({"type": "feed_updated", "data": {"count": total_new}})
             self._broadcast({"type": "stats_updated", "data": {}})
+
+        # Reclaim memory from temporary feed parsing buffers, XML trees, and HTTP payloads
+        import gc
+
+        gc.collect()
 
         return {
             "total_sources": len(sources),

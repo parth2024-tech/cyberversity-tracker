@@ -17,6 +17,7 @@ from typing import Any
 
 _CACHE: dict[str, tuple[float, Any]] = {}
 _PURGE_INTERVAL = 50  # Run a full sweep every N get_or_set calls
+_MAX_CACHE_SIZE = 300  # Cap maximum in-memory cache entries
 _call_counter: int = 0  # Tracks calls since last sweep
 
 
@@ -58,6 +59,14 @@ async def get_or_set(
             return value
 
     value = await factory()
+
+    # Memory guard: enforce upper bound on cache dictionary size
+    if len(_CACHE) >= _MAX_CACHE_SIZE:
+        purge_expired()
+        if len(_CACHE) >= _MAX_CACHE_SIZE:
+            for old_k in list(_CACHE.keys())[: int(_MAX_CACHE_SIZE * 0.2)]:
+                _CACHE.pop(old_k, None)
+
     _CACHE[key] = (_now() + ttl_seconds, value)
     return value
 
