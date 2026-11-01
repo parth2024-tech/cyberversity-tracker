@@ -568,12 +568,15 @@ sources:
   tier: 1.0
 - name: Kimi / Moonshot AI Open Codebases
   category: github_trending
-  type: rss
-  url: https://github.com/MoonshotAI/Kimi-k1.5/releases.atom
+  type: github_org
+  url: https://api.github.com/orgs/MoonshotAI/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
+  expected_cadence_days: 2
+  config:
+    org: MoonshotAI
   tier: 1.0
 - name: GitHub Trending Chinese AI & Open-Source Projects (Daily)
   category: github_trending
@@ -723,13 +726,16 @@ sources:
   tier: 2.0
 - name: Qwen Open Source Releases
   category: ai_models
-  type: rss
-  url: https://github.com/QwenLM/Qwen2.5/commits.atom
+  type: github_org
+  url: https://api.github.com/orgs/QwenLM/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 1
+  config:
+    org: QwenLM
 - name: Reddit r/LocalLLaMA (Open Weights & Local AI)
   category: ai_models
   type: reddit
@@ -1069,22 +1075,28 @@ sources:
   tier: 2.0
 - name: DeepSeek AI Official Releases
   category: ai_models
-  type: rss
-  url: https://github.com/deepseek-ai/DeepSeek-V3/releases.atom
+  type: github_org
+  url: https://api.github.com/orgs/deepseek-ai/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 1
+  config:
+    org: deepseek-ai
 - name: Shanghai AI Lab (InternLM Open Releases)
   category: ai_models
-  type: rss
-  url: https://github.com/InternLM/InternLM/releases.atom
+  type: github_org
+  url: https://api.github.com/orgs/InternLM/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 3
+  config:
+    org: InternLM
 - name: arXiv China Frontier AI Labs
   category: ai_research
   type: arxiv
@@ -1733,15 +1745,18 @@ sources:
   region: europe
   country: FR
   tier: 2.0
-- name: Zhipu AI GLM-4 Foundation Models (China)
+- name: Zhipu AI Foundation Models & Codebases (China)
   category: ai_models
-  type: rss
-  url: https://github.com/THUDM/GLM-4/commits.atom
+  type: github_org
+  url: https://api.github.com/orgs/zai-org/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 2
+  config:
+    org: zai-org
 - name: Fudan CodeWisdom (复旦大学代码智能与大模型评估)
   category: ai_research
   type: rss
@@ -2806,52 +2821,61 @@ analyzer:
   max_tokens: 1000
   temperature: 0.1
 retired_sources:
-- name: CNNVD China Vulnerability Alerts (CNNVD安全动态)
-  url: https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml
-  reason: Zero cybersecurity focus policy
-- name: GovCERT China / Hong Kong Alerts
-  url: https://www.govcert.gov.hk/en/rss_security_alerts.xml
-  reason: Zero cybersecurity focus policy
-- name: Qihoo 360 Threat Intelligence (360威胁情报中心)
-  url: https://wechat2rss.xlab.app/feed/920f171e3dae0c8eeb4c97b366b229ba19807732.xml
-  reason: Zero cybersecurity focus policy
-- name: Qi-AnXin Threat Research (奇安信技术研究院)
-  url: https://wechat2rss.xlab.app/feed/77a8d89f12dcb0aa75a19731e474a63427089081.xml
-  reason: Zero cybersecurity focus policy
-- name: Qi-AnXin XLab (奇安信XLab)
-  url: https://wechat2rss.xlab.app/feed/5c7b6eec254fbb0afac7abf4eae95573fc374555.xml
-  reason: Zero cybersecurity focus policy
-- name: Cyber Kunlun CERT (赛博昆仑CERT)
-  url: https://wechat2rss.xlab.app/feed/fb14ec6353e6ebbeb470d35d633471d0bca583a0.xml
-  reason: Zero cybersecurity focus policy
-- name: Antiy AVL Threat Intel (安天AVL威胁情报)
-  url: https://wechat2rss.xlab.app/feed/c17498223ad8f92e5434100b16f4894a3107a90b.xml
-  reason: Zero cybersecurity focus policy
-- name: DarkNavy Security Research
-  url: https://wechat2rss.xlab.app/feed/0d4ffa4a2127cb603c2da49daa678b0e780fd66b.xml
-  reason: Zero cybersecurity focus policy
-- name: Tsinghua NISL Lab (清华大学网络与信息安全实验室)
-  url: https://wechat2rss.xlab.app/feed/9c5931fa813fd1a38149e52d5809ce9b19a48ec4.xml
-  reason: Zero cybersecurity focus policy
-- name: Venustech ADLab (启明星辰积极防御实验室)
-  url: https://wechat2rss.xlab.app/feed/16f16b9f4eb45442a824a52e3ddb040941a49f68.xml
-  reason: Zero cybersecurity focus policy
-- name: 0x727 Red Team (0x727开源安全团队)
-  url: https://wechat2rss.xlab.app/feed/fb95636ab2edd220c83bc38b7041bb8e0a723496.xml
-  reason: Zero cybersecurity focus policy
-- name: Xmirror DevSecOps (悬镜安全技术研究)
-  url: https://wechat2rss.xlab.app/feed/59c134d2e41c3a0724d89cc6fa359bc1abedbc26.xml
-  reason: Zero cybersecurity focus policy
-- name: Hawkeye Threat Intelligence (鹰眼威胁情报)
-  url: https://wechat2rss.xlab.app/feed/6bdcd81fd3702868c913261790ec10ffb76df144.xml
-  reason: Zero cybersecurity focus policy
-- name: NVD Recent CVEs (API)
-  reason: Zero cybersecurity focus policy
-- name: CISA Known Exploited Vulnerabilities
-  url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
-  reason: Zero cybersecurity focus policy
-- name: GitHub Security Advisories
-  reason: Zero cybersecurity focus policy
-- name: DeepSeek-V3 Open Model Codebase
-  url: https://github.com/deepseek-ai/DeepSeek-V3/releases.atom
-  reason: Deduplicated with DeepSeek AI Official Releases
+  - name: CNNVD China Vulnerability Alerts (CNNVD安全动态)
+    url: https://wechat2rss.xlab.app/feed/899e0eaf0e3ea7abac0211b3db9bb39c616e3255.xml
+    reason: Zero cybersecurity focus policy
+  - name: GovCERT China / Hong Kong Alerts
+    url: https://www.govcert.gov.hk/en/rss_security_alerts.xml
+    reason: Zero cybersecurity focus policy
+  - name: Qihoo 360 Threat Intelligence (360威胁情报中心)
+    url: https://wechat2rss.xlab.app/feed/920f171e3dae0c8eeb4c97b366b229ba19807732.xml
+    reason: Zero cybersecurity focus policy
+  - name: Qi-AnXin Threat Research (奇安信技术研究院)
+    url: https://wechat2rss.xlab.app/feed/77a8d89f12dcb0aa75a19731e474a63427089081.xml
+    reason: Zero cybersecurity focus policy
+  - name: Qi-AnXin XLab (奇安信XLab)
+    url: https://wechat2rss.xlab.app/feed/5c7b6eec254fbb0afac7abf4eae95573fc374555.xml
+    reason: Zero cybersecurity focus policy
+  - name: Cyber Kunlun CERT (赛博昆仑CERT)
+    url: https://wechat2rss.xlab.app/feed/fb14ec6353e6ebbeb470d35d633471d0bca583a0.xml
+    reason: Zero cybersecurity focus policy
+  - name: Antiy AVL Threat Intel (安天AVL威胁情报)
+    url: https://wechat2rss.xlab.app/feed/c17498223ad8f92e5434100b16f4894a3107a90b.xml
+    reason: Zero cybersecurity focus policy
+  - name: DarkNavy Security Research
+    url: https://wechat2rss.xlab.app/feed/0d4ffa4a2127cb603c2da49daa678b0e780fd66b.xml
+    reason: Zero cybersecurity focus policy
+  - name: Tsinghua NISL Lab (清华大学网络与信息安全实验室)
+    url: https://wechat2rss.xlab.app/feed/9c5931fa813fd1a38149e52d5809ce9b19a48ec4.xml
+    reason: Zero cybersecurity focus policy
+  - name: Venustech ADLab (启明星辰积极防御实验室)
+    url: https://wechat2rss.xlab.app/feed/16f16b9f4eb45442a824a52e3ddb040941a49f68.xml
+    reason: Zero cybersecurity focus policy
+  - name: 0x727 Red Team (0x727开源安全团队)
+    url: https://wechat2rss.xlab.app/feed/fb95636ab2edd220c83bc38b7041bb8e0a723496.xml
+    reason: Zero cybersecurity focus policy
+  - name: Xmirror DevSecOps (悬镜安全技术研究)
+    url: https://wechat2rss.xlab.app/feed/59c134d2e41c3a0724d89cc6fa359bc1abedbc26.xml
+    reason: Zero cybersecurity focus policy
+  - name: Hawkeye Threat Intelligence (鹰眼威胁情报)
+    url: https://wechat2rss.xlab.app/feed/6bdcd81fd3702868c913261790ec10ffb76df144.xml
+    reason: Zero cybersecurity focus policy
+  - name: NVD Recent CVEs (API)
+    reason: Zero cybersecurity focus policy
+  - name: CISA Known Exploited Vulnerabilities
+    url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+    reason: Zero cybersecurity focus policy
+  - name: GitHub Security Advisories
+    reason: Zero cybersecurity focus policy
+  - name: DeepSeek-V3 Open Model Codebase
+    url: https://github.com/deepseek-ai/DeepSeek-V3/releases.atom
+    reason: Deduplicated with DeepSeek AI Official Releases
+  - name: Qwen2.5 Commits Feed
+    url: https://github.com/QwenLM/Qwen2.5/commits.atom
+    reason: Replaced by QwenLM org-level polling
+  - name: MoonshotAI Kimi-k1.5 Releases Feed
+    url: https://github.com/MoonshotAI/Kimi-k1.5/releases.atom
+    reason: Replaced by MoonshotAI org-level polling
+  - name: THUDM GLM-4 Commits Feed
+    url: https://github.com/THUDM/GLM-4/commits.atom
+    reason: Replaced by zai-org org-level polling

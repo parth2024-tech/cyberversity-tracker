@@ -39,6 +39,7 @@ class SourceType(str, Enum):
     MODELSCOPE = "modelscope"
     HUGGINGFACE_CHINA = "huggingface_china"
     HUGGINGFACE_DAILY_PAPERS = "huggingface_daily_papers"
+    GITHUB_ORG = "github_org"
 
 
 class FetchStatus(str, Enum):
@@ -101,6 +102,7 @@ class Source(Entity):
     consecutive_failures: int = 0
     quarantined_at: datetime | None = None
     quarantine_reason: str | None = None
+    expected_cadence_days: int = 7
 
 
 @dataclass(kw_only=True)

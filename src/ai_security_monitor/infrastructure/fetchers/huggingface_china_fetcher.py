@@ -47,10 +47,17 @@ class HuggingFaceChinaFetcher(BaseFetcher):
         "MoonshotAI",
     ]
 
+    # Deterministic mapping for organizational renames and historical lab migrations (Defect D5)
+    KNOWN_ORG_RENAMES: dict[str, str] = {
+        "THUDM": "zai-org",
+        "QwenLM": "Qwen",
+    }
+
     def __init__(
         self, source: Source, timeout: int | None = None, max_retries: int | None = None
     ):
         super().__init__(source, timeout=timeout or 30, max_retries=max_retries)
+        self.org_rename_alerts: list[str] = []
 
     @property
     def fetcher_type(self) -> str:
@@ -76,20 +83,39 @@ class HuggingFaceChinaFetcher(BaseFetcher):
             follow_redirects=True,
         ) as client:
             for author in authors:
+                target_author = author
+                if author in self.KNOWN_ORG_RENAMES:
+                    target_author = self.KNOWN_ORG_RENAMES[author]
+                    alert_msg = f"ALERT: Org rename detected: {author} has migrated to {target_author}"
+                    self.org_rename_alerts.append(alert_msg)
+                    logger.warning(alert_msg)
+
                 params: dict[str, Any] = {
-                    "author": author,
-                    "sort": cfg.get("sort", "lastModified"),
+                    "author": target_author,
+                    "sort": cfg.get("sort", "createdAt"),
                     "direction": -1,
                     "limit": limit_per_author,
                 }
                 try:
                     resp = await client.get(self.BASE_URL, params=params)
-                    if resp.status_code == 200:
-                        items = resp.json()
-                        if isinstance(items, list):
-                            for it in items:
-                                it["_tracked_author"] = author
-                            all_models.extend(items)
+                    items = resp.json() if resp.status_code == 200 else []
+
+                    # Fallback guard: if original author returned empty/404, check known renames
+                    if (not items or resp.status_code != 200) and author in self.KNOWN_ORG_RENAMES:
+                        target_author = self.KNOWN_ORG_RENAMES[author]
+                        logger.warning(
+                            "ALERT: Org rename detected: %s returned empty; redirecting to %s",
+                            author,
+                            target_author,
+                        )
+                        params["author"] = target_author
+                        resp = await client.get(self.BASE_URL, params=params)
+                        items = resp.json() if resp.status_code == 200 else []
+
+                    if isinstance(items, list):
+                        for it in items:
+                            it["_tracked_author"] = target_author
+                        all_models.extend(items)
                 except Exception as e:
                     logger.debug(
                         f"Failed to fetch models for Chinese lab {author}: {e}"
