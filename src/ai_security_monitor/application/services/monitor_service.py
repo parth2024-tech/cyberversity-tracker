@@ -1009,10 +1009,10 @@ class MonitorService:
             nonlocal total_new, success, error
             async with pool:
                 try:
-                    # arXiv and GitHub/HuggingFace trending sources require multi-step scraping
-                    # and search API fallbacks. Give them 90s so they complete cleanly.
+                    # arXiv, Reddit, and GitHub/HuggingFace trending sources require multi-step scraping
+                    # and search API fallbacks. Give them 150s so they complete cleanly.
                     source_timeout = (
-                        90.0
+                        150.0
                         if src.type.value
                         in (
                             "arxiv",
@@ -1021,7 +1021,7 @@ class MonitorService:
                             "twitter_x",
                             "reddit",
                         )
-                        else 30.0
+                        else 75.0
                     )
                     log = await asyncio.wait_for(
                         self.fetch_source(src), timeout=source_timeout
@@ -1047,7 +1047,8 @@ class MonitorService:
                                         src.name, failures, log.error_message
                                     )
                                 )
-                except Exception as e:
+                except TimeoutError:
+                    err_msg = f"Watchdog timeout exceeded ({source_timeout}s)"
                     async with lock:
                         error += 1
                         failures = _consecutive_failures.get(src.name, 0) + 1
@@ -1060,9 +1061,28 @@ class MonitorService:
                                 f"Source {src.name} has failed {failures} consecutive sweeps. Alerting."
                             )
                             asyncio.create_task(
-                                send_source_failure_alert(src.name, failures, str(e))
+                                send_source_failure_alert(src.name, failures, err_msg)
                             )
-                    logger.warning(f"Concurrent sweep error for {src.name}: {e}")
+                    logger.warning(f"Concurrent sweep timeout for {src.name}: {err_msg}")
+                except Exception as e:
+                    err_msg = (
+                        f"{type(e).__name__}: {e}" if str(e).strip() else type(e).__name__
+                    )
+                    async with lock:
+                        error += 1
+                        failures = _consecutive_failures.get(src.name, 0) + 1
+                        _consecutive_failures[src.name] = failures
+                        threshold = settings.fetch.consecutive_failure_threshold
+                        if failures == threshold or (
+                            failures > threshold and failures % 5 == 0
+                        ):
+                            logger.warning(
+                                f"Source {src.name} has failed {failures} consecutive sweeps. Alerting."
+                            )
+                            asyncio.create_task(
+                                send_source_failure_alert(src.name, failures, err_msg)
+                            )
+                    logger.warning(f"Concurrent sweep error for {src.name}: {err_msg}")
                 finally:
                     # Balanced cooperative yield to keep SQLite and event loop fluid for user HTTP requests
                     await asyncio.sleep(0.02)

@@ -83,7 +83,7 @@ class RSSFetcher(BaseFetcher):
             stealth_headers["If-Modified-Since"] = str(last_modified)
 
         async with httpx.AsyncClient(
-            timeout=self.timeout,
+            timeout=min(float(self.timeout), 20.0),
             headers=stealth_headers,
             follow_redirects=True,
         ) as client:
