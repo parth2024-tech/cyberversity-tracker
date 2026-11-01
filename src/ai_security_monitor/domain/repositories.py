@@ -99,6 +99,10 @@ class EntryRepository(ABC):
         """Count entries matching filters."""
         ...
 
+    async def count_by_source(self, source_id: UUID | str) -> int:
+        """Count active (non-purged) entries for a specific source."""
+        return 0
+
     @abstractmethod
     async def update(self, entry: Entry) -> Entry:
         """Update an existing entry."""
@@ -271,6 +275,10 @@ class SourceRepository(ABC):
     async def toggle_enabled(self, source_id_or_name: str, enabled: bool) -> bool:
         """Enable or disable source by UUID or name slug."""
         return False
+
+    async def clear_stale_validators(self, min_entries: int = 3) -> int:
+        """Clear ETag and Last-Modified validators for sources with fewer than min_entries (Defect Ledger D3)."""
+        return 0
 
 
 class FetchLogRepository(ABC):

@@ -331,6 +331,16 @@ class MonitorService:
         logger.info(f"Fetching from {source.name} ({source.type.value})")
 
         try:
+            # Query stored entries count to guard against ETag lockout (Defect Ledger D3)
+            try:
+                async with self._uow_factory() as uow:
+                    stored_count = await uow.entries.count_by_source(source.id)
+                if source.config is None:
+                    source.config = {}
+                source.config["stored_entries_count"] = stored_count
+            except Exception as cnt_err:
+                logger.debug(f"Unable to query source entry count: {cnt_err}")
+
             fetcher_cls = fetcher_registry.get(source.type.value)
             fetcher = fetcher_cls(source)
             fetch_result = await fetcher.fetch()
@@ -1221,6 +1231,8 @@ class MonitorService:
                 hard_purged = await uow.entries.hard_delete_purged(grace_days=0)
             purged_logs = await uow.fetch_logs.purge_old_logs(older_than_days=days)
             purged_digests = await uow.digests.purge_old_digests(older_than_days=days)
+            # Defect Ledger D3: Clear stale ETag/Last-Modified validators on sources with < 3 entries
+            await uow.sources.clear_stale_validators(min_entries=3)
             try:
                 from sqlalchemy import text
 

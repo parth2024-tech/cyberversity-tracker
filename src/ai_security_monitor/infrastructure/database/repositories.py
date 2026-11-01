@@ -217,6 +217,15 @@ class SQLAlchemyEntryRepository(EntryRepository):
         result = await self._session.execute(stmt)
         return result.scalar() or 0
 
+    async def count_by_source(self, source_id: UUID | str) -> int:
+        """Count active (non-purged) entries stored for a specific source."""
+        s_id = str(source_id)
+        stmt = select(func.count(EntryModel.id)).where(
+            and_(EntryModel.source_id == s_id, EntryModel.is_purged.is_(False))
+        )
+        res = await self._session.execute(stmt)
+        return int(res.scalar() or 0)
+
     async def search_fts(self, query: str, limit: int = 50) -> builtins.list[Entry]:
         """Sub-millisecond BM25 full-text search using SQLite FTS5 table."""
         import re
@@ -1288,6 +1297,20 @@ class SQLAlchemySourceRepository(SourceRepository):
         )
         self._session.expire_all()
         return bool(getattr(result, "rowcount", 0) > 0)
+
+    async def clear_stale_validators(self, min_entries: int = 3) -> int:
+        """Clear ETag and Last-Modified validators for sources with fewer than min_entries (Defect Ledger D3)."""
+        stmt = text(
+            "UPDATE sources SET config = json_remove(json_remove(config, '$.etag'), '$.last_modified') "
+            "WHERE id IN ("
+            "  SELECT s.id FROM sources s "
+            "  LEFT JOIN entries e ON s.id = e.source_id AND (e.is_purged IS NULL OR e.is_purged = 0) "
+            f"  GROUP BY s.id HAVING COUNT(e.id) < {int(min_entries)}"
+            ") AND (json_extract(config, '$.etag') IS NOT NULL OR json_extract(config, '$.last_modified') IS NOT NULL)"
+        )
+        res = await self._session.execute(stmt)
+        self._session.expire_all()
+        return getattr(res, "rowcount", 0) or 0
 
     def _model_to_entity(self, model: SourceModel) -> Source:
         try:
