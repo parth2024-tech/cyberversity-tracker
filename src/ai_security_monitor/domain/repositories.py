@@ -16,6 +16,7 @@ from ai_security_monitor.domain.entities import (
     AIEntity,
     Analysis,
     Category,
+    CouncilReview,
     Digest,
     EntityType,
     Entry,
@@ -415,4 +416,41 @@ class AIEntityRepository(ABC):
         limit: int = 20,
     ) -> list[dict[str, Any]]:
         """Retrieve top referenced entities grouped by name within the freshness window."""
+        ...
+
+
+class CouncilReviewRepository(ABC):
+    """Repository interface for multi-agent council reviews and shadow calibration queue."""
+
+    @abstractmethod
+    async def save(self, review: CouncilReview) -> CouncilReview:
+        """Persist or update a council review."""
+        ...
+
+    @abstractmethod
+    async def get_by_id(self, review_id: UUID | str) -> CouncilReview | None:
+        """Lookup council review by ID."""
+        ...
+
+    @abstractmethod
+    async def get_by_entry(self, entry_id: UUID | str) -> CouncilReview | None:
+        """Lookup latest council review for a specific entry."""
+        ...
+
+    @abstractmethod
+    async def list_reviews(
+        self,
+        status: str | None = None,
+        verdict: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[CouncilReview]:
+        """List reviews in shadow review queue with optional status/verdict filters."""
+        ...
+
+    @abstractmethod
+    async def update_status(
+        self, review_id: UUID | str, status: str
+    ) -> CouncilReview | None:
+        """Update review status (e.g. 'approved', 'rejected', 'calibrated')."""
         ...

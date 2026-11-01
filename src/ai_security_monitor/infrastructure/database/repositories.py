@@ -21,6 +21,7 @@ from ai_security_monitor.domain.entities import (
     Analysis,
     AnalysisModel,
     Category,
+    CouncilReview,
     Digest,
     EntityType,
     Entry,
@@ -37,6 +38,7 @@ from ai_security_monitor.domain.exceptions import (
 from ai_security_monitor.domain.repositories import (
     AIEntityRepository,
     AnalysisRepository,
+    CouncilReviewRepository,
     DigestRepository,
     EntryFilters,
     EntryRepository,
@@ -50,6 +52,7 @@ from ai_security_monitor.infrastructure.database.models import (
     AnalysisModel as AnalysisModelDB,
 )
 from ai_security_monitor.infrastructure.database.models import (
+    CouncilReviewModel,
     DigestModel,
     EntryEntityModel,
     EntryModel,
@@ -1619,7 +1622,18 @@ class SQLAlchemyReceiptRepository(LLMReceiptRepository):
         res = await self._session.execute(stmt)
         model = res.scalar_one_or_none()
         if not model:
-            raise EntityNotFoundError("ReceiptModel", logical_key)
+            model = ReceiptModel(
+                logical_key=logical_key,
+                provider="unknown",
+                model="unknown",
+                prompt_version="v1.0",
+                status="succeeded",
+                attempts=1,
+                max_attempts=3,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+            self._session.add(model)
 
         model.status = "succeeded"
         model.response_json = response_json
@@ -1863,3 +1877,130 @@ class SQLAlchemyEntityRepository(AIEntityRepository):
                 }
             )
         return top_list
+
+
+class SQLAlchemyCouncilReviewRepository(CouncilReviewRepository):
+    """SQLAlchemy implementation of CouncilReviewRepository."""
+
+    def __init__(self, session: AsyncSession):
+        self._session = session
+
+    def _model_to_entity(self, model: CouncilReviewModel) -> CouncilReview:
+        return CouncilReview(
+            id=_str_to_uuid(model.id),
+            entry_id=_str_to_uuid(model.entry_id),
+            consensus_verdict=model.consensus_verdict,
+            consensus_score=model.consensus_score,
+            consensus_summary=model.consensus_summary,
+            persona_evaluations=model.persona_evaluations or {},
+            verified_claims=model.verified_claims or [],
+            receipt_keys=model.receipt_keys or [],
+            status=model.status,
+            total_tokens=model.total_tokens,
+            total_latency_ms=model.total_latency_ms,
+            estimated_cost_usd=model.estimated_cost_usd,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
+    async def save(self, review: CouncilReview) -> CouncilReview:
+        stmt = select(CouncilReviewModel).where(
+            CouncilReviewModel.id == _uuid_to_str(review.id)
+        )
+        res = await self._session.execute(stmt)
+        existing = res.scalar_one_or_none()
+
+        if existing:
+            existing.status = review.status
+            existing.consensus_verdict = review.consensus_verdict
+            existing.consensus_score = review.consensus_score
+            existing.consensus_summary = review.consensus_summary
+            existing.persona_evaluations = review.persona_evaluations
+            existing.verified_claims = review.verified_claims
+            existing.receipt_keys = review.receipt_keys
+            existing.total_tokens = review.total_tokens
+            existing.total_latency_ms = review.total_latency_ms
+            existing.estimated_cost_usd = review.estimated_cost_usd
+            existing.updated_at = datetime.now(UTC)
+            await self._session.flush()
+            return self._model_to_entity(existing)
+        else:
+            model = CouncilReviewModel(
+                id=_uuid_to_str(review.id),
+                entry_id=_uuid_to_str(review.entry_id),
+                status=review.status,
+                consensus_verdict=review.consensus_verdict,
+                consensus_score=review.consensus_score,
+                consensus_summary=review.consensus_summary,
+                persona_evaluations=review.persona_evaluations,
+                verified_claims=review.verified_claims,
+                receipt_keys=review.receipt_keys,
+                total_tokens=review.total_tokens,
+                total_latency_ms=review.total_latency_ms,
+                estimated_cost_usd=review.estimated_cost_usd,
+                created_at=review.created_at or datetime.now(UTC),
+                updated_at=review.updated_at or datetime.now(UTC),
+            )
+            self._session.add(model)
+            await self._session.flush()
+            return self._model_to_entity(model)
+
+    async def get_by_id(self, review_id: UUID | str) -> CouncilReview | None:
+        rid_str = (
+            _uuid_to_str(review_id) if isinstance(review_id, UUID) else str(review_id)
+        )
+        stmt = select(CouncilReviewModel).where(CouncilReviewModel.id == rid_str)
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def get_by_entry(self, entry_id: UUID | str) -> CouncilReview | None:
+        eid_str = (
+            _uuid_to_str(entry_id) if isinstance(entry_id, UUID) else str(entry_id)
+        )
+        stmt = (
+            select(CouncilReviewModel)
+            .where(CouncilReviewModel.entry_id == eid_str)
+            .order_by(desc(CouncilReviewModel.created_at))
+            .limit(1)
+        )
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
+    async def list_reviews(
+        self,
+        status: str | None = None,
+        verdict: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[CouncilReview]:
+        stmt = (
+            select(CouncilReviewModel)
+            .order_by(desc(CouncilReviewModel.created_at))
+            .offset(offset)
+            .limit(min(limit, 100))
+        )
+        if status:
+            stmt = stmt.where(CouncilReviewModel.status == status)
+        if verdict:
+            stmt = stmt.where(CouncilReviewModel.consensus_verdict == verdict)
+
+        res = await self._session.execute(stmt)
+        return [self._model_to_entity(m) for m in res.scalars()]
+
+    async def update_status(
+        self, review_id: UUID | str, status: str
+    ) -> CouncilReview | None:
+        rid_str = (
+            _uuid_to_str(review_id) if isinstance(review_id, UUID) else str(review_id)
+        )
+        stmt = select(CouncilReviewModel).where(CouncilReviewModel.id == rid_str)
+        res = await self._session.execute(stmt)
+        model = res.scalar_one_or_none()
+        if not model:
+            return None
+        model.status = status
+        model.updated_at = datetime.now(UTC)
+        await self._session.flush()
+        return self._model_to_entity(model)

@@ -124,7 +124,11 @@ class DecisionBriefService:
         )
 
         # Step E: Factual Synthesis via LLM (Q1, Q2, and Novelty nuance Q3)
-        event_summary, significance, novelty_assessment = await self._synthesize_q1_q2_q3(
+        (
+            event_summary,
+            significance,
+            novelty_assessment,
+        ) = await self._synthesize_q1_q2_q3(
             entry=entry,
             historical_comparisons=historical_comparisons,
             stack_relevance=stack_relevance,
@@ -187,7 +191,9 @@ class DecisionBriefService:
                 "WHERE embedding MATCH :vec "
                 "ORDER BY distance LIMIT :k"
             )
-            result = await uow.session.execute(query_sql, {"vec": vec_json, "k": limit + 5})
+            result = await uow.session.execute(
+                query_sql, {"vec": vec_json, "k": limit + 5}
+            )
             rows = result.fetchall()
 
             for row in rows:
@@ -214,7 +220,9 @@ class DecisionBriefService:
                                     title=hist_entry.title,
                                     published_at=pub_str,
                                     similarity_score=sim,
-                                    relation="prior_work" if sim >= 0.70 else "related_ecosystem",
+                                    relation="prior_work"
+                                    if sim >= 0.70
+                                    else "related_ecosystem",
                                     source_url=hist_entry.url,
                                 )
                             )
@@ -224,7 +232,9 @@ class DecisionBriefService:
                     logger.debug(f"Row extraction error in vector search: {row_err}")
 
         except Exception as vec_err:
-            logger.debug(f"sqlite-vec KNN query unavailable or not populated: {vec_err}")
+            logger.debug(
+                f"sqlite-vec KNN query unavailable or not populated: {vec_err}"
+            )
 
         # 2. Fallback to querying recent database entries if entries_vec had insufficient matches
         if len(comparisons) < limit:
@@ -258,7 +268,9 @@ class DecisionBriefService:
                                 title=h_entry.title,
                                 published_at=pub_str,
                                 similarity_score=round(sim, 3),
-                                relation="prior_work" if sim >= 0.75 else "related_topic",
+                                relation="prior_work"
+                                if sim >= 0.75
+                                else "related_topic",
                                 source_url=h_entry.url,
                             )
                         )
@@ -328,7 +340,14 @@ class DecisionBriefService:
         # 4. Determine Impact Level & Suggested Priority
         if matched_rules:
             impact_level = StackImpactLevel.DIRECT
-            suggested_priority = "P0" if any("critical" in r.lower() or "production" in r.lower() for r in matched_rules) else "P1"
+            suggested_priority = (
+                "P0"
+                if any(
+                    "critical" in r.lower() or "production" in r.lower()
+                    for r in matched_rules
+                )
+                else "P1"
+            )
             direct_impact = (
                 f"Modifies or updates tracked components ({', '.join(sorted(matched_technologies)[:3])}) "
                 f"matching your active watchlist ({', '.join(matched_rules[:2])})."
@@ -336,19 +355,30 @@ class DecisionBriefService:
             indirect_impact = None
         elif matched_technologies:
             impact_level = StackImpactLevel.INDIRECT
-            suggested_priority = "P1" if any(t in ("vLLM", "SGLang", "Ollama", "llama.cpp", "ONNX") for t in matched_technologies) else "P2"
+            suggested_priority = (
+                "P1"
+                if any(
+                    t in ("vLLM", "SGLang", "Ollama", "llama.cpp", "ONNX")
+                    for t in matched_technologies
+                )
+                else "P2"
+            )
             direct_impact = None
             indirect_impact = (
                 f"Pertains to ecosystem frameworks ({', '.join(sorted(matched_technologies)[:3])}) "
                 "relevant to local AI serving or developer infrastructure."
             )
-            reasons.append(f"Framework overlap: {', '.join(sorted(matched_technologies)[:3])}")
+            reasons.append(
+                f"Framework overlap: {', '.join(sorted(matched_technologies)[:3])}"
+            )
         else:
             impact_level = StackImpactLevel.NO_MATCH
             suggested_priority = "P2"
             direct_impact = None
             indirect_impact = None
-            reasons.append("No configured watchlist rules or tracked core technologies matched.")
+            reasons.append(
+                "No configured watchlist rules or tracked core technologies matched."
+            )
 
         return StackRelevance(
             impact_level=impact_level,
@@ -377,10 +407,21 @@ class DecisionBriefService:
         elif "huggingface.co" in url:
             primary_source_type = "model_weights_registry (Hugging Face)"
             is_official = True
-        elif any(lab in url for lab in ("openai.com", "anthropic.com", "deepseek.com", "mistral.ai", "meta.com")):
+        elif any(
+            lab in url
+            for lab in (
+                "openai.com",
+                "anthropic.com",
+                "deepseek.com",
+                "mistral.ai",
+                "meta.com",
+            )
+        ):
             primary_source_type = "official_lab_dispatch"
             is_official = True
-        elif any(social in url for social in ("twitter.com", "x.com", "t.co", "reddit.com")):
+        elif any(
+            social in url for social in ("twitter.com", "x.com", "t.co", "reddit.com")
+        ):
             primary_source_type = "social_media_discussion"
             is_official = False
         else:
@@ -393,7 +434,10 @@ class DecisionBriefService:
             or "huggingface.co" in url
             or meta.get("has_weights")
             or meta.get("has_code")
-            or any(kw in title_lower for kw in ("open weights", "source code", "released", "weights release"))
+            or any(
+                kw in title_lower
+                for kw in ("open weights", "source code", "released", "weights release")
+            )
         )
 
         # 3. Corroboration Count
@@ -411,7 +455,9 @@ class DecisionBriefService:
         if claim_tokens:
             verified_count = 0
             for tok in claim_tokens:
-                present, _ = self.claim_verifier.check_substring_presence(tok, corpus_norm)
+                present, _ = self.claim_verifier.check_substring_presence(
+                    tok, corpus_norm
+                )
                 if present:
                     verified_count += 1
                 else:
@@ -429,10 +475,19 @@ class DecisionBriefService:
         if conflicting_signals and claim_score < 0.50:
             confidence = EvidenceConfidence.CONTRADICTED
             notes = "Unverified claims contradict primary source grounding or represent ungrounded marketing."
-        elif primary_source_type == "social_media_discussion" and not has_artifact and corroboration_count == 1:
+        elif (
+            primary_source_type == "social_media_discussion"
+            and not has_artifact
+            and corroboration_count == 1
+        ):
             confidence = EvidenceConfidence.INSUFFICIENT_EVIDENCE
             notes = "Single-source social media discussion without independent technical artifacts or source code."
-        elif is_official and has_artifact and corroboration_count >= 2 and claim_score >= 0.85:
+        elif (
+            is_official
+            and has_artifact
+            and corroboration_count >= 2
+            and claim_score >= 0.85
+        ):
             confidence = EvidenceConfidence.VERIFIED
             notes = "Corroborated across multiple independent sources with verified primary source code/weights and grounded claims."
         elif is_official and claim_score >= 0.70:
@@ -468,11 +523,21 @@ class DecisionBriefService:
 
         # Rule 1: UPGRADE_DEPENDENCY strictly requires identified affected components
         # and security/patch context
-        is_patch_or_sec = (
-            cat_val == "vulnerabilities"
-            or any(kw in title_lower for kw in ("patch", "security update", "cve-", "vulnerability fix", "advisory"))
+        is_patch_or_sec = cat_val == "vulnerabilities" or any(
+            kw in title_lower
+            for kw in (
+                "patch",
+                "security update",
+                "cve-",
+                "vulnerability fix",
+                "advisory",
+            )
         )
-        if is_patch_or_sec and stack_relevance.affected_components and stack_relevance.impact_level == StackImpactLevel.DIRECT:
+        if (
+            is_patch_or_sec
+            and stack_relevance.affected_components
+            and stack_relevance.impact_level == StackImpactLevel.DIRECT
+        ):
             return (
                 DecisionAction.UPGRADE_DEPENDENCY,
                 f"Critical advisory or patch directly affecting configured stack component(s): {', '.join(stack_relevance.affected_components[:2])}.",
@@ -480,15 +545,24 @@ class DecisionBriefService:
 
         # Rule 2: Research breakthroughs with supported evidence -> READ_PAPER
         if cat_val == "ai_research" or "arxiv.org" in (entry.url or "").lower():
-            if evidence.confidence in (EvidenceConfidence.VERIFIED, EvidenceConfidence.SUPPORTED):
+            if evidence.confidence in (
+                EvidenceConfidence.VERIFIED,
+                EvidenceConfidence.SUPPORTED,
+            ):
                 return (
                     DecisionAction.READ_PAPER,
                     "High-significance foundational research preprint with verified methodology. Study architectural improvements.",
                 )
 
         # Rule 3: Open-source developer tools, runtimes, or models with artifacts -> TEST_IN_SANDBOX
-        if evidence.has_reproducible_artifact or cat_val in ("github_trending", "ai_models"):
-            if evidence.confidence in (EvidenceConfidence.VERIFIED, EvidenceConfidence.SUPPORTED):
+        if evidence.has_reproducible_artifact or cat_val in (
+            "github_trending",
+            "ai_models",
+        ):
+            if evidence.confidence in (
+                EvidenceConfidence.VERIFIED,
+                EvidenceConfidence.SUPPORTED,
+            ):
                 return (
                     DecisionAction.TEST_IN_SANDBOX,
                     "Verified open-source weights or code available. Benchmark throughput and integration in an isolated sandbox runtime.",
@@ -498,7 +572,10 @@ class DecisionBriefService:
         is_tech_artifact_or_repo = (
             evidence.has_reproducible_artifact
             or cat_val in ("github_trending", "ai_research", "ai_models")
-            or any(d in (entry.url or "").lower() for d in ("github.com", "huggingface.co", "arxiv.org"))
+            or any(
+                d in (entry.url or "").lower()
+                for d in ("github.com", "huggingface.co", "arxiv.org")
+            )
         )
         if (
             stack_relevance.impact_level == StackImpactLevel.NO_MATCH
@@ -511,7 +588,11 @@ class DecisionBriefService:
             )
 
         # Rule 5: Preliminary or ungrounded claims -> MONITOR_CLAIMS
-        if evidence.confidence in (EvidenceConfidence.PRELIMINARY, EvidenceConfidence.INSUFFICIENT_EVIDENCE, EvidenceConfidence.CONTRADICTED):
+        if evidence.confidence in (
+            EvidenceConfidence.PRELIMINARY,
+            EvidenceConfidence.INSUFFICIENT_EVIDENCE,
+            EvidenceConfidence.CONTRADICTED,
+        ):
             return (
                 DecisionAction.MONITOR_CLAIMS,
                 "Evidence is preliminary or pending independent verification. Wait for reproducible code, checkpoints, or peer validation.",
@@ -539,7 +620,11 @@ class DecisionBriefService:
                     f"[{i}] {h.title} (Published: {h.published_at or 'Unknown'}, Sim: {h.similarity_score}, ID: {h.entry_id})"
                 )
             hist_context_str = "\n".join(hist_text_blocks)
-            novelty_type_default = NoveltyType.INCREMENTAL_UPDATE if any(h.similarity_score >= 0.70 for h in historical_comparisons) else NoveltyType.GENUINE_NOVELTY
+            novelty_type_default = (
+                NoveltyType.INCREMENTAL_UPDATE
+                if any(h.similarity_score >= 0.70 for h in historical_comparisons)
+                else NoveltyType.GENUINE_NOVELTY
+            )
         else:
             hist_context_str = "No prior related entries found in local database (INSUFFICIENT_HISTORY)."
             novelty_type_default = NoveltyType.INSUFFICIENT_HISTORY
@@ -560,14 +645,22 @@ class DecisionBriefService:
         try:
             analyzer = LLMAnalyzer(config={"tier": "cloud_frontier"})
             if analyzer.client is not None or not slm_circuit_breaker.is_tripped:
-                if analyzer.tier == "cloud_frontier" and hasattr(analyzer, "_call_groq") and analyzer.client is not None:
-                    raw_res = await analyzer._call_groq(user_prompt, user_prompt=user_prompt)
+                if (
+                    analyzer.tier == "cloud_frontier"
+                    and hasattr(analyzer, "_call_groq")
+                    and analyzer.client is not None
+                ):
+                    raw_res = await analyzer._call_groq(
+                        user_prompt, user_prompt=user_prompt
+                    )
                     if isinstance(raw_res, tuple):
                         llm_data = raw_res[0]
                     elif isinstance(raw_res, dict):
                         llm_data = raw_res
                 elif not slm_circuit_breaker.is_tripped:
-                    llm_data = await analyzer._call_ollama(user_prompt, user_prompt=user_prompt)
+                    llm_data = await analyzer._call_ollama(
+                        user_prompt, user_prompt=user_prompt
+                    )
         except Exception as e:
             logger.debug(f"Decision brief LLM synthesis bypassed: {e}")
 
@@ -590,25 +683,22 @@ class DecisionBriefService:
                 f"{entry.summary or 'Primary technical details published at official source.'}"
             )
         if not significance:
-            tech_list = ", ".join(stack_relevance.matched_technologies) or "AI ecosystem infrastructure"
+            tech_list = (
+                ", ".join(stack_relevance.matched_technologies)
+                or "AI ecosystem infrastructure"
+            )
             significance = (
                 f"Technical milestone impacting {tech_list}. "
                 "Presents practical performance, compute efficiency, or architectural improvements for practitioners."
             )
         if not novelty_summary:
             if novelty_type_default == NoveltyType.INSUFFICIENT_HISTORY:
-                novelty_summary = (
-                    "New to local intelligence database. Insufficient prior historical records in local memory to establish incremental lineage."
-                )
+                novelty_summary = "New to local intelligence database. Insufficient prior historical records in local memory to establish incremental lineage."
             elif novelty_type_default == NoveltyType.INCREMENTAL_UPDATE:
                 comp_titles = [c.title for c in historical_comparisons[:2]]
-                novelty_summary = (
-                    f"Represents an incremental development building directly upon earlier recorded work: {'; '.join(comp_titles)}."
-                )
+                novelty_summary = f"Represents an incremental development building directly upon earlier recorded work: {'; '.join(comp_titles)}."
             else:
-                novelty_summary = (
-                    "Substantial divergence in architectural approach or capabilities compared to prior records in local database."
-                )
+                novelty_summary = "Substantial divergence in architectural approach or capabilities compared to prior records in local database."
 
         novelty_assessment = NoveltyAssessment(
             novelty_type=novelty_type_default,
@@ -617,7 +707,8 @@ class DecisionBriefService:
                 f"Compared against {len(historical_comparisons)} historical vector records. "
                 "Distinguishes local database novelty from broader global industry claims."
             ),
-            uncertainties=uncertainties or [
+            uncertainties=uncertainties
+            or [
                 "Awaiting third-party replication benchmarks and production load measurements."
             ],
         )
@@ -656,10 +747,13 @@ class DecisionBriefService:
                     attack_vector=entry.title[:100],
                     risk_assessment=brief.significance[:250],
                     mitigation=brief.action_rationale[:250],
-                    threat_velocity=75 if brief.stack_relevance.suggested_priority == "P0" else 50,
+                    threat_velocity=75
+                    if brief.stack_relevance.suggested_priority == "P0"
+                    else 50,
                     severity_index=70,
                     blast_radius_score=60,
-                    affected_ecosystem=brief.stack_relevance.matched_technologies or ["AI Ecosystem"],
+                    affected_ecosystem=brief.stack_relevance.matched_technologies
+                    or ["AI Ecosystem"],
                     attack_archetype="Decision Intelligence",
                     weaponization_potential="Production Ready",
                     decision_brief=brief_dict,
