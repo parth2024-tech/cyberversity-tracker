@@ -39,9 +39,11 @@ class HuggingFaceChinaFetcher(BaseFetcher):
         "deepseek-ai",
         "Qwen",
         "internlm",
+        "zai-org",  # Zhipu AI renamed HF org
         "THUDM",
         "01-ai",
         "baichuan-inc",
+        "moonshotai",  # Moonshot AI canonical HF org
         "MoonshotAI",
     ]
 
@@ -76,7 +78,7 @@ class HuggingFaceChinaFetcher(BaseFetcher):
             for author in authors:
                 params: dict[str, Any] = {
                     "author": author,
-                    "sort": "createdAt",
+                    "sort": cfg.get("sort", "lastModified"),
                     "direction": -1,
                     "limit": limit_per_author,
                 }
@@ -125,7 +127,7 @@ class HuggingFaceChinaFetcher(BaseFetcher):
         title = f"[{author}] {model_id} ({pipeline_tag.replace('-', ' ').title()})"
 
         published_at = datetime.now(UTC)
-        created_at_str = raw.get("createdAt")
+        created_at_str = raw.get("lastModified") or raw.get("createdAt")
         if created_at_str:
             try:
                 published_at = datetime.fromisoformat(

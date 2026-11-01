@@ -233,7 +233,6 @@
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-
       <!-- Category Filter Pills -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs font-mono pb-1 border-b border-white/[0.06]">
         <button onclick="filterChinaSourcesCategory('')" id="cn-src-cat-all" class="cn-src-cat-btn px-2 py-0.5 rounded bg-red-500/20 text-red-200 border border-red-500/35 text-[11px] font-medium whitespace-nowrap">
@@ -258,6 +257,61 @@
 
       <div id="china-sources-content" class="overflow-y-auto space-y-2 pr-1 text-xs font-mono max-h-[60vh]">
         <!-- Populated dynamically via fetch('/api/china/sources?category=...') -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Multilingual Canonical Event Intelligence -->
+  <div id="events-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-4xl rounded-2xl p-6 relative max-h-[92vh] flex flex-col border border-emerald-500/30 bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 flex items-center justify-center">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold tracking-tight text-white font-mono">Cross-Lingual Event Intelligence</h2>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                14-Day Freshness Guard Active
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 font-sans">Language-independent canonical AI events with grounded claims & evidentiary hierarchy</p>
+          </div>
+        </div>
+        <button onclick="closeEventsModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Controls & Filter Bar -->
+      <div class="flex items-center justify-between flex-wrap gap-2 text-xs font-mono pb-2 border-b border-white/[0.06]">
+        <div class="flex items-center gap-2">
+          <label class="text-slate-400">EVENT TYPE:</label>
+          <select id="event-type-filter" onchange="loadEvents()" class="glass-input px-2.5 py-1 text-xs rounded-lg text-emerald-300">
+            <option value="">All Event Types</option>
+            <option value="model_release">Model Releases</option>
+            <option value="benchmark_result">Benchmark Evaluations</option>
+            <option value="framework_update">Framework Updates</option>
+            <option value="general_intelligence">General Intelligence</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="triggerEventClusterSweep()" class="px-3 py-1 rounded-lg border border-white/[0.1] hover:bg-white/[0.05] text-slate-300 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Cluster New Docs</span>
+          </button>
+          <button onclick="loadEvents()" class="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 transition flex items-center gap-1.5">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Events List Container -->
+      <div id="events-container" class="overflow-y-auto space-y-4 pr-1 text-xs font-mono max-h-[68vh]">
+        <!-- Populated dynamically via loadEvents() -->
       </div>
     </div>
   </div>
@@ -846,6 +900,12 @@
     <button class="sidebar-btn" id="sidebar-china-btn" onclick="setCategory('china')" title="">
       <span class="text-xs font-bold font-mono">🇨🇳</span>
       <span class="sidebar-tooltip">China Radar (中国前沿)</span>
+    </button>
+
+    <!-- Multilingual Canonical Events -->
+    <button class="sidebar-btn" id="sidebar-events-btn" onclick="openEventsModal()" title="">
+      <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i>
+      <span class="sidebar-tooltip">Cross-Lingual Events (<span id="sidebar-events-count">—</span>)</span>
     </button>
 
     <!-- Watchlist -->
@@ -3161,6 +3221,281 @@
       }
     }
 
+    // Multilingual Event Intelligence Management
+    function openEventsModal() {
+      document.getElementById('events-modal').classList.remove('hidden');
+      if (typeof playBeep === 'function') playBeep('click');
+      loadEvents();
+    }
+
+    function closeEventsModal() {
+      document.getElementById('events-modal').classList.add('hidden');
+    }
+
+    async function loadEvents() {
+      const container = document.getElementById('events-container');
+      const typeFilter = document.getElementById('event-type-filter')?.value || '';
+      container.innerHTML = `
+        <div class="py-12 text-center text-slate-400 font-mono text-xs flex items-center justify-center gap-2">
+          <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-emerald-400"></i>
+          <span>Retrieving cross-lingual events & grounded claims...</span>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+
+      try {
+        let url = '/api/v1/events?limit=30&days=14';
+        if (typeFilter) url += `&type=${encodeURIComponent(typeFilter)}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // Update badge count
+        const badge = document.getElementById('sidebar-events-count');
+        if (badge) badge.innerText = data.total || 0;
+
+        if (!data.events || data.events.length === 0) {
+          container.innerHTML = `
+            <div class="p-8 text-center text-slate-400 font-mono text-xs glass-panel rounded-xl border border-white/[0.06]">
+              No events found within the 14-day freshness window. Click "Cluster New Docs" to process recent intelligence.
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = data.events.map(ev => renderEventCard(ev)).join('');
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        container.innerHTML = `
+          <div class="p-6 text-center text-rose-400 font-mono text-xs glass-panel rounded-xl">
+            Failed to retrieve events. Ensure the backend API is operational.
+          </div>
+        `;
+      }
+    }
+
+    function renderEventCard(ev) {
+      const langs = ev.languages_covered || [ev.first_seen_lang];
+      const hasZh = langs.includes('zh');
+      const hasEn = langs.includes('en');
+      const isBilingual = hasZh && hasEn;
+
+      // Badges
+      let langBadges = '';
+      if (isBilingual) {
+        langBadges += `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Bilingual (ZH+EN)</span>`;
+      } else if (hasZh) {
+        langBadges += `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-red-500/15 text-red-300 border border-red-500/30">🇨🇳 ZH Origin</span>`;
+      } else {
+        langBadges += `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-sky-500/15 text-sky-300 border border-sky-500/30">🌐 EN Origin</span>`;
+      }
+
+      // Claims pills
+      const claimsHtml = (ev.key_claims || []).map(c => `
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.04] border border-emerald-500/25 text-emerald-300">
+          <span class="text-slate-400">${escapeHtml(c.field)}:</span>
+          <strong class="font-semibold text-white">${escapeHtml(c.normalized_value)}</strong>
+        </span>
+      `).join('');
+
+      const firstSeenTime = new Date(ev.first_seen_at).toLocaleDateString(undefined, {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      return `
+        <div id="event-card-${ev.id}" class="glass-panel p-4 rounded-xl border border-white/[0.08] hover:border-emerald-500/30 transition space-y-3 bg-slate-900/40">
+          <div class="flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white/[0.06] text-slate-300 border border-white/[0.08]">
+                  ${escapeHtml(ev.type.replace('_', ' '))}
+                </span>
+                ${ev.version_tag ? `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">${escapeHtml(ev.version_tag)}</span>` : ''}
+                ${langBadges}
+                <span class="text-[10px] text-slate-400 font-mono">${firstSeenTime}</span>
+              </div>
+              <h3 class="text-sm font-bold text-white font-mono tracking-tight">${escapeHtml(ev.title)}</h3>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400 px-2 py-1 rounded bg-black/40 border border-white/[0.05] flex-shrink-0">
+              ${ev.documents_count} doc(s)
+            </span>
+          </div>
+
+          <!-- Claims -->
+          ${claimsHtml ? `<div class="flex flex-wrap gap-1.5 pt-1">${claimsHtml}</div>` : ''}
+
+          <!-- View Tabs -->
+          <div class="pt-2 border-t border-white/[0.06] flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-1.5">
+              <button onclick="showEventBrief('${ev.id}')" id="tab-brief-${ev.id}" class="px-2.5 py-1 rounded-md text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-medium">
+                Event Brief
+              </button>
+              <button onclick="showEventDossier('${ev.id}')" id="tab-dossier-${ev.id}" class="px-2.5 py-1 rounded-md text-[11px] font-mono bg-white/[0.04] text-slate-400 hover:text-white border border-white/[0.08]">
+                Evidence Dossier
+              </button>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">Canonical ID: ${ev.id.slice(0, 8)}...</span>
+          </div>
+
+          <!-- Dynamic Panel -->
+          <div id="event-panel-${ev.id}" class="p-3 rounded-lg bg-black/40 border border-white/[0.06] text-xs font-mono text-slate-300 min-h-[40px]">
+            <div class="text-slate-400 text-[11px]">Click "Event Brief" or "Evidence Dossier" to inspect details.</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function showEventBrief(eventId) {
+      const panel = document.getElementById(`event-panel-${eventId}`);
+      const tabBrief = document.getElementById(`tab-brief-${eventId}`);
+      const tabDossier = document.getElementById(`tab-dossier-${eventId}`);
+
+      if (tabBrief) {
+        tabBrief.className = "px-2.5 py-1 rounded-md text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-medium";
+      }
+      if (tabDossier) {
+        tabDossier.className = "px-2.5 py-1 rounded-md text-[11px] font-mono bg-white/[0.04] text-slate-400 hover:text-white border border-white/[0.08]";
+      }
+
+      panel.innerHTML = `<div class="text-slate-400 text-xs font-mono flex items-center gap-1.5 py-2"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Synthesizing brief across documents...</div>`;
+      if (window.lucide) lucide.createIcons();
+
+      try {
+        const res = await fetch(`/api/v1/events/${eventId}/summary?lang=en`);
+        const data = await res.json();
+
+        let benchTable = '';
+        if (data.benchmarks && data.benchmarks.length > 0) {
+          benchTable = `
+            <div class="mt-2.5 pt-2 border-t border-white/[0.06]">
+              <div class="text-[10px] uppercase font-semibold text-slate-400 mb-1">Grounded Benchmarks:</div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                ${data.benchmarks.map(b => `
+                  <div class="p-1.5 rounded bg-white/[0.03] border border-white/[0.06] text-[11px]">
+                    <div class="text-slate-400 text-[10px]">${escapeHtml(b.benchmark)}</div>
+                    <div class="text-emerald-300 font-bold">${escapeHtml(b.score)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        panel.innerHTML = `
+          <div class="space-y-2">
+            <p class="text-slate-200 text-xs leading-relaxed font-sans">${escapeHtml(data.summary_text)}</p>
+            ${benchTable}
+          </div>
+        `;
+      } catch (err) {
+        panel.innerHTML = `<div class="text-rose-400 text-xs">Failed to generate event brief.</div>`;
+      }
+    }
+
+    async function showEventDossier(eventId) {
+      const panel = document.getElementById(`event-panel-${eventId}`);
+      const tabBrief = document.getElementById(`tab-brief-${eventId}`);
+      const tabDossier = document.getElementById(`tab-dossier-${eventId}`);
+
+      if (tabBrief) {
+        tabBrief.className = "px-2.5 py-1 rounded-md text-[11px] font-mono bg-white/[0.04] text-slate-400 hover:text-white border border-white/[0.08]";
+      }
+      if (tabDossier) {
+        tabDossier.className = "px-2.5 py-1 rounded-md text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-medium";
+      }
+
+      panel.innerHTML = `<div class="text-slate-400 text-xs font-mono flex items-center gap-1.5 py-2"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Fetching partitioned dossier...</div>`;
+      if (window.lucide) lucide.createIcons();
+
+      try {
+        const res = await fetch(`/api/v1/events/${eventId}`);
+        const data = await res.json();
+
+        let timingLeadHtml = '';
+        if (data.cross_lingual_parity && data.cross_lingual_parity.latency_delta_hours !== null) {
+          const leader = data.cross_lingual_parity.leader_lang === 'zh' ? 'Chinese sources' : 'English sources';
+          timingLeadHtml = `
+            <div class="p-2 rounded bg-emerald-950/30 border border-emerald-500/20 text-[11px] text-emerald-300 mb-2">
+              ⚡ Cross-Lingual Lead: ${leader} reported ${data.cross_lingual_parity.latency_delta_hours}h ahead of the other language.
+            </div>
+          `;
+        }
+
+        const renderDocsList = (docs, roleLabel, colorCls) => {
+          if (!docs || docs.length === 0) return '';
+          return `
+            <div class="space-y-1.5 mt-2">
+              <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">${roleLabel} (${docs.length}):</div>
+              ${docs.map(d => `
+                <div id="doc-card-${d.doc_id}" class="p-2.5 rounded bg-white/[0.02] border border-white/[0.06] text-[11px] space-y-1.5">
+                  <div class="flex items-center justify-between text-[10px] text-slate-400">
+                    <span class="px-1.5 py-0.5 rounded ${colorCls} uppercase font-bold">${d.lang} [${d.role}]</span>
+                    <span>${new Date(d.published_at).toLocaleTimeString()}</span>
+                  </div>
+                  <div id="doc-text-${d.doc_id}" class="text-slate-300 font-sans leading-relaxed text-xs">
+                    ${escapeHtml(d.snippet)}
+                  </div>
+                  ${d.lang !== 'en' ? `
+                    <div class="pt-1">
+                      <button onclick="translateDoc('${eventId}', '${d.doc_id}')" class="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1">
+                        <i data-lucide="languages" class="w-3 h-3"></i> Translate on-demand to English
+                      </button>
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `;
+        };
+
+        panel.innerHTML = `
+          <div class="space-y-2">
+            ${timingLeadHtml}
+            ${renderDocsList(data.documents_by_role.primary, 'Primary Authority Sources', 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30')}
+            ${renderDocsList(data.documents_by_role.corroborating, 'Corroborating Media Accounts', 'bg-sky-500/20 text-sky-300 border border-sky-500/30')}
+            ${renderDocsList(data.documents_by_role.derivative, 'Derivative Community Commentary', 'bg-white/[0.05] text-slate-400 border border-white/[0.1]')}
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        panel.innerHTML = `<div class="text-rose-400 text-xs">Failed to load dossier.</div>`;
+      }
+    }
+
+    async function translateDoc(eventId, docId) {
+      const textContainer = document.getElementById(`doc-text-${docId}`);
+      if (!textContainer) return;
+      const originalText = textContainer.innerHTML;
+      textContainer.innerHTML = `<span class="text-slate-400 text-xs flex items-center gap-1"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Translating...</span>`;
+      if (window.lucide) lucide.createIcons();
+
+      try {
+        const res = await fetch(`/api/v1/events/${eventId}/documents/${docId}/translation?target_lang=en`);
+        const data = await res.json();
+        textContainer.innerHTML = `
+          <div class="space-y-1">
+            <div class="text-[10px] font-mono text-emerald-400 uppercase font-semibold">English View (${escapeHtml(data.producer)}):</div>
+            <div class="text-slate-200 font-sans leading-relaxed text-xs">${escapeHtml(data.text)}</div>
+          </div>
+        `;
+      } catch (err) {
+        textContainer.innerHTML = originalText;
+        alert('Translation request failed.');
+      }
+    }
+
+    async function triggerEventClusterSweep() {
+      try {
+        const res = await fetch('/api/v1/events/cluster?limit=100', { method: 'POST' });
+        const data = await res.json();
+        alert(`Clustered ${data.clustered_count || 0} documents into canonical events!`);
+        loadEvents();
+      } catch (err) {
+        alert('Failed to trigger event clustering sweep.');
+      }
+    }
+
     // Watchlist Management
     function openWatchlistModal() {
       document.getElementById('watchlist-modal').classList.remove('hidden');
@@ -5273,6 +5608,16 @@
         (async () => { try { await fetchTriageStatus(); } catch (e) { console.warn("TriageStatus:", e); } })(),
         (async () => { try { await updateSweepFreshness(); } catch (e) { console.warn("SweepFreshness:", e); } })(),
         (async () => { try { await loadMomentumRadar(); } catch (e) { console.warn("MomentumRadar:", e); } })(),
+        (async () => {
+          try {
+            const r = await fetch('/api/v1/events?limit=1');
+            const d = await r.json();
+            const badge = document.getElementById('sidebar-events-count');
+            if (badge && d.total !== undefined) badge.innerText = d.total;
+          } catch (e) {
+            console.warn("EventsCount:", e);
+          }
+        })(),
       ]);
 
       // WebSocket setup (non-blocking)
@@ -5597,6 +5942,10 @@
     <button onclick="openNewspaperModal()" class="flex flex-col items-center gap-0.5 text-cyan-400 hover:text-cyan-300 text-[10px] font-mono">
       <i data-lucide="newspaper" class="w-4 h-4"></i>
       <span>Gazette</span>
+    </button>
+    <button onclick="openEventsModal()" class="flex flex-col items-center gap-0.5 text-emerald-400 hover:text-emerald-300 text-[10px] font-mono">
+      <i data-lucide="layers" class="w-4 h-4"></i>
+      <span>Events</span>
     </button>
     <button onclick="VoiceRadar.startBriefing()" class="flex flex-col items-center gap-0.5 text-purple-400 hover:text-purple-300 text-[10px] font-mono">
       <i data-lucide="mic" class="w-4 h-4 animate-pulse"></i>

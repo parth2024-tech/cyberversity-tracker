@@ -300,6 +300,16 @@ class MonitorService:
                                 f"Soft-deactivated orphaned YAML source in DB: {db_s.name} (id={db_s.id})"
                             )
 
+            # Seed canonical entities and aliases for native document intelligence
+            try:
+                from ai_security_monitor.application.services.native_document_ingestion_service import (
+                    native_document_ingestion_service,
+                )
+
+                await native_document_ingestion_service.seed_canonical_entities(uow.session)
+            except Exception as seed_err:
+                logger.debug(f"Canonical entity seeding notice: {seed_err}")
+
             await uow.commit()
 
         if deactivated_count > 0:
@@ -457,7 +467,6 @@ class MonitorService:
                         await translation_service.translate_entry_async(entry)
                     except Exception as trans_e:
                         logger.debug(f"Translation skipped: {trans_e}")
-
                 entry.metadata = entry.metadata or {}
                 entry.metadata["region"] = source.config.get("region", "global")
                 entry.metadata["country"] = source.config.get("country", "GLOBAL")
@@ -762,6 +771,18 @@ class MonitorService:
                         await uow.analyses.add(analysis)
                         added_entry.analysis = analysis
                         new_entries_count += 1
+
+                        # Ingest native document into multilingual event architecture
+                        try:
+                            from ai_security_monitor.application.services.native_document_ingestion_service import (
+                                native_document_ingestion_service,
+                            )
+
+                            await native_document_ingestion_service.ingest_entry(
+                                uow.session, entry=added_entry, source_id=source.id
+                            )
+                        except Exception as doc_err:
+                            logger.debug(f"Native document ingestion notice: {doc_err}")
 
                         # Buffer WebSocket payload
                         pending_broadcasts.append(

@@ -40,4 +40,5 @@ build/
 data/backups/
 data/digests/
 data/*.db-journal
-
+data/briefs/
+data/digests/
