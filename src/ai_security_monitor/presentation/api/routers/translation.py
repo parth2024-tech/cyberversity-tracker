@@ -10,13 +10,14 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ai_security_monitor.application.services.translation_service import (
     LANGUAGE_NAMES,
     translation_service,
 )
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -70,7 +71,10 @@ async def translate_text_endpoint(req: TranslateTextRequest):
 
 
 @translation_router.post("/entry/{entry_id}")
-async def translate_entry_endpoint(entry_id: str):
+async def translate_entry_endpoint(
+    entry_id: str,
+    _admin: bool = Depends(require_admin_auth),
+):
     """Translate a specific database entry into English and persist original text in metadata."""
     try:
         e_uuid = UUID(entry_id)
@@ -109,7 +113,10 @@ from ai_security_monitor.domain.repositories import PaginationParams
 
 
 @translation_router.post("/backfill")
-async def backfill_translations(req: BackfillTranslationRequest):
+async def backfill_translations(
+    req: BackfillTranslationRequest,
+    _admin: bool = Depends(require_admin_auth),
+):
     """Backfill translations for existing foreign language entries in the database."""
     translated_count = 0
     async with SqlAlchemyUnitOfWork() as uow:

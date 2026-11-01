@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
@@ -15,6 +15,7 @@ from ai_security_monitor.application.services.newspaper_delivery_tracker import 
 )
 from ai_security_monitor.application.services.newspaper_service import NewspaperService
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.infrastructure.delivery.base import delivery_registry
 
 newspaper_router = APIRouter(prefix="/newspaper", tags=["Newspaper"])
@@ -125,6 +126,7 @@ async def list_newspaper_editions(limit: int = 15):
 @newspaper_router.post("/generate")
 async def trigger_newspaper_generation(
     req: GenerateEditionRequest = GenerateEditionRequest(),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Manually compile and publish a fresh 5-hour newspaper edition."""
     meta = await _newspaper_service.generate_edition(window_hours=req.window_hours)
@@ -137,7 +139,10 @@ async def trigger_newspaper_generation(
 
 
 @newspaper_router.post("/email")
-async def email_newspaper_pdf(req: EmailNewspaperRequest):
+async def email_newspaper_pdf(
+    req: EmailNewspaperRequest,
+    _admin: bool = Depends(require_admin_auth),
+):
     """Email the latest 5-hour newspaper PDF document to the specified recipient."""
     edition = _newspaper_service.get_latest_edition()
     if not edition:
@@ -226,6 +231,7 @@ class TelegramNewspaperRequest(BaseModel):
 @newspaper_router.post("/telegram")
 async def telegram_newspaper_pdf(
     req: TelegramNewspaperRequest = TelegramNewspaperRequest(),
+    _admin: bool = Depends(require_admin_auth),
 ):
     """Send the latest 5-hour newspaper PDF document to Telegram."""
     edition = _newspaper_service.get_latest_edition()
