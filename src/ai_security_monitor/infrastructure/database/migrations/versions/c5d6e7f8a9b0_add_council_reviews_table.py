@@ -1,6 +1,6 @@
 """add_council_reviews_table
 
-Revision ID: d1e2f3a4b5c6
+Revision ID: c5d6e7f8a9b0
 Revises: c9d2e5f3a1b0
 Create Date: 2026-11-01 14:30:00.000000
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "d1e2f3a4b5c6"
+revision: str = "c5d6e7f8a9b0"
 down_revision: str | Sequence[str] | None = "c9d2e5f3a1b0"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
