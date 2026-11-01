@@ -14,6 +14,8 @@ data/*.db-wal
 logs/*.log
 data/audio_cache/*
 data/newspapers/
+data/briefs/
+data/digests/
 data/*.json
 
 # Testing & Coverage
