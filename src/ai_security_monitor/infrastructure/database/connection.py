@@ -184,6 +184,15 @@ class DatabaseManager:
                     )
             except Exception:
                 pass
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "ALTER TABLE entries ADD COLUMN is_user_saved BOOLEAN DEFAULT 0"
+                        )
+                    )
+            except Exception:
+                pass
 
             # Pillar 3 Telemetry Columns on llm_receipts
             for col, col_type in [

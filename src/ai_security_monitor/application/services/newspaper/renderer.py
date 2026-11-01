@@ -765,9 +765,23 @@ class NewspaperRenderer:
             if item.analysis and getattr(item.analysis, "decision_brief", None):
                 db = item.analysis.decision_brief
                 if isinstance(db, dict):
-                    act = html.escape(str(db.get("recommended_action", "MONITOR_CLAIMS")))
-                    conf = html.escape(str(db.get("evidence_assessment", {}).get("confidence", "PRELIMINARY")))
-                    stack_impact = html.escape(str(db.get("stack_relevance", {}).get("impact_level", "NO_MATCH")))
+                    act = html.escape(
+                        str(db.get("recommended_action", "MONITOR_CLAIMS"))
+                    )
+                    conf = html.escape(
+                        str(
+                            db.get("evidence_assessment", {}).get(
+                                "confidence", "PRELIMINARY"
+                            )
+                        )
+                    )
+                    stack_impact = html.escape(
+                        str(
+                            db.get("stack_relevance", {}).get(
+                                "impact_level", "NO_MATCH"
+                            )
+                        )
+                    )
                     act_rat = html.escape(str(db.get("action_rationale", ""))[:120])
                     db_block = f"""
           <div class="mt-2 pt-2 border-t border-[#e2dccd] text-[10px]">

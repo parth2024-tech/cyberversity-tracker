@@ -29,7 +29,9 @@ def upgrade() -> None:
         sa.Column("display_name", sa.String(length=128), nullable=False),
         sa.Column("metric_value", sa.String(length=64), nullable=True),
         sa.Column("context", sa.Text(), nullable=True),
-        sa.Column("confidence", sa.Float(), nullable=False, server_default=sa.text("1.0")),
+        sa.Column(
+            "confidence", sa.Float(), nullable=False, server_default=sa.text("1.0")
+        ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(
             ["entry_id"],
@@ -40,14 +42,20 @@ def upgrade() -> None:
     )
     with op.batch_alter_table("entry_entities", schema=None) as batch_op:
         batch_op.create_index("ix_entry_entities_entry_id", ["entry_id"], unique=False)
-        batch_op.create_index("ix_entry_entities_entity_type", ["entity_type"], unique=False)
+        batch_op.create_index(
+            "ix_entry_entities_entity_type", ["entity_type"], unique=False
+        )
         batch_op.create_index("ix_entry_entities_name", ["name"], unique=False)
-        batch_op.create_index("ix_entry_entities_created_at", ["created_at"], unique=False)
+        batch_op.create_index(
+            "ix_entry_entities_created_at", ["created_at"], unique=False
+        )
         batch_op.create_index(
             "ix_entry_entities_type_name", ["entity_type", "name"], unique=False
         )
         batch_op.create_index(
-            "ix_entry_entities_created_type", ["created_at", "entity_type"], unique=False
+            "ix_entry_entities_created_type",
+            ["created_at", "entity_type"],
+            unique=False,
         )
 
 

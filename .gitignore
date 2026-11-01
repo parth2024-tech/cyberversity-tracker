@@ -38,5 +38,6 @@ build/
 .env.*
 .antigravitycli/
 data/backups/
+data/digests/
 data/*.db-journal
 

@@ -235,4 +235,3 @@ class TestChinaTokenShieldIntegration:
             assert "Qwen2.5-72B" in res
             assert "vLLM" in res
             assert "⟦" not in res
-

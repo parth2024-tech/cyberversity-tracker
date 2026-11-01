@@ -111,6 +111,9 @@ class EntryModel(Base):
         Boolean, default=False, server_default="0", index=True
     )
     purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_user_saved: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", index=True
+    )
 
     # Relationships
     source: Mapped[SourceModel] = relationship(
@@ -357,12 +360,9 @@ class EntryEntityModel(Base):
         index=True,
     )
 
-    entry: Mapped[EntryModel] = relationship(
-        "EntryModel", back_populates="entities"
-    )
+    entry: Mapped[EntryModel] = relationship("EntryModel", back_populates="entities")
 
     __table_args__ = (
         Index("ix_entry_entities_type_name", "entity_type", "name"),
         Index("ix_entry_entities_created_type", "created_at", "entity_type"),
     )
-

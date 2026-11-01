@@ -56,6 +56,7 @@ class EntryFilters:
     region: str | None = None
     country: str | None = None
     important_only: bool = False
+    user_saved_only: bool = False
     purged_only: bool = False
     watchlist_rules: list[Any] | None = None
 
@@ -141,6 +142,7 @@ class EntryRepository(ABC):
         entry_id: UUID,
         is_important: bool | None = None,
         reason: str | None = None,
+        is_user_action: bool = True,
     ) -> Entry:
         """Toggle or set importance status in vault."""
         ...
