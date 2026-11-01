@@ -134,6 +134,105 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "name": "run_autonomous_research_loop",
+        "description": "Execute an autonomous deep research loop aggregating hybrid semantic search, entity knowledge graph timelines, and heat velocity to synthesize an evidence-grounded research dossier.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The research topic or technical query (e.g. 'Analyze recent breakthroughs in test-time compute and vLLM')",
+                },
+                "max_sources": {
+                    "type": "integer",
+                    "description": "Maximum number of database items to aggregate (default: 10, max: 30)",
+                    "default": 10,
+                },
+                "include_entities": {
+                    "type": "boolean",
+                    "description": "Whether to query the entry_entities knowledge graph (Pillar 4) for matching models, repos, and benchmarks (default: true)",
+                    "default": True,
+                },
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "evaluate_council_shadow_review",
+        "description": "Trigger or inspect multi-agent council shadow evaluation for an AI intelligence entry (Architect, Skeptic, Practitioner, Domain Specialist) with citation-grounded claims.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "entry_id": {
+                    "type": "string",
+                    "description": "UUID of the intelligence entry to evaluate",
+                },
+                "force_refresh": {
+                    "type": "boolean",
+                    "description": "Whether to force a re-evaluation if review already exists",
+                    "default": False,
+                },
+            },
+            "required": ["entry_id"],
+        },
+    },
+    {
+        "name": "get_semantic_cluster_graph",
+        "description": "Retrieve precomputed semantic cluster graph of recent worldwide AI breakthroughs, models, and tools across the 14-day freshness window, including kNN similarity edges, cluster themes, and cross-language mappings.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Freshness window in days (max 14, default: 14)",
+                    "default": 14,
+                },
+                "max_nodes": {
+                    "type": "integer",
+                    "description": "Maximum number of nodes in graph (max 500, default: 300)",
+                    "default": 300,
+                },
+                "min_similarity": {
+                    "type": "number",
+                    "description": "Minimum cosine similarity threshold for edges (default: 0.72)",
+                    "default": 0.72,
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Optional category filter: 'ai_tech', 'ai_research', 'github_trending', 'ai_models'",
+                },
+            },
+        },
+    },
+    {
+        "name": "export_weekly_digest",
+        "description": "Export publication-grade weekly intelligence digest in Markdown, HTML, or JSON, featuring explicit user bookmarks, foundation models, and research breakthroughs within the 14-day freshness window.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Coverage window in days (1 to 14, default: 7)",
+                    "default": 7,
+                },
+                "format": {
+                    "type": "string",
+                    "description": "Output format: 'markdown', 'html', or 'json' (default: 'markdown')",
+                    "default": "markdown",
+                },
+                "timezone": {
+                    "type": "string",
+                    "description": "User timezone for date formatting (e.g. 'America/New_York', 'Asia/Kolkata', 'UTC')",
+                },
+                "user_saves_only": {
+                    "type": "boolean",
+                    "description": "Restrict digest strictly to explicit user-bookmarked entries (default: false)",
+                    "default": False,
+                },
+            },
+        },
+    },
 ]
 
 
@@ -284,6 +383,91 @@ class MCPServer:
                         entity_type=e_type, days=days, limit=limit
                     )
                     return json.dumps(top_entities, indent=2, default=str)
+
+            elif name == "run_autonomous_research_loop":
+                query_text = str(args.get("query", "")).strip()
+                if not query_text:
+                    return "Error: 'query' parameter is required for run_autonomous_research_loop."
+                max_sources = min(max(1, int(args.get("max_sources", 10))), 30)
+                include_entities = bool(args.get("include_entities", True))
+                from ai_security_monitor.application.services.autonomous_research_service import (
+                    autonomous_research_service,
+                )
+
+                return await autonomous_research_service.run_research_loop(
+                    query=query_text,
+                    max_sources=max_sources,
+                    include_entities=include_entities,
+                )
+
+            elif name == "evaluate_council_shadow_review":
+                entry_id_arg = args.get("entry_id", "")
+                force = bool(args.get("force_refresh", False))
+                from ai_security_monitor.application.services.council_service import (
+                    MultiAgentCouncilService,
+                )
+
+                council_svc = MultiAgentCouncilService()
+                council_review = await council_svc.evaluate_entry_in_shadow_mode(
+                    entry_id=entry_id_arg, force_refresh=force
+                )
+                return json.dumps(
+                    {
+                        "id": str(council_review.id),
+                        "entry_id": str(council_review.entry_id),
+                        "status": council_review.status,
+                        "consensus_verdict": council_review.consensus_verdict,
+                        "consensus_score": council_review.consensus_score,
+                        "consensus_summary": council_review.consensus_summary,
+                        "persona_evaluations": council_review.persona_evaluations,
+                        "verified_claims": council_review.verified_claims,
+                        "total_tokens": council_review.total_tokens,
+                        "total_latency_ms": council_review.total_latency_ms,
+                        "estimated_cost_usd": council_review.estimated_cost_usd,
+                    },
+                    indent=2,
+                )
+
+            elif name == "get_semantic_cluster_graph":
+                days = int(args.get("days", 14))
+                max_nodes = int(args.get("max_nodes", 300))
+                min_sim = float(args.get("min_similarity", 0.72))
+                category = args.get("category")
+                from ai_security_monitor.application.services.cluster_graph_service import (
+                    cluster_graph_service,
+                )
+
+                graph_data = await cluster_graph_service.get_graph(
+                    days=days,
+                    max_nodes=max_nodes,
+                    min_similarity=min_sim,
+                    category=category,
+                )
+                return json.dumps(graph_data, indent=2, default=str)
+
+            elif name == "export_weekly_digest":
+                from ai_security_monitor.application.services.weekly_digest_export_service import (
+                    WeeklyDigestExportService,
+                )
+
+                days = int(args.get("days", 7))
+                fmt = str(args.get("format", "markdown")).lower()
+                tz_name = args.get("timezone")
+                user_saves_only = bool(args.get("user_saves_only", False))
+
+                svc = WeeklyDigestExportService()
+                data = await svc.compile_weekly_digest(
+                    days=days,
+                    timezone_str=tz_name,
+                    include_user_saves_only=user_saves_only,
+                )
+
+                if fmt == "html":
+                    return svc.render_html(data)
+                elif fmt == "json":
+                    return json.dumps(data, indent=2, default=str)
+                else:
+                    return svc.render_markdown(data)
 
             else:
                 return f"Error: Unknown tool {name!r}"

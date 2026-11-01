@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -35,7 +36,10 @@ def twitter_source() -> Source:
 @pytest.mark.asyncio
 async def test_twitter_x_fetcher_parses_tweets(twitter_source: Source):
     """TwitterXFetcher should fetch and parse live tweets, cleaning ' - X' and extracting handles."""
-    mock_rss_xml = """<?xml version="1.0" encoding="UTF-8"?>
+    recent_pub = (datetime.now(UTC) - timedelta(days=1)).strftime(
+        "%a, %d %b %Y %H:%M:%S GMT"
+    )
+    mock_rss_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
     <rss version="2.0">
       <channel>
         <title>X / Twitter AI Updates</title>
@@ -43,7 +47,7 @@ async def test_twitter_x_fetcher_parses_tweets(twitter_source: Source):
           <title>🚀 DeepSeek-V4.1-Flash-1017 is here! Faster task completion by @deepseek_ai - X</title>
           <link>https://news.google.com/rss/articles/CBMi_test_link</link>
           <description>&lt;a href="https://x.com/deepseek_ai/status/123"&gt;DeepSeek-V4.1-Flash-1017 is here&lt;/a&gt;</description>
-          <pubDate>Sun, 18 Oct 2026 12:00:00 GMT</pubDate>
+          <pubDate>{recent_pub}</pubDate>
         </item>
       </channel>
     </rss>

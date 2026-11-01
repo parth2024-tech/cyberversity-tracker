@@ -14,6 +14,9 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, or_, select
 
+from ai_security_monitor.application.services.translation_service import (
+    translation_service,
+)
 from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.models import EntryModel, SourceModel
 from ai_security_monitor.infrastructure.database.unit_of_work import (
@@ -81,6 +84,28 @@ KEY_CHINA_LABS = [
 ]
 
 
+@china_router.get("/sources")
+@limiter.limit("60/minute")
+async def get_china_corridor_sources(request: Request, category: str | None = None):
+    """Retrieve the China Corridor 55+ Intelligence Ingestion Matrix grouped or filtered by category."""
+    from ai_security_monitor.config.china_source_catalog import (
+        CHINA_INGESTION_MATRIX,
+        get_sources_by_china_category,
+    )
+
+    if category:
+        sources = get_sources_by_china_category(category)
+    else:
+        sources = CHINA_INGESTION_MATRIX
+
+    return {
+        "status": "success",
+        "total": len(sources),
+        "filter_category": category,
+        "sources": [s.to_dict() for s in sources],
+    }
+
+
 @china_router.get("/overview")
 @limiter.limit("60/minute")
 async def get_china_corridor_overview(request: Request):
@@ -137,16 +162,107 @@ async def get_china_corridor_overview(request: Request):
                 .limit(5)
             )
             recent_res = await session.execute(recent_stmt)
-            recent_entries = [
-                {
-                    "id": r[0],
-                    "title": r[1],
-                    "url": r[2],
-                    "category": r[3],
-                    "published_at": r[4].isoformat() if r[4] else None,
-                }
-                for r in recent_res.all()
-            ]
+
+            recent_entries = []
+            for r in recent_res.all():
+                raw_title = r[1]
+                if translation_service.has_foreign_text(raw_title):
+                    tr_title, _, ok = translation_service.translate_text(raw_title)
+                    if ok:
+                        raw_title = tr_title
+                recent_entries.append(
+                    {
+                        "id": r[0],
+                        "title": raw_title,
+                        "url": r[2],
+                        "category": r[3],
+                        "published_at": r[4].isoformat() if r[4] else None,
+                    }
+                )
+
+            # Query recent 5 trending GitHub repos from China corridor
+            trending_stmt = (
+                select(
+                    EntryModel.id,
+                    EntryModel.title,
+                    EntryModel.url,
+                    EntryModel.summary,
+                    EntryModel.extra_metadata,
+                    EntryModel.published_at,
+                )
+                .join(SourceModel, EntryModel.source_id == SourceModel.id)
+                .where(EntryModel.is_purged.is_(False))
+                .where(EntryModel.category == "github_trending")
+                .where(
+                    or_(
+                        SourceModel.config.like('%"region": "china"%'),
+                        SourceModel.config.like('%"country": "CN"%'),
+                        SourceModel.config.like('%"country": "HK"%'),
+                        EntryModel.extra_metadata.like('%"region": "china"%'),
+                        EntryModel.extra_metadata.like('%"country": "CN"%'),
+                    )
+                )
+                .order_by(EntryModel.published_at.desc())
+                .limit(10)
+            )
+            trending_res = await session.execute(trending_stmt)
+            from ai_security_monitor.application.services.china_repo_intelligence import (
+                china_repo_intelligence,
+            )
+
+            trending_repos = []
+            archetype_counts: dict[str, int] = {}
+            for row in trending_res.all():
+                r_id = row[0]
+                r_title = str(row[1] or "")
+                r_url = str(row[2] or "")
+                r_summary = str(row[3] or "")
+                raw_meta = row[4]
+                meta: dict[str, Any] = (
+                    dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                )
+                r_pub = row[5]
+
+                repo_title = r_title
+                repo_summary = r_summary
+                if translation_service.has_foreign_text(repo_title):
+                    tr_title, _, ok = translation_service.translate_text(repo_title)
+                    if ok:
+                        repo_title = tr_title
+                if translation_service.has_foreign_text(repo_summary):
+                    tr_summary, _, ok = translation_service.translate_text(repo_summary)
+                    if ok:
+                        repo_summary = tr_summary
+
+                repo_intel = meta.get("repo_intel")
+                if not repo_intel:
+                    profile = china_repo_intelligence.extract_profile(
+                        title=repo_title,
+                        description=repo_summary,
+                        url=r_url,
+                        stars=meta.get("stars", 0),
+                    )
+                    repo_intel = profile.to_dict()
+
+                arch = repo_intel.get("archetype", "dev_tool")
+                archetype_counts[arch] = archetype_counts.get(arch, 0) + 1
+
+                pub_iso = (
+                    r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
+                )
+                trending_repos.append(
+                    {
+                        "id": r_id,
+                        "title": repo_title,
+                        "url": r_url,
+                        "summary": repo_summary,
+                        "repo_name": meta.get("repo_name", ""),
+                        "language": meta.get("language", ""),
+                        "stars": meta.get("stars") or meta.get("stars_period", ""),
+                        "repo_intel": repo_intel,
+                        "published_at": pub_iso,
+                    }
+                )
 
         return {
             "corridor": "China AI & Cyber Radar (中国前沿科技与网络安全)",
@@ -154,15 +270,145 @@ async def get_china_corridor_overview(request: Request):
             "by_category": category_counts,
             "key_laboratories": KEY_CHINA_LABS,
             "recent_dispatches": recent_entries,
+            "trending_repositories": trending_repos[:5],
+            "archetype_breakdown": archetype_counts,
             "coverage_pillars": [
                 "Frontier Foundation Models (DeepSeek, Qwen, GLM, Kimi)",
-                "Open-Source Repositories & Serving Runtimes (LMDeploy, ModelScope)",
+                "Open-Source Repositories & Serving Runtimes (LMDeploy, ModelScope, FastGPT, RAGFlow)",
                 "Academic Research (Tsinghua, SJTU, CAS, Fudan)",
                 "Cyber Defense, Threat Intel & Vulnerability Research (Qi-AnXin, 360, DarkNavy)",
             ],
         }
 
     data = await response_cache.get_or_set("china_corridor_overview", 30.0, _fetch)
+    headers = {"Cache-Control": "public, max-age=30, stale-while-revalidate=60"}
+    return JSONResponse(content=data, headers=headers)
+
+
+@china_router.get("/trending")
+@limiter.limit("60/minute")
+async def get_china_trending_repos(
+    request: Request,
+    limit: int = 25,
+    archetype: str | None = None,
+    lab: str | None = None,
+):
+    """Retrieve trending and unique Chinese open-source GitHub repositories with archetype filters."""
+
+    async def _fetch() -> dict[str, Any]:
+        async with SqlAlchemyUnitOfWork() as uow:
+            session = uow.session
+            stmt = (
+                select(
+                    EntryModel.id,
+                    EntryModel.title,
+                    EntryModel.url,
+                    EntryModel.summary,
+                    EntryModel.tags,
+                    EntryModel.extra_metadata,
+                    EntryModel.published_at,
+                )
+                .join(SourceModel, EntryModel.source_id == SourceModel.id)
+                .where(EntryModel.is_purged.is_(False))
+                .where(EntryModel.category == "github_trending")
+                .where(
+                    or_(
+                        SourceModel.config.like('%"region": "china"%'),
+                        SourceModel.config.like('%"country": "CN"%'),
+                        SourceModel.config.like('%"country": "HK"%'),
+                        EntryModel.extra_metadata.like('%"region": "china"%'),
+                        EntryModel.extra_metadata.like('%"country": "CN"%'),
+                    )
+                )
+                .order_by(EntryModel.published_at.desc())
+                .limit(min(limit * 2, 100))
+            )
+            result = await session.execute(stmt)
+            from ai_security_monitor.application.services.china_repo_intelligence import (
+                china_repo_intelligence,
+            )
+
+            repos = []
+            for row in result.all():
+                r_id = row[0]
+                r_title = str(row[1] or "")
+                r_url = str(row[2] or "")
+                r_summary = str(row[3] or "")
+                r_tags = row[4] or []
+                raw_meta = row[5]
+                meta: dict[str, Any] = (
+                    dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                )
+                r_pub = row[6]
+
+                repo_title = r_title
+                repo_summary = r_summary
+                is_tr = bool(meta.get("is_translated", False))
+
+                if translation_service.has_foreign_text(repo_title):
+                    tr_title, _, ok = translation_service.translate_text(repo_title)
+                    if ok:
+                        repo_title = tr_title
+                        is_tr = True
+                if translation_service.has_foreign_text(repo_summary):
+                    tr_summary, _, ok = translation_service.translate_text(repo_summary)
+                    if ok:
+                        repo_summary = tr_summary
+                        is_tr = True
+
+                repo_intel = meta.get("repo_intel")
+                if not repo_intel:
+                    profile = china_repo_intelligence.extract_profile(
+                        title=repo_title,
+                        description=repo_summary,
+                        url=r_url,
+                        tags=r_tags,
+                        stars=meta.get("stars", 0),
+                    )
+                    repo_intel = profile.to_dict()
+
+                # Filter by archetype if requested
+                if archetype and repo_intel.get("archetype") != archetype:
+                    continue
+
+                # Filter by lab if requested
+                if lab:
+                    lab_lower = lab.lower()
+                    repo_lab = (repo_intel.get("lab_name") or "").lower()
+                    if (
+                        lab_lower not in repo_lab
+                        and lab_lower not in repo_title.lower()
+                    ):
+                        continue
+
+                pub_iso = (
+                    r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
+                )
+                repos.append(
+                    {
+                        "id": r_id,
+                        "title": repo_title,
+                        "url": r_url,
+                        "summary": repo_summary,
+                        "tags": r_tags,
+                        "repo_name": meta.get("repo_name", ""),
+                        "language": meta.get("language", ""),
+                        "stars": meta.get("stars") or meta.get("stars_period", ""),
+                        "is_translated": is_tr,
+                        "repo_intel": repo_intel,
+                        "published_at": pub_iso,
+                    }
+                )
+
+            final_repos = repos[:limit]
+            return {
+                "trending_repositories": final_repos,
+                "count": len(final_repos),
+                "filter": {"archetype": archetype, "lab": lab},
+            }
+
+    cache_key = f"china_trending_repos_{limit}_{archetype}_{lab}"
+    data = await response_cache.get_or_set(cache_key, 30.0, _fetch)
     headers = {"Cache-Control": "public, max-age=30, stale-while-revalidate=60"}
     return JSONResponse(content=data, headers=headers)
 
@@ -226,6 +472,26 @@ async def get_china_glossary():
             "zh": "逆向工程",
             "en": "Reverse Engineering",
             "category": "Security Engineering",
+        },
+        {
+            "zh": "开源智能体编排 (Agentic Workflow)",
+            "en": "Multi-Agent Orchestration & Autonomous Workflows",
+            "category": "Developer Tooling",
+        },
+        {
+            "zh": "知识库检索与文档问答 (RAG)",
+            "en": "Retrieval-Augmented Generation & Document QA",
+            "category": "Developer Tooling",
+        },
+        {
+            "zh": "高吞吐量推理引擎 (Serving Runtime)",
+            "en": "High-Throughput Inference & Serving Engine",
+            "category": "Inference Infrastructure",
+        },
+        {
+            "zh": "提示词微调与对齐 (LoRA / SFT)",
+            "en": "Parameter-Efficient Fine-Tuning & Alignment",
+            "category": "Fine-Tuning",
         },
     ]
     return JSONResponse(content={"glossary": glossary, "count": len(glossary)})

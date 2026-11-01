@@ -6,6 +6,7 @@ Maps to database tables for persistent storage.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -112,6 +113,9 @@ class EntryModel(Base):
         Boolean, default=False, server_default="0", index=True
     )
     purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_user_saved: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", index=True
+    )
 
     # Relationships
     source: Mapped[SourceModel] = relationship(
@@ -363,6 +367,133 @@ class EntryEntityModel(Base):
     __table_args__ = (
         Index("ix_entry_entities_type_name", "entity_type", "name"),
         Index("ix_entry_entities_created_type", "created_at", "entity_type"),
+    )
+
+
+class ResearchRunModel(Base):
+    """Audit and replay log for autonomous deep research loop executions."""
+
+    __tablename__ = "research_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    query: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
+    sources_count: Mapped[int] = mapped_column(Integer, default=0)
+    execution_steps: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    cost_estimate: Mapped[float] = mapped_column(Float, default=0.0)
+    coverage_score: Mapped[float] = mapped_column(Float, default=1.0)
+    output_markdown: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        index=True,
+    )
+
+
+class CouncilReviewModel(Base):
+    """Multi-Agent Council evaluation stored in shadow mode for calibration review (Workstream A2)."""
+
+    __tablename__ = "council_reviews"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    entry_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default="shadow", nullable=False, index=True
+    )  # "shadow", "pending_review", "approved", "rejected", "calibrated"
+    consensus_verdict: Mapped[str] = mapped_column(
+        String(50), nullable=False, index=True
+    )
+    consensus_score: Mapped[float] = mapped_column(Float, nullable=False)
+    consensus_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    persona_evaluations: Mapped[dict] = mapped_column(JSON, nullable=False)
+    verified_claims: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    receipt_keys: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    estimated_cost_usd: Mapped[float] = mapped_column(
+        Float, default=0.0, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        index=True,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index("ix_council_reviews_entry_status", "entry_id", "status"),
+        Index("ix_council_reviews_created_verdict", "created_at", "consensus_verdict"),
+    )
+
+
+class EntityDailyCountModel(Base):
+    """Pre-aggregated daily mention counts for AI knowledge graph entities (Workstream B1)."""
+
+    __tablename__ = "entity_daily_counts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    entity_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    bucket_date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    mention_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_entity_daily_counts_key_date",
+            "entity_name",
+            "entity_type",
+            "bucket_date",
+            unique=True,
+        ),
+        Index("ix_entity_daily_counts_date_type", "bucket_date", "entity_type"),
+    )
+
+
+class BackupRunModel(Base):
+    """Execution log for encrypted offsite database backups and restore drills."""
+
+    __tablename__ = "backup_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    status: Mapped[str] = mapped_column(
+        String(20), default="in_progress", nullable=False, index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    raw_size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    compressed_size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    encrypted_size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    sha256_raw: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sha256_encrypted: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    integrity_check_passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    uploaded_to_remote: Mapped[bool] = mapped_column(Boolean, default=False)
+    remote_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_seconds: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
     )
 
 

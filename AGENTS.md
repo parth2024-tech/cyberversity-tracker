@@ -22,3 +22,10 @@ Always prioritize and balance broad, worldwide artificial intelligence news:
 - **CRITICAL DIRECTIVE**: Antigravity MUST NEVER run `gh pr merge` or merge its own pull requests autonomously under any circumstance.
 - All pull requests MUST remain open with the PR URL and a clear diff summary provided to the user.
 - Merging and deployment are strictly reserved for the human user.
+
+## ⚠️ MANDATORY RULE: 100% Free & Zero-Cost Architecture ($0/Month Law)
+- **CRITICAL DIRECTIVE**: Everything in this project MUST be 100% completely free ($0/month).
+- **Zero Paid APIs / Zero Subscriptions**: Under NO circumstance should any paid API, recurring subscription, proprietary cloud billing (e.g., paid OpenAI, paid Anthropic, paid DeepL, paid Google Cloud Translation API), or commercial SaaS dependency be introduced or required.
+- **Permissive Open-Source Only**: All models, libraries, runtimes, and dependencies must be free and open-source (Apache 2.0, MIT, BSD, CC0). Avoid commercial paywalls or non-commercial licensing traps.
+- **Local Silicon & Free-Tier First**: Architecture must rely entirely on local SLMs (via Ollama/llama.cpp such as `qwen2.5-coder:7b`/`3b`), generous free tiers (e.g., Groq free tier), direct public RPCs (e.g., Google GTX endpoint), or embedded in-process engines (e.g., Argos Translate).
+- **Zero Operational Cost Guarantee**: The system must run perpetually on local compute and free public infrastructure with zero monthly bills or credit card requirements.

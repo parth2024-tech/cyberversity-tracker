@@ -50,6 +50,17 @@ class DatabaseSettings(BaseSettings):
     echo: bool = Field(default=False, description="Log SQL queries")
     pool_size: int = Field(default=5, description="Connection pool size")
     max_overflow: int = Field(default=10, description="Max pool overflow")
+    sqlite_cache_size: int = Field(
+        default=-4000,
+        description="SQLite page cache size in KB (-4000 = 4MB, optimized for 512MB host)",
+    )
+    sqlite_mmap_size: int = Field(
+        default=33554432,
+        description="SQLite memory-mapped I/O limit in bytes (32MB, down from 256MB)",
+    )
+    sqlite_wal_autocheckpoint: int = Field(
+        default=100, description="SQLite WAL autocheckpoint interval in pages"
+    )
 
     model_config = SettingsConfigDict(env_prefix="DB_")
 
@@ -116,8 +127,14 @@ class FetchSettings(BaseSettings):
         default=3600, description="Default rate limit (seconds)"
     )
     max_concurrency: int = Field(
-        default=12,
-        description="Maximum concurrent fetch workers (adaptive semaphore cap)",
+        default=4,
+        description="Maximum concurrent fetch workers (adaptive semaphore cap, defaults to 4 for 512MB RAM stability)",
+    )
+    low_memory_mode: bool = Field(
+        default_factory=lambda: (
+            os.environ.get("LOW_MEMORY_MODE", "").lower() in ("true", "1", "yes")
+        ),
+        description="Whether host operates in aggressive low-memory mode (512MB Render free tier)",
     )
     consecutive_failure_threshold: int = Field(
         default=3, description="Consecutive fetch failures before triggering alert"
@@ -268,6 +285,66 @@ class DeliverySettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="DELIVERY_")
 
 
+class BackupSettings(BaseSettings):
+    """Encrypted offsite backup configuration."""
+
+    enabled: bool = Field(default=True, description="Enable automated backups")
+    backup_dir: Path = Field(
+        default=Path("data/backups"), description="Local directory for encrypted backups"
+    )
+    age_public_key: str | None = Field(
+        default=None,
+        description="X25519 age public key (age1...) for encrypting backups. Private key held offline.",
+    )
+    s3_endpoint_url: str | None = Field(
+        default=None, description="S3/R2 compatible endpoint URL"
+    )
+    s3_bucket_name: str | None = Field(
+        default=None, description="S3/R2 bucket name for offsite storage"
+    )
+    s3_access_key_id: str | None = Field(
+        default=None, description="S3/R2 access key ID"
+    )
+    s3_secret_access_key: str | None = Field(
+        default=None, description="S3/R2 secret access key"
+    )
+    s3_region_name: str = Field(
+        default="auto", description="S3/R2 region name"
+    )
+    # Retention policy: 7 daily, 4 weekly, 6 monthly
+    retention_daily: int = Field(default=7, description="Number of daily backups to keep")
+    retention_weekly: int = Field(default=4, description="Number of weekly backups to keep")
+    retention_monthly: int = Field(default=6, description="Number of monthly backups to keep")
+
+    model_config = SettingsConfigDict(env_prefix="BACKUP_")
+
+
+class ExportSettings(BaseSettings):
+    """Weekly digest export and external synchronization settings."""
+
+    default_timezone: str = Field(
+        default="UTC", description="Default user timezone for digest exports"
+    )
+    output_dir: Path = Field(
+        default=Path("data/digests/weekly"), description="Local export directory"
+    )
+    r2_bucket: str | None = Field(
+        default=None, description="Cloudflare R2 / S3 bucket name"
+    )
+    r2_endpoint_url: str | None = Field(
+        default=None, description="Cloudflare R2 / S3 endpoint URL"
+    )
+    r2_access_key: str | None = Field(default=None, description="R2 / S3 access key ID")
+    r2_secret_key: str | None = Field(
+        default=None, description="R2 / S3 secret access key"
+    )
+    git_repo_url: str | None = Field(
+        default=None, description="Private Git repository URL for export sync"
+    )
+
+    model_config = SettingsConfigDict(env_prefix="EXPORT_")
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -288,6 +365,8 @@ class Settings(BaseSettings):
     fetch: FetchSettings = Field(default_factory=FetchSettings)
     analyzer: AnalyzerSettings = Field(default_factory=AnalyzerSettings)
     delivery: DeliverySettings = Field(default_factory=DeliverySettings)
+    backup: BackupSettings = Field(default_factory=BackupSettings)
+    export: ExportSettings = Field(default_factory=ExportSettings)
 
     model_config = SettingsConfigDict(
         env_file=".env",

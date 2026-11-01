@@ -306,3 +306,95 @@ async def test_backup_loop_creates_backup_and_prunes(
         await scheduler._backup_loop()
 
     assert not b1.exists()  # Oldest should be pruned since retention is 2
+
+
+@pytest.mark.asyncio
+async def test_backup_loop_with_age_encryption_success(
+    scheduler: SchedulerService, tmp_path
+):
+    """Verify that _backup_loop triggers BackupService when age public key is set."""
+    scheduler._running = True
+    call_count = 0
+
+    async def fake_sleep(duration: float):
+        nonlocal call_count
+        call_count += 1
+        if call_count > 1:
+            scheduler._running = False
+
+    from unittest.mock import AsyncMock
+
+    from ai_security_monitor.application.services.backup_service import BackupResult
+
+    mock_result = BackupResult(
+        backup_run_id="run-123",
+        status="success",
+        filename="aetherguard_backup_20261101_010000_123.db.gz.age",
+        filepath=tmp_path / "aetherguard_backup_20261101_010000_123.db.gz.age",
+        raw_size_bytes=1000,
+        compressed_size_bytes=500,
+        encrypted_size_bytes=600,
+        sha256_raw="rawsha",
+        sha256_encrypted="encsha",
+        integrity_check_passed=True,
+        uploaded_to_remote=False,
+    )
+
+    with (
+        patch("asyncio.sleep", side_effect=fake_sleep),
+        patch.object(settings.backup, "age_public_key", "age1testpublickey12345"),
+        patch.object(settings.backup, "s3_bucket_name", None),
+        patch(
+            "ai_security_monitor.application.services.backup_service.BackupService.create_backup",
+            new_callable=AsyncMock,
+            return_value=mock_result,
+        ) as mock_create,
+    ):
+        await scheduler._backup_loop()
+        assert mock_create.called
+        status = scheduler.get_backup_status()
+        assert status["last_backup_at"] is not None
+        assert status["is_overdue"] is False
+        assert status["age_encryption_enabled"] is True
+
+
+@pytest.mark.asyncio
+async def test_backup_loop_failure_dispatches_telegram_alert(
+    scheduler: SchedulerService,
+):
+    """Verify that _backup_loop dispatches emergency Telegram alert on backup failure."""
+    scheduler._running = True
+    call_count = 0
+
+    async def fake_sleep(duration: float):
+        nonlocal call_count
+        call_count += 1
+        if call_count > 1:
+            scheduler._running = False
+
+    from unittest.mock import AsyncMock
+
+    from ai_security_monitor.application.services.backup_service import BackupError
+
+    with (
+        patch("asyncio.sleep", side_effect=fake_sleep),
+        patch.object(settings.backup, "age_public_key", "age1testpublickey12345"),
+        patch.object(settings.delivery, "telegram_enabled", True),
+        patch.object(settings.delivery, "telegram_bot_token", "123456:ABC-DEF"),
+        patch.object(settings.delivery, "telegram_chat_id", "99999999"),
+        patch(
+            "ai_security_monitor.application.services.backup_service.BackupService.create_backup",
+            new_callable=AsyncMock,
+            side_effect=BackupError("Disk IO failure"),
+        ),
+        patch(
+            "ai_security_monitor.infrastructure.delivery.telegram_delivery.TelegramDelivery.send_message",
+            new_callable=AsyncMock,
+        ) as mock_tg_alert,
+    ):
+        await scheduler._backup_loop()
+        assert mock_tg_alert.called
+        alert_msg = mock_tg_alert.call_args[0][0]
+        assert "AETHERGUARD BACKUP FAILED" in alert_msg
+        assert "Disk IO failure" in alert_msg
+

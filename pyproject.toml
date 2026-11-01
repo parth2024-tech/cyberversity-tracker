@@ -63,6 +63,8 @@ dependencies = [
     "sqlite-vec>=0.1.6",
     "fastembed>=0.4.0",
     "numpy>=1.26",
+    "pyrage>=1.4.0",
+    "boto3>=1.34.0",
 ]
 
 [project.optional-dependencies]

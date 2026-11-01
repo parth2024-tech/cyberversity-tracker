@@ -20,8 +20,12 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema - add decision_brief to entry_analysis."""
-    with op.batch_alter_table("entry_analysis", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("decision_brief", sa.JSON(), nullable=True))
+    conn = op.get_bind()
+    insp = sa.inspect(conn)
+    existing_columns = [c["name"] for c in insp.get_columns("entry_analysis")]
+    if "decision_brief" not in existing_columns:
+        with op.batch_alter_table("entry_analysis", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("decision_brief", sa.JSON(), nullable=True))
 
 
 def downgrade() -> None:

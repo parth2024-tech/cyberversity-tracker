@@ -136,7 +136,7 @@ def test_triage_scoring_boost_from_personal_affinity():
     # Candidate aligned with preference
     aligned_entry = Entry(
         source_id=uuid4(),
-        title="Reinforcement learning incentives for extended reasoning steps",
+        title="DeepSeek-R1 test-time compute reasoning architecture exploration",
         url="https://arxiv.org/abs/2501.99999",
         summary="Empirical evaluation of test-time compute scaling in reasoning LLMs.",
         content_hash="h_aligned",

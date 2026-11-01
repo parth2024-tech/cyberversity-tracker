@@ -8,10 +8,11 @@ import os
 
 # Guarantee that automated test sessions use an isolated throwaway SQLite DB
 # and never mutate a developer's real local database or production state.
-os.environ["DATA_DIR"] = "/tmp/aetherguard_test_data"
-os.environ["DATABASE__URL"] = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
-os.environ["DB_URL"] = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
-os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
+TEST_DATA_DIR = "/tmp/aetherguard_test_data"
+os.environ["DATA_DIR"] = TEST_DATA_DIR
+os.environ["DATABASE__URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
+os.environ["DB_URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
+os.makedirs(TEST_DATA_DIR, exist_ok=True)
 
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -37,6 +38,21 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     import asyncio
     import os
 
+    from ai_security_monitor.config.settings import settings
+
+    # Assert on resolved database URL, not merely DATA_DIR
+    resolved_url = settings.database.url
+    assert (
+        "sqlite+aiosqlite:////tmp/" in resolved_url
+        or "memory" in resolved_url
+    ), (
+        f"CRITICAL TEST ISOLATION FAILURE: Database URL does not resolve to an isolated test path: {resolved_url}"
+    )
+    # Strict safeguard: never target real local data/monitor.db
+    assert not resolved_url.endswith("/data/monitor.db"), (
+        f"CRITICAL TEST ISOLATION FAILURE: Database URL targets real dev/prod DB: {resolved_url}"
+    )
+
     # Wipe stale test database file to guarantee a fresh state on each test session run
     data_dir = os.environ.get("DATA_DIR")
     if data_dir and os.path.exists(data_dir):
@@ -47,9 +63,6 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             except OSError:
                 pass
 
-    from ai_security_monitor.config.settings import settings
-
-    settings.database.url = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
     assert "/tmp/aetherguard_test_data" in settings.database.url, (
         f"CRITICAL SAFETY CHECK FAILED: tests must never target development database! "
         f"Resolved url: {settings.database.url}"
