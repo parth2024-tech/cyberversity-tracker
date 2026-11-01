@@ -112,13 +112,38 @@ class SitemapFetcher(BaseFetcher):
             try:
                 resp = await client.get(self.source.url)
                 if resp.status_code == 304:
-                    logger.info(
-                        f"Sitemap {self.source.name!r} returned HTTP 304 Not Modified. "
-                        "Sitemap unchanged; zero payload parsed."
-                    )
-                    return []
-                resp.raise_for_status()
-                response = resp
+                    stored_count = source_cfg.get("stored_entries_count")
+                    # Defect Ledger D3: Stored validators outlive data (ETag lockout)
+                    if stored_count is not None and stored_count < 3:
+                        logger.warning(
+                            f"Sitemap {self.source.name!r} returned HTTP 304 but only has {stored_count} stored entries. "
+                            "Discarding stale ETag/Last-Modified validators and refetching full sitemap."
+                        )
+                        if self.source.config is not None:
+                            self.source.config.pop("etag", None)
+                            self.source.config.pop("last_modified", None)
+                        unconditional_headers = {
+                            k: v
+                            for k, v in stealth_headers.items()
+                            if k not in ("If-None-Match", "If-Modified-Since")
+                        }
+                        refetch_resp = await client.get(
+                            self.source.url, headers=unconditional_headers
+                        )
+                        if refetch_resp.status_code == 200:
+                            response = refetch_resp
+                        else:
+                            resp = refetch_resp
+
+                    if response is None and resp.status_code == 304:
+                        logger.info(
+                            f"Sitemap {self.source.name!r} returned HTTP 304 Not Modified. "
+                            "Sitemap unchanged; zero payload parsed."
+                        )
+                        return []
+                if response is None:
+                    resp.raise_for_status()
+                    response = resp
             except Exception as e:
                 logger.warning(f"Failed to fetch sitemap from {self.source.url}: {e}")
                 raise
