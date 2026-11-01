@@ -8,10 +8,14 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import yaml
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 
+from ai_security_monitor.application.services.weekly_brief_service import (
+    WeeklyBriefService,
+)
 from ai_security_monitor.config.settings import settings
+from ai_security_monitor.core.auth import require_admin_auth
 from ai_security_monitor.domain.entities import Digest, Entry
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -152,7 +156,9 @@ async def get_markdown_digest(
         BalancedDigestService,
     )
 
-    balanced_result = BalancedDigestService(max_total_items=40).balance(filtered_entries)
+    balanced_result = BalancedDigestService(max_total_items=40).balance(
+        filtered_entries
+    )
     balanced_entries = balanced_result.items
 
     date_str = datetime.now(UTC).strftime("%Y-%m-%d")
@@ -235,3 +241,52 @@ async def get_markdown_digest(
     return Response(
         content=md_text, media_type="text/markdown; charset=utf-8", headers=headers
     )
+
+
+@digest_router.get("/weekly")
+async def get_weekly_brief(
+    year: int | None = Query(default=None, description="ISO Year (e.g. 2026)"),
+    week: int | None = Query(
+        default=None, ge=1, le=53, description="ISO Week number (1-53)"
+    ),
+    format: str = Query(
+        default="json", description="Output format: 'json' or 'markdown'"
+    ),
+):
+    """Retrieve Weekly 'What Changed' Intelligence Brief."""
+    service = WeeklyBriefService()
+    async with SqlAlchemyUnitOfWork() as uow:
+        brief = await service.generate_brief(uow=uow, year=year, week=week)
+
+    if format == "markdown":
+        return Response(
+            content=brief.render_markdown(),
+            media_type="text/markdown; charset=utf-8",
+        )
+    return brief.to_dict()
+
+
+@digest_router.post("/weekly/generate")
+async def generate_weekly_brief(
+    year: int | None = Query(default=None, description="ISO Year (e.g. 2026)"),
+    week: int | None = Query(
+        default=None, ge=1, le=53, description="ISO Week number (1-53)"
+    ),
+    _admin: bool = Depends(require_admin_auth),
+):
+    """Generate and persist Weekly Briefing to data/briefs/YYYY-WW.md & .json."""
+    service = WeeklyBriefService()
+    async with SqlAlchemyUnitOfWork() as uow:
+        brief = await service.generate_brief(
+            uow=uow,
+            year=year,
+            week=week,
+            output_dir="data/briefs",
+        )
+    return {
+        "message": f"Weekly brief {brief.year}-W{brief.week:02d} generated successfully.",
+        "year": brief.year,
+        "week": brief.week,
+        "markdown_file": f"data/briefs/{brief.year}-W{brief.week:02d}.md",
+        "json_file": f"data/briefs/{brief.year}-W{brief.week:02d}.json",
+    }
