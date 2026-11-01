@@ -4,8 +4,6 @@ Newspaper API router for 5-hour autonomous intelligence broadsheets.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
@@ -79,7 +77,7 @@ async def download_newspaper(
     if not edition:
         raise HTTPException(status_code=404, detail="No newspaper edition to download.")
 
-    output_dir = Path("data/newspapers")
+    output_dir = _newspaper_service._output_dir
     if file_format == "html":
         file_path = output_dir / f"{edition['edition_id']}.html"
         media_type = "text/html"

@@ -12,6 +12,7 @@ Tests for 14 Architectural & Reliability Improvements:
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -216,12 +217,11 @@ async def test_consecutive_failure_tracking_and_alert():
 
 
 @pytest.mark.asyncio
-async def test_automated_sqlite_backup_loop():
+async def test_automated_sqlite_backup_loop(tmp_path: Path):
     """Verify SQLite backup creates timestamped copy and limits retention."""
     import shutil
-    from pathlib import Path
 
-    test_dir = Path("data/test_backup_suite")
+    test_dir = tmp_path / "test_backup_suite"
     test_dir.mkdir(parents=True, exist_ok=True)
     db_file = test_dir / "monitor.db"
     db_file.write_text("sqlite mock database")

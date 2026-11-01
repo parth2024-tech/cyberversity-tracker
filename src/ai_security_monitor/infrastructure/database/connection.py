@@ -32,10 +32,21 @@ class DatabaseManager:
     """Manages database engine and sessions."""
 
     def __init__(self, url: str | None = None, echo: bool | None = None):
-        self._url = url or settings.database.url
+        self._custom_url = url
         self._echo = echo if echo is not None else settings.database.echo
         self._engine: AsyncEngine | None = None
         self._session_factory: async_sessionmaker[AsyncSession] | None = None
+
+    @property
+    def url(self) -> str:
+        if self._custom_url is not None:
+            return self._custom_url
+        return settings.database.resolved_url
+
+    def reset(self) -> None:
+        """Reset lazy engine and session factory to force re-evaluation of URL."""
+        self._engine = None
+        self._session_factory = None
 
     @property
     def engine(self) -> AsyncEngine:
@@ -57,11 +68,11 @@ class DatabaseManager:
     def _create_engine(self) -> AsyncEngine:
         """Create async engine with appropriate configuration."""
         # For SQLite, ensure directory exists and use NullPool
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
             import os
 
             db_path = (
-                self._url.replace("sqlite+aiosqlite:///", "")
+                self.url.replace("sqlite+aiosqlite:///", "")
                 .replace("sqlite:///", "")
                 .split("?")[0]
             )
@@ -73,21 +84,21 @@ class DatabaseManager:
             _ensure_seed_database(db_path)
 
             engine = create_async_engine(
-                self._url,
+                self.url,
                 echo=self._echo,
                 poolclass=NullPool,
                 connect_args={"check_same_thread": False},
             )
         else:
             engine = create_async_engine(
-                self._url,
+                self.url,
                 echo=self._echo,
                 pool_size=settings.database.pool_size,
                 max_overflow=settings.database.max_overflow,
             )
 
         # Enable WAL mode for SQLite
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
 
             @event.listens_for(engine.sync_engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -154,9 +165,9 @@ class DatabaseManager:
     async def init_db(self) -> None:
         """Initialize database - create tables if they don't exist."""
         db_path = None
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
             db_path = (
-                self._url.replace("sqlite+aiosqlite:///", "")
+                self.url.replace("sqlite+aiosqlite:///", "")
                 .replace("sqlite:///", "")
                 .split("?")[0]
             )
@@ -167,7 +178,7 @@ class DatabaseManager:
             await conn.run_sync(Base.metadata.create_all)
 
         # Ensure soft-delete columns exist on pre-existing databases
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
             try:
                 async with self.engine.begin() as conn:
                     await conn.execute(
