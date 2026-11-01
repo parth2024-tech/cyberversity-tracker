@@ -10,6 +10,7 @@ from dateutil import parser as dt_parser
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.exceptions import FetchNotModifiedError
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
@@ -121,10 +122,12 @@ class RSSFetcher(BaseFetcher):
                                 f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
                                 "Feed unchanged; skipping body payload."
                             )
-                            return []
+                            raise FetchNotModifiedError(self.source.name)
                     resp.raise_for_status()
                     response = resp
                     break
+                except FetchNotModifiedError:
+                    raise
                 except Exception as req_err:
                     last_error = req_err
                     response = None
@@ -160,7 +163,7 @@ class RSSFetcher(BaseFetcher):
             response.headers.get("content-type", "").lower().split(";")[0].strip()
         )
         first_bytes = raw_bytes[:100].lower().replace(b" ", b"")
-        is_html_response = ct_header in ("text/html",) and (
+        is_html_response = ct_header in ("text/html", "application/xhtml+xml") or (
             first_bytes.startswith((b"<!doctype", b"<html"))
         )
         if is_html_response:

@@ -16,6 +16,7 @@ from defusedxml import ElementTree
 
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Entry
+from ai_security_monitor.domain.exceptions import FetchNotModifiedError
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
@@ -117,19 +118,19 @@ class SitemapFetcher(BaseFetcher):
                     if stored_count is not None and stored_count < 3:
                         logger.warning(
                             f"Sitemap {self.source.name!r} returned HTTP 304 but only has {stored_count} stored entries. "
-                            "Discarding stale ETag/Last-Modified validators and refetching full sitemap."
+                            "Discarding stale ETag/Last-Modified validators and refetching full payload."
                         )
                         if self.source.config is not None:
                             self.source.config.pop("etag", None)
                             self.source.config.pop("last_modified", None)
-                        unconditional_headers = {
-                            k: v
-                            for k, v in stealth_headers.items()
-                            if k not in ("If-None-Match", "If-Modified-Since")
-                        }
-                        refetch_resp = await client.get(
-                            self.source.url, headers=unconditional_headers
-                        )
+                        for h_key in (
+                            "if-none-match",
+                            "if-modified-since",
+                            "If-None-Match",
+                            "If-Modified-Since",
+                        ):
+                            client.headers.pop(h_key, None)
+                        refetch_resp = await client.get(self.source.url)
                         if refetch_resp.status_code == 200:
                             response = refetch_resp
                         else:
@@ -140,10 +141,12 @@ class SitemapFetcher(BaseFetcher):
                             f"Sitemap {self.source.name!r} returned HTTP 304 Not Modified. "
                             "Sitemap unchanged; zero payload parsed."
                         )
-                        return []
+                        raise FetchNotModifiedError(self.source.name)
                 if response is None:
                     resp.raise_for_status()
                     response = resp
+            except FetchNotModifiedError:
+                raise
             except Exception as e:
                 logger.warning(f"Failed to fetch sitemap from {self.source.url}: {e}")
                 raise
