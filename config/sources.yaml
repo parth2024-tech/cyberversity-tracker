@@ -575,6 +575,82 @@ sources:
   region: china
   country: CN
   tier: 1.0
+- name: GitHub Trending Chinese AI & Open-Source Projects (Daily)
+  category: github_trending
+  type: github_trending
+  since: daily
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  config:
+    frequency: daily
+    spoken_language_code: zh
+    filter_mode: ai
+  tier: 1.0
+- name: GitHub Trending Chinese Python Repositories (Daily)
+  category: github_trending
+  type: github_trending
+  since: daily
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  config:
+    frequency: daily
+    language: python
+    spoken_language_code: zh
+    filter_mode: ai
+  tier: 1.0
+- name: GitHub Trending Chinese AI & Developer Tools (Weekly)
+  category: github_trending
+  type: github_trending
+  since: weekly
+  rate_limit_seconds: 3600
+  enabled: true
+  region: china
+  country: CN
+  config:
+    frequency: weekly
+    spoken_language_code: zh
+    filter_mode: ai
+  tier: 1.0
+- name: RAGFlow Open-Source Deep Doc RAG Engine (InfiniFlow)
+  category: github_trending
+  type: rss
+  url: https://github.com/infiniflow/ragflow/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+- name: FastGPT Knowledge Base & Agent Orchestration (LabRing)
+  category: github_trending
+  type: rss
+  url: https://github.com/labring/FastGPT/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+- name: ChatTTS Conversational Voice Synthesis (2noise)
+  category: github_trending
+  type: rss
+  url: https://github.com/2noise/ChatTTS/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.0
+- name: Datawhale Open-Source AI Tutorial Series (Leading Chinese Developer Community)
+  category: github_trending
+  type: rss
+  url: https://github.com/datawhalechina/self-llm/releases.atom
+  rate_limit_seconds: 1800
+  enabled: true
+  region: china
+  country: CN
+  tier: 1.5
 - name: QbitAI (量子位) AI Research & Repos
   category: ai_tech
   type: rss

@@ -379,21 +379,35 @@ class MonitorService:
 
             # 2. In-Memory Enrichment & Analysis (OUTSIDE write transaction)
             prepared_items: list[tuple[Entry, Analysis, bool, str, bool]] = []
+            is_chinese_source = (
+                source.config.get("spoken_language_code") == "zh"
+                or source.config.get("region") == "china"
+                or source.config.get("country") in ("CN", "HK")
+                or source.config.get("language") in ("zh", "zh-CN", "zh-TW")
+            )
             is_english_source = (
-                source.type.value in ("arxiv", "hackernews", "github_trending")
-                or source.config.get("country")
-                in (
-                    "US",
-                    "GB",
-                    "CA",
-                    "AU",
-                    "IE",
-                    "IN",
-                    "SG",
-                    "GLOBAL",
-                    "EU",
+                not is_chinese_source
+                and (
+                    source.type.value in ("arxiv", "hackernews")
+                    or (
+                        source.type.value == "github_trending"
+                        and source.config.get("spoken_language_code") != "zh"
+                        and source.config.get("region") != "china"
+                    )
+                    or source.config.get("country")
+                    in (
+                        "US",
+                        "GB",
+                        "CA",
+                        "AU",
+                        "IE",
+                        "IN",
+                        "SG",
+                        "GLOBAL",
+                        "EU",
+                    )
+                    or source.config.get("language") == "en"
                 )
-                or source.config.get("language") == "en"
             )
 
             for entry in new_raw_entries:

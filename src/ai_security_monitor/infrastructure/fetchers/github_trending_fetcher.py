@@ -166,6 +166,66 @@ _AI_KEYWORDS = frozenset(
         "dataset",
         "evaluate",
         "leaderboard",
+        # Chinese AI & open-source developer terms
+        "大模型",
+        "大语言模型",
+        "开源",
+        "模型",
+        "深度学习",
+        "机器学习",
+        "智能体",
+        "推理",
+        "知识库",
+        "多模态",
+        "微调",
+        "量化",
+        "算力",
+        "提示词",
+        "嵌入",
+        "向量",
+        "代码助手",
+        "计算机视觉",
+        "生成式",
+        "自然语言",
+        "神经网络",
+        "预训练",
+        "对齐",
+        "语料",
+        "检索增强",
+        "测试时计算",
+        "架构",
+        "通义千问",
+        "深度求索",
+        "智谱",
+        "月之暗面",
+        "百川",
+        "阶跃星辰",
+        "零一万物",
+        "商汤",
+        "百度",
+        "飞桨",
+        "字节跳动",
+        "腾讯",
+        "清华",
+        # Chinese Labs & Repos
+        "chatglm",
+        "glm",
+        "baichuan",
+        "minimax",
+        "stepfun",
+        "sensenova",
+        "ernie",
+        "paddlepaddle",
+        "fastgpt",
+        "ragflow",
+        "huixiangdou",
+        "chatchat",
+        "db-gpt",
+        "bisheng",
+        "chattts",
+        "cosyvoice",
+        "fish-speech",
+        "sherpa-onnx",
     }
 )
 
@@ -246,6 +306,11 @@ class GitHubTrendingFetcher(BaseFetcher):
         self.language: str | None = source.config.get("language")
         # filter_mode: "ai" | "infra" | "security" | "any"
         self.filter_mode: str = source.config.get("filter_mode", "ai")
+        self.spoken_language_code: str | None = source.config.get(
+            "spoken_language_code"
+        )
+        self.region: str = source.config.get("region", "global")
+        self.country: str = source.config.get("country", "GLOBAL")
 
     async def _fetch_raw(self) -> list[dict]:
         entries: list[dict] = []
@@ -335,13 +400,19 @@ class GitHubTrendingFetcher(BaseFetcher):
         all_entries: list[dict] = []
         seen_urls: set[str] = set()
 
+        scrape_params: dict[str, str] = {}
+        if self.spoken_language_code and self.spoken_language_code not in ("any", "all"):
+            scrape_params["spoken_language_code"] = self.spoken_language_code
+        elif self.spoken_language_code is None:
+            scrape_params["spoken_language_code"] = "en"
+
         async with httpx.AsyncClient(
             timeout=self.timeout or 25.0, headers=headers, follow_redirects=True
         ) as client:
             for url in target_urls:
                 try:
                     response = await client.get(
-                        url, params={"spoken_language_code": "en"}
+                        url, params=scrape_params if scrape_params else None
                     )
                     if response.status_code != 200:
                         continue
@@ -432,6 +503,8 @@ class GitHubTrendingFetcher(BaseFetcher):
                 tags = ["github", "trending", "open-source", self.frequency]
                 if language:
                     tags.append(language.lower())
+                if self.spoken_language_code == "zh" or self.region == "china":
+                    tags.extend(["china", "chinese", "chinese-ai"])
 
                 entries.append(
                     {
@@ -439,13 +512,18 @@ class GitHubTrendingFetcher(BaseFetcher):
                         "url": repo_url,
                         "content": content,
                         "published_at": datetime.now(UTC),
-                        "tags": tags,
+                        "tags": list(dict.fromkeys(tags)),
                         "metadata": {
                             "repo_name": repo_name,
                             "language": language,
                             "stars_period": stars_text,
                             "frequency": self.frequency,
                             "filter_mode": self.filter_mode,
+                            "region": self.region,
+                            "country": self.country,
+                            "spoken_language_code": self.spoken_language_code
+                            or ("zh" if self.region == "china" else "en"),
+                            "provenance_type": "trending_repo",
                         },
                     }
                 )
@@ -482,6 +560,12 @@ class GitHubTrendingFetcher(BaseFetcher):
                 "topic:machine-learning OR topic:deep-learning"
             )
             stars_floor = "stars:>100"
+        elif self.spoken_language_code == "zh" or self.region == "china":
+            topic_filter = (
+                "topic:chinese-llm OR topic:llm OR topic:ai OR topic:ai-agents OR "
+                "topic:rag OR topic:deep-learning"
+            )
+            stars_floor = "stars:>50"
         else:  # "ai" or "any"
             topic_filter = (
                 "topic:ai OR topic:llm OR topic:ai-agents OR "
@@ -551,6 +635,8 @@ class GitHubTrendingFetcher(BaseFetcher):
                 tags = ["github", "trending", "open-source", self.frequency]
                 if language:
                     tags.append(language.lower())
+                if self.spoken_language_code == "zh" or self.region == "china":
+                    tags.extend(["china", "chinese", "chinese-ai"])
                 tags.extend(t.lower() for t in topics[:5])
 
                 published_at = datetime.now(UTC)
@@ -578,6 +664,11 @@ class GitHubTrendingFetcher(BaseFetcher):
                             "forks": forks,
                             "frequency": self.frequency,
                             "filter_mode": self.filter_mode,
+                            "region": self.region,
+                            "country": self.country,
+                            "spoken_language_code": self.spoken_language_code
+                            or ("zh" if self.region == "china" else "en"),
+                            "provenance_type": "trending_repo",
                         },
                     }
                 )
@@ -605,6 +696,20 @@ class GitHubTrendingFetcher(BaseFetcher):
             pub_date_str,
         )
         content = raw.get("content") or ""
+        metadata = (
+            dict(raw.get("metadata", {}))
+            if isinstance(raw.get("metadata"), dict)
+            else {}
+        )
+        if "region" not in metadata:
+            metadata["region"] = self.region
+        if "country" not in metadata:
+            metadata["country"] = self.country
+        if "spoken_language_code" not in metadata and self.spoken_language_code:
+            metadata["spoken_language_code"] = self.spoken_language_code
+        if "provenance_type" not in metadata:
+            metadata["provenance_type"] = "trending_repo"
+
         return Entry(
             source_id=self.source.id,
             title=title_str,
@@ -614,9 +719,7 @@ class GitHubTrendingFetcher(BaseFetcher):
             published_at=pub_at,
             category=self.source.category,
             tags=[t for t in raw.get("tags", []) if t],
-            metadata=raw.get("metadata", {})
-            if isinstance(raw.get("metadata"), dict)
-            else {},
+            metadata=metadata,
         )
 
 

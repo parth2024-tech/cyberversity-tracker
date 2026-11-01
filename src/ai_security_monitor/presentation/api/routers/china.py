@@ -148,21 +148,121 @@ async def get_china_corridor_overview(request: Request):
                 for r in recent_res.all()
             ]
 
+            # Query recent 5 trending GitHub repos from China corridor
+            trending_stmt = (
+                select(
+                    EntryModel.id,
+                    EntryModel.title,
+                    EntryModel.url,
+                    EntryModel.summary,
+                    EntryModel.extra_metadata,
+                    EntryModel.published_at,
+                )
+                .join(SourceModel, EntryModel.source_id == SourceModel.id)
+                .where(EntryModel.is_purged.is_(False))
+                .where(EntryModel.category == "github_trending")
+                .where(
+                    or_(
+                        SourceModel.config.like('%"region": "china"%'),
+                        SourceModel.config.like('%"country": "CN"%'),
+                        SourceModel.config.like('%"country": "HK"%'),
+                        EntryModel.extra_metadata.like('%"region": "china"%'),
+                        EntryModel.extra_metadata.like('%"country": "CN"%'),
+                    )
+                )
+                .order_by(EntryModel.published_at.desc())
+                .limit(5)
+            )
+            trending_res = await session.execute(trending_stmt)
+            trending_repos = [
+                {
+                    "id": r[0],
+                    "title": r[1],
+                    "url": r[2],
+                    "summary": r[3],
+                    "repo_name": (r[4] or {}).get("repo_name", ""),
+                    "language": (r[4] or {}).get("language", ""),
+                    "stars": (r[4] or {}).get("stars")
+                    or (r[4] or {}).get("stars_period", ""),
+                    "published_at": r[5].isoformat() if r[5] else None,
+                }
+                for r in trending_res.all()
+            ]
+
         return {
             "corridor": "China AI & Cyber Radar (中国前沿科技与网络安全)",
             "total_entries": total,
             "by_category": category_counts,
             "key_laboratories": KEY_CHINA_LABS,
             "recent_dispatches": recent_entries,
+            "trending_repositories": trending_repos,
             "coverage_pillars": [
                 "Frontier Foundation Models (DeepSeek, Qwen, GLM, Kimi)",
-                "Open-Source Repositories & Serving Runtimes (LMDeploy, ModelScope)",
+                "Open-Source Repositories & Serving Runtimes (LMDeploy, ModelScope, FastGPT, RAGFlow)",
                 "Academic Research (Tsinghua, SJTU, CAS, Fudan)",
                 "Cyber Defense, Threat Intel & Vulnerability Research (Qi-AnXin, 360, DarkNavy)",
             ],
         }
 
     data = await response_cache.get_or_set("china_corridor_overview", 30.0, _fetch)
+    headers = {"Cache-Control": "public, max-age=30, stale-while-revalidate=60"}
+    return JSONResponse(content=data, headers=headers)
+
+
+@china_router.get("/trending")
+@limiter.limit("60/minute")
+async def get_china_trending_repos(request: Request, limit: int = 25):
+    """Retrieve trending and unique Chinese open-source GitHub repositories."""
+
+    async def _fetch() -> dict[str, Any]:
+        async with SqlAlchemyUnitOfWork() as uow:
+            session = uow.session
+            stmt = (
+                select(
+                    EntryModel.id,
+                    EntryModel.title,
+                    EntryModel.url,
+                    EntryModel.summary,
+                    EntryModel.tags,
+                    EntryModel.extra_metadata,
+                    EntryModel.published_at,
+                )
+                .join(SourceModel, EntryModel.source_id == SourceModel.id)
+                .where(EntryModel.is_purged.is_(False))
+                .where(EntryModel.category == "github_trending")
+                .where(
+                    or_(
+                        SourceModel.config.like('%"region": "china"%'),
+                        SourceModel.config.like('%"country": "CN"%'),
+                        SourceModel.config.like('%"country": "HK"%'),
+                        EntryModel.extra_metadata.like('%"region": "china"%'),
+                        EntryModel.extra_metadata.like('%"country": "CN"%'),
+                    )
+                )
+                .order_by(EntryModel.published_at.desc())
+                .limit(min(limit, 100))
+            )
+            result = await session.execute(stmt)
+            repos = [
+                {
+                    "id": r[0],
+                    "title": r[1],
+                    "url": r[2],
+                    "summary": r[3],
+                    "tags": r[4] or [],
+                    "repo_name": (r[5] or {}).get("repo_name", ""),
+                    "language": (r[5] or {}).get("language", ""),
+                    "stars": (r[5] or {}).get("stars")
+                    or (r[5] or {}).get("stars_period", ""),
+                    "is_translated": bool((r[5] or {}).get("is_translated", False)),
+                    "published_at": r[6].isoformat() if r[6] else None,
+                }
+                for r in result.all()
+            ]
+            return {"trending_repositories": repos, "count": len(repos)}
+
+    cache_key = f"china_trending_repos_{limit}"
+    data = await response_cache.get_or_set(cache_key, 30.0, _fetch)
     headers = {"Cache-Control": "public, max-age=30, stale-while-revalidate=60"}
     return JSONResponse(content=data, headers=headers)
 
@@ -226,6 +326,26 @@ async def get_china_glossary():
             "zh": "逆向工程",
             "en": "Reverse Engineering",
             "category": "Security Engineering",
+        },
+        {
+            "zh": "开源智能体编排 (Agentic Workflow)",
+            "en": "Multi-Agent Orchestration & Autonomous Workflows",
+            "category": "Developer Tooling",
+        },
+        {
+            "zh": "知识库检索与文档问答 (RAG)",
+            "en": "Retrieval-Augmented Generation & Document QA",
+            "category": "Developer Tooling",
+        },
+        {
+            "zh": "高吞吐量推理引擎 (Serving Runtime)",
+            "en": "High-Throughput Inference & Serving Engine",
+            "category": "Inference Infrastructure",
+        },
+        {
+            "zh": "提示词微调与对齐 (LoRA / SFT)",
+            "en": "Parameter-Efficient Fine-Tuning & Alignment",
+            "category": "Fine-Tuning",
         },
     ]
     return JSONResponse(content={"glossary": glossary, "count": len(glossary)})

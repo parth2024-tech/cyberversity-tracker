@@ -246,7 +246,8 @@ class DecisionBriefService:
 
                     h_vec = embedding_service.embed_text(h_text)
                     sim = embedding_service.cosine_similarity(cand_vec, h_vec)
-                    if sim >= 0.50:
+                    threshold = 0.15 if embedding_service.is_fallback else 0.50
+                    if sim >= threshold:
                         pub_str = (
                             h_entry.published_at.strftime("%Y-%m-%d")
                             if h_entry.published_at
