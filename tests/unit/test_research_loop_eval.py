@@ -138,7 +138,10 @@ def test_15_query_expansions_precision():
 
         # Queries mentioning vllm should include related runtime terms
         if "vllm" in query.lower():
-            assert any("sglang" in term.lower() or "runtime" in term.lower() for term in expanded)
+            assert any(
+                "sglang" in term.lower() or "runtime" in term.lower()
+                for term in expanded
+            )
 
 
 @pytest.mark.asyncio
@@ -221,8 +224,12 @@ async def test_15_queries_citation_precision_and_recall():
         assert len(retrieved_entries) >= 1
 
         # Check citation precision & recall against gold entities
-        retrieved_names = [e["name"].lower() for e in retrieval["matched_entities"] if "name" in e]
-        matches = [g for g in gold_terms if any(g.lower() in rn for rn in retrieved_names)]
+        retrieved_names = [
+            e["name"].lower() for e in retrieval["matched_entities"] if "name" in e
+        ]
+        matches = [
+            g for g in gold_terms if any(g.lower() in rn for rn in retrieved_names)
+        ]
 
         precision = len(matches) / max(1, len(retrieved_names))
         recall = len(matches) / max(1, len(gold_terms))

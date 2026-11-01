@@ -409,9 +409,43 @@ class MonitorService:
                 or source.config.get("language") == "en"
             )
 
+            from ai_security_monitor.application.services.china_repo_intelligence import (
+                china_repo_intelligence,
+            )
             from ai_security_monitor.application.services.translation_service import (
                 translation_service,
             )
+
+            # Pre-Translation Community Noise Gate: Discard generic tutorials (入门教程, 面试题, 环境安装)
+            # from tier_3_community / developer_community sources at zero translation and embedding cost.
+            is_community_source = (
+                source.config.get("china_category") == "developer_community"
+                or source.config.get("trust_tier") == "tier_3_community"
+                or any(
+                    k in (source.name or "").lower()
+                    for k in (
+                        "csdn",
+                        "juejin",
+                        "cnblogs",
+                        "segmentfault",
+                        "v2ex",
+                        "oschina",
+                    )
+                )
+            )
+
+            if is_chinese_source and is_community_source:
+                filtered_entries: list[Entry] = []
+                for entry in new_raw_entries:
+                    if china_repo_intelligence.is_community_noise(
+                        entry.title or "", entry.summary or ""
+                    ):
+                        logger.debug(
+                            f"Pre-translation noise gate: Discarding generic tutorial {entry.title!r} from {source.name!r} at zero cost"
+                        )
+                        continue
+                    filtered_entries.append(entry)
+                new_raw_entries = filtered_entries
 
             for entry in new_raw_entries:
                 if (

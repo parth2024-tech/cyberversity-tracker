@@ -24,17 +24,25 @@ def upgrade() -> None:
         "research_runs",
         sa.Column("id", sa.String(length=36), nullable=False),
         sa.Column("query", sa.String(length=512), nullable=False),
-        sa.Column("sources_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
+        sa.Column(
+            "sources_count", sa.Integer(), nullable=False, server_default=sa.text("0")
+        ),
         sa.Column("execution_steps", sa.JSON(), nullable=True),
-        sa.Column("cost_estimate", sa.Float(), nullable=False, server_default=sa.text("0.0")),
-        sa.Column("coverage_score", sa.Float(), nullable=False, server_default=sa.text("1.0")),
+        sa.Column(
+            "cost_estimate", sa.Float(), nullable=False, server_default=sa.text("0.0")
+        ),
+        sa.Column(
+            "coverage_score", sa.Float(), nullable=False, server_default=sa.text("1.0")
+        ),
         sa.Column("output_markdown", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("research_runs", schema=None) as batch_op:
         batch_op.create_index("ix_research_runs_query", ["query"], unique=False)
-        batch_op.create_index("ix_research_runs_created_at", ["created_at"], unique=False)
+        batch_op.create_index(
+            "ix_research_runs_created_at", ["created_at"], unique=False
+        )
 
 
 def downgrade() -> None:

@@ -568,6 +568,32 @@ class ChinaRepoIntelligenceExtractor:
 
         return ChinaRepoArchetype.DEV_TOOL
 
+    # Pre-translation community noise gate patterns (tutorials, interview prep, environment installation)
+    COMMUNITY_NOISE_REGEX = re.compile(
+        r"(入门教程|入门指南|新手教程|小白入门|基础教程|保姆级教程|手把手教你|实战教程|"
+        r"面试题|笔试题|高频面试|八股文|面试宝典|面经|"
+        r"环境安装|环境配置|安装教程|安装配置|踩坑记录|报错解决|激活码|破解教程|破解补丁)",
+        re.IGNORECASE,
+    )
+
+    # Breakthrough and authority signals that must NEVER be discarded
+    HIGH_SIGNAL_BREAKTHROUGH_REGEX = re.compile(
+        r"(CNVD-[A-Z0-9-]+|CNNVD-[A-Z0-9-]+|CVE-\d{4}-\d{4,}|\bRISC-V\b|香山|具身智能|人形机器人|四足机器人|开源芯片)",
+        re.IGNORECASE,
+    )
+
+    def is_community_noise(self, title: str, summary: str = "") -> bool:
+        """Evaluate if an entry from developer communities represents generic tutorial noise.
+
+        Discards generic tutorials, interview prep, and installation guides at zero translation/embedding cost,
+        unless the entry contains high-signal national vulnerability IDs (CNVD/CNNVD/CVE),
+        semiconductor/RISC-V breakthroughs, or embodied robotics indicators.
+        """
+        combined = f"{title} {summary}"
+        if self.HIGH_SIGNAL_BREAKTHROUGH_REGEX.search(combined):
+            return False
+        return bool(self.COMMUNITY_NOISE_REGEX.search(combined))
+
 
 # Global singleton instance
 china_repo_intelligence = ChinaRepoIntelligenceExtractor()

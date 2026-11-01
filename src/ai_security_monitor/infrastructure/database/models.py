@@ -365,6 +365,7 @@ class EntryEntityModel(Base):
         Index("ix_entry_entities_created_type", "created_at", "entity_type"),
     )
 
+
 class ResearchRunModel(Base):
     """Audit and replay log for autonomous deep research loop executions."""
 
@@ -383,4 +384,3 @@ class ResearchRunModel(Base):
         default=lambda: datetime.now(UTC),
         index=True,
     )
-

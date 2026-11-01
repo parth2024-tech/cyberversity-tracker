@@ -216,6 +216,52 @@
     </div>
   </div>
 
+  <!-- MODAL: China AI Corridor 55-Source Radar Matrix -->
+  <div id="china-sources-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col border border-red-500/30 bg-gradient-to-b from-slate-900 to-slate-950 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 flex items-center justify-center text-lg">
+            📡
+          </div>
+          <div>
+            <h2 class="text-base font-bold tracking-tight text-white font-mono">China AI Corridor Ingestion Radar (55 Sources)</h2>
+            <p class="text-xs text-slate-400 font-sans">Ecosystem radar tracking Chinese code platforms, robotics/chip media, vulnerability databases, developer blogs, and academic labs</p>
+          </div>
+        </div>
+        <button onclick="closeChinaSourcesModal()" class="text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] p-2 rounded-xl border border-white/[0.08] transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs font-mono pb-1 border-b border-white/[0.06]">
+        <button onclick="filterChinaSourcesCategory('')" id="cn-src-cat-all" class="cn-src-cat-btn px-2 py-0.5 rounded bg-red-500/20 text-red-200 border border-red-500/35 text-[11px] font-medium whitespace-nowrap">
+          All (全部 55)
+        </button>
+        <button onclick="filterChinaSourcesCategory('code_hosting_platform')" id="cn-src-cat-code" class="cn-src-cat-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[11px] font-medium whitespace-nowrap">
+          Code Platforms (7)
+        </button>
+        <button onclick="filterChinaSourcesCategory('ai_robotics_chip_media')" id="cn-src-cat-media" class="cn-src-cat-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[11px] font-medium whitespace-nowrap">
+          AI & Chips Media (9)
+        </button>
+        <button onclick="filterChinaSourcesCategory('cybersecurity_vuln_intel')" id="cn-src-cat-sec" class="cn-src-cat-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[11px] font-medium whitespace-nowrap">
+          Vuln & Cyber Intel (15)
+        </button>
+        <button onclick="filterChinaSourcesCategory('developer_community')" id="cn-src-cat-dev" class="cn-src-cat-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[11px] font-medium whitespace-nowrap">
+          Developer Hubs (9)
+        </button>
+        <button onclick="filterChinaSourcesCategory('corporate_academic_lab')" id="cn-src-cat-lab" class="cn-src-cat-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[11px] font-medium whitespace-nowrap">
+          Corporate & Academic Labs (15)
+        </button>
+      </div>
+
+      <div id="china-sources-content" class="overflow-y-auto space-y-2 pr-1 text-xs font-mono max-h-[60vh]">
+        <!-- Populated dynamically via fetch('/api/china/sources?category=...') -->
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Custom Framework Watchlist Manager -->
   <div id="watchlist-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-3xl rounded-2xl p-6 sm:p-8 relative max-h-[92vh] flex flex-col border border-white/[0.1] shadow-2xl space-y-5">
@@ -1254,6 +1300,9 @@
             <button onclick="setChinaSubFilter('cybersecurity')" id="china-sub-cyber" class="china-sub-btn px-2.5 py-1 rounded-md bg-white/[0.04] text-slate-300 hover:text-white border border-white/[0.08] text-[11px] font-medium transition whitespace-nowrap">
               🛡️ Cyber & Threat Intel (安全情报)
             </button>
+            <button onclick="openChinaSourcesModal()" class="px-2.5 py-1 rounded-md bg-red-500/15 text-red-300 hover:text-red-200 border border-red-500/30 text-[11px] font-medium transition whitespace-nowrap flex items-center gap-1">
+              📡 55-Source Radar (雷达矩阵)
+            </button>
             <button onclick="openChinaGlossaryModal()" class="ml-auto px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 hover:text-amber-200 border border-amber-500/30 text-[11px] font-medium transition whitespace-nowrap flex items-center gap-1">
               📖 Researcher Glossary (专业词典)
             </button>
@@ -1279,6 +1328,18 @@
             </button>
             <button onclick="setChinaArchetypeFilter('multimodal_voice')" id="china-arch-multimodal" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
               🎙️ Multimodal (多模态)
+            </button>
+            <button onclick="setChinaArchetypeFilter('embodied_ai_robotics')" id="china-arch-robotics" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              🦾 Robotics (具身智能)
+            </button>
+            <button onclick="setChinaArchetypeFilter('computer_vision_edge')" id="china-arch-vision" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              👁️ Vision & Edge (计算机视觉)
+            </button>
+            <button onclick="setChinaArchetypeFilter('semiconductor_riscv')" id="china-arch-riscv" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              🔬 RISC-V & Chips (开源芯片)
+            </button>
+            <button onclick="setChinaArchetypeFilter('offensive_security_vuln')" id="china-arch-vuln" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
+              🛡️ Vulns & Exploits (漏洞分析)
             </button>
             <button onclick="setChinaArchetypeFilter('eval_and_benchmark')" id="china-arch-eval" class="china-arch-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[10px] font-medium transition whitespace-nowrap">
               📊 Benchmarks (评测基准)
@@ -2847,7 +2908,11 @@
         'agentic_system': 'china-arch-agents',
         'rag_knowledge_base': 'china-arch-rag',
         'multimodal_voice': 'china-arch-multimodal',
-        'eval_and_benchmark': 'china-arch-eval'
+        'eval_and_benchmark': 'china-arch-eval',
+        'embodied_ai_robotics': 'china-arch-robotics',
+        'computer_vision_edge': 'china-arch-vision',
+        'semiconductor_riscv': 'china-arch-riscv',
+        'offensive_security_vuln': 'china-arch-vuln'
       };
       const targetBtn = document.getElementById(idMap[arch] || 'china-arch-all');
       if (targetBtn) {
@@ -2982,6 +3047,81 @@
         `).join('');
       } catch (err) {
         container.innerHTML = '<p class="text-center text-rose-400 py-6 font-mono text-xs">Failed to load glossary.</p>';
+      }
+    }
+
+    // China Corridor 55-Source Radar Matrix Modal
+    let currentChinaSourcesCategory = '';
+
+    function openChinaSourcesModal() {
+      const modal = document.getElementById('china-sources-modal');
+      if (modal) modal.classList.remove('hidden');
+      playBeep('click');
+      loadChinaSources(currentChinaSourcesCategory);
+    }
+
+    function closeChinaSourcesModal() {
+      const modal = document.getElementById('china-sources-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function filterChinaSourcesCategory(cat) {
+      currentChinaSourcesCategory = cat;
+      document.querySelectorAll('.cn-src-cat-btn').forEach(btn => {
+        btn.className = 'cn-src-cat-btn px-2 py-0.5 rounded bg-white/[0.03] text-slate-300 hover:text-white border border-white/[0.06] text-[11px] font-medium whitespace-nowrap';
+      });
+      const activeId = cat ? (
+        cat === 'code_hosting_platform' ? 'cn-src-cat-code' :
+        cat === 'ai_robotics_chip_media' ? 'cn-src-cat-media' :
+        cat === 'cybersecurity_vuln_intel' ? 'cn-src-cat-sec' :
+        cat === 'developer_community' ? 'cn-src-cat-dev' : 'cn-src-cat-lab'
+      ) : 'cn-src-cat-all';
+      const activeBtn = document.getElementById(activeId);
+      if (activeBtn) {
+        activeBtn.className = 'cn-src-cat-btn px-2 py-0.5 rounded bg-red-500/20 text-red-200 border border-red-500/35 text-[11px] font-medium whitespace-nowrap';
+      }
+      playBeep('click');
+      loadChinaSources(cat);
+    }
+
+    async function loadChinaSources(category = '') {
+      const container = document.getElementById('china-sources-content');
+      if (!container) return;
+      container.innerHTML = '<p class="text-center text-slate-500 py-6 font-mono text-xs">Querying China Ingestion Matrix...</p>';
+      try {
+        const url = category ? `/api/china/sources?category=${encodeURIComponent(category)}` : '/api/china/sources';
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.sources || !data.sources.length) {
+          container.innerHTML = '<p class="text-center text-slate-500 py-6 font-mono text-xs">No sources found for this category.</p>';
+          return;
+        }
+        container.innerHTML = data.sources.map(s => `
+          <div class="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between gap-3 hover:border-red-500/30 transition">
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-red-300 font-bold text-xs font-mono">${escapeHtml(s.name_zh || s.name)}</span>
+                <span class="text-slate-400 text-[10px] font-mono">(${escapeHtml(s.name)})</span>
+              </div>
+              <div class="text-slate-400 text-[11px] mt-0.5 font-mono truncate">
+                <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline inline-flex items-center gap-1">
+                  ${escapeHtml(s.url)} <i data-lucide="external-link" class="w-3 h-3"></i>
+                </a>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.05] text-slate-300 border border-white/[0.08]">
+                Tier ${escapeHtml(String(s.trust_tier || '2.0'))}
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-red-950/40 text-red-300 border border-red-500/30">
+                ${escapeHtml(s.china_category)}
+              </span>
+            </div>
+          </div>
+        `).join('');
+        lucide.createIcons();
+      } catch (err) {
+        container.innerHTML = '<p class="text-center text-rose-400 py-6 font-mono text-xs">Failed to load China sources matrix.</p>';
       }
     }
 

@@ -37,6 +37,9 @@ from sqlalchemy import text
 from ai_security_monitor.application.services.ai_entity_extractor import (
     AIEntityExtractor,
 )
+from ai_security_monitor.application.services.china_repo_intelligence import (
+    china_repo_intelligence,
+)
 from ai_security_monitor.application.services.claim_verifier import (
     ScopedSubstringVerifier,
     extract_grounding_corpus,
@@ -79,12 +82,35 @@ CN_EN_ALIASES: dict[str, list[str]] = {
     "字节跳动": ["bytedance", "doubao"],
     "vllm": ["sglang", "inference runtime", "kv cache", "pagedattention"],
     "sglang": ["vllm", "radixattention", "inference runtime"],
-    "test-time compute": ["推理计算", "测试时计算", "reasoning compute", "o1", "deepseek-r1"],
+    "test-time compute": [
+        "推理计算",
+        "测试时计算",
+        "reasoning compute",
+        "o1",
+        "deepseek-r1",
+    ],
     "推理计算": ["test-time compute", "reasoning compute", "deepseek-r1"],
     "quantization": ["量化", "gguf", "awq", "fp8"],
     "量化": ["quantization", "gguf", "awq", "fp8"],
     "reinforcement learning": ["强化学习", "rl", "grpo", "ppo"],
     "强化学习": ["reinforcement learning", "grpo", "ppo"],
+    "unitree": ["宇树科技", "四足机器人", "humanoid robot", "b2", "go2", "embodied ai"],
+    "宇树科技": ["unitree", "quadruped", "humanoid robot"],
+    "agibot": ["智元机器人", "具身智能", "humanoid", "embodied ai"],
+    "智元机器人": ["agibot", "embodied ai", "humanoid"],
+    "embodied ai": ["具身智能", "人形机器人", "四足机器人", "unitree", "agibot"],
+    "具身智能": ["embodied ai", "unitree", "agibot", "人形机器人"],
+    "xiangshan": ["香山", "risc-v", "ict cas", "开源芯片", "开源处理器"],
+    "香山": ["xiangshan", "risc-v", "ict cas", "处理器芯片"],
+    "risc-v": ["xiangshan", "香山", "开源芯片", "fpga", "elecfans"],
+    "mindspore": ["昇思", "huawei", "ascend", "昇腾"],
+    "昇思": ["mindspore", "huawei", "ascend", "昇腾"],
+    "paddlepaddle": ["飞桨", "baidu", "aistudio", "yolox"],
+    "飞桨": ["paddlepaddle", "baidu", "aistudio"],
+    "computer vision": ["计算机视觉", "openmmlab", "mmdetection", "yolox", "cvmart"],
+    "计算机视觉": ["computer vision", "openmmlab", "mmdetection", "yolox"],
+    "cnvd": ["国家信息安全漏洞共享平台", "cnnvd", "vulnerability", "cve"],
+    "cnnvd": ["国家信息安全漏洞库", "cnvd", "vulnerability", "cve"],
 }
 
 STATIC_RESEARCH_SYSTEM_PROMPT = """You are an Autonomous AI Principal Research Architect.
@@ -334,15 +360,18 @@ class AutonomousResearchService:
                     )
                     scored_fallbacks: list[tuple[float, Entry]] = []
                     for r_entry in recent_entries:
-                        if (
-                            _is_fresh(r_entry.published_at, since_date)
-                            and not getattr(r_entry, "is_purged", False)
+                        if _is_fresh(r_entry.published_at, since_date) and not getattr(
+                            r_entry, "is_purged", False
                         ):
                             candidate_map[r_entry.id] = r_entry
-                            r_text = f"{r_entry.title or ''} {r_entry.summary or ''}".strip()
+                            r_text = (
+                                f"{r_entry.title or ''} {r_entry.summary or ''}".strip()
+                            )
                             if r_text:
                                 r_vec = embedding_service.embed_text(r_text)
-                                sim = embedding_service.cosine_similarity(query_vec, r_vec)
+                                sim = embedding_service.cosine_similarity(
+                                    query_vec, r_vec
+                                )
                                 scored_fallbacks.append((sim, r_entry))
                     scored_fallbacks.sort(key=lambda x: x[0], reverse=True)
                     for _, fb_entry in scored_fallbacks:
@@ -360,9 +389,8 @@ class AutonomousResearchService:
                     query=fts_query, limit=max_sources * 2
                 )
                 for fts_entry in fts_results:
-                    if (
-                        _is_fresh(fts_entry.published_at, since_date)
-                        and not getattr(fts_entry, "is_purged", False)
+                    if _is_fresh(fts_entry.published_at, since_date) and not getattr(
+                        fts_entry, "is_purged", False
                     ):
                         if fts_entry.id not in ranked_fts:
                             ranked_fts.append(fts_entry.id)
@@ -380,13 +408,25 @@ class AutonomousResearchService:
                         query, entry_id=uuid4()
                     )
                     query_terms: set[str] = {e.name for e in extracted_from_query}
-                    query_terms.update(e.display_name.lower() for e in extracted_from_query)
+                    query_terms.update(
+                        e.display_name.lower() for e in extracted_from_query
+                    )
 
                     # Also append significant alphanumeric keyword tokens (length >= 3)
                     words = re.findall(r"\b[a-zA-Z0-9_-]{3,}\b", query.lower())
                     stopwords = {
-                        "the", "and", "for", "with", "from", "what", "how",
-                        "recent", "breakthroughs", "analyze", "analysis", "report",
+                        "the",
+                        "and",
+                        "for",
+                        "with",
+                        "from",
+                        "what",
+                        "how",
+                        "recent",
+                        "breakthroughs",
+                        "analyze",
+                        "analysis",
+                        "report",
                     }
                     for w in words:
                         if w not in stopwords:
@@ -404,21 +444,35 @@ class AutonomousResearchService:
                             raw_eid = rec.get("entry_id")
                             if raw_eid:
                                 try:
-                                    eid = raw_eid if isinstance(raw_eid, UUID) else UUID(str(raw_eid))
-                                    entity_hit_counter[eid] = entity_hit_counter.get(eid, 0) + 1
+                                    eid = (
+                                        raw_eid
+                                        if isinstance(raw_eid, UUID)
+                                        else UUID(str(raw_eid))
+                                    )
+                                    entity_hit_counter[eid] = (
+                                        entity_hit_counter.get(eid, 0) + 1
+                                    )
                                     if eid not in candidate_map:
                                         linked_entry = await active_uow.entries.get(eid)
                                         if (
                                             linked_entry
-                                            and _is_fresh(linked_entry.published_at, since_date)
-                                            and not getattr(linked_entry, "is_purged", False)
+                                            and _is_fresh(
+                                                linked_entry.published_at, since_date
+                                            )
+                                            and not getattr(
+                                                linked_entry, "is_purged", False
+                                            )
                                         ):
                                             candidate_map[eid] = linked_entry
                                 except Exception as ent_link_err:
-                                    logger.debug(f"Entity timeline entry lookup error: {ent_link_err}")
+                                    logger.debug(
+                                        f"Entity timeline entry lookup error: {ent_link_err}"
+                                    )
 
                     # Rank entity leg by hit count descending
-                    sorted_ent_hits = sorted(entity_hit_counter.items(), key=lambda x: x[1], reverse=True)
+                    sorted_ent_hits = sorted(
+                        entity_hit_counter.items(), key=lambda x: x[1], reverse=True
+                    )
                     for eid, _ in sorted_ent_hits:
                         if eid in candidate_map and eid not in ranked_entity:
                             ranked_entity.append(eid)
@@ -435,17 +489,20 @@ class AutonomousResearchService:
                 )
                 scored_vel: list[tuple[float, Entry]] = []
                 for hv_entry in high_velocity_candidates:
-                    if (
-                        _is_fresh(hv_entry.published_at, since_date)
-                        and not getattr(hv_entry, "is_purged", False)
+                    if _is_fresh(hv_entry.published_at, since_date) and not getattr(
+                        hv_entry, "is_purged", False
                     ):
                         candidate_map[hv_entry.id] = hv_entry
                         vel = 50
-                        if hv_entry.analysis and hasattr(hv_entry.analysis, "threat_velocity"):
+                        if hv_entry.analysis and hasattr(
+                            hv_entry.analysis, "threat_velocity"
+                        ):
                             vel = hv_entry.analysis.threat_velocity
                         elif hasattr(hv_entry, "threat_velocity"):
                             vel = getattr(hv_entry, "threat_velocity", 50) or 50
-                        heat_val, _ = heat_ranking_service.compute_entry_heat(hv_entry, now=now)
+                        heat_val, _ = heat_ranking_service.compute_entry_heat(
+                            hv_entry, now=now
+                        )
                         score = (vel / 100.0) + heat_val
                         scored_vel.append((score, hv_entry))
 
@@ -497,7 +554,9 @@ class AutonomousResearchService:
         # Filter strictly by 14-day freshness window
         valid_candidates: list[tuple[float, Entry]] = []
         for eid, entry in candidate_map.items():
-            if not _is_fresh(entry.published_at, since_date) or getattr(entry, "is_purged", False):
+            if not _is_fresh(entry.published_at, since_date) or getattr(
+                entry, "is_purged", False
+            ):
                 continue
             fused_score = rrf_scores.get(eid, 0.0)
             valid_candidates.append((fused_score, entry))
@@ -513,10 +572,16 @@ class AutonomousResearchService:
             score_breakdown[str(eid)] = {
                 "rrf_score": round(c[0], 5),
                 "combined": round(c[0] * 100.0, 2),  # Scaled for display
-                "semantic_rank": ranked_semantic.index(eid) + 1 if eid in ranked_semantic else 0,
+                "semantic_rank": ranked_semantic.index(eid) + 1
+                if eid in ranked_semantic
+                else 0,
                 "fts_rank": ranked_fts.index(eid) + 1 if eid in ranked_fts else 0,
-                "entity_rank": ranked_entity.index(eid) + 1 if eid in ranked_entity else 0,
-                "velocity_rank": ranked_velocity.index(eid) + 1 if eid in ranked_velocity else 0,
+                "entity_rank": ranked_entity.index(eid) + 1
+                if eid in ranked_entity
+                else 0,
+                "velocity_rank": ranked_velocity.index(eid) + 1
+                if eid in ranked_velocity
+                else 0,
             }
 
         # Deduplicate matched entities
@@ -544,13 +609,21 @@ class AutonomousResearchService:
                             "confidence": e.confidence,
                             "entry_title": entry.title,
                             "entry_url": entry.url,
-                            "category": entry.category.value if hasattr(entry.category, "value") else str(entry.category),
-                            "published_at": entry.published_at.isoformat() if entry.published_at else None,
+                            "category": entry.category.value
+                            if hasattr(entry.category, "value")
+                            else str(entry.category),
+                            "published_at": entry.published_at.isoformat()
+                            if entry.published_at
+                            else None,
                         }
                     )
 
         # Evidence coverage score: ratio of sources retrieved vs target + entity cross-referencing
-        coverage_score = min(1.0, (len(top_entries) / max(1, min(max_sources, 5))) * (1.0 if deduped_entities else 0.8))
+        coverage_score = min(
+            1.0,
+            (len(top_entries) / max(1, min(max_sources, 5)))
+            * (1.0 if deduped_entities else 0.8),
+        )
 
         return {
             "entries": top_entries,
@@ -572,13 +645,17 @@ class AutonomousResearchService:
         timestamp_str = now.strftime("%Y-%m-%d %H:%M UTC")
 
         # 1. Executive Summary Synthesis with Delimiters
-        exec_summary = await self._synthesize_executive_summary_delimiters(query, entries)
+        exec_summary = await self._synthesize_executive_summary_delimiters(
+            query, entries
+        )
 
         # 2. Synthesized Findings & Technical Implications with Numeric Verification
         findings_markdown = self._synthesize_verified_findings(entries)
 
         # 3. Corroborating Evidence & Knowledge Graph Entities
-        evidence_markdown = self._format_entity_knowledge_graph(matched_entities)
+        evidence_markdown = self._format_entity_knowledge_graph(
+            matched_entities, entries
+        )
 
         # 4. Source Citations with IDs, URLs & RRF Fusion Ranks
         citations_markdown = self._format_source_citations(entries, scores)
@@ -646,7 +723,9 @@ class AutonomousResearchService:
                     if isinstance(raw, dict) and "summary" in raw:
                         return str(raw["summary"]).strip()
                     elif isinstance(raw, tuple) and isinstance(raw[0], dict):
-                        return str(raw[0].get("summary") or raw[0].get("executive_summary", "")).strip()
+                        return str(
+                            raw[0].get("summary") or raw[0].get("executive_summary", "")
+                        ).strip()
             except Exception as e:
                 logger.debug(f"Research loop LLM summary bypassed: {e}")
 
@@ -661,7 +740,9 @@ class AutonomousResearchService:
         ]
 
         if len(entries) > 1:
-            secondary_titles = ", ".join(f"'{sanitizer.sanitize_text(e.title[:45])}...'" for e in entries[1:4])
+            secondary_titles = ", ".join(
+                f"'{sanitizer.sanitize_text(e.title[:45])}...'" for e in entries[1:4]
+            )
             summary_bullets.append(
                 f"Corroborating activity across the ecosystem is reinforced by releases including {secondary_titles}."
             )
@@ -674,11 +755,23 @@ class AutonomousResearchService:
 
         for i, entry in enumerate(entries, 1):
             title = sanitizer.sanitize_text(entry.title)
-            category = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
-            date_str = entry.published_at.strftime("%Y-%m-%d") if entry.published_at else "Recent"
+            category = (
+                entry.category.value
+                if hasattr(entry.category, "value")
+                else str(entry.category)
+            )
+            date_str = (
+                entry.published_at.strftime("%Y-%m-%d")
+                if entry.published_at
+                else "Recent"
+            )
 
             corpus = extract_grounding_corpus(entry)
-            brief = entry.analysis.decision_brief if (entry.analysis and entry.analysis.decision_brief) else None
+            brief = (
+                entry.analysis.decision_brief
+                if (entry.analysis and entry.analysis.decision_brief)
+                else None
+            )
 
             lines = [f"### {i}. {title} ({date_str}) — `{category}`"]
 
@@ -704,7 +797,9 @@ class AutonomousResearchService:
             else:
                 summary_text = sanitizer.sanitize_text(entry.summary or "").strip()
                 if summary_text:
-                    verified_sum = self._verify_numeric_claims_in_text(summary_text, corpus)
+                    verified_sum = self._verify_numeric_claims_in_text(
+                        summary_text, corpus
+                    )
                     lines.append(f"- **Core Finding:** {verified_sum}")
 
             # Engine stack detection
@@ -715,7 +810,9 @@ class AutonomousResearchService:
                 re.I,
             )
             if engines:
-                lines.append(f"- **Inference / Engine Stack:** {', '.join(sorted(set(engines)))}")
+                lines.append(
+                    f"- **Inference / Engine Stack:** {', '.join(sorted(set(engines)))}"
+                )
 
             sections.append("\n".join(lines))
 
@@ -736,28 +833,84 @@ class AutonomousResearchService:
         return claim_text
 
     def _format_entity_knowledge_graph(
-        self, matched_entities: list[dict[str, Any]]
+        self,
+        matched_entities: list[dict[str, Any]],
+        entries: list[Entry] | None = None,
     ) -> str:
-        """Format knowledge graph entities into structured markdown table."""
+        """Format knowledge graph entities into structured markdown table with China AI Corridor grounding."""
+        # 1. Base entity table
         if not matched_entities:
-            return "_No structured entity nodes detected for this query in the 14-day knowledge graph._"
+            base_table = "_No structured entity nodes detected for this query in the 14-day knowledge graph._"
+        else:
+            lines: list[str] = [
+                "| Entity Name | Type | Metric / Benchmark Value | Source Context |",
+                "|:---|:---|:---|:---|",
+            ]
 
-        lines: list[str] = [
-            "| Entity Name | Type | Metric / Benchmark Value | Source Context |",
-            "|:---|:---|:---|:---|",
-        ]
+            for ent in matched_entities[:15]:
+                name = ent.get("display_name") or ent.get("name") or "Unknown"
+                etype = str(ent.get("entity_type", "")).upper()
+                metric = ent.get("metric_value") or "—"
+                raw_ctx = str(ent.get("context") or ent.get("entry_title") or "")
+                clean_ctx = raw_ctx.replace("|", "/").replace("\n", " ").strip()
+                if len(clean_ctx) > 80:
+                    clean_ctx = clean_ctx[:77] + "..."
+                lines.append(f"| **{name}** | `{etype}` | `{metric}` | {clean_ctx} |")
+            base_table = "\n".join(lines)
 
-        for ent in matched_entities[:15]:
-            name = ent.get("display_name") or ent.get("name") or "Unknown"
-            etype = str(ent.get("entity_type", "")).upper()
-            metric = ent.get("metric_value") or "—"
-            raw_ctx = str(ent.get("context") or ent.get("entry_title") or "")
-            clean_ctx = raw_ctx.replace("|", "/").replace("\n", " ").strip()
-            if len(clean_ctx) > 80:
-                clean_ctx = clean_ctx[:77] + "..."
-            lines.append(f"| **{name}** | `{etype}` | `{metric}` | {clean_ctx} |")
+        # 2. Extract China AI Corridor archetypes, lab affiliations, and CNVD/CNNVD identifiers
+        china_sections: list[str] = []
+        if entries:
+            detected_archetypes: dict[str, str] = {}
+            detected_labs: set[str] = set()
+            detected_vuln_ids: set[str] = set()
 
-        return "\n".join(lines)
+            vuln_regex = re.compile(
+                r"\b(CNVD-[A-Z0-9-]+|CNNVD-[A-Z0-9-]+|CVE-\d{4}-\d{4,})\b",
+                re.IGNORECASE,
+            )
+
+            for entry in entries:
+                t = entry.title or ""
+                s = entry.summary or ""
+                u = entry.url or ""
+                combined = f"{t} {s}"
+
+                for vid in vuln_regex.findall(combined):
+                    detected_vuln_ids.add(vid.upper())
+
+                profile = china_repo_intelligence.extract_profile(
+                    title=t,
+                    description=s,
+                    url=u,
+                )
+                if profile.archetype:
+                    detected_archetypes[profile.archetype] = profile.archetype_label
+                if profile.lab_name:
+                    detected_labs.add(profile.lab_name)
+
+            if detected_archetypes or detected_labs or detected_vuln_ids:
+                china_blocks = [
+                    "",
+                    "### 🇨🇳 China AI Corridor & Epistemic Grounding",
+                ]
+                if detected_archetypes:
+                    arch_badges = ", ".join(
+                        f"`{label}` (`{arch}`)"
+                        for arch, label in sorted(detected_archetypes.items())
+                    )
+                    china_blocks.append(f"- **Corridor Archetypes:** {arch_badges}")
+                if detected_labs:
+                    labs_str = ", ".join(f"**{lab}**" for lab in sorted(detected_labs))
+                    china_blocks.append(f"- **Authority Lab Affiliations:** {labs_str}")
+                if detected_vuln_ids:
+                    vulns_str = ", ".join(f"`{v}`" for v in sorted(detected_vuln_ids))
+                    china_blocks.append(
+                        f"- **National Vulnerability & Threat Identifiers:** {vulns_str}"
+                    )
+                china_sections.append("\n".join(china_blocks))
+
+        return base_table + ("\n".join(china_sections) if china_sections else "")
 
     def _format_evidence_coverage(
         self, entries: list[Entry], matched_entities: list[dict[str, Any]]
@@ -809,8 +962,16 @@ class AutonomousResearchService:
         citations: list[str] = []
 
         for i, entry in enumerate(entries, 1):
-            date_str = entry.published_at.strftime("%Y-%m-%d") if entry.published_at else "Recent"
-            cat = entry.category.value if hasattr(entry.category, "value") else str(entry.category)
+            date_str = (
+                entry.published_at.strftime("%Y-%m-%d")
+                if entry.published_at
+                else "Recent"
+            )
+            cat = (
+                entry.category.value
+                if hasattr(entry.category, "value")
+                else str(entry.category)
+            )
             eid_str = str(entry.id)
             score_meta = scores.get(eid_str, {})
             score_tag = f"RRF Score: {score_meta.get('combined', 0.0):.2f}"
@@ -859,7 +1020,9 @@ class AutonomousResearchService:
                     active_uow.session.add(record)
                     await active_uow.commit()
         except Exception as persist_err:
-            logger.debug(f"Audit log persistence to research_runs bypassed: {persist_err}")
+            logger.debug(
+                f"Audit log persistence to research_runs bypassed: {persist_err}"
+            )
 
 
 # Global singleton instance

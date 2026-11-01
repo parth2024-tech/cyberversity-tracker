@@ -25,10 +25,9 @@ def test_resolved_database_url_isolation():
     resolved_url = settings.database.url
 
     # Must be either tmp test path or in-memory
-    assert (
-        "sqlite+aiosqlite:////tmp/" in resolved_url
-        or "memory" in resolved_url
-    ), f"Test suite is running with non-isolated DB URL: {resolved_url}"
+    assert "sqlite+aiosqlite:////tmp/" in resolved_url or "memory" in resolved_url, (
+        f"Test suite is running with non-isolated DB URL: {resolved_url}"
+    )
 
     # Must never target local repo data/monitor.db
     assert not resolved_url.endswith("/data/monitor.db") or "/tmp/" in resolved_url

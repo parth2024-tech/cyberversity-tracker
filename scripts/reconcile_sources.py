@@ -130,6 +130,16 @@ async def reconcile(config_path: str | None = None, apply: bool = False) -> int:
                 )
 
             if apply:
+                from ai_security_monitor.application.services.monitor_service import (
+                    MonitorService,
+                )
+
+                mon = MonitorService()
+                added = await mon.init_sources(config_path)
+                print(
+                    f"\nSynced YAML sources into database: {added} new sources inserted/updated."
+                )
+
                 for s in total_to_deactivate:
                     s.enabled = False
                     cfg = dict(s.config or {})
@@ -146,9 +156,17 @@ async def reconcile(config_path: str | None = None, apply: bool = False) -> int:
                     f"\nDRY-RUN COMPLETE: Run with --apply to commit these {len(total_to_deactivate)} deactivations."
                 )
         else:
-            print(
-                "\nDatabase is already in sync with YAML configuration. No deactivations needed."
-            )
+            if apply:
+                from ai_security_monitor.application.services.monitor_service import (
+                    MonitorService,
+                )
+
+                mon = MonitorService()
+                added = await mon.init_sources(config_path)
+                print(
+                    f"\nSynced YAML sources into database: {added} new sources inserted/updated."
+                )
+            print("\nDatabase is in sync with YAML configuration.")
 
     return 0
 

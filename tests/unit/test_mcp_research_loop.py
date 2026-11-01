@@ -230,7 +230,9 @@ async def test_freshness_window_strictly_enforced(
         return None
 
     mock_uow.entries.get = AsyncMock(side_effect=mock_get)
-    mock_uow.entries.list = AsyncMock(return_value=[sample_entry_fresh, sample_entry_stale])
+    mock_uow.entries.list = AsyncMock(
+        return_value=[sample_entry_fresh, sample_entry_stale]
+    )
     mock_uow.entries.search_fts = AsyncMock(return_value=[])
     mock_uow.entities.query_timeline = AsyncMock(return_value=[])
 
@@ -243,7 +245,9 @@ async def test_freshness_window_strictly_enforced(
 
     entry_ids = [e.id for e in retrieval["entries"]]
     assert sample_entry_fresh.id in entry_ids
-    assert sample_entry_stale.id not in entry_ids, "Stale entry (> 14 days) leaked through guard!"
+    assert sample_entry_stale.id not in entry_ids, (
+        "Stale entry (> 14 days) leaked through guard!"
+    )
 
 
 # ==============================================================================
@@ -275,7 +279,10 @@ async def test_dossier_synthesis_all_four_sections(sample_entry_fresh: Entry):
     )
 
     # 1. Header & Executive Summary
-    assert "# 🔬 Autonomous AI Research Dossier: Analyze vLLM chunked prefill optimization" in report
+    assert (
+        "# 🔬 Autonomous AI Research Dossier: Analyze vLLM chunked prefill optimization"
+        in report
+    )
     assert "## 📌 Executive Summary" in report
     assert "**Freshness Guard:** ≤ 14 Days (Active)" in report
 
@@ -289,7 +296,9 @@ async def test_dossier_synthesis_all_four_sections(sample_entry_fresh: Entry):
 
     # 3. Corroborating Evidence & Knowledge Graph Entities
     assert "## 🌐 Corroborating Evidence & Knowledge Graph Entities" in report
-    assert "| Entity Name | Type | Metric / Benchmark Value | Source Context |" in report
+    assert (
+        "| Entity Name | Type | Metric / Benchmark Value | Source Context |" in report
+    )
     assert "DeepSeek-R1" in report
     assert "49.2%" in report
 
@@ -311,7 +320,9 @@ async def test_mcp_server_run_autonomous_research_loop_rpc(sample_entry_fresh: E
 
     with patch(
         "ai_security_monitor.application.services.autonomous_research_service.AutonomousResearchService.run_research_loop",
-        new=AsyncMock(return_value="# 🔬 Autonomous AI Research Dossier: Test Topic\n\n## 📌 Executive Summary\nSuccess"),
+        new=AsyncMock(
+            return_value="# 🔬 Autonomous AI Research Dossier: Test Topic\n\n## 📌 Executive Summary\nSuccess"
+        ),
     ):
         req = {
             "jsonrpc": "2.0",
