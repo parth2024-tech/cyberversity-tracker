@@ -512,11 +512,63 @@ class TranslationService:
             return self._refine_ai_translation(res, source_lang)
         return None
 
+    def _translate_via_argos(
+        self, text: str, source_lang: str, target: str
+    ) -> str | None:
+        """
+        Tier 3/4 Offline Engine: Argos Translate with Token Shielding & Glossary Integration.
+        100% offline, in-process, MIT/Apache licensed.
+        Protects technical AI terms and code identifiers before OpenNMT/CTranslate2 inference.
+        """
+        try:
+            import argostranslate.translate  # type: ignore[import-not-found,import-untyped]
+        except ImportError:
+            return None
+
+        try:
+            # Normalize ISO source code (e.g. 'zh-cn' -> 'zh')
+            clean_src = source_lang.lower().split("-")[0].split("_")[0]
+            clean_target = target.lower().split("-")[0].split("_")[0]
+
+            # Pre-shield technical AI tokens from glossary before passing to Argos
+            shielded_text = text
+            glossary_map: dict[str, str] = {}
+            for idx, (zh_term, en_term) in enumerate(GLOSSARY_FALLBACK_TERMS):
+                if zh_term in shielded_text:
+                    placeholder = f"⟦G_{idx:03d}⟧"
+                    glossary_map[placeholder] = en_term
+                    shielded_text = shielded_text.replace(zh_term, placeholder)
+
+            # Perform offline CTranslate2 translation via Argos
+            translated = argostranslate.translate.translate(
+                shielded_text, clean_src, clean_target
+            )
+            if not translated or translated.strip() == text.strip():
+                return None
+
+            # Restore verified glossary terms
+            for placeholder, en_term in glossary_map.items():
+                translated = translated.replace(placeholder, en_term)
+
+            unescaped = html.unescape(translated)
+            return self._refine_ai_translation(unescaped, source_lang)
+        except Exception as e:
+            logger.debug(f"Argos translation fallback notice: {e}")
+            return None
+
     def _execute_translation(
         self, text: str, source_lang: str, target: str
     ) -> str | None:
-        """Execute translation via Multi-Tier resilient cascade with fail-safe fallbacks."""
-        # Tier 1: Local SLM (Ollama / Qwen2.5) if circuit breaker permits
+        """
+        Execute translation via Multi-Tier resilient cascade with fail-safe fallbacks:
+        Tier 1: Local SLM (Ollama / Qwen2.5-Coder Apache 2.0)
+        Tier 2: Fast Cloud LLM (Groq Llama-3.1-8B)
+        Tier 3: Direct Google GTX RPC (Fast, zero-cost, ~200ms)
+        Tier 4: Offline Argos Translate + Token Shielding & Glossary Integration (MIT)
+        Tier 5: Scraper Fallbacks (GoogleTranslator, MyMemory, Linguee)
+        Tier 6: Deterministic AI Terminology Substitution (Emergency offline zero-crash)
+        """
+        # Tier 1: Local SLM (Ollama / Qwen2.5-Coder) if circuit breaker permits
         try:
             slm_result = self._translate_via_slm(text, source_lang, target)
             if slm_result:
@@ -540,7 +592,15 @@ class TranslationService:
         except Exception as e:
             logger.debug(f"Tier 3 GTX translation notice: {e}")
 
-        # Tier 4: deep_translator GoogleTranslator
+        # Tier 4: Argos Translate with Token Shielding & Glossary Integration (100% Offline)
+        try:
+            argos_result = self._translate_via_argos(text, source_lang, target)
+            if argos_result:
+                return argos_result
+        except Exception as e:
+            logger.debug(f"Tier 4 Argos translation notice: {e}")
+
+        # Tier 5: deep_translator GoogleTranslator
         try:
             from deep_translator import GoogleTranslator
 

@@ -273,4 +273,21 @@ class TestForeignTextDetectionAndMultiTier:
             res = svc._translate_via_gtx("大模型评估", "zh", "en")
             assert "Large Language Model Evaluation" in res
 
+    def test_argos_translate_with_token_shielding(self):
+        svc = TranslationService()
+        mock_trans_mod = MagicMock()
+
+        def fake_argos(text: str, src: str, target: str) -> str:
+            assert "⟦G_001⟧" in text or "⟦G_000⟧" in text
+            return f"Translated with placeholder: {text}"
+
+        mock_trans_mod.translate = fake_argos
+        mock_root = MagicMock()
+        mock_root.translate = mock_trans_mod
+        with patch.dict("sys.modules", {"argostranslate": mock_root, "argostranslate.translate": mock_trans_mod}):
+            res = svc._translate_via_argos("这是大模型的重要突破", "zh", "en")
+            assert res is not None
+            assert "Large Language Model" in res
+            assert "⟦G_" not in res
+
 
