@@ -16,7 +16,8 @@
     "Strict type hinting and dataclasses across domain models",
     "Luxury dark aesthetic with obsidian palette and refined glassmorphism",
     "Strict user rule: Focus on broad global AI news (trending GitHub repos, developer tools, frontier models, research breakthroughs) and omit security unless explicitly asked",
-    "Strict user rule: News must mostly be within 2 weeks old (maximum 14 days) — discard stale historical items"
+    "Strict user rule: News must mostly be within 2 weeks old (maximum 14 days) — discard stale historical items",
+    "Strict user rule: 100% Free & Zero-Cost Architecture ($0/month Law) — never introduce paid APIs, subscriptions, commercial SaaS, or paywalled services; rely exclusively on local SLMs (Apache 2.0), generous free-tiers, direct public RPCs, and permissive open source"
   ],
   "architecture_patterns": [
     "Domain-Driven Design (DDD) with clear boundary contexts",
@@ -66,6 +67,7 @@
     "Never focus on cybersecurity, CVEs, or vulnerability telemetry unless the user explicitly requests it",
     "Never ingest or surface news older than 2 weeks (14 days max) — keep all intelligence strictly fresh",
     "Never autonomously merge pull requests or run gh pr merge — always leave PRs open for human user review",
+    "Never introduce or require paid APIs, recurring subscriptions, commercial licenses, or cloud billing (everything must be 100% free and open-source)",
     "Never use useEffect for data fetching — use Server Components or SWR",
     "Never store secrets in .env files committed to git",
     "Never use inline styles — always use Tailwind classes",
@@ -115,6 +117,7 @@
     "Zero-Trust Offline PWA App Shell: Standalone PWA support over Tailscale/localhost requires web/manifest.json and web/sw.js with explicit FastAPI routes serving Service-Worker-Allowed: / and caching App Shell with network-first offline API fallback.",
     "Structured AI Entity & Benchmark Knowledge Graph: Relational entry_entities table links model families, GitHub repos, arXiv IDs, and benchmarks with bidirectional metric extraction (e.g. 'scored 79.8% on AIME 2024' vs 'SWE-bench: 49.2%') and longest-first span suppression (preventing sub-string duplicate false positives like MMLU within MMLU-Pro), querying exact entity timelines across the 14-day freshness window.",
     "Chinese GitHub Trending & Bilingual Intelligence Corridor: GitHub Trending scraping requires configurable spoken_language_code ('zh' for Chinese) and bilingual keyword matching in _AI_KEYWORDS (e.g. '大模型', '智能体', '推理', '知识库') to prevent Chinese open-source repos from being dropped. Additionally, is_english_source must exempt Chinese sources to ensure title and summary translations are automatically executed while preserving invariant model and repo placeholders.",
-    "China AI Open-Source Repository Intelligence & Epistemic Profiling: Chinese developer repositories require dedicated epistemic parsing (ChinaRepoIntelligenceExtractor) extracting architectural archetypes (foundation_model, inference_runtime, agentic_system, rag_knowledge_base, multimodal_voice, eval_and_benchmark, dev_tool), lab authority mapping (DeepSeek, Alibaba Qwen, Shanghai AI Lab, Zhipu, InfiniFlow), parameter scales, context lengths, VRAM/hardware targets, quantization, serving frameworks, and open-source licenses, enriched on-the-fly during API serialization and filterable via archetype and lab query parameters."
+    "China AI Open-Source Repository Intelligence & Epistemic Profiling: Chinese developer repositories require dedicated epistemic parsing (ChinaRepoIntelligenceExtractor) extracting architectural archetypes (foundation_model, inference_runtime, agentic_system, rag_knowledge_base, multimodal_voice, eval_and_benchmark, dev_tool), lab authority mapping (DeepSeek, Alibaba Qwen, Shanghai AI Lab, Zhipu, InfiniFlow), parameter scales, context lengths, VRAM/hardware targets, quantization, serving frameworks, and open-source licenses, enriched on-the-fly during API serialization and filterable via archetype and lab query parameters.",
+    "100% Free & Zero-Cost Architecture ($0/Month Law): The entire project must run with zero operational cost and zero subscription dependencies. Use Apache 2.0 licensed local SLMs (e.g. qwen2.5-coder:7b/3b via Ollama/llama.cpp), free-tier cloud APIs (Groq), direct public endpoints (Google GTX RPC), and embedded MIT/Apache offline libraries (Argos Translate with AI token shielding). Never introduce paid API keys, paid token quotas, or commercial cloud bills."
   ]
 }
