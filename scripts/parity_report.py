@@ -19,18 +19,27 @@ sys.path.insert(0, str(root_dir / "src"))
 from ai_security_monitor.application.services.language_parity_service import (
     language_parity_service,
 )
-from ai_security_monitor.infrastructure.database.unit_of_work import unit_of_work
+from ai_security_monitor.infrastructure.database.unit_of_work import (
+    UnitOfWork,
+    unit_of_work,
+)
 
 
-async def run_report(days: int, save_snapshot: bool, output_json: bool) -> int:
-    async with unit_of_work() as uow:
+async def run_report(
+    days: int,
+    save_snapshot: bool,
+    output_json: bool,
+    check_slo: bool,
+    uow: UnitOfWork | None = None,
+) -> int:
+    async def _execute(active_uow: UnitOfWork) -> int:
         metrics = await language_parity_service.compute_parity_metrics(
-            uow.session, days=days
+            active_uow.session, days=days
         )
 
         if save_snapshot:
             snapshot = await language_parity_service.record_snapshot(
-                uow.session, metrics
+                active_uow.session, metrics
             )
             print(f"[+] Persisted parity snapshot: {snapshot.id}", file=sys.stderr)
 
@@ -40,7 +49,25 @@ async def run_report(days: int, save_snapshot: bool, output_json: bool) -> int:
             report_md = language_parity_service.format_markdown_report(metrics)
             print(report_md)
 
-    return 0
+        if check_slo:
+            if not metrics.slo_capture_active:
+                print(
+                    "\n[!] SLO VIOLATION: Zero native Chinese documents captured in trailing window.",
+                    file=sys.stderr,
+                )
+                return 1
+            print(
+                "\n[+] SLO COMPLIANT: Native multilingual intelligence intake is active.",
+                file=sys.stderr,
+            )
+
+        return 0
+
+    if uow is not None:
+        return await _execute(uow)
+    else:
+        async with unit_of_work() as active_uow:
+            return await _execute(active_uow)
 
 
 def main() -> int:
@@ -63,6 +90,11 @@ def main() -> int:
         action="store_true",
         help="Output raw telemetry metrics in JSON format",
     )
+    parser.add_argument(
+        "--check-slo",
+        action="store_true",
+        help="Validate capture active SLO, exiting with code 1 if violated",
+    )
 
     args = parser.parse_args()
     return asyncio.run(
@@ -70,6 +102,7 @@ def main() -> int:
             days=args.days,
             save_snapshot=args.save_snapshot,
             output_json=args.json,
+            check_slo=args.check_slo,
         )
     )
 
