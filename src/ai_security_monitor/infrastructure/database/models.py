@@ -65,10 +65,10 @@ class SourceModel(Base):
 
     # Relationships (lazy="select" prevents massive eager loads of thousands of entries when querying sources)
     entries: Mapped[list[EntryModel]] = relationship(
-        back_populates="source", lazy="select"
+        back_populates="source", cascade="all, delete-orphan", lazy="select"
     )
     fetch_logs: Mapped[list[FetchLogModel]] = relationship(
-        back_populates="source", lazy="select"
+        back_populates="source", cascade="all, delete-orphan", lazy="select"
     )
 
     __table_args__ = (Index("ix_sources_category_enabled", "category", "enabled"),)
@@ -86,7 +86,7 @@ class EntryModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     source_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sources.id"), nullable=False, index=True
+        String(36), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
@@ -117,7 +117,7 @@ class EntryModel(Base):
         back_populates="entries", lazy="selectin"
     )
     analysis: Mapped[AnalysisModel | None] = relationship(
-        back_populates="entry", uselist=False, lazy="selectin"
+        back_populates="entry", uselist=False, cascade="all, delete-orphan", lazy="selectin"
     )
     entities: Mapped[list[EntryEntityModel]] = relationship(
         "EntryEntityModel",
@@ -125,6 +125,7 @@ class EntryModel(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+
 
     __table_args__ = (
         Index("ix_entries_category_published", "category", "published_at"),
@@ -139,7 +140,7 @@ class AnalysisModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     entry_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("entries.id"), unique=True, nullable=False, index=True
+        String(36), ForeignKey("entries.id", ondelete="CASCADE"), unique=True, nullable=False, index=True
     )
     attack_vector: Mapped[str] = mapped_column(Text, nullable=False)
     risk_assessment: Mapped[str] = mapped_column(Text, nullable=False)
@@ -193,7 +194,7 @@ class FetchLogModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     source_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sources.id"), nullable=False, index=True
+        String(36), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False, index=True
     )
     source_name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -284,7 +285,7 @@ class AnalysisOutcomeModel(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     analysis_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("entry_analysis.id"), nullable=False, index=True
+        String(36), ForeignKey("entry_analysis.id", ondelete="CASCADE"), nullable=False, index=True
     )
     outcome_type: Mapped[str] = mapped_column(
         String(20), nullable=False
