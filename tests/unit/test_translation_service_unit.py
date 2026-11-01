@@ -236,3 +236,41 @@ class TestChinaTokenShieldIntegration:
             assert "vLLM" in res
             assert "⟦" not in res
 
+
+# ---------------------------------------------------------------------------
+# Foreign Text Detection & Multi-Tier Engine Tests
+# ---------------------------------------------------------------------------
+
+
+class TestForeignTextDetectionAndMultiTier:
+    def test_has_foreign_text(self):
+        svc = TranslationService()
+        assert svc.has_foreign_text("大模型问答能力评测法") is True
+        assert svc.has_foreign_text("XiaoAi Speakers (小爱音箱)") is True
+        assert svc.has_foreign_text("Привет мир") is True
+        assert svc.has_foreign_text("Panache — RTS Belle Époque pour mobile") is True
+        assert svc.has_foreign_text("Hello world, pure English text!") is False
+        assert svc.has_foreign_text(None) is False
+        assert svc.has_foreign_text("") is False
+
+    def test_glossary_fallback(self):
+        svc = TranslationService()
+        chinese_text = "大模型和智能体正在改变开源软件生态"
+        fallback = svc._translate_via_glossary_fallback(chinese_text, "zh")
+        assert fallback is not None
+        assert "LLM / Large Model" in fallback or "Autonomous Agent" in fallback
+
+    def test_gtx_translator_fallback(self):
+        svc = TranslationService()
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            [["Large Model Evaluation", "大模型评估", None, None]],
+            None,
+            "zh-CN",
+        ]
+        with patch("httpx.Client.get", return_value=mock_response):
+            res = svc._translate_via_gtx("大模型评估", "zh", "en")
+            assert "Large Language Model Evaluation" in res
+
+

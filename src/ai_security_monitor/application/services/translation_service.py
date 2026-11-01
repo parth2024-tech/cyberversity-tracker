@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import html
 import re
+import urllib.parse
 from datetime import UTC, datetime
 
 import structlog
@@ -46,6 +47,44 @@ LANGUAGE_NAMES: dict[str, tuple[str, str]] = {
     "en": ("English", "🌐"),
 }
 
+GLOSSARY_FALLBACK_TERMS: list[tuple[str, str]] = [
+    ("大语言模型", "Foundation Large Language Model"),
+    ("大模型", "Large Language Model"),
+    ("基座模型", "Foundation Model"),
+    ("思维链", "Chain-of-Thought (CoT)"),
+    ("测试时计算扩展", "Test-Time Compute Scaling"),
+    ("强化学习对齐", "RL / RLHF Alignment"),
+    ("开源权重", "Open-Weights Release"),
+    ("端侧模型", "On-Device SLM"),
+    ("算力集群", "Compute Cluster"),
+    ("显存占用", "VRAM Footprint"),
+    ("显存", "VRAM"),
+    ("推理框架", "Inference Runtime"),
+    ("推理加速", "Inference Acceleration"),
+    ("推理引擎", "Inference Engine"),
+    ("智能体", "Autonomous Agent"),
+    ("知识库", "RAG Knowledge Base"),
+    ("检索增强", "Retrieval-Augmented Generation (RAG)"),
+    ("多模态", "Multimodal"),
+    ("视觉大模型", "Vision-Language Foundation Model"),
+    ("语音大模型", "Voice Foundation Model"),
+    ("语音合成", "Speech Synthesis / TTS"),
+    ("微调", "Fine-Tuning"),
+    ("量化", "Quantization"),
+    ("深度求索", "DeepSeek"),
+    ("通义千问", "Alibaba Qwen"),
+    ("上海人工智能实验室", "Shanghai AI Lab"),
+    ("智谱", "Zhipu AI"),
+    ("月之暗面", "Moonshot AI"),
+    ("评测基准", "Evaluation Benchmark"),
+    ("零日漏洞", "Zero-Day Vulnerability"),
+    ("利用代码", "Exploit PoC"),
+    ("权限提升", "Privilege Escalation"),
+    ("威胁情报", "Threat Intelligence"),
+    ("安全公告", "Security Advisory"),
+    ("逆向工程", "Reverse Engineering"),
+]
+
 
 class TranslationService:
     """Zero-cost autonomous neural translation engine with multi-provider fallbacks."""
@@ -60,6 +99,22 @@ class TranslationService:
         ] = {}  # text -> (translated, detected_lang)
         self._max_cache_size = max_cache_size
         self._token_shield = token_shield_instance or token_shield
+
+    def has_foreign_text(self, text: str | None) -> bool:
+        """Check if text contains foreign non-English characters or non-Latin scripts."""
+        if not text or not text.strip():
+            return False
+        # Non-Latin scripts (Chinese, Japanese, Korean, Cyrillic, Arabic, Hebrew, Thai, etc.)
+        if re.search(
+            r"[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff\u0590-\u05ff\u0e00-\u0e7f]",
+            text,
+        ):
+            return True
+        # Check Latin text with accented characters against detect_language
+        if re.search(r"[áéíóúüñäößàèìòùâêîôûç]", text, re.I):
+            lang = self.detect_language(text)
+            return lang != "en" and not lang.startswith("en")
+        return False
 
     def detect_language(self, text: str) -> str:
         """Detect the source language of a text with high accuracy."""
@@ -343,11 +398,125 @@ class TranslationService:
 
         return None
 
+    def _translate_via_gtx(
+        self, text: str, source_lang: str, target: str
+    ) -> str | None:
+        """Translate via Google Translate GTX RPC — fast, free, and robust against web scraping limits."""
+        import httpx
+
+        src = "auto" if source_lang in ("en", "auto") else source_lang
+        if src in ("zh-cn", "zh_cn"):
+            src = "zh-CN"
+        elif src in ("zh-tw", "zh_tw"):
+            src = "zh-TW"
+
+        # Chunk if text exceeds 1200 characters to stay within safe query bounds
+        if len(text) > 1200:
+            chunks = [text[i : i + 1000] for i in range(0, len(text), 1000)]
+            translated_chunks = []
+            for chunk in chunks:
+                part = self._translate_via_gtx(chunk, source_lang, target)
+                if part:
+                    translated_chunks.append(part)
+                else:
+                    return None
+            return " ".join(translated_chunks)
+
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={src}&tl={target}&dt=t&q={urllib.parse.quote(text)}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        }
+
+        try:
+            with httpx.Client(timeout=6.0, headers=headers) as client:
+                resp = client.get(url)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if (
+                        data
+                        and isinstance(data, list)
+                        and len(data) > 0
+                        and isinstance(data[0], list)
+                    ):
+                        pieces = [p[0] for p in data[0] if p and p[0]]
+                        combined = "".join(pieces)
+                        if (
+                            combined
+                            and combined.strip()
+                            and combined.strip() != text.strip()
+                        ):
+                            unescaped = html.unescape(combined)
+                            return self._refine_ai_translation(unescaped, source_lang)
+        except Exception as e:
+            logger.debug(f"GTX translation notice: {e}")
+
+        return None
+
+    def _translate_via_groq(
+        self, text: str, source_lang: str, target: str
+    ) -> str | None:
+        """Route translation to Groq cloud API if key is present."""
+        groq_key = getattr(settings.analyzer, "groq_api_key", None)
+        if not groq_key:
+            return None
+        import httpx
+
+        headers = {
+            "Authorization": f"Bearer {groq_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": "llama-3.1-8b-instant",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a professional technical translator. Translate the text into fluent English. Preserve all placeholders like ⟦T_01⟧ and model names exactly as given. Output ONLY the English translation without preamble or quotes.",
+                },
+                {
+                    "role": "user",
+                    "content": text,
+                },
+            ],
+            "temperature": 0.1,
+            "max_tokens": 500,
+        }
+        try:
+            with httpx.Client(timeout=7.0) as client:
+                resp = client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    choices = data.get("choices", [])
+                    if choices:
+                        raw = choices[0].get("message", {}).get("content", "").strip()
+                        if raw and raw != text:
+                            unescaped = html.unescape(raw)
+                            return self._refine_ai_translation(unescaped, source_lang)
+        except Exception as e:
+            logger.debug(f"Groq translation notice: {e}")
+        return None
+
+    def _translate_via_glossary_fallback(
+        self, text: str, source_lang: str
+    ) -> str | None:
+        """Deterministic offline glossary substitution when all network translation channels fail."""
+        if not text:
+            return None
+        res = text
+        for zh_term, en_term in GLOSSARY_FALLBACK_TERMS:
+            res = res.replace(zh_term, en_term)
+        if res != text:
+            return self._refine_ai_translation(res, source_lang)
+        return None
+
     def _execute_translation(
         self, text: str, source_lang: str, target: str
     ) -> str | None:
-        """Execute translation via Tier 1 SLM or deep_translator with fallback providers."""
-        # 0. Tier 1: Local SLM (e.g. Qwen2.5:7b)
+        """Execute translation via Multi-Tier resilient cascade with fail-safe fallbacks."""
+        # Tier 1: Local SLM (Ollama / Qwen2.5) if circuit breaker permits
         try:
             slm_result = self._translate_via_slm(text, source_lang, target)
             if slm_result:
@@ -355,7 +524,23 @@ class TranslationService:
         except Exception as e:
             logger.debug(f"Tier 1 SLM translation notice: {e}")
 
-        # 1. Primary: GoogleTranslator
+        # Tier 2: Free Cloud LLM (Groq) if configured
+        try:
+            groq_result = self._translate_via_groq(text, source_lang, target)
+            if groq_result:
+                return groq_result
+        except Exception as e:
+            logger.debug(f"Tier 2 Groq translation notice: {e}")
+
+        # Tier 3: Direct Google GTX RPC (Fast, robust, zero-cost, no scraper rate limits)
+        try:
+            gtx_result = self._translate_via_gtx(text, source_lang, target)
+            if gtx_result:
+                return gtx_result
+        except Exception as e:
+            logger.debug(f"Tier 3 GTX translation notice: {e}")
+
+        # Tier 4: deep_translator GoogleTranslator
         try:
             from deep_translator import GoogleTranslator
 
@@ -373,7 +558,7 @@ class TranslationService:
         except Exception as e:
             logger.debug(f"GoogleTranslator error for '{text[:30]}...': {e}")
 
-        # 2. Fallback: MyMemoryTranslator (chunks text into <500 char pieces)
+        # Tier 5: deep_translator MyMemoryTranslator (chunked)
         try:
             from deep_translator import MyMemoryTranslator
 
@@ -398,7 +583,6 @@ class TranslationService:
             target_locale = "en-US" if target == "en" else target
             mm = MyMemoryTranslator(source=src_locale, target=target_locale)
 
-            # Chunk long texts to respect 500-char limit
             if len(text) > 480:
                 chunks = [
                     text[i : i + 450] for i in range(0, min(len(text), 1500), 450)
@@ -419,7 +603,7 @@ class TranslationService:
         except Exception as e:
             logger.debug(f"MyMemoryTranslator fallback error: {e}")
 
-        # 3. Fallback: LingueeTranslator
+        # Tier 6: deep_translator LingueeTranslator
         try:
             from deep_translator import LingueeTranslator
 
@@ -428,6 +612,14 @@ class TranslationService:
             if result:
                 unescaped = html.unescape(result)
                 return self._refine_ai_translation(unescaped, source_lang)
+        except Exception:
+            pass
+
+        # Tier 7: Deterministic Glossary Fallback (Offline emergency fail-safe)
+        try:
+            glossary_res = self._translate_via_glossary_fallback(text, source_lang)
+            if glossary_res:
+                return glossary_res
         except Exception:
             pass
 
@@ -455,6 +647,11 @@ class TranslationService:
             (r"\bright escalation\b", "privilege escalation"),
             (r"\bsecurity announcement(s)?\b", r"security advisory\1"),
             (r"\bknowledge distilling\b", "knowledge distillation"),
+            (r"\bretrieval enhancement\b", "Retrieval-Augmented Generation (RAG)"),
+            (r"\bknowledge base\b", "RAG knowledge base"),
+            (r"\bsmart body\b|\bintelligent body\b", "AI Agent"),
+            (r"\breasoning frame\b", "inference runtime"),
+            (r"\bmulti-modal\b", "multimodal"),
         ]
         for pat, rep in replacements:
             t = re.sub(pat, rep, t, flags=re.I)

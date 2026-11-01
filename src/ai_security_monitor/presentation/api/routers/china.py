@@ -14,6 +14,9 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, or_, select
 
+from ai_security_monitor.application.services.translation_service import (
+    translation_service,
+)
 from ai_security_monitor.infrastructure.cache import response_cache
 from ai_security_monitor.infrastructure.database.models import EntryModel, SourceModel
 from ai_security_monitor.infrastructure.database.unit_of_work import (
@@ -137,16 +140,23 @@ async def get_china_corridor_overview(request: Request):
                 .limit(5)
             )
             recent_res = await session.execute(recent_stmt)
-            recent_entries = [
-                {
-                    "id": r[0],
-                    "title": r[1],
-                    "url": r[2],
-                    "category": r[3],
-                    "published_at": r[4].isoformat() if r[4] else None,
-                }
-                for r in recent_res.all()
-            ]
+
+            recent_entries = []
+            for r in recent_res.all():
+                raw_title = r[1]
+                if translation_service.has_foreign_text(raw_title):
+                    tr_title, _, ok = translation_service.translate_text(raw_title)
+                    if ok:
+                        raw_title = tr_title
+                recent_entries.append(
+                    {
+                        "id": r[0],
+                        "title": raw_title,
+                        "url": r[2],
+                        "category": r[3],
+                        "published_at": r[4].isoformat() if r[4] else None,
+                    }
+                )
 
             # Query recent 5 trending GitHub repos from China corridor
             trending_stmt = (
@@ -180,14 +190,32 @@ async def get_china_corridor_overview(request: Request):
 
             trending_repos = []
             archetype_counts: dict[str, int] = {}
-            for r in trending_res.all():
-                meta = r[4] or {}
+            for row in trending_res.all():
+                r_id = row[0]
+                r_title = str(row[1] or "")
+                r_url = str(row[2] or "")
+                r_summary = str(row[3] or "")
+                raw_meta = row[4]
+                meta: dict[str, Any] = dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                r_pub = row[5]
+
+                repo_title = r_title
+                repo_summary = r_summary
+                if translation_service.has_foreign_text(repo_title):
+                    tr_title, _, ok = translation_service.translate_text(repo_title)
+                    if ok:
+                        repo_title = tr_title
+                if translation_service.has_foreign_text(repo_summary):
+                    tr_summary, _, ok = translation_service.translate_text(repo_summary)
+                    if ok:
+                        repo_summary = tr_summary
+
                 repo_intel = meta.get("repo_intel")
                 if not repo_intel:
                     profile = china_repo_intelligence.extract_profile(
-                        title=r[1],
-                        description=r[3] or "",
-                        url=r[2],
+                        title=repo_title,
+                        description=repo_summary,
+                        url=r_url,
                         stars=meta.get("stars", 0),
                     )
                     repo_intel = profile.to_dict()
@@ -195,17 +223,18 @@ async def get_china_corridor_overview(request: Request):
                 arch = repo_intel.get("archetype", "dev_tool")
                 archetype_counts[arch] = archetype_counts.get(arch, 0) + 1
 
+                pub_iso = r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
                 trending_repos.append(
                     {
-                        "id": r[0],
-                        "title": r[1],
-                        "url": r[2],
-                        "summary": r[3],
+                        "id": r_id,
+                        "title": repo_title,
+                        "url": r_url,
+                        "summary": repo_summary,
                         "repo_name": meta.get("repo_name", ""),
                         "language": meta.get("language", ""),
                         "stars": meta.get("stars") or meta.get("stars_period", ""),
                         "repo_intel": repo_intel,
-                        "published_at": r[5].isoformat() if r[5] else None,
+                        "published_at": pub_iso,
                     }
                 )
 
@@ -274,15 +303,38 @@ async def get_china_trending_repos(
             )
 
             repos = []
-            for r in result.all():
-                meta = r[5] or {}
+            for row in result.all():
+                r_id = row[0]
+                r_title = str(row[1] or "")
+                r_url = str(row[2] or "")
+                r_summary = str(row[3] or "")
+                r_tags = row[4] or []
+                raw_meta = row[5]
+                meta: dict[str, Any] = dict(raw_meta) if isinstance(raw_meta, dict) else {}
+                r_pub = row[6]
+
+                repo_title = r_title
+                repo_summary = r_summary
+                is_tr = bool(meta.get("is_translated", False))
+
+                if translation_service.has_foreign_text(repo_title):
+                    tr_title, _, ok = translation_service.translate_text(repo_title)
+                    if ok:
+                        repo_title = tr_title
+                        is_tr = True
+                if translation_service.has_foreign_text(repo_summary):
+                    tr_summary, _, ok = translation_service.translate_text(repo_summary)
+                    if ok:
+                        repo_summary = tr_summary
+                        is_tr = True
+
                 repo_intel = meta.get("repo_intel")
                 if not repo_intel:
                     profile = china_repo_intelligence.extract_profile(
-                        title=r[1],
-                        description=r[3] or "",
-                        url=r[2],
-                        tags=r[4] or [],
+                        title=repo_title,
+                        description=repo_summary,
+                        url=r_url,
+                        tags=r_tags,
                         stars=meta.get("stars", 0),
                     )
                     repo_intel = profile.to_dict()
@@ -295,22 +347,23 @@ async def get_china_trending_repos(
                 if lab:
                     lab_lower = lab.lower()
                     repo_lab = (repo_intel.get("lab_name") or "").lower()
-                    if lab_lower not in repo_lab and lab_lower not in r[1].lower():
+                    if lab_lower not in repo_lab and lab_lower not in repo_title.lower():
                         continue
 
+                pub_iso = r_pub.isoformat() if hasattr(r_pub, "isoformat") and r_pub else None
                 repos.append(
                     {
-                        "id": r[0],
-                        "title": r[1],
-                        "url": r[2],
-                        "summary": r[3],
-                        "tags": r[4] or [],
+                        "id": r_id,
+                        "title": repo_title,
+                        "url": r_url,
+                        "summary": repo_summary,
+                        "tags": r_tags,
                         "repo_name": meta.get("repo_name", ""),
                         "language": meta.get("language", ""),
                         "stars": meta.get("stars") or meta.get("stars_period", ""),
-                        "is_translated": bool(meta.get("is_translated", False)),
+                        "is_translated": is_tr,
                         "repo_intel": repo_intel,
-                        "published_at": r[6].isoformat() if r[6] else None,
+                        "published_at": pub_iso,
                     }
                 )
 

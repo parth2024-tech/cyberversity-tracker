@@ -1,6 +1,6 @@
 # 📰 THE GLOBAL AI GAZETTE
 **Comprehensive Worldwide AI Ecosystem Broadsheet • Edition #2462**
-*Sunday, November 01, 2026 • 16:14 UTC • Coverage Window: 5h • 227 verified AI stories analyzed*
+*Sunday, November 01, 2026 • 17:06 UTC • Coverage Window: 5h • 239 verified AI stories analyzed*
 
 ---
 
@@ -116,7 +116,7 @@ Easy, fast, and cheap LLM serving for everyone | Documentation | Blog | Paper | 
 | **ISTA-DASLab/DeepSeek-V4.1-Flash-1017-GSQ-RCO-GGUF:** | `Hugging Face Trend` | `763B / 128K` | `68/100` | Non-uniform GGUF quantizations** of a 763B-parameter, 384-expert MoE, produced with **GSQ** and **RCO**. > **Update, October 27, 2026.** The files. |
 | **deepseek-ai/DeepSeek-V4.1-Flash-1017: Trending Ima** | `Hugging Face Trend` | `MoE / SOTA / 128K` | `68/100` | DeepSeek-V4.1-Flash-1017** is a minor update to **DeepSeek-V4.1-Flash**, delivering substantial improvements across reasoning, coding, agentic tasks, and visual benchmarks. |
 | **ALERT🚨: GB300 NVL72 @sgl_project can get close to ** | `X / Twitter: AI De` | `MoE / SOTA / 128K` | `68/100` | Source: Twitter/X | Author: @sgl_project ALERT🚨: GB300 NVL72 @sgl_project can get close to 1000 tok/s/user on DeepSeek Flash v4.1 by. |
-| **OpenAI is merging Chat and Work in December. Only ** | `Reddit r/Singulari` | `MoE / SOTA / 128K` | `68/100` | Community: r/Singularity | Score: 100 | Comments: 20 | Author: u/reddit_community OpenAI is merging Chat and Work in December. |
+| **OpenAI is testing GPT-6.2 Astra** | `Reddit r/Singulari` | `MOE / 128K` | `68/100` | OpenAI is testing GPT-6.2 Astra marks an architectural milestone in Frontier API foundation modeling, engineered for high-throughput reasoning and featuring. |
 | **Clef is available on Ollama's cloud** | `ollama.com` | `27B / 128K` | `68/100` | Clef, a 27B multimodal decision model from Cloudflare, is now available on Ollama . Users can run it locally or. |
 | **Latest open artifacts (#25): DeepSeek V4.1 Flash 1** | `interconnects.ai` | `MoE / SOTA / 128K` | `68/100` | The geopolitics of open-weight AI are accelerating again this fall, as we would expect with the risks of all AI. |
 
@@ -146,10 +146,10 @@ DeepSeek-V4.1-Flash-1017** is a minor update to **DeepSeek-V4.1-Flash**, deliver
 
 Source: Twitter/X | Author: @sgl_project ALERT🚨: GB300 NVL72 @sgl_project can get close to 1000 tok/s/user on DeepSeek Flash v4.1 by aggressively fusing kernels together!! TileRT started this trend in the ecosystem of megakernel engines on OSS frontier models! Glad to see SGLang widely ad ALERT🚨: GB300 NVL72 @sgl_project can get close to 1000 tok/s/user on DeepSeek Flash v4.1 by aggressively fusing kernels together!! TileRT started this trend in the ecosystem of megakernel engines on OSS frontier models!
 
-### 🤖 OpenAI is merging Chat and Work in December. Only Instant will be unlimited, and everything else will count toward your Codex limits
-- **Velocity**: `95/100` | **Architecture**: `MoE / SOTA • Native / FP16` | **Source**: `Reddit r/Singularity`
+### 🤖 OpenAI is testing GPT-6.2 Astra
+- **Velocity**: `95/100` | **Architecture**: `MOE • FP8` | **Source**: `Reddit r/Singularity`
 
-OpenAI is merging Chat and Work in December. Only Instant will be unlimited, and everything else will count toward your Codex limits reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
+OpenAI is testing GPT-6.2 Astra marks an architectural milestone in Frontier API foundation modeling, engineered for high-throughput reasoning and featuring extended context evaluation. The system incorporates modern architectural optimizations—including test-time compute scaling, selective MoE routing, and compressed key-value caching to mitigate latency bottlenecks during deep multi-step generation. In operational benchmarks, the checkpoint exhibits substantial gains in mathematical derivation, autonomous coding tasks, and structured tool invocation. Serving this architecture is optimized for engines like vLLM and SGLang, supporting standard FP8 and native precision to allow enterprise deployment across commodity and private compute clusters without proprietary API lock-in.
 
 
 ---
@@ -176,20 +176,25 @@ Recent work from Anthropic introduced a new interpretability tool, called the Ja
 
 One of the central concerns for the safety of advanced AI is scheming: when a model strategically complies under oversight but pursues its own goals when unobserved. Current demonstrations, such as Anthropic's Alignment Faking work, depend on design choices that make them less convincing: explicit test-time prompting, handcrafted backdoors, or training data that demonstrates or hints at the target behavior.
 
+### 🔬 Intelligent Software Development Micro-Interview · Issue 45: Intelligent software platform and applications for AI4S
+- **Research Velocity**: `90/100` | **Source**: `mp.weixin.qq.com`
+
+“Intelligent AI4S's intelligent application for flat platform and user” micro-transfer background information AI for Science It is one of the most dynamic and humanistic sports studios in existence. In 2024, the introduction of physics and chemistry courses will take the lead in the development of AI and dynamic science, and will introduce the core of artificial intelligence and advanced science research tools. In recent years, a number of "intelligent scientists" have been criticized for their intelligent bodies, such as Google DeepMind's Co-Scientist, intelligent bodies, self-extermination, generation of exclusionary methods, and evolution of Japanese selection; FutureHouse's PaperQA2, Crow, and Falcon. His work in the literature has reached an extremely high level, and he has studied the number of specific practical and industrial biological organisms.
+
 ### 🔬 MISTRAL 🔥: Le Chonk (Mistral Large 4) is now available on HuggingFace! > "The new model also features substantial gains in reasoning efficiency that give developers greater performance while lowering inference costs." > "Mistral Large 4 ranks as the best
 - **Research Velocity**: `98/100` | **Source**: `X / Twitter: AI Research & Preprint Breakthroughs`
 
 Source: Twitter/X | Author: X / Twitter MISTRAL 🔥: Le Chonk (Mistral Large 4) is now available on HuggingFace! > "The new model also features substantial gains in reasoning efficiency that give developers greater performance while lowering inference costs." > "Mistral Large 4 ranks as the best MISTRAL 🔥: Le Chonk (Mistral Large 4) is now available on HuggingFace! > "The new model also features substantial gains in reasoning efficiency that give developers greater performance while lowering inference costs." > "Mistral Large 4 ranks as the best.
 
-### 🔬 From Document Layout to Causal Topology: An End-to-End Architecture for Temporal Causal Reasoning
-- **Research Velocity**: `97/100` | **Source**: `arxiv.org`
-
-Large language models (LLMs) generally lack deep causal reasoning capabilities in temporal reasoning. Inspired by document layout reordering, this paper proposes a paradigm shift from discrete narratives to causal topologies.
-
 
 ---
 
 ## 🛠️ [PAGE 6] DEVELOPER TOOLS, FRAMEWORKS & AI INFRASTRUCTURE
+
+### 🛠️ Heretic 2.0 makes stripping AI safety guardrails even easier to automate - Startup Fortune
+- **Adoption Index**: `75/100` | **Engine**: `PyTorch / ONNX` | **Source**: `Reddit r/LocalLLaMA`
+
+Heretic 2.0 makes stripping AI safety guardrails even easier to automate - Startup Fortune reflects the rapid acceleration of sovereign artificial intelligence ecosystems and decentralized technology development. Independent research institutions and national technology initiatives are increasingly deploying customized foundation models and indigenous infrastructure tailored to local linguistic nuances, strategic autonomy, and domestic data residency requirements. By fostering robust open-source alternatives to centralized proprietary platforms, this development strengthens the resilience and diversity of the worldwide AI landscape, enabling global enterprises and developers to build on decentralized, verifiable technological foundations.
 
 ### 🛠️ SGLang Fast Serving Engine v0.5.22: Highlights 950 PRs from 245 contributors. New models Model Type Cookbook Clef / Clef Flash
 - **Adoption Index**: `98/100` | **Engine**: `SGLang` | **Source**: `github.com`
@@ -215,11 +220,6 @@ Source: Twitter/X | Author: X / Twitter Same kernels, different paths. vLLM and 
 - **Adoption Index**: `95/100` | **Engine**: `Ollama` | **Source**: `ollama.com`
 
 Clef, a 27B multimodal decision model from Cloudflare, is now available on Ollama . Users can run it locally or on Ollama’s cloud. Clef turns a state and a schema of typed questions into decisions. It supports text and image input and is compatible with the Jev and System One APIs. Clef is fine-tuned from Qwen3.8-27B and released under the Apache 2.0 license.
-
-### 🛠️ Donating Agent Skills to the Agentic AI Foundation
-- **Adoption Index**: `85/100` | **Engine**: `PyTorch / ONNX` | **Source**: `simonwillison.net`
-
-Donating Agent Skills to the Agentic AI Foundation News today from Anthropic: We're committed to keeping Agent Skills open, community-driven, and vendor-neutral. Today, we are donating the standard to the Agentic AI Foundation (AAIF) under the Linux Foundation, which we co-founded with Block and OpenAI last year, and to which we donated the Model Context Protocol (MCP).
 
 
 ---
@@ -251,10 +251,10 @@ OpenAI combines the Chat and Work modes into a single interface. Starting in Dec
 
 SenseTime open-sourced SenseNova-Loop-9B-Preview on October 30, a multimodal model built on a looped Transformer design that the company says can match models of around 27 billion parameters with only 9 billion, IT Home reported. The weights are on Hugging Face under the Apache 2.0 license, with code on GitHub. According to the model card, the model has 32 distinct decoder layers.
 
-### 🌐 🇯🇵 [JP] Japan asks Anthropic, OpenAI for more access to advanced models
-- **Source**: `asia.nikkei.com`
+### 🌐 🇨🇳 [CN] Chinese video AI models beat US rivals in visual quality, but lag on safeguards: HKU study
+- **Source**: `scmp.com`
 
-Japan asks Anthropic, OpenAI for more access to advanced models marks an architectural milestone in Frontier API foundation modeling, engineered for high-throughput reasoning and featuring extended context evaluation. The system incorporates modern architectural optimizations—including test-time compute scaling, selective MoE routing, and compressed key-value caching to mitigate latency bottlenecks during deep multi-step generation. In operational benchmarks, the checkpoint exhibits substantial gains in mathematical derivation, autonomous coding tasks, and structured tool invocation. Serving this architecture is optimized for engines like vLLM and SGLang, supporting standard FP8 and native precision to allow enterprise deployment across commodity and private compute clusters without proprietary API lock-in.
+Chinese AI video-generation models have surpassed leading US rivals in visual quality, but several fall behind in safety precautions, according to researchers at the University of Hong Kong. ByteDance's Seedance 2.0 Pro took top spot in a ranking of 12 leading artificial intelligence video-generation models, scoring 3.84 out of 5 for visual quality. It outperformed Google DeepMind's Veo 3.1, which scored 3.47, and OpenAI's Sora 2 Pro, on 3.27, in a study led by Zhenhui Jack Jiang, professor of..
 
 
 ---
@@ -353,4 +353,4 @@ Persistent memory across coding sessions and agents. Persistent memory for Claud
 
 
 ---
-*Compiled autonomously • Sunday, November 01, 2026 • 16:14 UTC • Edition #2462 • 227 items processed from worldwide AI feeds*
+*Compiled autonomously • Sunday, November 01, 2026 • 17:06 UTC • Edition #2462 • 239 items processed from worldwide AI feeds*

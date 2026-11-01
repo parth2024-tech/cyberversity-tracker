@@ -2462,14 +2462,14 @@
                 ${origTitle ? `<button onclick="event.stopPropagation(); toggleOriginalText('${eid}')" id="trans-btn-${eid}" class="text-[9.5px] text-cyan-400 hover:text-cyan-200 underline font-semibold transition cursor-pointer">Show Original</button>` : ''}
               </div>
             ` : (hasNonEnglish ? `
-              <!-- Untranslated Foreign Text Action -->
-              <div class="mb-2 p-1.5 rounded-lg bg-amber-950/30 border border-amber-500/25 text-[10px] font-mono text-amber-300 flex items-center justify-between gap-2">
-                <span class="flex items-center gap-1.5">
-                  <span>🌐 Foreign Script</span>
+              <!-- Seamless Auto-Translation in Progress -->
+              <div class="mb-2 p-1.5 rounded-lg bg-sky-950/30 border border-sky-500/25 text-[10px] font-mono text-sky-300 flex items-center justify-between gap-2 shadow-sm">
+                <span class="flex items-center gap-1.5 font-bold">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                  <span class="text-cyan-200">AUTO-TRANSLATING...</span>
+                  <span class="text-slate-400 font-normal">Seamless English render</span>
                 </span>
-                <button onclick="event.stopPropagation(); translateCardOnDemand('${eid}')" id="trans-btn-${eid}" class="text-[9.5px] bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded font-semibold transition cursor-pointer">
-                  Translate →
-                </button>
+                <span id="trans-btn-${eid}" class="text-[9px] text-cyan-400 font-mono animate-pulse">EN STREAM</span>
               </div>
             ` : '')}
 
@@ -2513,6 +2513,12 @@
         }
       };
 
+      if (hasNonEnglish && !isTranslated) {
+        setTimeout(() => {
+          translateCardOnDemand(entry.id);
+        }, 50);
+      }
+
       return card;
     }
 
@@ -2541,6 +2547,12 @@
       const tags = (entry.tags || []).map(t => `<span class="px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.08] text-xs font-mono">#${escapeHtml(t)}</span>`).join(' ');
       const ecoBadges = ecosystem.map(e => `<span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/25 text-xs font-mono font-medium flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i>${escapeHtml(e)}</span>`).join(' ');
       const detectedPocs = (entry.summary || '').match(/https?:\/\/github\.com\/[a-zA-Z0-9_\-\.\/]+/g) || [];
+      const meta = entry.metadata || {};
+      const isTranslated = Boolean(meta.is_translated);
+      const origTitle = meta.original_title || '';
+      const origSummary = meta.original_summary || '';
+      const langName = meta.detected_language_name || (meta.detected_language ? meta.detected_language.toUpperCase() : 'Foreign');
+      const langFlag = meta.detected_language_flag || '🌐';
 
       content.innerHTML = `
         <div class="space-y-5">
@@ -2587,6 +2599,32 @@
           <h2 class="text-xl sm:text-2xl font-bold text-white leading-snug">
             ${escapeHtml(entry.title || 'Untitled')}
           </h2>
+
+          ${isTranslated ? `
+            <!-- Translation Intelligence Verified Banner -->
+            <div class="p-3.5 rounded-xl bg-sky-950/40 border border-sky-500/30 text-xs font-mono text-sky-300 flex items-center justify-between gap-3 shadow-md">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="font-bold text-sky-200 uppercase tracking-wide">AI TRANSLATION VERIFIED</span>
+                <span class="text-slate-400 font-sans">• Original: ${escapeHtml(langFlag)} ${escapeHtml(langName)}</span>
+              </div>
+              ${origTitle ? `
+                <button onclick="toggleModalOriginal(this, '${escapeHtml(entry.id)}')" class="text-cyan-400 hover:text-cyan-200 underline font-semibold transition text-xs cursor-pointer">
+                  View Original Text
+                </button>
+              ` : ''}
+            </div>
+            ${origTitle ? `
+              <div id="modal-orig-${escapeHtml(entry.id)}" class="hidden p-3.5 rounded-xl bg-black/60 border border-slate-700/50 text-xs font-mono text-slate-300 space-y-2">
+                <div class="text-[10px] uppercase text-slate-400 font-bold">Original Title (${escapeHtml(langName)})</div>
+                <div class="text-slate-200 font-sans text-sm">${escapeHtml(origTitle)}</div>
+                ${origSummary ? `
+                  <div class="text-[10px] uppercase text-slate-400 font-bold pt-1.5 border-t border-white/[0.05]">Original Briefing</div>
+                  <div class="text-slate-300 font-sans text-xs leading-relaxed whitespace-pre-line">${escapeHtml(origSummary)}</div>
+                ` : ''}
+              </div>
+            ` : ''}
+          ` : ''}
 
           <!-- Source Intelligence Briefing -->
           <div class="p-5 rounded-xl bg-black/40 border border-white/[0.06] space-y-3">
@@ -4052,6 +4090,18 @@
         const pinned = isThreatPinned(id);
         btn.innerHTML = `<i data-lucide="star" class="w-3.5 h-3.5 ${pinned ? 'fill-amber-400 text-amber-400' : ''}"></i><span id="modal-pin-text">${pinned ? 'PINNED' : 'PIN'}</span>`;
         lucide.createIcons();
+      }
+    }
+
+    function toggleModalOriginal(btn, entryId) {
+      const el = document.getElementById(`modal-orig-${entryId}`);
+      if (!el) return;
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        btn.innerText = 'Hide Original Text';
+      } else {
+        el.classList.add('hidden');
+        btn.innerText = 'View Original Text';
       }
     }
 

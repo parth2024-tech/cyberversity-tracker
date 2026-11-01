@@ -410,13 +410,17 @@ class MonitorService:
                 )
             )
 
-            for entry in new_raw_entries:
-                if not is_english_source:
-                    try:
-                        from ai_security_monitor.application.services.translation_service import (
-                            translation_service,
-                        )
+            from ai_security_monitor.application.services.translation_service import (
+                translation_service,
+            )
 
+            for entry in new_raw_entries:
+                if (
+                    not is_english_source
+                    or translation_service.has_foreign_text(entry.title)
+                    or translation_service.has_foreign_text(entry.summary)
+                ):
+                    try:
                         await translation_service.translate_entry_async(entry)
                     except Exception as trans_e:
                         logger.debug(f"Translation skipped: {trans_e}")

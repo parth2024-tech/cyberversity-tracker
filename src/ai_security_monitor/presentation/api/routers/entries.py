@@ -455,6 +455,32 @@ async def query_serialized_entries(
         cleaned_summary = _clean_entry_summary(e.summary, e, cleaned_title)
 
         meta_dict = e.metadata or {}
+
+        # Zero-friction on-the-fly English translation safeguard
+        from ai_security_monitor.application.services.translation_service import (
+            LANGUAGE_NAMES,
+            translation_service,
+        )
+
+        if translation_service.has_foreign_text(cleaned_title) or translation_service.has_foreign_text(cleaned_summary):
+            if not meta_dict.get("is_translated"):
+                meta_dict = dict(meta_dict)
+                if translation_service.has_foreign_text(cleaned_title):
+                    trans_title, lang_code, ok = translation_service.translate_text(cleaned_title)
+                    if ok:
+                        meta_dict["original_title"] = cleaned_title
+                        meta_dict["is_translated"] = True
+                        meta_dict["detected_language"] = lang_code
+                        friendly_name, flag = LANGUAGE_NAMES.get(lang_code, (lang_code.upper(), "🌐"))
+                        meta_dict["detected_language_name"] = friendly_name
+                        meta_dict["detected_language_flag"] = flag
+                        cleaned_title = trans_title
+                if translation_service.has_foreign_text(cleaned_summary):
+                    trans_summary, lang_code, ok = translation_service.translate_text(cleaned_summary)
+                    if ok:
+                        meta_dict["original_summary"] = cleaned_summary
+                        meta_dict["is_translated"] = True
+                        cleaned_summary = trans_summary
         if cat_val == "github_trending" and (
             src_region == "china"
             or src_country in ("CN", "HK")
