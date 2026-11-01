@@ -18,6 +18,9 @@ from sqlalchemy.orm import selectinload
 from ai_security_monitor.application.services.cross_lingual_event_service import (
     event_service,
 )
+from ai_security_monitor.application.services.derived_view_service import (
+    derived_view_service,
+)
 from ai_security_monitor.infrastructure.database.models import (
     EventDocumentModel,
     EventModel,
@@ -178,3 +181,55 @@ async def cluster_documents(
     count = await event_service.cluster_unclustered_documents(uow.session, limit=limit)
     await uow.commit()
     return ClusterResponse(status="success", clustered_count=count)
+
+
+@events_router.get("/{event_id}/summary")
+async def get_event_summary(
+    event_id: str,
+    lang: str = Query(default="en", pattern="^(en|zh)$"),
+    uow: UnitOfWork = Depends(get_unit_of_work),
+) -> dict[str, Any]:
+    """
+    Get or synthesize a grounded cross-lingual event executive brief.
+    Synthesizes facts across all primary and corroborating sources in the requested language.
+    """
+    summary = await derived_view_service.generate_event_summary(
+        uow.session, event_id, lang=lang
+    )
+    if not summary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+    return summary
+
+
+@events_router.get("/{event_id}/documents/{doc_id}/translation")
+async def get_document_translation(
+    event_id: str,
+    doc_id: str,
+    target_lang: str = Query(default="en", pattern="^(en|zh)$"),
+    uow: UnitOfWork = Depends(get_unit_of_work),
+) -> dict[str, Any]:
+    """
+    On-demand lazy translation of a native document without mutating the original text.
+    Caches translated view in document_views.
+    """
+    view = await derived_view_service.get_or_create_document_translation(
+        uow.session, doc_id, target_lang=target_lang
+    )
+    if not view:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document {doc_id} not found",
+        )
+    await uow.commit()
+    return {
+        "doc_id": view.doc_id,
+        "view_type": view.view_type,
+        "target_lang": target_lang,
+        "text": view.text,
+        "producer": view.producer,
+        "quality_score": view.quality_score,
+        "created_at": view.created_at.isoformat(),
+    }
