@@ -1950,7 +1950,7 @@ sources:
 - name: AtomGit (OpenAtom Foundation)
   category: github_trending
   type: rss
-  url: https://atomgit.com
+  url: https://github.com/openharmony/kernel_liteos_a/releases.atom
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -2542,7 +2542,7 @@ sources:
 - name: Alibaba DAMO Academy (Frontier AI & Science)
   category: ai_research
   type: rss
-  url: https://damo.alibaba.com
+  url: https://github.com/modelscope/modelscope/releases.atom
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -2558,7 +2558,7 @@ sources:
 - name: Tencent YouTu Lab (Computer Vision & AI Engineering)
   category: ai_research
   type: rss
-  url: https://open.youtu.qq.com
+  url: https://github.com/Tencent/ncnn/releases.atom
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -2574,7 +2574,7 @@ sources:
 - name: ByteDance Tech (Systems & Large Models)
   category: ai_tech
   type: rss
-  url: https://bytotech.bytedance.com
+  url: https://github.com/bytedance/lightseq/releases.atom
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -2590,7 +2590,7 @@ sources:
 - name: Baidu Research & Apollo Autonomous Driving
   category: ai_research
   type: rss
-  url: http://research.baidu.com
+  url: https://github.com/PaddlePaddle/PaddleDetection/releases.atom
   rate_limit_seconds: 1800
   enabled: true
   region: china
@@ -2718,7 +2718,7 @@ sources:
 - name: Tsinghua AIR (Autonomous Systems & Embodied AI)
   category: ai_research
   type: rss
-  url: https://air.tsinghua.edu.cn
+  url: https://github.com/thunlp/OpenPrompt/releases.atom
   rate_limit_seconds: 1800
   enabled: true
   region: china

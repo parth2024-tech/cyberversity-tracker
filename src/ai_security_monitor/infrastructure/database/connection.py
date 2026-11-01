@@ -118,9 +118,13 @@ class DatabaseManager:
                 try:
                     import sqlite_vec
 
-                    dbapi_connection.enable_load_extension(True)
-                    sqlite_vec.load(dbapi_connection)
-                    dbapi_connection.enable_load_extension(False)
+                    raw_conn = dbapi_connection
+                    while hasattr(raw_conn, "_connection"):
+                        raw_conn = raw_conn._connection
+                    if hasattr(raw_conn, "enable_load_extension"):
+                        raw_conn.enable_load_extension(True)
+                        sqlite_vec.load(raw_conn)
+                        raw_conn.enable_load_extension(False)
                 except Exception:
                     pass
 
