@@ -50,6 +50,13 @@ class FetchError(DomainError):
     pass
 
 
+class FetchNotModifiedError(FetchError):
+    """Feed returned HTTP 304 Not Modified."""
+
+    def __init__(self, message: str = "HTTP 304 Not Modified"):
+        super().__init__(message, "FETCH_NOT_MODIFIED")
+
+
 class FetchTimeoutError(FetchError):
     def __init__(self, source_name: str, timeout: int):
         super().__init__(

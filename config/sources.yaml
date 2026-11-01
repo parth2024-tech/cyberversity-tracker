@@ -568,13 +568,16 @@ sources:
   tier: 1.0
 - name: Kimi / Moonshot AI Open Codebases
   category: github_trending
-  type: rss
-  url: https://github.com/MoonshotAI/Kimi-k1.5/releases.atom
+  type: github_org
+  url: https://api.github.com/orgs/MoonshotAI/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 2
+  config:
+    org: MoonshotAI
 - name: QbitAI (量子位) AI Research & Repos
   category: ai_tech
   type: rss
@@ -647,13 +650,16 @@ sources:
   tier: 2.0
 - name: Qwen Open Source Releases
   category: ai_models
-  type: rss
-  url: https://github.com/QwenLM/Qwen2.5/commits.atom
+  type: github_org
+  url: https://api.github.com/orgs/QwenLM/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 1
+  config:
+    org: QwenLM
 - name: Reddit r/LocalLLaMA (Open Weights & Local AI)
   category: ai_models
   type: reddit
@@ -993,22 +999,28 @@ sources:
   tier: 2.0
 - name: DeepSeek AI Official Releases
   category: ai_models
-  type: rss
-  url: https://github.com/deepseek-ai/DeepSeek-V3/releases.atom
+  type: github_org
+  url: https://api.github.com/orgs/deepseek-ai/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 1
+  config:
+    org: deepseek-ai
 - name: Shanghai AI Lab (InternLM Open Releases)
   category: ai_models
-  type: rss
-  url: https://github.com/InternLM/InternLM/releases.atom
+  type: github_org
+  url: https://api.github.com/orgs/InternLM/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 3
+  config:
+    org: InternLM
 - name: arXiv China Frontier AI Labs
   category: ai_research
   type: arxiv
@@ -1657,15 +1669,18 @@ sources:
   region: europe
   country: FR
   tier: 2.0
-- name: Zhipu AI GLM-4 Foundation Models (China)
+- name: Zhipu AI Foundation Models & Codebases (China)
   category: ai_models
-  type: rss
-  url: https://github.com/THUDM/GLM-4/commits.atom
+  type: github_org
+  url: https://api.github.com/orgs/zai-org/repos
   rate_limit_seconds: 1800
   enabled: true
   region: china
   country: CN
   tier: 1.0
+  expected_cadence_days: 2
+  config:
+    org: zai-org
 - name: Fudan CodeWisdom (复旦大学代码智能与大模型评估)
   category: ai_research
   type: rss
@@ -1950,3 +1965,13 @@ retired_sources:
   - name: "DeepSeek-V3 Open Model Codebase"
     url: "https://github.com/deepseek-ai/DeepSeek-V3/releases.atom"
     reason: "Deduplicated with DeepSeek AI Official Releases"
+  # Dormant single repo feeds replaced by org-level polling (Defect D5)
+  - name: "Qwen2.5 Commits Feed"
+    url: "https://github.com/QwenLM/Qwen2.5/commits.atom"
+    reason: "Replaced by QwenLM org-level polling"
+  - name: "MoonshotAI Kimi-k1.5 Releases Feed"
+    url: "https://github.com/MoonshotAI/Kimi-k1.5/releases.atom"
+    reason: "Replaced by MoonshotAI org-level polling"
+  - name: "THUDM GLM-4 Commits Feed"
+    url: "https://github.com/THUDM/GLM-4/commits.atom"
+    reason: "Replaced by zai-org org-level polling"
