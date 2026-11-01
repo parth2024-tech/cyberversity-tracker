@@ -431,3 +431,39 @@ class CouncilReviewModel(Base):
         Index("ix_council_reviews_entry_status", "entry_id", "status"),
         Index("ix_council_reviews_created_verdict", "created_at", "consensus_verdict"),
     )
+
+
+class EntityDailyCountModel(Base):
+    """Pre-aggregated daily mention counts for AI knowledge graph entities (Workstream B1)."""
+
+    __tablename__ = "entity_daily_counts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    entity_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    bucket_date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    mention_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_entity_daily_counts_key_date",
+            "entity_name",
+            "entity_type",
+            "bucket_date",
+            unique=True,
+        ),
+        Index("ix_entity_daily_counts_date_type", "bucket_date", "entity_type"),
+    )
+

@@ -1366,8 +1366,44 @@
 
       </div>
 
-      <!-- RIGHT PANEL: Live Sweep Activity Log -->
-      <div class="lg:col-span-4">
+      <!-- RIGHT PANEL: AI Ecosystem Momentum Radar & Live Sweep Activity -->
+      <div class="lg:col-span-4 space-y-4">
+
+        <!-- AI ECOSYSTEM MOMENTUM RADAR (Workstream B1) -->
+        <div class="glass-panel p-5 space-y-3.5 border border-white/[0.08]">
+          <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div class="panel-heading !mb-0 flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-4 h-4 text-amber-400"></i>
+              <span class="text-sm font-bold tracking-tight text-white">AI Ecosystem Momentum Radar</span>
+            </div>
+            <button onclick="refreshMomentumRadar(true)" class="text-slate-400 hover:text-white p-1 rounded hover:bg-white/[0.04] transition" title="Refresh Momentum Radar">
+              <i id="momentum-refresh-icon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>3D VELOCITY VS 28D BASELINE</span>
+            <span class="text-[10px] text-amber-300 font-bold bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded">Z-SCORE RANKED</span>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 text-[11px] font-mono">
+            <button onclick="filterMomentumType('')" id="m-tab-all" class="momentum-tab px-2.5 py-1 rounded-md bg-white/[0.12] text-white border border-white/20 transition whitespace-nowrap">ALL</button>
+            <button onclick="filterMomentumType('model')" id="m-tab-model" class="momentum-tab px-2.5 py-1 rounded-md bg-white/[0.03] text-slate-400 border border-white/[0.06] hover:text-white transition whitespace-nowrap">MODELS</button>
+            <button onclick="filterMomentumType('repository')" id="m-tab-repository" class="momentum-tab px-2.5 py-1 rounded-md bg-white/[0.03] text-slate-400 border border-white/[0.06] hover:text-white transition whitespace-nowrap">REPOS</button>
+            <button onclick="filterMomentumType('benchmark')" id="m-tab-benchmark" class="momentum-tab px-2.5 py-1 rounded-md bg-white/[0.03] text-slate-400 border border-white/[0.06] hover:text-white transition whitespace-nowrap">BENCHMARKS</button>
+            <button onclick="filterMomentumType('arxiv')" id="m-tab-arxiv" class="momentum-tab px-2.5 py-1 rounded-md bg-white/[0.03] text-slate-400 border border-white/[0.06] hover:text-white transition whitespace-nowrap">ARXIV</button>
+          </div>
+
+          <!-- Radar Cards Container -->
+          <div id="momentum-radar-list" class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+            <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-center font-mono text-xs text-slate-400">
+              Loading AI ecosystem momentum telemetry...
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Sweep Activity Log -->
         <div class="glass-panel p-5 space-y-3">
           <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
             <div class="panel-heading !mb-0 flex items-center gap-2">
@@ -1378,7 +1414,7 @@
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>ACTIVE
             </span>
           </div>
-          <div id="recent-fetches-list" class="space-y-2 max-h-[600px] overflow-y-auto text-[10px] font-mono pr-1"></div>
+          <div id="recent-fetches-list" class="space-y-2 max-h-[380px] overflow-y-auto text-[10px] font-mono pr-1"></div>
         </div>
       </div>
 
@@ -5093,10 +5129,11 @@
       // Channel config: maxAgeMs = how stale data can get before proactive refresh
       //                 minIntervalMs = minimum gap between two requests (dedup guard)
       const CHANNELS = {
-        stats:   { maxAgeMs: 45_000,   minIntervalMs: 30_000,  backoffMulti: 1 },  // 45s max staleness
-        sweep:   { maxAgeMs: 60_000,   minIntervalMs: 45_000,  backoffMulti: 1 },  // 60s max staleness
-        feed:    { maxAgeMs: 90_000,   minIntervalMs: 60_000,  backoffMulti: 1 },  // 90s max staleness
-        sources: { maxAgeMs: 300_000,  minIntervalMs: 120_000, backoffMulti: 1 },  // 5min (config changes rarely)
+        stats:    { maxAgeMs: 45_000,   minIntervalMs: 30_000,  backoffMulti: 1 },  // 45s max staleness
+        sweep:    { maxAgeMs: 60_000,   minIntervalMs: 45_000,  backoffMulti: 1 },  // 60s max staleness
+        feed:     { maxAgeMs: 90_000,   minIntervalMs: 60_000,  backoffMulti: 1 },  // 90s max staleness
+        sources:  { maxAgeMs: 300_000,  minIntervalMs: 120_000, backoffMulti: 1 },  // 5min (config changes rarely)
+        momentum: { maxAgeMs: 60_000,   minIntervalMs: 30_000,  backoffMulti: 1 },  // 60s momentum radar
       };
 
       const _state = {};
@@ -5132,6 +5169,7 @@
           else if (ch === 'sweep')   await updateSweepFreshness();
           else if (ch === 'feed')    await loadFeed(true, true);
           else if (ch === 'sources' && typeof loadSources === 'function') await loadSources();
+          else if (ch === 'momentum') await loadMomentumRadar();
 
           s.lastFetchedAt = performance.now();
           s.failures = 0;
@@ -5234,6 +5272,7 @@
         (async () => { try { await updateVaultCount(); } catch (e) { console.warn("VaultCount:", e); } })(),
         (async () => { try { await fetchTriageStatus(); } catch (e) { console.warn("TriageStatus:", e); } })(),
         (async () => { try { await updateSweepFreshness(); } catch (e) { console.warn("SweepFreshness:", e); } })(),
+        (async () => { try { await loadMomentumRadar(); } catch (e) { console.warn("MomentumRadar:", e); } })(),
       ]);
 
       // WebSocket setup (non-blocking)
@@ -5347,6 +5386,130 @@
         txt.textContent = 'SWEEP: --';
         dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
         txt.className = 'text-slate-400';
+      }
+    }
+
+    // ─── AI Ecosystem Momentum Radar (Workstream B1) ────────────────────────
+    let currentMomentumType = '';
+
+    function renderSparklineSvg(series, strokeColor) {
+      if (!series || !series.length) return '';
+      const width = 96;
+      const height = 22;
+      const max = Math.max(...series, 1);
+      const pts = series.map((val, idx) => {
+        const x = (idx / (series.length - 1)) * (width - 4) + 2;
+        const y = (height - 3) - (val / max) * (height - 6);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+
+      return `
+        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="overflow-visible">
+          <polyline points="${pts}" fill="none" stroke="${strokeColor}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      `;
+    }
+
+    async function loadMomentumRadar(type = currentMomentumType) {
+      const container = document.getElementById('momentum-radar-list');
+      if (!container) return;
+
+      const url = `/api/entities/momentum?limit=10&min_3d_mentions=1${type ? `&entity_type=${encodeURIComponent(type)}` : ''}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const items = data.items || [];
+
+        if (items.length === 0) {
+          container.innerHTML = `
+            <div class="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-center font-mono text-xs text-slate-400">
+              No surging AI entities detected in the current 14-day freshness window.
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = items.map(item => {
+          let badgeCls = 'bg-white/[0.04] text-slate-300 border-white/[0.08]';
+          let strokeColor = '#94a3b8'; // slate
+          let labelText = 'STEADY';
+
+          if (item.momentum_label === 'surging') {
+            badgeCls = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+            strokeColor = '#f59e0b'; // amber
+            labelText = `+${item.z_score}σ SURGING`;
+          } else if (item.momentum_label === 'rising') {
+            badgeCls = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+            strokeColor = '#10b981'; // emerald
+            labelText = `+${item.z_score}σ RISING`;
+          } else if (item.momentum_label === 'cooling') {
+            badgeCls = 'bg-sky-500/15 text-sky-300 border-sky-500/30';
+            strokeColor = '#38bdf8'; // sky
+            labelText = `${item.z_score}σ COOLING`;
+          } else {
+            labelText = `${item.z_score > 0 ? '+' : ''}${item.z_score}σ STEADY`;
+          }
+
+          const sparklineHtml = renderSparklineSvg(item.sparkline_14d, strokeColor);
+
+          return `
+            <div class="p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] transition flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="font-semibold text-xs text-slate-100 truncate">${escapeHtml(item.display_name || item.entity_name)}</span>
+                  <span class="text-[9px] font-mono uppercase text-slate-400 px-1.5 py-0.2 rounded bg-white/[0.04] border border-white/[0.08]">${escapeHtml(item.entity_type)}</span>
+                </div>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${badgeCls} whitespace-nowrap">${labelText}</span>
+              </div>
+
+              <div class="flex items-center justify-between gap-3 pt-1 border-t border-white/[0.04]">
+                <div class="flex items-center gap-3 text-[10px] font-mono text-slate-400">
+                  <div><span class="text-slate-500">3D:</span> <span class="font-bold text-slate-200">${item.count_3d}</span></div>
+                  <div><span class="text-slate-500">28D:</span> <span class="text-slate-300">${item.count_28d}</span></div>
+                  <div><span class="text-slate-500">μ:</span> <span class="text-slate-300">${item.mean_daily_28d}/d</span></div>
+                </div>
+                <div class="flex-shrink-0" title="14-day trajectory sparkline">
+                  ${sparklineHtml}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        try { lucide.createIcons(); } catch(e) {}
+      } catch (err) {
+        console.warn("loadMomentumRadar error:", err);
+        container.innerHTML = `
+          <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center font-mono text-xs text-rose-300">
+            Failed to load momentum telemetry.
+          </div>
+        `;
+      }
+    }
+
+    async function filterMomentumType(type) {
+      currentMomentumType = type;
+      document.querySelectorAll('.momentum-tab').forEach(btn => {
+        btn.className = 'momentum-tab px-2.5 py-1 rounded-md bg-white/[0.03] text-slate-400 border border-white/[0.06] hover:text-white transition whitespace-nowrap';
+      });
+      const activeBtnId = type ? `m-tab-${type}` : 'm-tab-all';
+      const activeBtn = document.getElementById(activeBtnId);
+      if (activeBtn) {
+        activeBtn.className = 'momentum-tab px-2.5 py-1 rounded-md bg-white/[0.12] text-white border border-white/20 transition whitespace-nowrap';
+      }
+      await loadMomentumRadar(type);
+    }
+
+    async function refreshMomentumRadar(force = false) {
+      const icon = document.getElementById('momentum-refresh-icon');
+      if (icon) icon.classList.add('animate-spin');
+      try {
+        if (force) {
+          await fetch('/api/entities/rollup/refresh?days=30', { method: 'POST' });
+        }
+        await loadMomentumRadar(currentMomentumType);
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
       }
     }
   
