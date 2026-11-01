@@ -177,6 +177,35 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
             "required": ["entry_id"],
         },
     },
+    {
+        "name": "get_semantic_cluster_graph",
+        "description": "Retrieve precomputed semantic cluster graph of recent worldwide AI breakthroughs, models, and tools across the 14-day freshness window, including kNN similarity edges, cluster themes, and cross-language mappings.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Freshness window in days (max 14, default: 14)",
+                    "default": 14,
+                },
+                "max_nodes": {
+                    "type": "integer",
+                    "description": "Maximum number of nodes in graph (max 500, default: 300)",
+                    "default": 300,
+                },
+                "min_similarity": {
+                    "type": "number",
+                    "description": "Minimum cosine similarity threshold for edges (default: 0.72)",
+                    "default": 0.72,
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Optional category filter: 'ai_tech', 'ai_research', 'github_trending', 'ai_models'",
+                },
+            },
+        },
+        },
+    },
 ]
 
 
@@ -328,6 +357,7 @@ class MCPServer:
                     )
                     return json.dumps(top_entities, indent=2, default=str)
 
+<<<<<<< HEAD
             elif name == "run_autonomous_research_loop":
                 query_text = str(args.get("query", "")).strip()
                 if not query_text:
@@ -371,6 +401,23 @@ class MCPServer:
                     },
                     indent=2,
                 )
+
+            elif name == "get_semantic_cluster_graph":
+                days = int(args.get("days", 14))
+                max_nodes = int(args.get("max_nodes", 300))
+                min_sim = float(args.get("min_similarity", 0.72))
+                category = args.get("category")
+                from ai_security_monitor.application.services.cluster_graph_service import (
+                    cluster_graph_service,
+                )
+
+                graph_data = await cluster_graph_service.get_graph(
+                    days=days,
+                    max_nodes=max_nodes,
+                    min_similarity=min_sim,
+                    category=category,
+                )
+                return json.dumps(graph_data, indent=2, default=str)
 
             else:
                 return f"Error: Unknown tool {name!r}"

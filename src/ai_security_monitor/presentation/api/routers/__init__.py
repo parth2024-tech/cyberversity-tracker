@@ -5,7 +5,9 @@ API routers export.
 from ai_security_monitor.presentation.api.routers.analysis import analysis_router
 from ai_security_monitor.presentation.api.routers.audio import audio_router
 from ai_security_monitor.presentation.api.routers.backup import backup_router
-from ai_security_monitor.presentation.api.routers.china import china_router
+from ai_security_monitor.presentation.api.routers.clusters import (
+    router as clusters_router,
+)
 from ai_security_monitor.presentation.api.routers.council import council_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router
 from ai_security_monitor.presentation.api.routers.entities import entities_router
@@ -38,4 +40,5 @@ __all__ = [
     "telegram_router",
     "entities_router",
     "council_router",
+    "clusters_router",
 ]

@@ -26,6 +26,7 @@ from ai_security_monitor.presentation.api.routers import (
     audio_router,
     backup_router,
     china_router,
+    clusters_router,
     council_router,
     digest_router,
     entities_router,
@@ -266,6 +267,9 @@ def create_app() -> FastAPI:
         app.include_router(
             council_router, prefix=api_prefix, tags=["Multi-Agent Council"]
         )
+        app.include_router(
+            clusters_router, prefix=api_prefix, tags=["Semantic Clusters"]
+        )
 
 
     # Top-level syndication feed route for standard RSS reader auto-discovery
@@ -295,6 +299,16 @@ def create_app() -> FastAPI:
             gazette_path = os.path.join(web_dir, "gazette.html")
             if os.path.exists(gazette_path):
                 return FileResponse(gazette_path, media_type="text/html")
+            return FileResponse(
+                os.path.join(web_dir, "index.html"), media_type="text/html"
+            )
+
+        @app.get("/clusters", include_in_schema=False)
+        @app.get("/clusters/", include_in_schema=False)
+        async def serve_clusters():
+            clusters_path = os.path.join(web_dir, "clusters.html")
+            if os.path.exists(clusters_path):
+                return FileResponse(clusters_path, media_type="text/html")
             return FileResponse(
                 os.path.join(web_dir, "index.html"), media_type="text/html"
             )

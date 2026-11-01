@@ -14,7 +14,6 @@ os.environ["DATABASE__URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
 os.environ["DB_URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
 os.makedirs(TEST_DATA_DIR, exist_ok=True)
 
-
 from datetime import UTC, datetime
 from uuid import uuid4
 
