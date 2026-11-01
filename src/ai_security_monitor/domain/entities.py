@@ -119,6 +119,7 @@ class Entry(Entity):
     analysis: Analysis | None = None
     is_purged: bool = False
     purged_at: datetime | None = None
+    is_user_saved: bool = False
     story_id: UUID | None = None
     entities: list[AIEntity] = field(default_factory=list)
 
@@ -339,8 +340,6 @@ class AIEntity(Entity):
     )
     context: str | None = None  # Context sentence or snippet where mentioned
     confidence: float = 1.0
-
-
 @dataclass(kw_only=True)
 class CouncilReview(Entity):
     """Multi-Agent Council evaluation record for shadow review queue and calibration."""
@@ -358,4 +357,3 @@ class CouncilReview(Entity):
     total_tokens: int = 0
     total_latency_ms: int = 0
     estimated_cost_usd: float = 0.0
-

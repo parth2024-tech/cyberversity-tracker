@@ -112,6 +112,9 @@ class EntryModel(Base):
         Boolean, default=False, server_default="0", index=True
     )
     purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_user_saved: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", index=True
+    )
 
     # Relationships
     source: Mapped[SourceModel] = relationship(
@@ -491,3 +494,4 @@ class BackupRunModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), index=True
     )
+

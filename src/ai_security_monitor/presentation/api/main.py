@@ -271,7 +271,6 @@ def create_app() -> FastAPI:
             clusters_router, prefix=api_prefix, tags=["Semantic Clusters"]
         )
 
-
     # Top-level syndication feed route for standard RSS reader auto-discovery
     app.include_router(feed_router, tags=["Syndication Feeds"])
     # Top-level Telegram webhook route

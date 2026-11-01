@@ -205,6 +205,34 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "name": "export_weekly_digest",
+        "description": "Export publication-grade weekly intelligence digest in Markdown, HTML, or JSON, featuring explicit user bookmarks, foundation models, and research breakthroughs within the 14-day freshness window.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Coverage window in days (1 to 14, default: 7)",
+                    "default": 7,
+                },
+                "format": {
+                    "type": "string",
+                    "description": "Output format: 'markdown', 'html', or 'json' (default: 'markdown')",
+                    "default": "markdown",
+                },
+                "timezone": {
+                    "type": "string",
+                    "description": "User timezone for date formatting (e.g. 'America/New_York', 'Asia/Kolkata', 'UTC')",
+                },
+                "user_saves_only": {
+                    "type": "boolean",
+                    "description": "Restrict digest strictly to explicit user-bookmarked entries (default: false)",
+                    "default": False,
+                },
+            },
+        },
+    },
 ]
 
 
@@ -416,6 +444,30 @@ class MCPServer:
                     category=category,
                 )
                 return json.dumps(graph_data, indent=2, default=str)
+
+            elif name == "export_weekly_digest":
+                from ai_security_monitor.application.services.weekly_digest_export_service import (
+                    WeeklyDigestExportService,
+                )
+
+                days = int(args.get("days", 7))
+                fmt = str(args.get("format", "markdown")).lower()
+                tz_name = args.get("timezone")
+                user_saves_only = bool(args.get("user_saves_only", False))
+
+                svc = WeeklyDigestExportService()
+                data = await svc.compile_weekly_digest(
+                    days=days,
+                    timezone_str=tz_name,
+                    include_user_saves_only=user_saves_only,
+                )
+
+                if fmt == "html":
+                    return svc.render_html(data)
+                elif fmt == "json":
+                    return json.dumps(data, indent=2, default=str)
+                else:
+                    return svc.render_markdown(data)
 
             else:
                 return f"Error: Unknown tool {name!r}"

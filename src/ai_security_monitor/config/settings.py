@@ -319,6 +319,32 @@ class BackupSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="BACKUP_")
 
 
+class ExportSettings(BaseSettings):
+    """Weekly digest export and external synchronization settings."""
+
+    default_timezone: str = Field(
+        default="UTC", description="Default user timezone for digest exports"
+    )
+    output_dir: Path = Field(
+        default=Path("data/digests/weekly"), description="Local export directory"
+    )
+    r2_bucket: str | None = Field(
+        default=None, description="Cloudflare R2 / S3 bucket name"
+    )
+    r2_endpoint_url: str | None = Field(
+        default=None, description="Cloudflare R2 / S3 endpoint URL"
+    )
+    r2_access_key: str | None = Field(default=None, description="R2 / S3 access key ID")
+    r2_secret_key: str | None = Field(
+        default=None, description="R2 / S3 secret access key"
+    )
+    git_repo_url: str | None = Field(
+        default=None, description="Private Git repository URL for export sync"
+    )
+
+    model_config = SettingsConfigDict(env_prefix="EXPORT_")
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -340,6 +366,7 @@ class Settings(BaseSettings):
     analyzer: AnalyzerSettings = Field(default_factory=AnalyzerSettings)
     delivery: DeliverySettings = Field(default_factory=DeliverySettings)
     backup: BackupSettings = Field(default_factory=BackupSettings)
+    export: ExportSettings = Field(default_factory=ExportSettings)
 
     model_config = SettingsConfigDict(
         env_file=".env",

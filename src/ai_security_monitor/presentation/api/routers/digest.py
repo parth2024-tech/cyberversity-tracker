@@ -237,3 +237,132 @@ async def get_markdown_digest(
     return Response(
         content=md_text, media_type="text/markdown; charset=utf-8", headers=headers
     )
+
+
+@digest_router.get("/weekly/preview")
+async def preview_weekly_digest(
+    days: int = Query(
+        default=7, ge=1, le=14, description="Coverage window in days (max 14 days)"
+    ),
+    timezone: str | None = Query(
+        default=None,
+        description="Explicit timezone name (e.g. America/New_York, Asia/Kolkata)",
+    ),
+    user_saves_only: bool = Query(
+        default=False,
+        description="Restrict preview strictly to explicit user bookmarks",
+    ),
+):
+    """Preview compiled weekly digest telemetry, sections, explicit user saves, and knowledge graph momentum."""
+    from ai_security_monitor.application.services.weekly_digest_export_service import (
+        WeeklyDigestExportService,
+    )
+
+    svc = WeeklyDigestExportService()
+    data = await svc.compile_weekly_digest(
+        days=days,
+        timezone_str=timezone,
+        include_user_saves_only=user_saves_only,
+    )
+    return {
+        "title": data["title"],
+        "period_days": data["period_days"],
+        "timezone": data["timezone"],
+        "generated_at_local": data["generated_at_local"],
+        "user_saved_count": data["user_saved_count"],
+        "total_breakthroughs": data["total_breakthroughs"],
+        "sections_summary": {k: len(v) for k, v in data["sections"].items()},
+        "top_entities": data.get("top_entities", []),
+    }
+
+
+@digest_router.get("/weekly/export")
+async def export_weekly_digest(
+    days: int = Query(
+        default=7, ge=1, le=14, description="Coverage window in days (max 14 days)"
+    ),
+    format: str = Query(
+        default="markdown",
+        description="Export format: 'markdown', 'html', 'pdf', or 'json'",
+    ),
+    timezone: str | None = Query(
+        default=None,
+        description="Explicit timezone name (e.g. America/New_York, Asia/Kolkata)",
+    ),
+    user_saves_only: bool = Query(
+        default=False, description="Export strictly explicit user bookmarks"
+    ),
+    download: bool = Query(
+        default=False, description="Set attachment header for direct browser download"
+    ),
+):
+    """Export publication-grade weekly intelligence digest in Markdown, HTML, PDF, or JSON."""
+    from ai_security_monitor.application.services.weekly_digest_export_service import (
+        WeeklyDigestExportService,
+    )
+
+    svc = WeeklyDigestExportService()
+    data = await svc.compile_weekly_digest(
+        days=days,
+        timezone_str=timezone,
+        include_user_saves_only=user_saves_only,
+    )
+
+    date_str = datetime.now(UTC).strftime("%Y-%m-%d")
+    fmt = format.lower().strip()
+
+    if fmt == "html":
+        html_text = svc.render_html(data)
+        headers = {"Cache-Control": "public, max-age=60"}
+        if download:
+            headers["Content-Disposition"] = (
+                f'attachment; filename="aetherguard-weekly-digest-{date_str}.html"'
+            )
+        return Response(
+            content=html_text, media_type="text/html; charset=utf-8", headers=headers
+        )
+
+    elif fmt == "pdf":
+        pdf_bytes = svc.render_pdf(data)
+        headers = {"Cache-Control": "public, max-age=60"}
+        if download:
+            headers["Content-Disposition"] = (
+                f'attachment; filename="aetherguard-weekly-digest-{date_str}.pdf"'
+            )
+        return Response(
+            content=pdf_bytes, media_type="application/pdf", headers=headers
+        )
+
+    elif fmt == "json":
+        return data
+
+    else:  # markdown default
+        md_text = svc.render_markdown(data)
+        headers = {"Cache-Control": "public, max-age=60"}
+        if download:
+            headers["Content-Disposition"] = (
+                f'attachment; filename="aetherguard-weekly-digest-{date_str}.md"'
+            )
+        return Response(
+            content=md_text, media_type="text/markdown; charset=utf-8", headers=headers
+        )
+
+
+@digest_router.post("/weekly/archive")
+async def archive_weekly_digest(
+    days: int = Query(default=7, ge=1, le=14),
+    timezone: str | None = Query(default=None),
+    user_saves_only: bool = Query(default=False),
+):
+    """Generate and archive weekly digest to local storage (Markdown, HTML, and PDF)."""
+    from ai_security_monitor.application.services.weekly_digest_export_service import (
+        WeeklyDigestExportService,
+    )
+
+    svc = WeeklyDigestExportService()
+    result = await svc.export_and_archive(
+        days=days,
+        timezone_str=timezone,
+        include_user_saves_only=user_saves_only,
+    )
+    return result

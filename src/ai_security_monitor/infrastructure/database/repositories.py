@@ -99,6 +99,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             updated_at=entry.updated_at,
             is_purged=entry.is_purged,
             purged_at=entry.purged_at,
+            is_user_saved=entry.is_user_saved,
         )
         self._session.add(model)
         try:
@@ -591,6 +592,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         entry_id: UUID,
         is_important: bool | None = None,
         reason: str | None = None,
+        is_user_action: bool = True,
     ) -> Entry:
         """Toggle or explicitly set an entry's vault/importance status with metadata persistence."""
         stmt = (
@@ -612,12 +614,24 @@ class SQLAlchemyEntryRepository(EntryRepository):
         meta["is_important"] = new_state
         meta["is_saved"] = new_state
         meta["is_pinned"] = new_state
+        if is_user_action:
+            meta["is_user_saved"] = new_state
+            model.is_user_saved = new_state
+            if new_state:
+                meta["user_saved_at"] = datetime.now(UTC).isoformat()
+            else:
+                meta.pop("user_saved_at", None)
+
         if new_state:
             meta["saved_at"] = datetime.now(UTC).isoformat()
             if reason:
                 meta["importance_reason"] = reason
             elif not meta.get("importance_reason"):
-                meta["importance_reason"] = "Saved to Vault for In-Depth Analysis"
+                meta["importance_reason"] = (
+                    "Saved to Vault by User"
+                    if is_user_action
+                    else "Saved to Vault for In-Depth Analysis"
+                )
         else:
             meta.pop("saved_at", None)
 
@@ -817,6 +831,14 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 )
             )
 
+        if getattr(filters, "user_saved_only", False):
+            stmt = stmt.where(
+                or_(
+                    EntryModel.is_user_saved.is_(True),
+                    EntryModel.extra_metadata.like('%"is_user_saved": true%'),
+                )
+            )
+
         source_joined = False
 
         if filters.region and filters.region != "all":
@@ -998,6 +1020,10 @@ class SQLAlchemyEntryRepository(EntryRepository):
             analysis=analysis,
             is_purged=bool(getattr(model, "is_purged", False)),
             purged_at=getattr(model, "purged_at", None),
+            is_user_saved=bool(
+                getattr(model, "is_user_saved", False)
+                or (model.extra_metadata or {}).get("is_user_saved", False)
+            ),
             entities=entities_list,
         )
 
