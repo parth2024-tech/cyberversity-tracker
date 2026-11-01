@@ -96,6 +96,10 @@ class EntryRepository(ABC):
         """Count entries matching filters."""
         ...
 
+    async def count_by_source(self, source_id: UUID | str) -> int:
+        """Count active (non-purged) entries for a specific source."""
+        return 0
+
     @abstractmethod
     async def update(self, entry: Entry) -> Entry:
         """Update an existing entry."""

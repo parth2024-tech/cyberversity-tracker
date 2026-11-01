@@ -47,6 +47,7 @@ class FetchStatus(str, Enum):
     SUCCESS = "success"
     ERROR = "error"
     SKIPPED = "skipped"
+    NOT_MODIFIED = "not_modified"
 
 
 class AnalysisModel(str, Enum):

@@ -319,10 +319,25 @@ class MonitorService:
         logger.info(f"Fetching from {source.name} ({source.type.value})")
 
         try:
+            # Query stored entries count to guard against ETag lockout (Defect Ledger D3)
+            try:
+                async with self._uow_factory() as uow:
+                    if hasattr(uow.entries, "count_by_source"):
+                        stored_count = await uow.entries.count_by_source(source.id)
+                        if source.config is None:
+                            source.config = {}
+                        source.config["stored_entries_count"] = stored_count
+            except Exception as cnt_err:
+                logger.debug(f"Unable to query source entry count: {cnt_err}")
+
             fetcher_cls = fetcher_registry.get(source.type.value)
             fetcher = fetcher_cls(source)
             fetch_result = await fetcher.fetch()
             entries_total = fetch_result.entries_total
+
+            if fetch_result.status != FetchStatus.SUCCESS:
+                status = fetch_result.status
+                error_msg = fetch_result.error_message
 
             analyzer = analyzer_registry.create(settings.analyzer.default_model)
             blast_engine = analyzer_registry.create("blast_radius")
@@ -813,7 +828,7 @@ class MonitorService:
 
                 # Update source telemetry
                 source.last_fetched_at = datetime.now(UTC)
-                source.last_status = fetch_result.status
+                source.last_status = status
                 source.last_entries_new = new_entries_count
                 await uow.sources.update(source)
                 await uow.commit()
@@ -880,6 +895,9 @@ class MonitorService:
                 else str(source.category),
                 region=source.config.get("region", "global"),
             )
+        elif status == FetchStatus.NOT_MODIFIED:
+            # HTTP 304 Not Modified is neutral: unchanged, not an error or failure
+            pass
         else:
             source_health_service.record_failure(
                 source_name=source.name,

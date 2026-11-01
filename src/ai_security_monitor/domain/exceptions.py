@@ -77,6 +77,17 @@ class FetchParseError(FetchError):
         )
 
 
+class FetchNotModifiedError(DomainError):
+    """Signal that remote resource returned HTTP 304 Not Modified."""
+
+    def __init__(self, source_name: str = ""):
+        super().__init__(
+            f"Source {source_name!r} returned HTTP 304 Not Modified",
+            "FETCH_NOT_MODIFIED",
+            {"source_name": source_name},
+        )
+
+
 class AnalysisError(DomainError):
     """Analysis errors."""
 

@@ -10,6 +10,7 @@ from dateutil import parser as dt_parser
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.exceptions import FetchNotModifiedError
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
@@ -91,14 +92,42 @@ class RSSFetcher(BaseFetcher):
                 try:
                     resp = await client.get(target_url)
                     if resp.status_code == 304:
-                        logger.info(
-                            f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
-                            "Feed unchanged; skipping body payload."
-                        )
-                        return []
+                        stored_count = source_cfg.get("stored_entries_count")
+                        # Defect Ledger D3: Stored validators outlive data (ETag lockout)
+                        # When a source has < 3 entries stored, ignore 304, drop validators and refetch full payload.
+                        if stored_count is not None and stored_count < 3:
+                            logger.warning(
+                                f"Source {self.source.name!r} returned HTTP 304 but only has {stored_count} stored entries. "
+                                "Discarding stale ETag/Last-Modified validators and refetching full payload."
+                            )
+                            if self.source.config is not None:
+                                self.source.config.pop("etag", None)
+                                self.source.config.pop("last_modified", None)
+                            # Remove conditional headers from client for unconditional refetch
+                            for h_key in (
+                                "if-none-match",
+                                "if-modified-since",
+                                "If-None-Match",
+                                "If-Modified-Since",
+                            ):
+                                client.headers.pop(h_key, None)
+                            refetch_resp = await client.get(target_url)
+                            if refetch_resp.status_code == 200:
+                                response = refetch_resp
+                                break
+                            resp = refetch_resp
+
+                        if resp.status_code == 304:
+                            logger.info(
+                                f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
+                                "Feed unchanged; skipping body payload."
+                            )
+                            raise FetchNotModifiedError(self.source.name)
                     resp.raise_for_status()
                     response = resp
                     break
+                except FetchNotModifiedError:
+                    raise
                 except Exception as req_err:
                     last_error = req_err
                     response = None
@@ -134,7 +163,7 @@ class RSSFetcher(BaseFetcher):
             response.headers.get("content-type", "").lower().split(";")[0].strip()
         )
         first_bytes = raw_bytes[:100].lower().replace(b" ", b"")
-        is_html_response = ct_header in ("text/html",) and (
+        is_html_response = ct_header in ("text/html", "application/xhtml+xml") or (
             first_bytes.startswith((b"<!doctype", b"<html"))
         )
         if is_html_response:

@@ -213,6 +213,15 @@ class SQLAlchemyEntryRepository(EntryRepository):
         result = await self._session.execute(stmt)
         return result.scalar() or 0
 
+    async def count_by_source(self, source_id: UUID | str) -> int:
+        """Count active (non-purged) entries stored for a specific source."""
+        s_id = str(source_id)
+        stmt = select(func.count(EntryModel.id)).where(
+            and_(EntryModel.source_id == s_id, EntryModel.is_purged.is_(False))
+        )
+        res = await self._session.execute(stmt)
+        return int(res.scalar() or 0)
+
     async def search_fts(self, query: str, limit: int = 50) -> builtins.list[Entry]:
         """Sub-millisecond BM25 full-text search using SQLite FTS5 table."""
         import re
