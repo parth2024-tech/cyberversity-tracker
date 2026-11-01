@@ -366,3 +366,146 @@ class EntryEntityModel(Base):
         Index("ix_entry_entities_created_type", "created_at", "entity_type"),
     )
 
+
+class DocumentModel(Base):
+    """Immutable native-language source document."""
+
+    __tablename__ = "documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    source_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    entry_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("entries.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    original_text: Mapped[str] = mapped_column(Text, nullable=False)
+    lang: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
+    lang_confidence: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
+    script: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    published_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
+    )
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    raw_blob_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    views: Mapped[list[DocumentViewModel]] = relationship(
+        "DocumentViewModel", back_populates="document", cascade="all, delete-orphan", lazy="selectin"
+    )
+    mentions: Mapped[list[MentionModel]] = relationship(
+        "MentionModel", back_populates="document", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+    __table_args__ = (
+        Index("ix_documents_lang_published", "lang", "published_at"),
+    )
+
+
+class DocumentViewModel(Base):
+    """Derived versioned view of a document."""
+
+    __tablename__ = "document_views"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    doc_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    view_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    producer: Mapped[str] = mapped_column(String(64), nullable=False)
+    quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    document: Mapped[DocumentModel] = relationship("DocumentModel", back_populates="views")
+
+    __table_args__ = (
+        Index("ix_document_views_doc_view", "doc_id", "view_type"),
+    )
+
+
+class CanonicalEntityModel(Base):
+    """Language-independent canonical entity."""
+
+    __tablename__ = "entities"
+
+    canonical_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    canonical_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    aliases: Mapped[list[EntityAliasModel]] = relationship(
+        "EntityAliasModel", back_populates="entity", cascade="all, delete-orphan", lazy="selectin"
+    )
+    mentions: Mapped[list[MentionModel]] = relationship(
+        "MentionModel", back_populates="entity", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class EntityAliasModel(Base):
+    """Alias for a canonical entity across languages and scripts."""
+
+    __tablename__ = "entity_aliases"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    entity_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("entities.canonical_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    alias: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    lang: Mapped[str | None] = mapped_column(String(12), nullable=True)
+    script: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    source: Mapped[str] = mapped_column(String(20), default="manual", nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    entity: Mapped[CanonicalEntityModel] = relationship("CanonicalEntityModel", back_populates="aliases")
+
+    __table_args__ = (
+        Index("ix_entity_aliases_alias_lang", "alias", "lang"),
+    )
+
+
+class MentionModel(Base):
+    """Span mention linking a document to a canonical entity."""
+
+    __tablename__ = "mentions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    doc_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    entity_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("entities.canonical_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    span_start: Mapped[int] = mapped_column(Integer, nullable=False)
+    span_end: Mapped[int] = mapped_column(Integer, nullable=False)
+    linker_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
+
+    document: Mapped[DocumentModel] = relationship("DocumentModel", back_populates="mentions")
+    entity: Mapped[CanonicalEntityModel] = relationship("CanonicalEntityModel", back_populates="mentions")
+
+
+class ParitySnapshotModel(Base):
+    """Language-parity SLO telemetry snapshot."""
+
+    __tablename__ = "parity_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True
+    )
+    zh_count_7d: Mapped[int] = mapped_column(Integer, nullable=False)
+    en_count_7d: Mapped[int] = mapped_column(Integer, nullable=False)
+    capture_rate_ratio: Mapped[float] = mapped_column(Float, nullable=False)
+    zh_median_latency_h: Mapped[float] = mapped_column(Float, nullable=False)
+    en_median_latency_h: Mapped[float] = mapped_column(Float, nullable=False)
+    latency_ratio: Mapped[float] = mapped_column(Float, nullable=False)
+    details: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+

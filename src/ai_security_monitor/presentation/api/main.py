@@ -31,6 +31,7 @@ from ai_security_monitor.presentation.api.routers import (
     entries_router,
     feed_router,
     newspaper_router,
+    parity_router,
     sources_router,
     stats_router,
     telegram_router,
@@ -263,6 +264,9 @@ def create_app() -> FastAPI:
         )
         app.include_router(
             entities_router, prefix=api_prefix, tags=["Knowledge Graph"]
+        )
+        app.include_router(
+            parity_router, prefix=api_prefix, tags=["Language Parity SLO"]
         )
 
     # Top-level syndication feed route for standard RSS reader auto-discovery

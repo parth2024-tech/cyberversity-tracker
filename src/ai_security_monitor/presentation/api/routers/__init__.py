@@ -11,6 +11,7 @@ from ai_security_monitor.presentation.api.routers.entities import entities_route
 from ai_security_monitor.presentation.api.routers.entries import entries_router
 from ai_security_monitor.presentation.api.routers.feed import feed_router
 from ai_security_monitor.presentation.api.routers.newspaper import newspaper_router
+from ai_security_monitor.presentation.api.routers.parity import parity_router
 from ai_security_monitor.presentation.api.routers.sources import sources_router
 from ai_security_monitor.presentation.api.routers.stats import stats_router
 from ai_security_monitor.presentation.api.routers.telegram import telegram_router
@@ -36,4 +37,5 @@ __all__ = [
     "feed_router",
     "telegram_router",
     "entities_router",
+    "parity_router",
 ]

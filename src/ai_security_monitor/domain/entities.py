@@ -339,3 +339,82 @@ class AIEntity(Entity):
     context: str | None = None  # Context sentence or snippet where mentioned
     confidence: float = 1.0
 
+
+@dataclass(kw_only=True)
+class Document(Entity):
+    """Immutable native-language source document."""
+
+    source_id: UUID
+    original_text: str
+    lang: str  # ISO-639-1 ('zh', 'en', etc.) or 'und'
+    lang_confidence: float = 1.0
+    script: str | None = None  # 'Hans', 'Hant', 'Latn'
+    published_at: datetime
+    fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    content_hash: str
+    raw_blob_ref: str | None = None
+    entry_id: UUID | None = None
+
+
+@dataclass(kw_only=True)
+class DocumentView(Entity):
+    """Derived, versioned view of a document (MT, summary, etc.)."""
+
+    doc_id: UUID
+    view_type: str  # 'original', 'mt_en', 'summary_en', 'summary_zh'
+    text: str
+    producer: str  # model+version or 'ingest_raw'
+    quality_score: float | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(kw_only=True)
+class CanonicalEntity:
+    """Language-independent canonical entity (lab, model, benchmark, etc.)."""
+
+    canonical_id: str  # e.g., 'lab:deepseek', 'model:deepseek-v3'
+    type: str  # 'lab', 'model', 'benchmark', 'product', 'person', 'repo'
+    canonical_name: str
+    status: str = "active"
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(kw_only=True)
+class EntityAlias(Entity):
+    """Multi-lingual and script-specific alias for a canonical entity."""
+
+    entity_id: str
+    alias: str
+    lang: str | None = None
+    script: str | None = None  # 'Hans', 'Hant', 'Latn'
+    source: str = "manual"  # 'manual', 'mined', 'org_rename'
+    confidence: float = 1.0
+    valid_from: datetime | None = None
+    valid_to: datetime | None = None
+
+
+@dataclass(kw_only=True)
+class Mention(Entity):
+    """Ground-truth span mention of an entity in original document text."""
+
+    doc_id: UUID
+    entity_id: str
+    span_start: int
+    span_end: int
+    linker_version: str
+    confidence: float = 1.0
+
+
+@dataclass(kw_only=True)
+class ParitySnapshot(Entity):
+    """Language-parity SLO telemetry snapshot."""
+
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    zh_count_7d: int
+    en_count_7d: int
+    capture_rate_ratio: float
+    zh_median_latency_h: float
+    en_median_latency_h: float
+    latency_ratio: float
+    details: dict[str, Any] = field(default_factory=dict)
+

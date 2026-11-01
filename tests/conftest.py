@@ -8,7 +8,9 @@ import os
 
 # Guarantee that automated test sessions use an isolated throwaway SQLite DB
 # and never mutate a developer's real local database or production state.
-os.environ.setdefault("DATA_DIR", "/tmp/aetherguard_test_data")
+os.environ["DATA_DIR"] = "/tmp/aetherguard_test_data"
+os.environ["DATABASE__URL"] = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
+os.environ["DB_URL"] = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
 os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
 
 from datetime import UTC, datetime
@@ -44,6 +46,14 @@ def pytest_sessionstart(session: pytest.Session) -> None:
                 os.remove(db_file)
             except OSError:
                 pass
+
+    from ai_security_monitor.config.settings import settings
+
+    settings.database.url = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
+    assert "/tmp/aetherguard_test_data" in settings.database.url, (
+        f"CRITICAL SAFETY CHECK FAILED: tests must never target development database! "
+        f"Resolved url: {settings.database.url}"
+    )
 
     from ai_security_monitor.application.services.monitor_service import MonitorService
 
