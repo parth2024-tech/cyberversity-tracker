@@ -1,6 +1,6 @@
 """add_is_user_saved_to_entries
 
-Revision ID: e1f2a3b4c5d6
+Revision ID: a7b8c9d0e1f2
 Revises: c9d2e5f3a1b0
 Create Date: 2026-11-01 01:00:00.000000
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "e1f2a3b4c5d6"
+revision: str = "a7b8c9d0e1f2"
 down_revision: str | Sequence[str] | None = "c9d2e5f3a1b0"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
