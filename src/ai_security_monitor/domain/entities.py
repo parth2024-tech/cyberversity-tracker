@@ -339,3 +339,23 @@ class AIEntity(Entity):
     )
     context: str | None = None  # Context sentence or snippet where mentioned
     confidence: float = 1.0
+
+
+@dataclass(kw_only=True)
+class CouncilReview(Entity):
+    """Multi-Agent Council evaluation record for shadow review queue and calibration."""
+
+    entry_id: UUID
+    consensus_verdict: str
+    consensus_score: float
+    consensus_summary: str
+    persona_evaluations: dict[str, Any]
+    verified_claims: list[dict[str, Any]] = field(default_factory=list)
+    receipt_keys: list[str] = field(default_factory=list)
+    status: str = (
+        "shadow"  # "shadow", "pending_review", "approved", "rejected", "calibrated"
+    )
+    total_tokens: int = 0
+    total_latency_ms: int = 0
+    estimated_cost_usd: float = 0.0
+

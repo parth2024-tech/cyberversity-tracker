@@ -292,3 +292,4 @@ class TestForeignTextDetectionAndMultiTier:
             assert res is not None
             assert "Large Language Model" in res
             assert "⟦G_" not in res
+

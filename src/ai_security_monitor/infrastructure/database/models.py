@@ -384,3 +384,50 @@ class ResearchRunModel(Base):
         default=lambda: datetime.now(UTC),
         index=True,
     )
+
+
+class CouncilReviewModel(Base):
+    """Multi-Agent Council evaluation stored in shadow mode for calibration review (Workstream A2)."""
+
+    __tablename__ = "council_reviews"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    entry_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("entries.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default="shadow", nullable=False, index=True
+    )  # "shadow", "pending_review", "approved", "rejected", "calibrated"
+    consensus_verdict: Mapped[str] = mapped_column(
+        String(50), nullable=False, index=True
+    )
+    consensus_score: Mapped[float] = mapped_column(Float, nullable=False)
+    consensus_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    persona_evaluations: Mapped[dict] = mapped_column(JSON, nullable=False)
+    verified_claims: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    receipt_keys: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    estimated_cost_usd: Mapped[float] = mapped_column(
+        Float, default=0.0, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        index=True,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index("ix_council_reviews_entry_status", "entry_id", "status"),
+        Index("ix_council_reviews_created_verdict", "created_at", "consensus_verdict"),
+    )

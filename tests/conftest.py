@@ -11,7 +11,9 @@ import os
 TEST_DATA_DIR = "/tmp/aetherguard_test_data"
 os.environ["DATA_DIR"] = TEST_DATA_DIR
 os.environ["DATABASE__URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
+os.environ["DB_URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
 os.makedirs(TEST_DATA_DIR, exist_ok=True)
+
 
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -21,7 +23,6 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from ai_security_monitor.config.settings import settings
 from ai_security_monitor.domain.entities import (
     Category,
     Entry,
@@ -37,6 +38,8 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     """Ensure database tables exist and initial sources are seeded before running test session."""
     import asyncio
     import os
+
+    from ai_security_monitor.config.settings import settings
 
     # Assert on resolved database URL, not merely DATA_DIR
     resolved_url = settings.database.url
@@ -60,6 +63,11 @@ def pytest_sessionstart(session: pytest.Session) -> None:
                 os.remove(db_file)
             except OSError:
                 pass
+
+    assert "/tmp/aetherguard_test_data" in settings.database.url, (
+        f"CRITICAL SAFETY CHECK FAILED: tests must never target development database! "
+        f"Resolved url: {settings.database.url}"
+    )
 
     from ai_security_monitor.application.services.monitor_service import MonitorService
 

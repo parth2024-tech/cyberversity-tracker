@@ -158,6 +158,25 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
             "required": ["query"],
         },
     },
+    {
+        "name": "evaluate_council_shadow_review",
+        "description": "Trigger or inspect multi-agent council shadow evaluation for an AI intelligence entry (Architect, Skeptic, Practitioner, Domain Specialist) with citation-grounded claims.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "entry_id": {
+                    "type": "string",
+                    "description": "UUID of the intelligence entry to evaluate",
+                },
+                "force_refresh": {
+                    "type": "boolean",
+                    "description": "Whether to force a re-evaluation if review already exists",
+                    "default": False,
+                },
+            },
+            "required": ["entry_id"],
+        },
+    },
 ]
 
 
@@ -323,6 +342,34 @@ class MCPServer:
                     query=query_text,
                     max_sources=max_sources,
                     include_entities=include_entities,
+                )
+
+            elif name == "evaluate_council_shadow_review":
+                entry_id_arg = args.get("entry_id", "")
+                force = bool(args.get("force_refresh", False))
+                from ai_security_monitor.application.services.council_service import (
+                    MultiAgentCouncilService,
+                )
+
+                council_svc = MultiAgentCouncilService()
+                council_review = await council_svc.evaluate_entry_in_shadow_mode(
+                    entry_id=entry_id_arg, force_refresh=force
+                )
+                return json.dumps(
+                    {
+                        "id": str(council_review.id),
+                        "entry_id": str(council_review.entry_id),
+                        "status": council_review.status,
+                        "consensus_verdict": council_review.consensus_verdict,
+                        "consensus_score": council_review.consensus_score,
+                        "consensus_summary": council_review.consensus_summary,
+                        "persona_evaluations": council_review.persona_evaluations,
+                        "verified_claims": council_review.verified_claims,
+                        "total_tokens": council_review.total_tokens,
+                        "total_latency_ms": council_review.total_latency_ms,
+                        "estimated_cost_usd": council_review.estimated_cost_usd,
+                    },
+                    indent=2,
                 )
 
             else:

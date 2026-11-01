@@ -26,6 +26,7 @@ from ai_security_monitor.presentation.api.routers import (
     audio_router,
     backup_router,
     china_router,
+    council_router,
     digest_router,
     entities_router,
     entries_router,
@@ -262,6 +263,10 @@ def create_app() -> FastAPI:
             telegram_router, prefix=api_prefix, tags=["Telegram ChatOps"]
         )
         app.include_router(entities_router, prefix=api_prefix, tags=["Knowledge Graph"])
+        app.include_router(
+            council_router, prefix=api_prefix, tags=["Multi-Agent Council"]
+        )
+
 
     # Top-level syndication feed route for standard RSS reader auto-discovery
     app.include_router(feed_router, tags=["Syndication Feeds"])
