@@ -103,6 +103,7 @@ class DatabaseManager:
             @event.listens_for(engine.sync_engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
                 cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
                 cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.execute("PRAGMA busy_timeout=30000")
                 cursor.execute("PRAGMA synchronous=NORMAL")
@@ -376,6 +377,13 @@ class DatabaseManager:
                             "END;"
                         )
                     )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_receipts_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM llm_receipts WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
                     # Backfill existing entries into FTS5 index only if FTS table is completely empty but entries exist
                     fts_count_res = await conn.execute(
                         text("SELECT count(*) FROM entries_fts")
@@ -405,6 +413,14 @@ class DatabaseManager:
                             ")"
                         )
                     )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_vec_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM entries_vec WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
+
             except Exception:
                 pass
 
