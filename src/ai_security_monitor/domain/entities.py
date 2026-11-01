@@ -418,3 +418,42 @@ class ParitySnapshot(Entity):
     latency_ratio: float
     details: dict[str, Any] = field(default_factory=dict)
 
+
+@dataclass(kw_only=True)
+class IntelligenceEvent(Entity):
+    """Language-independent canonical AI intelligence event."""
+
+    type: str  # 'model_release', 'benchmark_result', 'framework_update', 'policy'
+    title: str
+    canonical_entity_ids: list[str] = field(default_factory=list)
+    version_tag: str | None = None
+    first_seen_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    first_seen_lang: str = "en"
+    first_source_id: UUID | None = None
+    status: str = "active"
+
+
+@dataclass(kw_only=True)
+class EventDocument(Entity):
+    """Associates a native document with an event under a specific evidentiary role."""
+
+    event_id: UUID
+    doc_id: UUID
+    role: str = "corroborating"  # 'primary', 'corroborating', 'derivative'
+    linked_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(kw_only=True)
+class Claim(Entity):
+    """Ground-truth claim extracted from original native document with evidence span."""
+
+    event_id: UUID
+    doc_id: UUID
+    field: str  # 'params', 'context_window', 'benchmark_score', 'license', 'price'
+    normalized_value: str
+    unit: str | None = None
+    evidence_span_start: int | None = None
+    evidence_span_end: int | None = None
+    evidence_text: str | None = None
+    confidence: float = 1.0
+

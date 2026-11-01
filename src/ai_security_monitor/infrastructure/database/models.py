@@ -17,6 +17,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -357,9 +358,7 @@ class EntryEntityModel(Base):
         index=True,
     )
 
-    entry: Mapped[EntryModel] = relationship(
-        "EntryModel", back_populates="entities"
-    )
+    entry: Mapped[EntryModel] = relationship("EntryModel", back_populates="entities")
 
     __table_args__ = (
         Index("ix_entry_entities_type_name", "entity_type", "name"),
@@ -374,10 +373,16 @@ class DocumentModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     source_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("sources.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     entry_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("entries.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36),
+        ForeignKey("entries.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     original_text: Mapped[str] = mapped_column(Text, nullable=False)
     lang: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
@@ -391,15 +396,31 @@ class DocumentModel(Base):
     raw_blob_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     views: Mapped[list[DocumentViewModel]] = relationship(
-        "DocumentViewModel", back_populates="document", cascade="all, delete-orphan", lazy="selectin"
+        "DocumentViewModel",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
     mentions: Mapped[list[MentionModel]] = relationship(
-        "MentionModel", back_populates="document", cascade="all, delete-orphan", lazy="selectin"
+        "MentionModel",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    event_documents: Mapped[list[EventDocumentModel]] = relationship(
+        "EventDocumentModel",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    claims: Mapped[list[ClaimModel]] = relationship(
+        "ClaimModel",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
-    __table_args__ = (
-        Index("ix_documents_lang_published", "lang", "published_at"),
-    )
+    __table_args__ = (Index("ix_documents_lang_published", "lang", "published_at"),)
 
 
 class DocumentViewModel(Base):
@@ -409,7 +430,10 @@ class DocumentViewModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     doc_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     view_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     text: Mapped[str] = mapped_column(Text, nullable=False)
@@ -419,11 +443,11 @@ class DocumentViewModel(Base):
         DateTime, default=lambda: datetime.now(UTC), nullable=False
     )
 
-    document: Mapped[DocumentModel] = relationship("DocumentModel", back_populates="views")
-
-    __table_args__ = (
-        Index("ix_document_views_doc_view", "doc_id", "view_type"),
+    document: Mapped[DocumentModel] = relationship(
+        "DocumentModel", back_populates="views"
     )
+
+    __table_args__ = (Index("ix_document_views_doc_view", "doc_id", "view_type"),)
 
 
 class CanonicalEntityModel(Base):
@@ -440,10 +464,16 @@ class CanonicalEntityModel(Base):
     )
 
     aliases: Mapped[list[EntityAliasModel]] = relationship(
-        "EntityAliasModel", back_populates="entity", cascade="all, delete-orphan", lazy="selectin"
+        "EntityAliasModel",
+        back_populates="entity",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
     mentions: Mapped[list[MentionModel]] = relationship(
-        "MentionModel", back_populates="entity", cascade="all, delete-orphan", lazy="selectin"
+        "MentionModel",
+        back_populates="entity",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
 
@@ -454,7 +484,10 @@ class EntityAliasModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     entity_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("entities.canonical_id", ondelete="CASCADE"), nullable=False, index=True
+        String(64),
+        ForeignKey("entities.canonical_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     alias: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     lang: Mapped[str | None] = mapped_column(String(12), nullable=True)
@@ -464,11 +497,11 @@ class EntityAliasModel(Base):
     valid_from: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     valid_to: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    entity: Mapped[CanonicalEntityModel] = relationship("CanonicalEntityModel", back_populates="aliases")
-
-    __table_args__ = (
-        Index("ix_entity_aliases_alias_lang", "alias", "lang"),
+    entity: Mapped[CanonicalEntityModel] = relationship(
+        "CanonicalEntityModel", back_populates="aliases"
     )
+
+    __table_args__ = (Index("ix_entity_aliases_alias_lang", "alias", "lang"),)
 
 
 class MentionModel(Base):
@@ -478,18 +511,28 @@ class MentionModel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     doc_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     entity_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("entities.canonical_id", ondelete="CASCADE"), nullable=False, index=True
+        String(64),
+        ForeignKey("entities.canonical_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     span_start: Mapped[int] = mapped_column(Integer, nullable=False)
     span_end: Mapped[int] = mapped_column(Integer, nullable=False)
     linker_version: Mapped[str] = mapped_column(String(32), nullable=False)
     confidence: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
 
-    document: Mapped[DocumentModel] = relationship("DocumentModel", back_populates="mentions")
-    entity: Mapped[CanonicalEntityModel] = relationship("CanonicalEntityModel", back_populates="mentions")
+    document: Mapped[DocumentModel] = relationship(
+        "DocumentModel", back_populates="mentions"
+    )
+    entity: Mapped[CanonicalEntityModel] = relationship(
+        "CanonicalEntityModel", back_populates="mentions"
+    )
 
 
 class ParitySnapshotModel(Base):
@@ -509,3 +552,124 @@ class ParitySnapshotModel(Base):
     latency_ratio: Mapped[float] = mapped_column(Float, nullable=False)
     details: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
 
+
+class EventModel(Base):
+    """Canonical cross-lingual intelligence event."""
+
+    __tablename__ = "events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    canonical_entity_ids: Mapped[list[str]] = mapped_column(
+        JSON, default=list, nullable=False
+    )
+    version_tag: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, index=True
+    )
+    first_seen_lang: Mapped[str] = mapped_column(
+        String(12), default="en", nullable=False
+    )
+    first_source_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("sources.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default="active", nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    documents: Mapped[list[EventDocumentModel]] = relationship(
+        "EventDocumentModel",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    claims: Mapped[list[ClaimModel]] = relationship(
+        "ClaimModel",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+    __table_args__ = (Index("ix_events_type_first_seen", "type", "first_seen_at"),)
+
+
+class EventDocumentModel(Base):
+    """Associates a document with an event under a specific evidentiary role."""
+
+    __tablename__ = "event_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    event_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    doc_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(
+        String(20), default="corroborating", nullable=False, index=True
+    )
+    linked_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    event: Mapped[EventModel] = relationship("EventModel", back_populates="documents")
+    document: Mapped[DocumentModel] = relationship(
+        "DocumentModel", back_populates="event_documents"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("event_id", "doc_id", name="uq_event_documents_event_doc"),
+        Index("ix_event_documents_doc_role", "doc_id", "role"),
+    )
+
+
+class ClaimModel(Base):
+    """Structured claim extracted from original native document with evidence span."""
+
+    __tablename__ = "claims"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    event_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    doc_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    field: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    normalized_value: Mapped[str] = mapped_column(String(128), nullable=False)
+    unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    evidence_span_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    evidence_span_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    confidence: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    event: Mapped[EventModel] = relationship("EventModel", back_populates="claims")
+    document: Mapped[DocumentModel] = relationship(
+        "DocumentModel", back_populates="claims"
+    )
+
+    __table_args__ = (Index("ix_claims_event_field", "event_id", "field"),)

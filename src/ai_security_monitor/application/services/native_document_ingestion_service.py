@@ -256,6 +256,17 @@ class NativeDocumentIngestionService:
             session.add(entry_ent)
 
         await session.flush()
+
+        # Cluster document into language-independent canonical event
+        try:
+            from ai_security_monitor.application.services.cross_lingual_event_service import (
+                event_service,
+            )
+
+            await event_service.cluster_document(session, doc)
+        except Exception as cluster_err:
+            logger.debug(f"Event clustering notice: {cluster_err}")
+
         return doc
 
     async def backfill_recent_entries(

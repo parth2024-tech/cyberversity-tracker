@@ -29,6 +29,7 @@ from ai_security_monitor.presentation.api.routers import (
     digest_router,
     entities_router,
     entries_router,
+    events_router,
     feed_router,
     newspaper_router,
     parity_router,
@@ -267,6 +268,9 @@ def create_app() -> FastAPI:
         )
         app.include_router(
             parity_router, prefix=api_prefix, tags=["Language Parity SLO"]
+        )
+        app.include_router(
+            events_router, prefix=api_prefix, tags=["Cross-Lingual Events"]
         )
 
     # Top-level syndication feed route for standard RSS reader auto-discovery

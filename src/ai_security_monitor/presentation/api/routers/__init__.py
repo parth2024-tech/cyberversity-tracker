@@ -9,6 +9,7 @@ from ai_security_monitor.presentation.api.routers.china import china_router
 from ai_security_monitor.presentation.api.routers.digest import digest_router
 from ai_security_monitor.presentation.api.routers.entities import entities_router
 from ai_security_monitor.presentation.api.routers.entries import entries_router
+from ai_security_monitor.presentation.api.routers.events import events_router
 from ai_security_monitor.presentation.api.routers.feed import feed_router
 from ai_security_monitor.presentation.api.routers.newspaper import newspaper_router
 from ai_security_monitor.presentation.api.routers.parity import parity_router
@@ -38,4 +39,5 @@ __all__ = [
     "telegram_router",
     "entities_router",
     "parity_router",
+    "events_router",
 ]
