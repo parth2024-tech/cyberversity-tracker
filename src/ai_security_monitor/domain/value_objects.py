@@ -267,7 +267,9 @@ class PersonalDecisionBrief:
             "event_summary": self.event_summary,
             "significance": self.significance,
             "novelty_assessment": self.novelty_assessment.to_dict(),
-            "historical_comparisons": [c.to_dict() for c in self.historical_comparisons],
+            "historical_comparisons": [
+                c.to_dict() for c in self.historical_comparisons
+            ],
             "stack_relevance": self.stack_relevance.to_dict(),
             "evidence_assessment": self.evidence_assessment.to_dict(),
             "recommended_action": self.recommended_action.value,
@@ -311,8 +313,12 @@ class PersonalDecisionBrief:
 
         stack_data = data.get("stack_relevance") or {}
         stack = StackRelevance(
-            impact_level=StackImpactLevel.from_string(stack_data.get("impact_level", "")),
-            matching_watchlist_rules=list(stack_data.get("matching_watchlist_rules", [])),
+            impact_level=StackImpactLevel.from_string(
+                stack_data.get("impact_level", "")
+            ),
+            matching_watchlist_rules=list(
+                stack_data.get("matching_watchlist_rules", [])
+            ),
             matched_technologies=list(stack_data.get("matched_technologies", [])),
             direct_impact=stack_data.get("direct_impact"),
             indirect_impact=stack_data.get("indirect_impact"),
@@ -326,8 +332,12 @@ class PersonalDecisionBrief:
             confidence=EvidenceConfidence.from_string(ev_data.get("confidence", "")),
             primary_source_type=ev_data.get("primary_source_type", "general"),
             corroboration_count=int(ev_data.get("corroboration_count", 1)),
-            has_reproducible_artifact=bool(ev_data.get("has_reproducible_artifact", False)),
-            claim_verification_score=float(ev_data.get("claim_verification_score", 1.0)),
+            has_reproducible_artifact=bool(
+                ev_data.get("has_reproducible_artifact", False)
+            ),
+            claim_verification_score=float(
+                ev_data.get("claim_verification_score", 1.0)
+            ),
             notes=ev_data.get("notes", ""),
             conflicting_signals=list(ev_data.get("conflicting_signals", [])),
         )

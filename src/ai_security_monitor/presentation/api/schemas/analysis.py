@@ -32,8 +32,12 @@ class NoveltyAssessmentSchema(BaseModel):
         default=NoveltyType.INSUFFICIENT_HISTORY, description="Novelty classification"
     )
     summary: str = Field(default="", max_length=1500, description="Novelty summary")
-    comparison_notes: str = Field(default="", max_length=2000, description="Comparison notes")
-    uncertainties: list[str] = Field(default_factory=list, description="Known uncertainties")
+    comparison_notes: str = Field(
+        default="", max_length=2000, description="Comparison notes"
+    )
+    uncertainties: list[str] = Field(
+        default_factory=list, description="Known uncertainties"
+    )
 
 
 class StackRelevanceSchema(BaseModel):
@@ -73,8 +77,12 @@ class PersonalDecisionBriefSchema(BaseModel):
     """Structured Five-Question Personal Intelligence Decision Brief schema."""
 
     event_summary: str = Field(..., max_length=2500, description="Q1: What happened?")
-    significance: str = Field(..., max_length=2500, description="Q2: Why does it matter?")
-    novelty_assessment: NoveltyAssessmentSchema = Field(..., description="Q3: What's new?")
+    significance: str = Field(
+        ..., max_length=2500, description="Q2: Why does it matter?"
+    )
+    novelty_assessment: NoveltyAssessmentSchema = Field(
+        ..., description="Q3: What's new?"
+    )
     historical_comparisons: list[HistoricalComparisonSchema] = Field(
         default_factory=list, description="Historical vector comparisons"
     )
@@ -87,8 +95,12 @@ class PersonalDecisionBriefSchema(BaseModel):
     recommended_action: DecisionAction = Field(
         default=DecisionAction.MONITOR_CLAIMS, description="Q5: What should I do next?"
     )
-    action_rationale: str = Field(default="", max_length=1500, description="Action rationale")
-    source_references: list[str] = Field(default_factory=list, description="Citations and evidence links")
+    action_rationale: str = Field(
+        default="", max_length=1500, description="Action rationale"
+    )
+    source_references: list[str] = Field(
+        default_factory=list, description="Citations and evidence links"
+    )
     generated_at: str = Field(default="", description="ISO timestamp")
     analysis_version: str = Field(default="v1-decision-brief", max_length=50)
 

@@ -22,7 +22,7 @@ from ai_security_monitor.domain.entities import (
     EntityType,
     Entry,
 )
-from ai_security_monitor.infrastructure.database.models import EntryModel
+from ai_security_monitor.infrastructure.database.models import EntryModel, SourceModel
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
@@ -110,11 +110,21 @@ def test_ai_entity_extractor_deduplication():
 async def test_entity_repository_crud_and_timeline():
     """Verify adding entities, querying by entry, querying timeline, and top entities aggregation."""
     async with SqlAlchemyUnitOfWork() as uow:
-        # Create a fresh test entry
+        # Create a fresh test source & entry
+        source_id = str(uuid4())
+        src_m = SourceModel(
+            id=source_id,
+            name="vLLM Project",
+            url="https://github.com/vllm-project/vllm",
+            category="ai_tech",
+            type="github_org",
+        )
+        uow.session.add(src_m)
+
         entry_id = uuid4()
         entry_m = EntryModel(
             id=str(entry_id),
-            source_id=str(uuid4()),
+            source_id=source_id,
             title="vLLM 0.7.0 High-Throughput Inference Engine",
             url="https://github.com/vllm-project/vllm",
             content_hash=uuid4().hex + uuid4().hex,

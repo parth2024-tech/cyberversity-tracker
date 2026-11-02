@@ -6,6 +6,7 @@ Fetchers infrastructure package - plugin registration.
 from ai_security_monitor.infrastructure.fetchers import (
     arxiv_fetcher,
     base,
+    github_org_fetcher,
     github_trending_fetcher,
     google_news_fetcher,
     hackernews_fetcher,
@@ -33,6 +34,7 @@ __all__ = [
     "FetcherRegistry",
     "arxiv_fetcher",
     "base",
+    "github_org_fetcher",
     "github_trending_fetcher",
     "google_news_fetcher",
     "hackernews_fetcher",

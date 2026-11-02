@@ -188,6 +188,70 @@ def mcp():
         pass
 
 
+@app.command()
+def backup(
+    public_key: str = typer.Option(
+        None, "--public-key", "-k", help="X25519 age public key (age1...)"
+    ),
+    upload_remote: bool = typer.Option(
+        False, "--upload-remote", "-u", help="Push backup to offsite S3/R2 storage"
+    ),
+):
+    """Execute hot SQLite database backup with age encryption and GFS retention."""
+    from ai_security_monitor.application.services.backup_service import BackupService
+
+    async def _run():
+        await db_manager.init_db()
+        service = BackupService(public_key=public_key)
+        console.print("[bold yellow]🔐 Performing encrypted database backup...[/bold yellow]")
+        res = await service.create_backup(upload_remote=upload_remote)
+        console.print(f"[bold green]✅ Backup completed: {res.filename}[/bold green]")
+        console.print(f"Raw Size: {res.raw_size_bytes} bytes | Encrypted: {res.encrypted_size_bytes} bytes")
+        console.print(f"SHA-256 (Encrypted): {res.sha256_encrypted}")
+        await db_manager.close()
+
+    asyncio.run(_run())
+
+
+@app.command(name="restore-drill")
+def restore_drill_cmd(
+    backup_file: str = typer.Option(..., "--backup-file", "-b", help="Path to .db.gz.age file"),
+    secret_key: str = typer.Option(
+        None, "--secret-key", "-k", help="Age secret key (defaults to BACKUP_AGE_SECRET_KEY)"
+    ),
+    target_db: str = typer.Option(
+        None, "--target-db", "-t", help="Target restored SQLite DB path"
+    ),
+    reference_db: str = typer.Option(
+        None, "--reference-db", "-r", help="Reference SQLite DB path to verify parity"
+    ),
+):
+    """Execute verifiable restore drill and verify row-count parity."""
+    import os
+    import time
+    from pathlib import Path
+
+    from ai_security_monitor.scripts.restore_drill import run_drill
+
+    key = secret_key or os.environ.get("BACKUP_AGE_SECRET_KEY")
+    if not key:
+        console.print("[bold red]Age secret key required via --secret-key or BACKUP_AGE_SECRET_KEY env var.[/bold red]")
+        raise typer.Exit(code=1)
+
+    tgt = Path(target_db) if target_db else Path(f"/tmp/restore_drill_{int(time.time())}.db")
+    ref = Path(reference_db) if reference_db else None
+
+    exit_code = run_drill(
+        backup_file=Path(backup_file),
+        secret_key=key,
+        target_db=tgt,
+        reference_db=ref,
+        cleanup=False,
+    )
+    if exit_code != 0:
+        raise typer.Exit(code=exit_code)
+
+
 def main():
     app()
 

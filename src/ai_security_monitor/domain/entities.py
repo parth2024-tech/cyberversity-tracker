@@ -39,6 +39,7 @@ class SourceType(str, Enum):
     MODELSCOPE = "modelscope"
     HUGGINGFACE_CHINA = "huggingface_china"
     HUGGINGFACE_DAILY_PAPERS = "huggingface_daily_papers"
+    GITHUB_ORG = "github_org"
 
 
 class FetchStatus(str, Enum):
@@ -47,6 +48,7 @@ class FetchStatus(str, Enum):
     SUCCESS = "success"
     ERROR = "error"
     SKIPPED = "skipped"
+    NOT_MODIFIED = "not_modified"
 
 
 class AnalysisModel(str, Enum):
@@ -69,7 +71,6 @@ class EntityType(str, Enum):
     BENCHMARK = "benchmark"
     HARDWARE = "hardware"
     CVE = "cve"
-
 
 
 @dataclass(kw_only=True)
@@ -101,6 +102,7 @@ class Source(Entity):
     consecutive_failures: int = 0
     quarantined_at: datetime | None = None
     quarantine_reason: str | None = None
+    expected_cadence_days: int = 7
 
 
 @dataclass(kw_only=True)
@@ -120,6 +122,7 @@ class Entry(Entity):
     analysis: Analysis | None = None
     is_purged: bool = False
     purged_at: datetime | None = None
+    is_user_saved: bool = False
     story_id: UUID | None = None
     entities: list[AIEntity] = field(default_factory=list)
 
@@ -335,9 +338,28 @@ class AIEntity(Entity):
     entity_type: EntityType
     name: str  # Normalized identifier (e.g., 'deepseek-r1', 'vllm-project/vllm')
     display_name: str  # Display name (e.g., 'DeepSeek-R1', 'vllm')
-    metric_value: str | None = None  # Benchmark score or metric (e.g., '88.5%', '49.2%')
+    metric_value: str | None = (
+        None  # Benchmark score or metric (e.g., '88.5%', '49.2%')
+    )
     context: str | None = None  # Context sentence or snippet where mentioned
     confidence: float = 1.0
+@dataclass(kw_only=True)
+class CouncilReview(Entity):
+    """Multi-Agent Council evaluation record for shadow review queue and calibration."""
+
+    entry_id: UUID
+    consensus_verdict: str
+    consensus_score: float
+    consensus_summary: str
+    persona_evaluations: dict[str, Any]
+    verified_claims: list[dict[str, Any]] = field(default_factory=list)
+    receipt_keys: list[str] = field(default_factory=list)
+    status: str = (
+        "shadow"  # "shadow", "pending_review", "approved", "rejected", "calibrated"
+    )
+    total_tokens: int = 0
+    total_latency_ms: int = 0
+    estimated_cost_usd: float = 0.0
 
 
 @dataclass(kw_only=True)
@@ -456,4 +478,3 @@ class Claim(Entity):
     evidence_span_end: int | None = None
     evidence_text: str | None = None
     confidence: float = 1.0
-

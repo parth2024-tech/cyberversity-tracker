@@ -15,6 +15,10 @@ from pathlib import Path
 from typing import Any
 
 from ai_security_monitor.application.services.article_extractor import article_extractor
+from ai_security_monitor.application.services.china_repo_intelligence import (
+    ChinaRepoArchetype,
+    china_repo_intelligence,
+)
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import (
     Category,
@@ -102,7 +106,7 @@ class NewspaperService:
                 return True
             combined = f"{(e.title or '').lower()} {(e.summary or '').lower()}"
             sec_patterns = (
-                r"\b(?:cve|cve-\d{4}-\d+|rce|zero-day|0-day|0day|buffer overflow|remote code execution)\b",
+                r"\b(?:cve|cve-\d{4}-\d+|cnvd|cnnvd|cnvd-[a-z0-9-]+|cnnvd-[a-z0-9-]+|rce|zero-day|0-day|0day|buffer overflow|remote code execution)\b",
                 r"\b(?:privilege escalation|authentication bypass|rootkit|backdoor|malware|ransomware|cisa kev)\b",
                 r"\b(?:exploit-db|packet storm|vulnerability|vulnerabilities|exploit|exploits)\b",
                 r"\b(?:security patch|patch release|monthly patch|patched \d+|fixed \d+ vulnerabilities)\b",
@@ -425,22 +429,37 @@ class NewspaperService:
 
         await asyncio.to_thread(_write_edition_files)
 
-        # Generate 10-Page PDF Document in worker thread to prevent event loop stalls
-        try:
-            await asyncio.to_thread(
-                self._render_pdf,
-                pdf_path=pdf_file,
-                entries=entries,
-                categorized=categorized,
-                edition_num=edition_num,
-                generated_at=now,
-                window_hours=window_hours,
+        # Check host memory before generating heavy ReportLab PDF
+        from ai_security_monitor.infrastructure.fetchers.autoscaled_pool import (
+            get_system_resource_metrics,
+        )
+
+        res_metrics = get_system_resource_metrics()
+        if (
+            res_metrics.get("available_mb", 1000.0) < 70.0
+            or res_metrics.get("process_rss_mb", 0.0) > 420.0
+        ):
+            logger.warning(
+                f"Skipping PDF compilation to preserve memory (available: {res_metrics.get('available_mb')}MB, RSS: {res_metrics.get('process_rss_mb')}MB)"
             )
-            await asyncio.to_thread(shutil.copyfile, pdf_file, latest_pdf)
-            has_pdf = True
-        except Exception as pdf_err:
-            logger.error(f"Failed to generate 10-page newspaper PDF: {pdf_err}")
             has_pdf = False
+        else:
+            # Generate 10-Page PDF Document in worker thread to prevent event loop stalls
+            try:
+                await asyncio.to_thread(
+                    self._render_pdf,
+                    pdf_path=pdf_file,
+                    entries=entries,
+                    categorized=categorized,
+                    edition_num=edition_num,
+                    generated_at=now,
+                    window_hours=window_hours,
+                )
+                await asyncio.to_thread(shutil.copyfile, pdf_file, latest_pdf)
+                has_pdf = True
+            except Exception as pdf_err:
+                logger.error(f"Failed to generate 10-page newspaper PDF: {pdf_err}")
+                has_pdf = False
 
         metadata = {
             "edition_id": edition_id,
@@ -1022,81 +1041,114 @@ class NewspaperService:
             cat = e.category.value if hasattr(e.category, "value") else str(e.category)
             tags_lower = [t.lower() for t in (e.tags or [])]
 
-            is_hardware = any(
-                k in t_lower or k in s_lower
-                for k in (
-                    "nvidia",
-                    "gpu",
-                    "gpus",
-                    "cuda",
-                    "tpu",
-                    "blackwell",
-                    "h100",
-                    "b200",
-                    "h200",
-                    "amd",
-                    "rocm",
-                    "cerebras",
-                    "groq",
-                    "silicon",
-                    "semiconductor",
-                    "tsmc",
-                    "asml",
-                    "tensor core",
-                    "hardware",
-                    "datacenter",
-                    "data center",
-                    "hbm",
-                    "vram",
-                    "rtx 4090",
-                    "rtx 3090",
-                    "apple silicon",
-                    "m4",
-                    "m5",
-                    "npu",
-                    "chip",
-                    "chips",
-                    "wafer",
-                    "accelerator",
-                    "inference chip",
-                    "fp8",
-                    "fp4",
+            # China AI Corridor Epistemic Profiling & Archetype Annotation
+            china_profile = china_repo_intelligence.extract_profile(
+                title=e.title or "",
+                description=e.summary or "",
+                url=e.url or "",
+            )
+            archetype_val = china_profile.archetype
+            if archetype_val:
+                e.metadata = e.metadata or {}
+                e.metadata["archetype"] = archetype_val
+                e.metadata["archetype_label"] = china_profile.archetype_label
+                if china_profile.lab_name:
+                    e.metadata["lab_name"] = china_profile.lab_name
+
+            is_hardware = (
+                archetype_val == ChinaRepoArchetype.SEMICONDUCTOR_RISCV.value
+                or any(
+                    k in t_lower or k in s_lower
+                    for k in (
+                        "nvidia",
+                        "gpu",
+                        "gpus",
+                        "cuda",
+                        "tpu",
+                        "blackwell",
+                        "h100",
+                        "b200",
+                        "h200",
+                        "amd",
+                        "rocm",
+                        "cerebras",
+                        "groq",
+                        "silicon",
+                        "semiconductor",
+                        "tsmc",
+                        "asml",
+                        "tensor core",
+                        "hardware",
+                        "datacenter",
+                        "data center",
+                        "hbm",
+                        "vram",
+                        "rtx 4090",
+                        "rtx 3090",
+                        "apple silicon",
+                        "m4",
+                        "m5",
+                        "npu",
+                        "chip",
+                        "chips",
+                        "wafer",
+                        "accelerator",
+                        "inference chip",
+                        "fp8",
+                        "fp4",
+                        "risc-v",
+                        "xiangshan",
+                        "香山",
+                        "昇腾",
+                        "开源芯片",
+                    )
                 )
             )
 
-            is_agent_robotics = any(
-                k in t_lower or k in s_lower
-                for k in (
-                    "agent",
-                    "agents",
-                    "agentic",
-                    "swarm",
-                    "swarms",
-                    "robot",
-                    "robotics",
-                    "embodied",
-                    "humanoid",
-                    "computer-use",
-                    "computer use",
-                    "browser-use",
-                    "browser use",
-                    "action model",
-                    "autogen",
-                    "crewai",
-                    "langgraph",
-                    "tool use",
-                    "tool calling",
-                    "mcp",
-                    "multi-agent",
-                    "vision-language-action",
-                    "vla",
-                    "autonomous workflow",
-                    "operator",
+            is_agent_robotics = (
+                archetype_val == ChinaRepoArchetype.EMBODIED_AI_ROBOTICS.value
+                or any(
+                    k in t_lower or k in s_lower
+                    for k in (
+                        "agent",
+                        "agents",
+                        "agentic",
+                        "swarm",
+                        "swarms",
+                        "robot",
+                        "robotics",
+                        "embodied",
+                        "humanoid",
+                        "computer-use",
+                        "computer use",
+                        "browser-use",
+                        "browser use",
+                        "action model",
+                        "autogen",
+                        "crewai",
+                        "langgraph",
+                        "tool use",
+                        "tool calling",
+                        "mcp",
+                        "multi-agent",
+                        "vision-language-action",
+                        "vla",
+                        "autonomous workflow",
+                        "operator",
+                        "unitree",
+                        "agibot",
+                        "宇树",
+                        "智元",
+                        "具身智能",
+                        "人形机器人",
+                        "四足机器人",
+                    )
                 )
             )
 
             is_sovereign = (
-                region
+                bool(china_profile.is_official_lab or china_profile.lab_name)
+                or region
                 in (
                     "china",
                     "south_asia",
@@ -1158,7 +1210,8 @@ class NewspaperService:
             )
 
             is_research = (
-                cat == "ai_research"
+                archetype_val == ChinaRepoArchetype.COMPUTER_VISION_EDGE.value
+                or cat == "ai_research"
                 or "arxiv" in (e.url or "").lower()
                 or "arxiv" in t_lower
                 or any(
@@ -1174,6 +1227,10 @@ class NewspaperService:
                         "alignment",
                         "reasoning architecture",
                         "survey",
+                        "computer vision",
+                        "openmmlab",
+                        "yolox",
+                        "mmdetection",
                     )
                 )
             )

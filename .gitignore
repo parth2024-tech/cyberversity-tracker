@@ -14,6 +14,8 @@ data/*.db-wal
 logs/*.log
 data/audio_cache/*
 data/newspapers/
+data/briefs/
+data/digests/
 data/*.json
 
 # Testing & Coverage
@@ -38,6 +40,7 @@ build/
 .env.*
 .antigravitycli/
 data/backups/
+data/digests/
 data/*.db-journal
 data/briefs/
 data/digests/

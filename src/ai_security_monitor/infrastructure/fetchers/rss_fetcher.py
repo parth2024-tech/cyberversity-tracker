@@ -10,6 +10,7 @@ from dateutil import parser as dt_parser
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.logging import get_logger
 from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.exceptions import FetchNotModifiedError
 from ai_security_monitor.domain.value_objects import ContentHash
 from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
@@ -83,7 +84,7 @@ class RSSFetcher(BaseFetcher):
             stealth_headers["If-Modified-Since"] = str(last_modified)
 
         async with httpx.AsyncClient(
-            timeout=self.timeout,
+            timeout=min(float(self.timeout), 20.0),
             headers=stealth_headers,
             follow_redirects=True,
         ) as client:
@@ -91,14 +92,42 @@ class RSSFetcher(BaseFetcher):
                 try:
                     resp = await client.get(target_url)
                     if resp.status_code == 304:
-                        logger.info(
-                            f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
-                            "Feed unchanged; skipping body payload."
-                        )
-                        return []
+                        stored_count = source_cfg.get("stored_entries_count")
+                        # Defect Ledger D3: Stored validators outlive data (ETag lockout)
+                        # When a source has < 3 entries stored, ignore 304, drop validators and refetch full payload.
+                        if stored_count is not None and stored_count < 3:
+                            logger.warning(
+                                f"Source {self.source.name!r} returned HTTP 304 but only has {stored_count} stored entries. "
+                                "Discarding stale ETag/Last-Modified validators and refetching full payload."
+                            )
+                            if self.source.config is not None:
+                                self.source.config.pop("etag", None)
+                                self.source.config.pop("last_modified", None)
+                            # Remove conditional headers from client for unconditional refetch
+                            for h_key in (
+                                "if-none-match",
+                                "if-modified-since",
+                                "If-None-Match",
+                                "If-Modified-Since",
+                            ):
+                                client.headers.pop(h_key, None)
+                            refetch_resp = await client.get(target_url)
+                            if refetch_resp.status_code == 200:
+                                response = refetch_resp
+                                break
+                            resp = refetch_resp
+
+                        if resp.status_code == 304:
+                            logger.info(
+                                f"Source {self.source.name!r} returned HTTP 304 Not Modified. "
+                                "Feed unchanged; skipping body payload."
+                            )
+                            raise FetchNotModifiedError(self.source.name)
                     resp.raise_for_status()
                     response = resp
                     break
+                except FetchNotModifiedError:
+                    raise
                 except Exception as req_err:
                     last_error = req_err
                     response = None
@@ -134,7 +163,7 @@ class RSSFetcher(BaseFetcher):
             response.headers.get("content-type", "").lower().split(";")[0].strip()
         )
         first_bytes = raw_bytes[:100].lower().replace(b" ", b"")
-        is_html_response = ct_header in ("text/html",) and (
+        is_html_response = ct_header in ("text/html", "application/xhtml+xml") or (
             first_bytes.startswith((b"<!doctype", b"<html"))
         )
         if is_html_response:
@@ -258,7 +287,7 @@ class RSSFetcher(BaseFetcher):
                 except Exception:
                     pass
 
-            # Fallback to dateutil fuzzy parser for non-standard RFC timestamps (e.g., VTT, European portals)
+            # Fallback to dateutil fuzzy parser for non-standard RFC timestamps (e.g. Chinese YYYY年MM月DD日, VTT, European portals)
             if not parsed_date:
                 raw_date_str = (
                     getattr(item, "published", None)
@@ -267,9 +296,48 @@ class RSSFetcher(BaseFetcher):
                 )
                 if raw_date_str and isinstance(raw_date_str, str):
                     try:
-                        parsed_dt = dt_parser.parse(raw_date_str, fuzzy=True)
+                        clean_date_str = raw_date_str
+                        # Normalize Chinese calendar formats: 2025年02月18日 -> 2025-02-18
+                        clean_date_str = re.sub(
+                            r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日?",
+                            r"\1-\2-\3 ",
+                            clean_date_str,
+                        )
+                        clean_date_str = re.sub(
+                            r"(\d{1,2})\s*时\s*(\d{1,2})\s*分(?:\s*(\d{1,2})\s*秒)?",
+                            lambda m: (
+                                f" {m.group(1)}:{m.group(2)}:{m.group(3)} "
+                                if m.group(3)
+                                else f" {m.group(1)}:{m.group(2)} "
+                            ),
+                            clean_date_str,
+                        )
+                        is_cst_utc8 = bool(
+                            re.search(
+                                r"(?:CST|UTC\+8|\+0800|\+08:00|北京时间)",
+                                raw_date_str,
+                                re.IGNORECASE,
+                            )
+                        )
+                        parsed_dt = dt_parser.parse(clean_date_str, fuzzy=True)
                         if parsed_dt.tzinfo is None:
-                            parsed_dt = parsed_dt.replace(tzinfo=UTC)
+                            is_cn_source = bool(
+                                self.source
+                                and (
+                                    getattr(self.source, "config", {}).get("country")
+                                    == "CN"
+                                    or getattr(self.source, "config", {}).get("region")
+                                    == "china"
+                                )
+                            )
+                            if is_cst_utc8 or is_cn_source:
+                                from datetime import timedelta, timezone
+
+                                parsed_dt = parsed_dt.replace(
+                                    tzinfo=timezone(timedelta(hours=8))
+                                )
+                            else:
+                                parsed_dt = parsed_dt.replace(tzinfo=UTC)
                         published_at = parsed_dt.astimezone(UTC)
                         parsed_date = True
                     except Exception:

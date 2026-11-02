@@ -16,6 +16,7 @@ from ai_security_monitor.domain.entities import (
     AIEntity,
     Analysis,
     Category,
+    CouncilReview,
     Digest,
     EntityType,
     Entry,
@@ -56,8 +57,10 @@ class EntryFilters:
     region: str | None = None
     country: str | None = None
     important_only: bool = False
+    user_saved_only: bool = False
     purged_only: bool = False
     watchlist_rules: list[Any] | None = None
+    archetype: str | None = None
 
 
 class EntryRepository(ABC):
@@ -95,6 +98,10 @@ class EntryRepository(ABC):
     async def count(self, filters: EntryFilters | None = None) -> int:
         """Count entries matching filters."""
         ...
+
+    async def count_by_source(self, source_id: UUID | str) -> int:
+        """Count active (non-purged) entries for a specific source."""
+        return 0
 
     @abstractmethod
     async def update(self, entry: Entry) -> Entry:
@@ -141,6 +148,7 @@ class EntryRepository(ABC):
         entry_id: UUID,
         is_important: bool | None = None,
         reason: str | None = None,
+        is_user_action: bool = True,
     ) -> Entry:
         """Toggle or set importance status in vault."""
         ...
@@ -267,6 +275,10 @@ class SourceRepository(ABC):
     async def toggle_enabled(self, source_id_or_name: str, enabled: bool) -> bool:
         """Enable or disable source by UUID or name slug."""
         return False
+
+    async def clear_stale_validators(self, min_entries: int = 3) -> int:
+        """Clear ETag and Last-Modified validators for sources with fewer than min_entries (Defect Ledger D3)."""
+        return 0
 
 
 class FetchLogRepository(ABC):
@@ -415,4 +427,41 @@ class AIEntityRepository(ABC):
         limit: int = 20,
     ) -> list[dict[str, Any]]:
         """Retrieve top referenced entities grouped by name within the freshness window."""
+        ...
+
+
+class CouncilReviewRepository(ABC):
+    """Repository interface for multi-agent council reviews and shadow calibration queue."""
+
+    @abstractmethod
+    async def save(self, review: CouncilReview) -> CouncilReview:
+        """Persist or update a council review."""
+        ...
+
+    @abstractmethod
+    async def get_by_id(self, review_id: UUID | str) -> CouncilReview | None:
+        """Lookup council review by ID."""
+        ...
+
+    @abstractmethod
+    async def get_by_entry(self, entry_id: UUID | str) -> CouncilReview | None:
+        """Lookup latest council review for a specific entry."""
+        ...
+
+    @abstractmethod
+    async def list_reviews(
+        self,
+        status: str | None = None,
+        verdict: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[CouncilReview]:
+        """List reviews in shadow review queue with optional status/verdict filters."""
+        ...
+
+    @abstractmethod
+    async def update_status(
+        self, review_id: UUID | str, status: str
+    ) -> CouncilReview | None:
+        """Update review status (e.g. 'approved', 'rejected', 'calibrated')."""
         ...

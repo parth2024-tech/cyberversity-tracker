@@ -19,6 +19,7 @@ from ai_security_monitor.domain.events import (
 )
 from ai_security_monitor.domain.exceptions import (
     FetchError,
+    FetchNotModifiedError,
     FetchRateLimitedError,
     FetchTimeoutError,
 )
@@ -134,6 +135,26 @@ class BaseFetcher(ABC):
                     duration_ms=duration_ms,
                 )
 
+            except FetchNotModifiedError:
+                duration_ms = int(
+                    (datetime.now(UTC) - start_time).total_seconds() * 1000
+                )
+                domain = domain_throttle.extract_domain(
+                    self.source.url if self.source else None
+                )
+                domain_throttle.record(
+                    domain,
+                    latency=duration_ms / 1000.0,
+                    ok=True,
+                    floor=self._rate_limit_seconds,
+                )
+                return FetchResult(
+                    entries=[],
+                    entries_new=0,
+                    entries_total=0,
+                    status=FetchStatus.NOT_MODIFIED,
+                    duration_ms=duration_ms,
+                )
             except TimeoutError:
                 last_error = FetchTimeoutError(self.source.name, self.timeout)
             except FetchRateLimitedError:

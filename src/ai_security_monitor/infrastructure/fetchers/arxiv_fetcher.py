@@ -82,14 +82,14 @@ class ArxivFetcher(BaseFetcher):
         # ── Pacing: hold lock only for the sleep ───────────────────────────
         async with ArxivFetcher._lock:
             elapsed = time.time() - ArxivFetcher._last_request_time
-            if elapsed < 3.0:
-                await asyncio.sleep(3.0 - elapsed)
+            if elapsed < 1.5:
+                await asyncio.sleep(1.5 - elapsed)
             ArxivFetcher._last_request_time = time.time()
         # Lock released — HTTP request runs concurrently with next fetcher's pacing
 
         try:
             async with httpx.AsyncClient(
-                timeout=30.0,
+                timeout=15.0,
                 headers={
                     "User-Agent": (
                         "AetherGuard-AI-Monitor/2.0 "
@@ -146,7 +146,7 @@ class ArxivFetcher(BaseFetcher):
 
         try:
             async with httpx.AsyncClient(
-                timeout=20.0, headers=headers, follow_redirects=True
+                timeout=12.0, headers=headers, follow_redirects=True
             ) as client:
                 res = await client.get(rss_url)
                 if res.status_code == 200:

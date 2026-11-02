@@ -50,6 +50,18 @@ class FetchError(DomainError):
     pass
 
 
+class FetchNotModifiedError(FetchError):
+    """Signal that remote resource returned HTTP 304 Not Modified."""
+
+    def __init__(self, source_name: str = ""):
+        msg = f"Source {source_name!r} returned HTTP 304 Not Modified" if source_name else "HTTP 304 Not Modified"
+        super().__init__(
+            msg,
+            "FETCH_NOT_MODIFIED",
+            {"source_name": source_name} if source_name else None,
+        )
+
+
 class FetchTimeoutError(FetchError):
     def __init__(self, source_name: str, timeout: int):
         super().__init__(

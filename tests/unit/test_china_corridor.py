@@ -96,3 +96,19 @@ async def test_china_export_endpoint():
         assert "total_entries" in data
         assert "key_laboratories" in data
         assert "Cache-Control" in resp.headers
+
+
+@pytest.mark.asyncio
+async def test_china_trending_endpoint():
+    """GET /api/china/trending should return trending and unique Chinese open-source GitHub repositories."""
+    app = create_app()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get("/api/china/trending?limit=10")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "trending_repositories" in data
+        assert "count" in data
+        assert isinstance(data["trending_repositories"], list)
+        assert "Cache-Control" in resp.headers

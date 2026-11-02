@@ -178,7 +178,9 @@ async def test_watchlist_pagination_and_sql_filtering(test_uow):
 
         # 4. Query with watchlist_rules and limit=2
         filters = EntryFilters(watchlist_rules=[rule])
-        page1 = await uow.entries.list(filters=filters, pagination=PaginationParams(limit=2, offset=0))
+        page1 = await uow.entries.list(
+            filters=filters, pagination=PaginationParams(limit=2, offset=0)
+        )
         assert len(page1) == 2
 
         count = await uow.entries.count(filters=filters)

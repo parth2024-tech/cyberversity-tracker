@@ -17,7 +17,9 @@ import sqlite3
 import sys
 from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger("fts_dedup")
 
 
@@ -27,7 +29,9 @@ def cleanup_fts_duplicates(db_path: Path) -> bool:
         return False
 
     initial_size_mb = os.path.getsize(db_path) / (1024 * 1024)
-    logger.info(f"Connecting to database: {db_path} (Initial size: {initial_size_mb:.2f} MB)")
+    logger.info(
+        f"Connecting to database: {db_path} (Initial size: {initial_size_mb:.2f} MB)"
+    )
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
@@ -66,11 +70,15 @@ def cleanup_fts_duplicates(db_path: Path) -> bool:
         cur.execute("PRAGMA integrity_check")
         integrity = cur.fetchone()[0]
 
-        logger.info(f"Post-cleanup state: entries={entries_count}, entries_fts={fts_after}")
+        logger.info(
+            f"Post-cleanup state: entries={entries_count}, entries_fts={fts_after}"
+        )
         logger.info(f"Integrity check: {integrity}")
 
         if fts_after != entries_count or integrity != "ok":
-            logger.warning(f"Integrity or count mismatch: fts={fts_after}, expected={entries_count}")
+            logger.warning(
+                f"Integrity or count mismatch: fts={fts_after}, expected={entries_count}"
+            )
             return False
 
         conn.close()
@@ -84,7 +92,7 @@ def cleanup_fts_duplicates(db_path: Path) -> bool:
         savings_mb = initial_size_mb - final_size_mb
         logger.info(
             f"FTS deduplication & VACUUM complete! Final size: {final_size_mb:.2f} MB "
-            f"(Saved: {savings_mb:.2f} MB / {(savings_mb / initial_size_mb)*100:.1f}%)"
+            f"(Saved: {savings_mb:.2f} MB / {(savings_mb / initial_size_mb) * 100:.1f}%)"
         )
         return True
 
@@ -99,8 +107,15 @@ def cleanup_fts_duplicates(db_path: Path) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Deduplicate and compact SQLite entries_fts table.")
-    parser.add_argument("--db", type=Path, default=Path("data/monitor.db"), help="Path to SQLite database")
+    parser = argparse.ArgumentParser(
+        description="Deduplicate and compact SQLite entries_fts table."
+    )
+    parser.add_argument(
+        "--db",
+        type=Path,
+        default=Path("data/monitor.db"),
+        help="Path to SQLite database",
+    )
     args = parser.parse_args()
 
     success = cleanup_fts_duplicates(args.db)

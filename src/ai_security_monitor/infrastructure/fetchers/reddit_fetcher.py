@@ -238,7 +238,7 @@ class RedditFetcher(BaseFetcher):
         url = f"https://www.reddit.com/r/{sub}/comments/{post_id}.json"
         params: dict[str, str | int] = {"limit": 5, "raw_json": "1", "sort": "top"}
         try:
-            resp = await client.get(url, params=params)
+            resp = await client.get(url, params=params, timeout=5.0)
             if resp.status_code == 200:
                 body = resp.json()
                 comments = RedditEndpointsExtractor.extract_comments_from_thread(

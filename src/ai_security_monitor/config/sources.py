@@ -38,6 +38,10 @@ class SourceConfig(BaseModel):
         default=2.0,
         description="Source credibility tier: 1.0 (Frontier Labs/Arxiv), 1.5 (Primary Tooling/Engineering), 2.0 (Community/Aggregators/Unverified)",
     )
+    expected_cadence_days: int = Field(
+        default=7,
+        description="Declared expected update cadence in days (1=daily, 7=weekly, 30=monthly)",
+    )
     config: dict[str, Any] = Field(
         default_factory=dict, description="Type-specific extra config"
     )
@@ -99,6 +103,7 @@ class SourceConfig(BaseModel):
             "modelscope",
             "huggingface_china",
             "huggingface_daily_papers",
+            "github_org",
         }
         if v not in allowed:
             raise ValueError(f"Type must be one of {allowed}")

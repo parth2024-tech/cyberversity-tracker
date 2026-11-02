@@ -18,6 +18,7 @@ from uuid import uuid4
 import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ai_security_monitor.application.services.language_detection_service import (
     language_detector,
@@ -25,6 +26,8 @@ from ai_security_monitor.application.services.language_detection_service import 
 from ai_security_monitor.infrastructure.database.models import (
     DocumentModel,
     EntryModel,
+    EventDocumentModel,
+    EventModel,
     ParitySnapshotModel,
     SourceModel,
 )
@@ -44,6 +47,22 @@ class SourceYieldStat:
     en_count: int
     median_latency_h: float
     last_fetched_at: str | None
+
+
+@dataclass
+class EventParityMetrics:
+    """Event-level cross-lingual parity and discovery telemetry."""
+
+    total_events: int
+    bilingual_events_count: int
+    zh_origin_events_count: int
+    en_origin_events_count: int
+    bilingual_share_pct: float
+    zh_lead_count: int
+    en_lead_count: int
+    median_cross_lingual_lead_h: float
+    frontier_lab_events_count: int
+    frontier_lab_zh_capture_pct: float
 
 
 @dataclass
@@ -67,6 +86,7 @@ class LanguageParityMetrics:
     slo_latency_met: bool  # latency_ratio <= 1.25
     slo_capture_active: bool  # zh_count > 0
     sources: list[SourceYieldStat] = field(default_factory=list)
+    event_parity: EventParityMetrics | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -176,6 +196,7 @@ class LanguageParityService:
         latency_ratio = zh_med / max(en_med, 0.1) if zh_count > 0 else 0.0
 
         sources_list = self._build_source_yield_list(source_stats_map)
+        event_parity = await self.compute_event_parity(session, cutoff)
 
         return LanguageParityMetrics(
             timestamp=now,
@@ -192,9 +213,12 @@ class LanguageParityService:
             en_median_latency_h=round(en_med, 2),
             en_p90_latency_h=round(en_p90, 2),
             latency_ratio=round(latency_ratio, 4),
-            slo_latency_met=latency_ratio <= self._target_latency_ratio if zh_count > 0 else False,
+            slo_latency_met=latency_ratio <= self._target_latency_ratio
+            if zh_count > 0
+            else False,
             slo_capture_active=zh_count > 0,
             sources=sources_list,
+            event_parity=event_parity,
         )
 
     async def _compute_from_entries_baseline(
@@ -303,7 +327,9 @@ class LanguageParityService:
             en_median_latency_h=round(en_med, 2),
             en_p90_latency_h=round(en_p90, 2),
             latency_ratio=round(latency_ratio, 4),
-            slo_latency_met=latency_ratio <= self._target_latency_ratio if zh_count > 0 else False,
+            slo_latency_met=latency_ratio <= self._target_latency_ratio
+            if zh_count > 0
+            else False,
             slo_capture_active=zh_count > 0,
             sources=sources_list,
         )
@@ -343,6 +369,125 @@ class LanguageParityService:
         result.sort(key=lambda s: s.total_count, reverse=True)
         return result
 
+    async def compute_event_parity(
+        self, session: AsyncSession, cutoff: datetime
+    ) -> EventParityMetrics | None:
+        """Compute event-level cross-lingual parity and discovery telemetry."""
+        events_stmt = (
+            select(EventModel)
+            .where(
+                EventModel.first_seen_at >= cutoff,
+                EventModel.status == "active",
+            )
+            .order_by(EventModel.first_seen_at.desc())
+        )
+        events = (await session.execute(events_stmt)).scalars().all()
+        if not events:
+            return None
+
+        event_ids = [e.id for e in events]
+        docs_stmt = (
+            select(EventDocumentModel)
+            .where(EventDocumentModel.event_id.in_(event_ids))
+            .options(selectinload(EventDocumentModel.document))
+        )
+        event_docs = (await session.execute(docs_stmt)).scalars().all()
+
+        docs_by_event: dict[str, list[EventDocumentModel]] = {}
+        for ed in event_docs:
+            docs_by_event.setdefault(ed.event_id, []).append(ed)
+
+        bilingual_count = 0
+        zh_origin_count = 0
+        en_origin_count = 0
+        zh_lead_count = 0
+        en_lead_count = 0
+        lead_deltas_h: list[float] = []
+
+        frontier_lab_events_count = 0
+        frontier_lab_zh_count = 0
+
+        frontier_lab_prefixes = (
+            "lab:deepseek",
+            "lab:qwen",
+            "lab:moonshot",
+            "lab:zhipu",
+            "lab:shanghai_ai_lab",
+            "lab:modelscope",
+            "lab:fudan",
+            "model:deepseek",
+            "model:qwen",
+            "model:kimi",
+            "model:glm",
+            "model:internlm",
+        )
+
+        for e in events:
+            if e.first_seen_lang == "zh":
+                zh_origin_count += 1
+            elif e.first_seen_lang == "en":
+                en_origin_count += 1
+
+            eds = docs_by_event.get(e.id, [])
+            langs = {ed.document.lang for ed in eds if ed.document}
+
+            is_bilingual = "zh" in langs and "en" in langs
+            if is_bilingual:
+                bilingual_count += 1
+
+                zh_times = [
+                    ed.document.published_at
+                    for ed in eds
+                    if ed.document and ed.document.lang == "zh"
+                ]
+                en_times = [
+                    ed.document.published_at
+                    for ed in eds
+                    if ed.document and ed.document.lang == "en"
+                ]
+                if zh_times and en_times:
+                    min_zh = min(zh_times)
+                    min_en = min(en_times)
+                    delta_h = (min_en - min_zh).total_seconds() / 3600.0
+                    if delta_h > 0.05:
+                        zh_lead_count += 1
+                        lead_deltas_h.append(delta_h)
+                    elif delta_h < -0.05:
+                        en_lead_count += 1
+                        lead_deltas_h.append(abs(delta_h))
+
+            # Frontier lab check
+            is_frontier_lab = any(
+                any(eid.startswith(prefix) for prefix in frontier_lab_prefixes)
+                for eid in e.canonical_entity_ids
+            )
+            if is_frontier_lab:
+                frontier_lab_events_count += 1
+                if "zh" in langs:
+                    frontier_lab_zh_count += 1
+
+        total_ev = len(events)
+        bilingual_share = (bilingual_count / max(total_ev, 1)) * 100.0
+        med_lead = round(statistics.median(lead_deltas_h), 2) if lead_deltas_h else 0.0
+        lab_zh_pct = (
+            (frontier_lab_zh_count / max(frontier_lab_events_count, 1)) * 100.0
+            if frontier_lab_events_count > 0
+            else 100.0
+        )
+
+        return EventParityMetrics(
+            total_events=total_ev,
+            bilingual_events_count=bilingual_count,
+            zh_origin_events_count=zh_origin_count,
+            en_origin_events_count=en_origin_count,
+            bilingual_share_pct=round(bilingual_share, 2),
+            zh_lead_count=zh_lead_count,
+            en_lead_count=en_lead_count,
+            median_cross_lingual_lead_h=med_lead,
+            frontier_lab_events_count=frontier_lab_events_count,
+            frontier_lab_zh_capture_pct=round(lab_zh_pct, 2),
+        )
+
     async def record_snapshot(
         self, session: AsyncSession, metrics: LanguageParityMetrics
     ) -> ParitySnapshotModel:
@@ -364,7 +509,9 @@ class LanguageParityService:
 
     def format_markdown_report(self, metrics: LanguageParityMetrics) -> str:
         """Render metrics as an executive markdown report."""
-        status_capture = "🟢 ACTIVE" if metrics.slo_capture_active else "🔴 ZERO YIELD (FAIL)"
+        status_capture = (
+            "🟢 ACTIVE" if metrics.slo_capture_active else "🔴 ZERO YIELD (FAIL)"
+        )
         status_latency = (
             "🟢 COMPLIANT"
             if metrics.slo_latency_met
@@ -398,12 +545,40 @@ class LanguageParityService:
                 f"| {s.source_name} | `{s.category}` | {s.total_count} | {s.zh_count} | {s.en_count} | {s.median_latency_h:.2f} h |"
             )
 
+        if metrics.event_parity:
+            ep = metrics.event_parity
+            status_lab = (
+                "🟢 COMPLIANT"
+                if ep.frontier_lab_zh_capture_pct >= 80.0
+                else "🟡 ATTENTION"
+            )
+            lead_summary = (
+                f"ZH led: {ep.zh_lead_count} · EN led: {ep.en_lead_count} (med delta: {ep.median_cross_lingual_lead_h:.1f}h)"
+                if (ep.zh_lead_count + ep.en_lead_count) > 0
+                else "Simultaneous / Single origin"
+            )
+            md.extend(
+                [
+                    "",
+                    "## Cross-Lingual Event Parity & Discovery Lead",
+                    "| Metric | Value | SLO Target | Status |",
+                    "|---|---|---|---|",
+                    f"| **Canonical Events (14d)** | {ep.total_events} events | Event-Centric Core | 🟢 ACTIVE |",
+                    f"| **Bilingual Events (ZH + EN)** | {ep.bilingual_events_count} events ({ep.bilingual_share_pct}%) | Cross-Lingual | 🟢 ACTIVE |",
+                    f"| **Frontier Lab Events** | {ep.frontier_lab_events_count} events | Ecosystem Coverage | 🟢 TRACKED |",
+                    f"| **Frontier Lab Native ZH Capture** | {ep.frontier_lab_zh_capture_pct}% | $\\ge 80\\%$ Target | {status_lab} |",
+                    f"| **Cross-Lingual Discovery Lead** | {lead_summary} | Discovery Speed | ⚡ MEASURED |",
+                ]
+            )
+
         if not metrics.slo_capture_active:
-            md.extend([
-                "",
-                "> [!IMPORTANT]",
-                "> **Phase A Baseline Finding**: The current pipeline routes Chinese sources through 'translate-first' or relies on dormant single-repo GitHub Atom feeds. Native Chinese document capture is at **0 docs**, confirming the imperative for native-language acquisition and entity extraction without English translation dependency.",
-            ])
+            md.extend(
+                [
+                    "",
+                    "> [!IMPORTANT]",
+                    "> **Phase A Baseline Finding**: The current pipeline routes Chinese sources through 'translate-first' or relies on dormant single-repo GitHub Atom feeds. Native Chinese document capture is at **0 docs**, confirming the imperative for native-language acquisition and entity extraction without English translation dependency.",
+                ]
+            )
 
         return "\n".join(md)
 

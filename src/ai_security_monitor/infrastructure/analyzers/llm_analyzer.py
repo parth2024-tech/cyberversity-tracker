@@ -39,6 +39,7 @@ class LLMAnalyzer(BaseAnalyzer):
         config: dict | None = None,
         receipt_service: Any | None = None,
         enable_receipts: bool = True,
+        budget_service: Any | None = None,
     ):
         super().__init__(config)
         cfg = config or {}
@@ -57,6 +58,18 @@ class LLMAnalyzer(BaseAnalyzer):
         self.enable_receipts = enable_receipts
         self._last_cache_read_tokens: int = 0
         self._last_cache_creation_tokens: int = 0
+
+        if budget_service is not None:
+            self.budget_service = budget_service
+        else:
+            try:
+                from ai_security_monitor.application.services.llm_budget_service import (
+                    llm_budget_service,
+                )
+
+                self.budget_service = llm_budget_service
+            except Exception:
+                self.budget_service = None
 
         if receipt_service is not None:
             self.receipt_service = receipt_service
@@ -342,6 +355,23 @@ class LLMAnalyzer(BaseAnalyzer):
 
     async def analyze(self, entry: Entry) -> AnalysisResult:
         """Analyze entry using Tiered SLM routing with prompt caching and circuit breaker."""
+        # Check database-backed daily LLM budget before any execution
+        if getattr(self, "budget_service", None):
+            try:
+                is_available = await self.budget_service.is_budget_available()
+                if not is_available:
+                    logger.warning(
+                        "🛑 Daily LLM budget exceeded; gracefully degrading to heuristic analyzer for %s",
+                        entry.title[:45],
+                    )
+                    from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
+                        HeuristicAnalyzer,
+                    )
+
+                    return await HeuristicAnalyzer().analyze(entry)
+            except Exception as b_err:
+                logger.debug(f"Budget check non-blocking error: {b_err}")
+
         model_name = self._get_active_model_name()
         logical_key: str | None = None
 
@@ -404,8 +434,12 @@ class LLMAnalyzer(BaseAnalyzer):
         try:
             # 1. Tier 2 Cloud Frontier (for high-signal items or when provider is groq)
             if (is_high_signal or self.provider == "groq") and hasattr(self, "client"):
-                raw_res = await self._call_groq(combined_prompt, user_prompt=user_prompt)
-                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                raw_res = await self._call_groq(
+                    combined_prompt, user_prompt=user_prompt
+                )
+                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(
+                    raw_res
+                )
                 active_model = AnalysisModel.GROQ
                 execution_tier = (
                     "cloud_cached" if cache_read_tokens > 0 else "cloud_uncached"
@@ -430,7 +464,9 @@ class LLMAnalyzer(BaseAnalyzer):
                         raw_res = await self._call_groq(
                             combined_prompt, user_prompt=user_prompt
                         )
-                        result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                        result, cache_read_tokens, cache_creation_tokens = (
+                            _extract_groq_res(raw_res)
+                        )
                         active_model = AnalysisModel.GROQ
                         execution_tier = (
                             "cloud_cached"
@@ -442,8 +478,12 @@ class LLMAnalyzer(BaseAnalyzer):
 
             # 3. Circuit breaker OPEN or SLM disabled: route directly to cloud fast model if available
             elif hasattr(self, "client"):
-                raw_res = await self._call_groq(combined_prompt, user_prompt=user_prompt)
-                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(raw_res)
+                raw_res = await self._call_groq(
+                    combined_prompt, user_prompt=user_prompt
+                )
+                result, cache_read_tokens, cache_creation_tokens = _extract_groq_res(
+                    raw_res
+                )
                 active_model = AnalysisModel.GROQ
                 execution_tier = (
                     "cloud_cached" if cache_read_tokens > 0 else "cloud_uncached"

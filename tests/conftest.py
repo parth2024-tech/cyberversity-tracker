@@ -8,18 +8,60 @@ import os
 
 # Guarantee that automated test sessions use an isolated throwaway SQLite DB
 # and never mutate a developer's real local database or production state.
-os.environ["DATA_DIR"] = "/tmp/aetherguard_test_data"
-os.environ["DATABASE__URL"] = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
-os.environ["DB_URL"] = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
-os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
+TEST_DATA_DIR = "/tmp/aetherguard_test_data"
+os.environ["DATA_DIR"] = TEST_DATA_DIR
+os.environ["DATABASE__URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
+os.environ["DB_URL"] = f"sqlite+aiosqlite:///{TEST_DATA_DIR}/monitor.db"
+os.makedirs(TEST_DATA_DIR, exist_ok=True)
 
+import hashlib
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
+
+
+@pytest.fixture(scope="session", autouse=True)
+def guard_dev_db_immutability():
+    """Session fixture that hashes data/monitor.db before and after the run and fails on any change;
+    plus an assertion on the resolved URL."""
+    from ai_security_monitor.config.settings import settings
+    from ai_security_monitor.infrastructure.database.connection import db_manager
+
+    # 1. Assert on the resolved URL
+    resolved_settings_url = settings.database.resolved_url
+    resolved_db_mgr_url = db_manager.url
+
+    assert (
+        "data/monitor.db" not in resolved_settings_url
+        or "/tmp" in resolved_settings_url
+    ), (
+        f"CRITICAL TEST ISOLATION FAILURE: settings.database.resolved_url must not point to data/monitor.db! Resolved: {resolved_settings_url}"
+    )
+    assert (
+        "data/monitor.db" not in resolved_db_mgr_url
+        or "/tmp" in resolved_db_mgr_url
+    ), (
+        f"CRITICAL TEST ISOLATION FAILURE: db_manager.url must not point to data/monitor.db! Resolved: {resolved_db_mgr_url}"
+    )
+
+    dev_db = Path("data/monitor.db")
+    initial_hash = None
+    if dev_db.exists():
+        initial_hash = hashlib.sha256(dev_db.read_bytes()).hexdigest()
+
+    yield
+
+    if dev_db.exists() and initial_hash is not None:
+        final_hash = hashlib.sha256(dev_db.read_bytes()).hexdigest()
+        assert final_hash == initial_hash, (
+            f"CRITICAL TEST ISOLATION FAILURE: data/monitor.db was modified during the test suite! "
+            f"Initial SHA256: {initial_hash}, Final SHA256: {final_hash}"
+        )
 
 from ai_security_monitor.domain.entities import (
     Category,
@@ -37,6 +79,21 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     import asyncio
     import os
 
+    from ai_security_monitor.config.settings import settings
+
+    # Assert on resolved database URL, not merely DATA_DIR
+    resolved_url = settings.database.url
+    assert (
+        "sqlite+aiosqlite:////tmp/" in resolved_url
+        or "memory" in resolved_url
+    ), (
+        f"CRITICAL TEST ISOLATION FAILURE: Database URL does not resolve to an isolated test path: {resolved_url}"
+    )
+    # Strict safeguard: never target real local data/monitor.db
+    assert not resolved_url.endswith("/data/monitor.db"), (
+        f"CRITICAL TEST ISOLATION FAILURE: Database URL targets real dev/prod DB: {resolved_url}"
+    )
+
     # Wipe stale test database file to guarantee a fresh state on each test session run
     data_dir = os.environ.get("DATA_DIR")
     if data_dir and os.path.exists(data_dir):
@@ -47,9 +104,6 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             except OSError:
                 pass
 
-    from ai_security_monitor.config.settings import settings
-
-    settings.database.url = "sqlite+aiosqlite:////tmp/aetherguard_test_data/monitor.db"
     assert "/tmp/aetherguard_test_data" in settings.database.url, (
         f"CRITICAL SAFETY CHECK FAILED: tests must never target development database! "
         f"Resolved url: {settings.database.url}"

@@ -32,10 +32,21 @@ class DatabaseManager:
     """Manages database engine and sessions."""
 
     def __init__(self, url: str | None = None, echo: bool | None = None):
-        self._url = url or settings.database.url
+        self._custom_url = url
         self._echo = echo if echo is not None else settings.database.echo
         self._engine: AsyncEngine | None = None
         self._session_factory: async_sessionmaker[AsyncSession] | None = None
+
+    @property
+    def url(self) -> str:
+        if self._custom_url is not None:
+            return self._custom_url
+        return settings.database.resolved_url
+
+    def reset(self) -> None:
+        """Reset lazy engine and session factory to force re-evaluation of URL."""
+        self._engine = None
+        self._session_factory = None
 
     @property
     def engine(self) -> AsyncEngine:
@@ -57,11 +68,11 @@ class DatabaseManager:
     def _create_engine(self) -> AsyncEngine:
         """Create async engine with appropriate configuration."""
         # For SQLite, ensure directory exists and use NullPool
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
             import os
 
             db_path = (
-                self._url.replace("sqlite+aiosqlite:///", "")
+                self.url.replace("sqlite+aiosqlite:///", "")
                 .replace("sqlite:///", "")
                 .split("?")[0]
             )
@@ -73,32 +84,46 @@ class DatabaseManager:
             _ensure_seed_database(db_path)
 
             engine = create_async_engine(
-                self._url,
+                self.url,
                 echo=self._echo,
                 poolclass=NullPool,
                 connect_args={"check_same_thread": False},
             )
         else:
             engine = create_async_engine(
-                self._url,
+                self.url,
                 echo=self._echo,
                 pool_size=settings.database.pool_size,
                 max_overflow=settings.database.max_overflow,
             )
 
         # Enable WAL mode for SQLite
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
 
             @event.listens_for(engine.sync_engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
                 cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
                 cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.execute("PRAGMA busy_timeout=30000")
                 cursor.execute("PRAGMA synchronous=NORMAL")
-                # Performance tuning
-                cursor.execute("PRAGMA cache_size=-16000")  # 16MB page cache
-                cursor.execute("PRAGMA temp_store=MEMORY")  # temp tables in RAM
-                cursor.execute("PRAGMA mmap_size=268435456")  # 256MB memory-mapped I/O
+                # Memory-optimized SQLite PRAGMAs for Render 512MB Free Tier
+                cursor.execute(
+                    f"PRAGMA cache_size={settings.database.sqlite_cache_size}"
+                )  # 4MB page cache
+                cursor.execute(
+                    "PRAGMA temp_store=FILE"
+                )  # spill temp tables to disk, preserving heap
+                cursor.execute(
+                    f"PRAGMA mmap_size={settings.database.sqlite_mmap_size}"
+                )  # 32MB mmap (down from 256MB)
+                cursor.execute(
+                    f"PRAGMA wal_autocheckpoint={settings.database.sqlite_wal_autocheckpoint}"
+                )  # checkpoint every 100 pages (400KB)
+                try:
+                    cursor.execute("PRAGMA auto_vacuum = INCREMENTAL")
+                except Exception:
+                    pass
                 try:
                     cursor.execute("PRAGMA optimize")
                 except Exception:
@@ -109,9 +134,13 @@ class DatabaseManager:
                 try:
                     import sqlite_vec
 
-                    dbapi_connection.enable_load_extension(True)
-                    sqlite_vec.load(dbapi_connection)
-                    dbapi_connection.enable_load_extension(False)
+                    raw_conn = dbapi_connection
+                    while hasattr(raw_conn, "_connection"):
+                        raw_conn = raw_conn._connection
+                    if hasattr(raw_conn, "enable_load_extension"):
+                        raw_conn.enable_load_extension(True)
+                        sqlite_vec.load(raw_conn)
+                        raw_conn.enable_load_extension(False)
                 except Exception:
                     pass
 
@@ -154,9 +183,9 @@ class DatabaseManager:
     async def init_db(self) -> None:
         """Initialize database - create tables if they don't exist."""
         db_path = None
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
             db_path = (
-                self._url.replace("sqlite+aiosqlite:///", "")
+                self.url.replace("sqlite+aiosqlite:///", "")
                 .replace("sqlite:///", "")
                 .split("?")[0]
             )
@@ -167,7 +196,7 @@ class DatabaseManager:
             await conn.run_sync(Base.metadata.create_all)
 
         # Ensure soft-delete columns exist on pre-existing databases
-        if self._url.startswith("sqlite"):
+        if self.url.startswith("sqlite"):
             try:
                 async with self.engine.begin() as conn:
                     await conn.execute(
@@ -184,12 +213,23 @@ class DatabaseManager:
                     )
             except Exception:
                 pass
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "ALTER TABLE entries ADD COLUMN is_user_saved BOOLEAN DEFAULT 0"
+                        )
+                    )
+            except Exception:
+                pass
 
             # Pillar 3 Telemetry Columns on llm_receipts
             for col, col_type in [
                 ("execution_tier", "VARCHAR(30)"),
                 ("cache_read_input_tokens", "INTEGER DEFAULT 0"),
                 ("cache_creation_input_tokens", "INTEGER DEFAULT 0"),
+                ("estimated_cost_usd", "REAL DEFAULT 0.0"),
+                ("total_tokens", "INTEGER DEFAULT 0"),
             ]:
                 try:
                     async with self.engine.begin() as conn:
@@ -265,6 +305,38 @@ class DatabaseManager:
             except Exception:
                 pass
 
+            # Audit and Replay Log: research_runs Table (Workstream A1)
+            try:
+                async with self.engine.begin() as conn:
+                    await conn.execute(
+                        text(
+                            "CREATE TABLE IF NOT EXISTS research_runs ("
+                            "id VARCHAR(36) PRIMARY KEY, "
+                            "query VARCHAR(512) NOT NULL, "
+                            "sources_count INTEGER DEFAULT 0, "
+                            "execution_steps JSON, "
+                            "cost_estimate FLOAT DEFAULT 0.0, "
+                            "coverage_score FLOAT DEFAULT 1.0, "
+                            "output_markdown TEXT NOT NULL, "
+                            "created_at DATETIME NOT NULL"
+                            ")"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_research_runs_query "
+                            "ON research_runs(query)"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE INDEX IF NOT EXISTS ix_research_runs_created_at "
+                            "ON research_runs(created_at)"
+                        )
+                    )
+            except Exception:
+                pass
+
             # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
             try:
                 async with self.engine.begin() as conn:
@@ -275,9 +347,15 @@ class DatabaseManager:
                             ")"
                         )
                     )
+                    # Refresh triggers with idempotent duplicate-deletion on insert/replace
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_ai"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_au"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_ad"))
+
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN "
+                            "CREATE TRIGGER entries_ai AFTER INSERT ON entries BEGIN "
+                            "DELETE FROM entries_fts WHERE entry_id = new.id; "
                             "INSERT INTO entries_fts(entry_id, title, summary, category) "
                             "VALUES (new.id, new.title, new.summary, new.category); "
                             "END;"
@@ -285,25 +363,35 @@ class DatabaseManager:
                     )
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN "
+                            "CREATE TRIGGER entries_ad AFTER DELETE ON entries BEGIN "
                             "DELETE FROM entries_fts WHERE entry_id = old.id; "
                             "END;"
                         )
                     )
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN "
+                            "CREATE TRIGGER entries_au AFTER UPDATE ON entries BEGIN "
                             "DELETE FROM entries_fts WHERE entry_id = old.id; "
                             "INSERT INTO entries_fts(entry_id, title, summary, category) "
                             "VALUES (new.id, new.title, new.summary, new.category); "
                             "END;"
                         )
                     )
-                    # Backfill existing entries into FTS5 index if table was newly created
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_receipts_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM llm_receipts WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
+                    # Backfill existing entries into FTS5 index only if FTS table is completely empty but entries exist
                     fts_count_res = await conn.execute(
                         text("SELECT count(*) FROM entries_fts")
                     )
-                    if fts_count_res.scalar() == 0:
+                    entries_count_res = await conn.execute(
+                        text("SELECT count(*) FROM entries WHERE is_purged = 0")
+                    )
+                    if (fts_count_res.scalar() or 0) == 0 and (entries_count_res.scalar() or 0) > 0:
                         await conn.execute(
                             text(
                                 "INSERT INTO entries_fts(entry_id, title, summary, category) "
@@ -325,6 +413,42 @@ class DatabaseManager:
                             ")"
                         )
                     )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_vec_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM entries_vec WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
+
+            except Exception:
+                pass
+
+    async def maintain_fts_and_storage(self) -> None:
+        """Run FTS rebuild, segment optimization, and incremental vacuum (Defect Ledger D2)."""
+        if not self.url.startswith("sqlite"):
+            return
+        async with self.engine.begin() as conn:
+            try:
+                # Rebuild FTS5 index to eliminate orphan or duplicate segments
+                await conn.execute(
+                    text("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')")
+                )
+            except Exception:
+                pass
+            try:
+                # Merge FTS5 b-tree index segments
+                await conn.execute(
+                    text("INSERT INTO entries_fts(entries_fts) VALUES('optimize')")
+                )
+            except Exception:
+                pass
+            try:
+                await conn.execute(text("PRAGMA incremental_vacuum"))
+            except Exception:
+                pass
+            try:
+                await conn.execute(text("PRAGMA optimize"))
             except Exception:
                 pass
 

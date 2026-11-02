@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.infrastructure.database.repositories import (
     SQLAlchemyAnalysisRepository,
+    SQLAlchemyCouncilReviewRepository,
     SQLAlchemyDigestRepository,
     SQLAlchemyEntityRepository,
     SQLAlchemyEntryRepository,
@@ -40,6 +41,7 @@ class UnitOfWork:
         self._watchlist: SQLAlchemyWatchlistRepository | None = None
         self._receipts: SQLAlchemyReceiptRepository | None = None
         self._entities: SQLAlchemyEntityRepository | None = None
+        self._council: SQLAlchemyCouncilReviewRepository | None = None
 
     @property
     def session(self) -> AsyncSession:
@@ -100,6 +102,12 @@ class UnitOfWork:
         if self._entities is None:
             self._entities = SQLAlchemyEntityRepository(self.session)
         return self._entities
+
+    @property
+    def council(self) -> SQLAlchemyCouncilReviewRepository:
+        if self._council is None:
+            self._council = SQLAlchemyCouncilReviewRepository(self.session)
+        return self._council
 
     async def __aenter__(self) -> "UnitOfWork":
         if self._owns_session:
