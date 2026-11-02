@@ -12,7 +12,7 @@ from ai_security_monitor.application.services.deep_analysis_service import (
     DeepAnalysisService,
     deep_analysis_service,
 )
-from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.entities import Category, Entry, Source, SourceType
 from ai_security_monitor.domain.repositories import EntryFilters, PaginationParams
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -185,11 +185,21 @@ def test_deep_analysis_service_sovereign_ai():
 @pytest.mark.asyncio
 async def test_repository_permanent_vault_exemption_from_purge(test_uow):
     uow = test_uow
+    source_id = uuid4()
+    test_src = Source(
+        id=source_id,
+        name="Vault Exemption Source",
+        category=Category.AI_TECH,
+        type=SourceType.RSS,
+        url=f"https://example.com/source-{source_id}",
+    )
+    await uow.sources.add(test_src)
+
     # 1. Create a normal old entry (older than 7 days)
     old_time = datetime.utcnow() - timedelta(days=12)
     normal_old = Entry(
         id=uuid4(),
-        source_id=uuid4(),
+        source_id=source_id,
         published_at=old_time,
         title="Regular Temporary News Dispatch",
         url="https://example.com/temp-news",
@@ -204,7 +214,7 @@ async def test_repository_permanent_vault_exemption_from_purge(test_uow):
     # 2. Create a vaulted old entry (older than 7 days, but is_important=True)
     vaulted_old = Entry(
         id=uuid4(),
-        source_id=uuid4(),
+        source_id=source_id,
         published_at=old_time,
         title="Seminal Foundation Breakthrough (Vault Kept)",
         url="https://example.com/landmark-breakthrough",
@@ -239,10 +249,19 @@ async def test_repository_permanent_vault_exemption_from_purge(test_uow):
 @pytest.mark.asyncio
 async def test_vault_toggle_and_user_notes_persistence():
     entry_id = uuid4()
+    source_id = uuid4()
     async with SqlAlchemyUnitOfWork() as uow:
+        source = Source(
+            id=source_id,
+            name="Vault Toggle Source",
+            category=Category.CYBER_TOOLS,
+            type=SourceType.RSS,
+            url=f"https://github.com/sgl-project/sglang-{source_id}",
+        )
+        await uow.sources.add(source)
         entry = Entry(
             id=entry_id,
-            source_id=uuid4(),
+            source_id=source_id,
             published_at=datetime.utcnow(),
             title="SGLang High-Performance Serving Framework",
             url="https://github.com/sgl-project/sglang",
@@ -351,11 +370,25 @@ async def test_manual_entry_deletion_and_batch_cleanup(test_uow):
     async with SqlAlchemyUnitOfWork() as uow:
         existing = await uow.entries.list(pagination=PaginationParams(limit=2))
         if len(existing) < 2:
+            all_srcs = await uow.sources.list(enabled_only=False)
+            if all_srcs:
+                src_id = all_srcs[0].id
+            else:
+                new_src = Source(
+                    id=uuid4(),
+                    name="Deletion Test Source",
+                    category=Category.AI_TECH,
+                    type=SourceType.RSS,
+                    url="https://test.delete.com/rss",
+                )
+                await uow.sources.add(new_src)
+                await uow.commit()
+                src_id = new_src.id
             for i in range(2 - len(existing)):
                 await uow.entries.add(
                     Entry(
                         id=uuid4(),
-                        source_id=uuid4(),
+                        source_id=src_id,
                         title=f"Sample Test Entry for Deletion {i} {uuid4().hex[:6]}",
                         url=f"https://test.delete.com/{uuid4()}",
                         content_hash=f"del_{uuid4().hex[:16]}",

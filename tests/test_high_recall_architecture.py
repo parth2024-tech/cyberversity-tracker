@@ -88,8 +88,11 @@ async def test_rss_fetcher_conditional_handshake(monkeypatch):
 
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
-    result = await fetcher._fetch_raw()
-    assert result == []
+    from ai_security_monitor.infrastructure.fetchers.base import FetchStatus
+
+    res = await fetcher.fetch()
+    assert res.status == FetchStatus.NOT_MODIFIED
+    assert res.entries == []
 
 
 # ── Technique 2: Dual-Channel XML Sitemap Ingestion ─────────────────────────

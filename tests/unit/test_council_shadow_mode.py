@@ -225,11 +225,42 @@ async def test_council_circuit_breaker_telemetry():
         assert status1["is_tripped"] is False
         assert status1["used_cost_usd_24h"] == 0.0
 
+        source_id = str(uuid4())
+        entry_id = str(uuid4())
+        uow.session.add(
+            SourceModel(
+                id=source_id,
+                name=f"telemetry_test_source_{source_id[:8]}",
+                category="ai_tech",
+                type="rss",
+                url=f"https://example.com/{source_id}",
+                enabled=True,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+        )
+        uow.session.add(
+            EntryModel(
+                id=entry_id,
+                source_id=source_id,
+                title="Test Telemetry Entry",
+                url=f"https://example.com/entry/{entry_id}",
+                content_hash=uuid4().hex,
+                summary="Telemetry test summary",
+                published_at=datetime.now(UTC),
+                fetched_at=datetime.now(UTC),
+                category="ai_tech",
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+        )
+        await uow.session.flush()
+
         # Simulate heavy review spend tripping the breaker
         uow.session.add(
             CouncilReviewModel(
                 id=str(uuid4()),
-                entry_id=str(uuid4()),
+                entry_id=entry_id,
                 status="shadow",
                 consensus_verdict="CONSENSUS_PASS",
                 consensus_score=0.75,

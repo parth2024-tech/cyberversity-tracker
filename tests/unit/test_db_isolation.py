@@ -16,7 +16,7 @@ from uuid import uuid4
 import pytest
 
 from ai_security_monitor.config.settings import settings
-from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.entities import Category, Entry, Source, SourceType
 from ai_security_monitor.infrastructure.database.connection import db_manager
 from ai_security_monitor.infrastructure.database.unit_of_work import (
     SqlAlchemyUnitOfWork,
@@ -88,9 +88,17 @@ async def test_real_dev_db_remains_unmutated_after_writes():
 
     # Execute a real write in SqlAlchemyUnitOfWork
     test_id = uuid4()
+    source_id = uuid4()
+    test_source = Source(
+        id=source_id,
+        name="Isolation Test Source",
+        category=Category.AI_TECH,
+        type=SourceType.RSS,
+        url=f"https://example.com/source-{source_id}",
+    )
     test_entry = Entry(
         id=test_id,
-        source_id=uuid4(),
+        source_id=source_id,
         title="Isolation Test Entry",
         url=f"https://example.com/isolation-test-{test_id}",
         content_hash="f" * 64,
@@ -100,6 +108,7 @@ async def test_real_dev_db_remains_unmutated_after_writes():
     )
 
     async with SqlAlchemyUnitOfWork() as uow:
+        await uow.sources.add(test_source)
         await uow.entries.add(test_entry)
         await uow.commit()
 

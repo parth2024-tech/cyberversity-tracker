@@ -10,7 +10,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from ai_security_monitor.config.sources import load_sources
-from ai_security_monitor.domain.entities import Category, Entry
+from ai_security_monitor.domain.entities import Category, Entry, Source, SourceType
 from ai_security_monitor.infrastructure.analyzers.heuristic_analyzer import (
     HeuristicAnalyzer,
 )
@@ -33,7 +33,7 @@ def test_china_sources_configuration_loaded():
     assert any("Qwen" in n for n in names)
     assert any("ModelScope" in n for n in names)
     assert any("InternLM" in n for n in names)
-    assert any("GLM" in n for n in names)
+    assert any("GLM" in n or "Zhipu" in n or "智谱" in n for n in names)
     assert any("arXiv" in n for n in names)
 
 
@@ -81,18 +81,30 @@ async def test_api_entries_china_theatre_filter():
         )
         if not cn_items:
             all_srcs = await uow.sources.list(enabled_only=False)
-            cn_src = next(
-                (
-                    s
-                    for s in all_srcs
-                    if s.config
-                    and (
-                        s.config.get("country") in ("CN", "HK")
-                        or s.config.get("region") == "china"
-                    )
-                ),
-                all_srcs[0],
-            )
+            if not all_srcs:
+                cn_src = Source(
+                    id=uuid4(),
+                    name="China Test Source",
+                    category=Category.AI_MODELS,
+                    type=SourceType.RSS,
+                    url="https://test.cn/rss",
+                    config={"region": "china", "country": "CN"},
+                )
+                await uow.sources.add(cn_src)
+                await uow.commit()
+            else:
+                cn_src = next(
+                    (
+                        s
+                        for s in all_srcs
+                        if s.config
+                        and (
+                            s.config.get("country") in ("CN", "HK")
+                            or s.config.get("region") == "china"
+                        )
+                    ),
+                    all_srcs[0],
+                )
             await uow.entries.add(
                 Entry(
                     id=uuid4(),

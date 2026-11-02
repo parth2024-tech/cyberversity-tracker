@@ -128,6 +128,24 @@ async def test_monitor_service_pre_translation_noise_gate():
         },
     )
 
+    from ai_security_monitor.infrastructure.database.unit_of_work import (
+        SqlAlchemyUnitOfWork,
+    )
+
+    async with SqlAlchemyUnitOfWork() as uow:
+        existing_comm = await uow.sources.get_by_name(community_source.name)
+        if existing_comm:
+            community_source = existing_comm
+        else:
+            community_source = await uow.sources.add(community_source)
+
+        existing_auth = await uow.sources.get_by_name(authority_source.name)
+        if existing_auth:
+            authority_source = existing_auth
+        else:
+            authority_source = await uow.sources.add(authority_source)
+        await uow.commit()
+
     now = datetime.now(UTC)
 
     # 1. Community noisy entry

@@ -426,7 +426,7 @@ class DatabaseManager:
 
     async def maintain_fts_and_storage(self) -> None:
         """Run FTS rebuild, segment optimization, and incremental vacuum (Defect Ledger D2)."""
-        if not self._url.startswith("sqlite"):
+        if not self.url.startswith("sqlite"):
             return
         async with self.engine.begin() as conn:
             try:

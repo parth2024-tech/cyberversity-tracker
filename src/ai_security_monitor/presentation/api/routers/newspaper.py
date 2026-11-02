@@ -4,8 +4,6 @@ Newspaper API router for 5-hour autonomous intelligence broadsheets.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel

@@ -51,10 +51,15 @@ class FetchError(DomainError):
 
 
 class FetchNotModifiedError(FetchError):
-    """Feed returned HTTP 304 Not Modified."""
+    """Signal that remote resource returned HTTP 304 Not Modified."""
 
-    def __init__(self, message: str = "HTTP 304 Not Modified"):
-        super().__init__(message, "FETCH_NOT_MODIFIED")
+    def __init__(self, source_name: str = ""):
+        msg = f"Source {source_name!r} returned HTTP 304 Not Modified" if source_name else "HTTP 304 Not Modified"
+        super().__init__(
+            msg,
+            "FETCH_NOT_MODIFIED",
+            {"source_name": source_name} if source_name else None,
+        )
 
 
 class FetchTimeoutError(FetchError):
@@ -81,17 +86,6 @@ class FetchParseError(FetchError):
             f"Failed to parse feed from {source_name}: {reason}",
             "FETCH_PARSE_ERROR",
             {"source_name": source_name, "reason": reason},
-        )
-
-
-class FetchNotModifiedError(DomainError):
-    """Signal that remote resource returned HTTP 304 Not Modified."""
-
-    def __init__(self, source_name: str = ""):
-        super().__init__(
-            f"Source {source_name!r} returned HTTP 304 Not Modified",
-            "FETCH_NOT_MODIFIED",
-            {"source_name": source_name},
         )
 
 

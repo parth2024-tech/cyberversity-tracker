@@ -57,6 +57,7 @@
       "production"
     ]
   },
+  "validation_timeout_ms": 180000,
   "sprint_focus": "Building the user onboarding flow with email verification and profile setup.",
   "sprint_skills": [
     "security-and-hardening",

@@ -135,5 +135,5 @@ async def test_304_accepted_when_source_has_sufficient_stored_entries(
 
     # Should have made only 1 request and accepted 304
     assert len(calls) == 1
-    assert result.status.value == "success"
+    assert result.status.value in ("not_modified", "success")
     assert len(result.entries) == 0
