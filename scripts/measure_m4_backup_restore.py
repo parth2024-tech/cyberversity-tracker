@@ -13,6 +13,10 @@ import tempfile
 import time
 from pathlib import Path
 
+from ai_security_monitor.infrastructure.database.connection import (
+    load_sqlite_vec_extension,
+)
+
 
 def run_backup_restore_drill(src_db_path: str = "data/monitor.db") -> dict:
     if not os.path.exists(src_db_path):
@@ -46,7 +50,9 @@ def run_backup_restore_drill(src_db_path: str = "data/monitor.db") -> dict:
 
         # 3. Comprehensive Verification across EVERY table
         orig_conn = sqlite3.connect(src_db_path)
+        load_sqlite_vec_extension(orig_conn)
         rest_conn = sqlite3.connect(restored_file)
+        load_sqlite_vec_extension(rest_conn)
 
         # List all tables (excluding sqlite internal tables)
         orig_cursor = orig_conn.cursor()
