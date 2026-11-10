@@ -44,7 +44,7 @@ def server(
         or os.environ.get("API_PORT")
         or (str(api_cfg_port) if api_cfg_port != 8000 else None)
     )
-    if env_port and port == 8000:
+    if env_port and port in (8000, 8080):
         try:
             port = int(env_port)
         except ValueError:

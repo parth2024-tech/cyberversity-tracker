@@ -14,10 +14,10 @@ RUN mkdir -p data
 
 # Copy pyproject.toml and source code
 COPY pyproject.toml .
+COPY README.md .
 COPY src/ src/
 COPY config/ config/
 COPY web/ web/
-COPY data/ data/
 
 # Install python package
 RUN pip install --no-cache-dir -e .
@@ -25,5 +25,6 @@ RUN pip install --no-cache-dir -e .
 EXPOSE 8080
 
 ENV ENVIRONMENT=production
+ENV USE_LIGHTWEIGHT_EMBEDDINGS=true
 
-CMD ["python", "-m", "ai_security_monitor", "server", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "python -m ai_security_monitor server --host 0.0.0.0 --port ${PORT:-8080}"]
