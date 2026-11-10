@@ -24,6 +24,7 @@ from ai_security_monitor.presentation.api.limiter import limiter
 from ai_security_monitor.presentation.api.routers import (
     analysis_router,
     audio_router,
+    auth_router,
     backup_router,
     china_router,
     clusters_router,
@@ -173,6 +174,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await db_manager.close()
     logger.info("Database connections closed")
 
+    # Close curl-cffi session pool
+    try:
+        from ai_security_monitor.infrastructure.fetchers.curl_cffi_pool import (
+            curl_cffi_pool,
+        )
+
+        await curl_cffi_pool.close()
+    except Exception:
+        pass
+
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI application."""
@@ -245,6 +256,7 @@ def create_app() -> FastAPI:
 
     # Include routers under /api and /api/v1 for clean versioning
     for api_prefix in ("/api", "/api/v1"):
+        app.include_router(auth_router, prefix=api_prefix, tags=["Authentication"])
         app.include_router(health_router, prefix=api_prefix, tags=["Health"])
         app.include_router(stats_router, prefix=api_prefix, tags=["Statistics"])
         app.include_router(entries_router, prefix=api_prefix, tags=["Entries"])

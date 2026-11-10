@@ -230,7 +230,9 @@ class SQLAlchemyEntryRepository(EntryRepository):
         """Sub-millisecond BM25 full-text search using SQLite FTS5 table."""
         import re
 
-        tokens = re.findall(r"\w+", query)
+        # Extract technical alphanumeric tokens preserving versions, dots, hyphens, and hashes (e.g. v0.6.3, llama.cpp, C++)
+        raw_tokens = re.findall(r"[\w\.\-\+\#]+", query)
+        tokens = [t.strip('"\';') for t in raw_tokens if len(t.strip('"\';')) > 0]
         if not tokens:
             return []
         safe_q = " ".join(f'"{t}"' for t in tokens)

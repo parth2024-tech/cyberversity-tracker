@@ -89,39 +89,66 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests (HTML): Network first with fallback to cached page or App Shell
+  // Navigation requests (HTML documents): Network-First with 2.5s race timeout, falling back to cached App Shell
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+      new Promise((resolve) => {
+        let settled = false;
+        const timer = setTimeout(async () => {
+          if (!settled) {
+            settled = true;
+            const cached = await caches.match(request);
+            if (cached) {
+              resolve(cached);
+              return;
+            }
+            const fallback = await caches.match('/');
+            resolve(fallback || (await caches.match('/index.html')));
           }
-          return response;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          if (cached) return cached;
-          const fallback = await caches.match('/');
-          return fallback || caches.match('/index.html');
-        })
+        }, 2500);
+
+        fetch(request)
+          .then((response) => {
+            if (!settled) {
+              settled = true;
+              clearTimeout(timer);
+              if (response && response.status === 200) {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+              }
+              resolve(response);
+            }
+          })
+          .catch(async () => {
+            if (!settled) {
+              settled = true;
+              clearTimeout(timer);
+              const cached = await caches.match(request);
+              if (cached) {
+                resolve(cached);
+                return;
+              }
+              const fallback = await caches.match('/');
+              resolve(fallback || (await caches.match('/index.html')));
+            }
+          });
+      })
     );
     return;
   }
 
-  // Static Assets: Cache-first with background revalidation
+  // Static Assets (CSS, JS, Fonts, Icons): Stale-While-Revalidate (Sub-millisecond load + background cache refresh)
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Suppress offline fetch errors for static assets if cached
-      });
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
 
       return cachedResponse || fetchPromise;
     })

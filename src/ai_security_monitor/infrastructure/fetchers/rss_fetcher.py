@@ -1,5 +1,6 @@
 # RSS/Atom feed fetcher implementation — top-tier, fault-tolerant.
 
+import asyncio
 import json
 import re
 import urllib.parse
@@ -20,6 +21,7 @@ from ai_security_monitor.infrastructure.fetchers.base import (
     BaseFetcher,
     fetcher_registry,
 )
+from ai_security_monitor.infrastructure.fetchers.curl_cffi_pool import curl_cffi_pool
 
 logger = get_logger(__name__)
 
@@ -151,7 +153,7 @@ class RSSFetcher(BaseFetcher):
                 except FetchNotModifiedError:
                     raise
                 except Exception as req_err:
-                    # Attempt TLS impersonation fallback via curl_cffi for WAF / 403 / 429 challenges
+                    # Attempt TLS impersonation fallback via pooled curl_cffi for WAF / 403 / 429 challenges
                     status_code = getattr(
                         getattr(req_err, "response", None), "status_code", 0
                     )
@@ -159,23 +161,38 @@ class RSSFetcher(BaseFetcher):
                         req_err, (httpx.ConnectError, httpx.ConnectTimeout)
                     ):
                         try:
-                            from curl_cffi.requests import AsyncSession
+                            # Pass only conditional cache headers (ETag, Last-Modified)
+                            # Never pass manual User-Agent or Sec-Ch-* to prevent JA3 fingerprint mismatch
+                            cond_headers: dict[str, str] = {}
+                            source_cfg_dict = self.source.config or {}
+                            etag_val = source_cfg_dict.get("etag")
+                            lm_val = source_cfg_dict.get("last_modified")
+                            if etag_val:
+                                cond_headers["If-None-Match"] = str(etag_val)
+                            if lm_val:
+                                cond_headers["If-Modified-Since"] = str(lm_val)
 
-                            async with AsyncSession(impersonate="chrome131") as session:
-                                curl_resp = await session.get(
-                                    target_url,
-                                    timeout=min(float(self.timeout), 20.0),
+                            curl_resp = await curl_cffi_pool.get(
+                                target_url,
+                                timeout=min(float(self.timeout), 20.0),
+                                headers=cond_headers if cond_headers else None,
+                            )
+                            if curl_resp.status_code == 200:
+                                logger.info(
+                                    f"Bypassed WAF/403 block on {target_url} via Chrome TLS impersonation (Pooled)"
                                 )
-                                if curl_resp.status_code == 200:
-                                    logger.info(
-                                        f"Bypassed WAF/403 block on {target_url} via Chrome TLS impersonation"
-                                    )
-                                    response = _DuckResponse(
-                                        curl_resp.status_code,
-                                        curl_resp.content,
-                                        dict(curl_resp.headers),
-                                    )
-                                    break
+                                response = _DuckResponse(
+                                    curl_resp.status_code,
+                                    curl_resp.content,
+                                    dict(curl_resp.headers),
+                                )
+                                break
+                            elif curl_resp.status_code == 304:
+                                raise FetchNotModifiedError(
+                                    f"Feed not modified: {self.source.url}"
+                                )
+                        except FetchNotModifiedError:
+                            raise
                         except Exception as curl_err:
                             logger.debug(
                                 f"curl_cffi fallback failed for {target_url}: {curl_err}"
@@ -235,22 +252,14 @@ class RSSFetcher(BaseFetcher):
             first_bytes.startswith((b"<!doctype", b"<html"))
         )
         if is_html_response:
-            # 1. Attempt Auto-Discovery of live RSS/Atom feed from HTML <head>
+            # 1. Attempt Auto-Discovery of live RSS/Atom feed from HTML <head> off-thread
             try:
-                soup = BeautifulSoup(raw_bytes[:16384], "html.parser")
-                feed_link = None
-                for link in soup.find_all("link"):
-                    rel = link.get("rel")
-                    rel_str = " ".join(rel) if isinstance(rel, list) else str(rel or "")
-                    if "alternate" in rel_str.lower():
-                        t_str = str(link.get("type") or "").lower()
-                        if any(x in t_str for x in ("rss", "atom", "xml")):
-                            feed_link = link
-                            break
-
-                if feed_link and feed_link.get("href"):
+                feed_link_href = await asyncio.to_thread(
+                    self._sync_find_feed_link_in_head, raw_bytes[:16384]
+                )
+                if feed_link_href:
                     discovered_url = urllib.parse.urljoin(
-                        self.source.url, str(feed_link["href"])
+                        self.source.url, feed_link_href
                     )
                     if discovered_url != self.source.url:
                         logger.info(
@@ -268,8 +277,10 @@ class RSSFetcher(BaseFetcher):
             except Exception as disco_err:
                 logger.debug(f"Feed auto-discovery failed for {self.source.name!r}: {disco_err}")
 
-            # 2. High-Speed HTML Portal Extractor Fallback (Trafilatura & DOM)
-            portal_entries = self._extract_html_portal_entries(raw_bytes, self.source.url)
+            # 2. High-Speed HTML Portal Extractor Fallback (Off-thread to keep event loop free)
+            portal_entries = await asyncio.to_thread(
+                self._extract_html_portal_entries, raw_bytes, self.source.url
+            )
             if portal_entries:
                 logger.info(
                     f"Extracted {len(portal_entries)} live entries from HTML explore portal for {self.source.name!r}"
@@ -593,17 +604,44 @@ class RSSFetcher(BaseFetcher):
             else {},
         )
 
+    def _sync_find_feed_link_in_head(self, html_prefix: bytes) -> str | None:
+        """Find live alternate RSS/Atom feed links in HTML head (synchronous, run off-thread)."""
+        try:
+            soup = BeautifulSoup(html_prefix, "html.parser")
+            for link in soup.find_all("link"):
+                rel = link.get("rel")
+                rel_str = " ".join(rel) if isinstance(rel, list) else str(rel or "")
+                if "alternate" in rel_str.lower():
+                    t_str = str(link.get("type") or "").lower()
+                    if any(x in t_str for x in ("rss", "atom", "xml")):
+                        href = link.get("href")
+                        if href:
+                            return str(href)
+        except Exception:
+            pass
+        return None
+
     def _extract_json_entries(self, data: Any, base_url: str) -> list[dict]:
-        """Extract entries from JSON API endpoints (e.g. jiqizhixin.com/api/v1/articles)."""
+        """Extract entries from structured JSON API endpoints (e.g. Jiqizhixin, ModelScope, Gitee)."""
         items: list[Any] = []
+        is_jiqizhixin = "jiqizhixin" in base_url
+        is_modelscope = "modelscope" in base_url
+
         if isinstance(data, list):
             items = data
         elif isinstance(data, dict):
-            for k in ("items", "data", "articles", "entries", "posts", "models"):
-                val = data.get(k)
-                if isinstance(val, list):
-                    items = val
-                    break
+            # ModelScope structure
+            if is_modelscope and "Data" in data and isinstance(data["Data"], dict):
+                items = data["Data"].get("Models") or data["Data"].get("items") or []
+            # Jiqizhixin structure
+            elif is_jiqizhixin and "articles" in data:
+                items = data["articles"]
+            else:
+                for k in ("items", "data", "articles", "entries", "posts", "models", "Models", "repositories"):
+                    val = data.get(k)
+                    if isinstance(val, list):
+                        items = val
+                        break
 
         entries: list[dict] = []
         now = datetime.now(UTC)
@@ -615,17 +653,34 @@ class RSSFetcher(BaseFetcher):
                 break
             if not isinstance(item, dict):
                 continue
-            title = item.get("title") or item.get("name") or item.get("headline") or ""
+            title = (
+                item.get("title")
+                or item.get("name")
+                or item.get("ChineseName")
+                or item.get("headline")
+                or ""
+            )
             if not title or len(str(title).strip()) < 5:
                 continue
 
-            url_val = item.get("url") or item.get("link") or item.get("target_url")
-            if not url_val:
-                item_id = item.get("id") or item.get("slug")
-                if item_id:
-                    url_val = urllib.parse.urljoin(base_url, f"articles/{item_id}")
+            # ModelScope target link canonicalization
+            if is_modelscope:
+                model_name = str(item.get("Name") or item.get("name") or item.get("TargetUrl") or "")
+                url_val = f"https://modelscope.cn/models/{model_name}" if model_name else base_url
+            # Jiqizhixin article canonicalization
+            elif is_jiqizhixin:
+                art_id = str(item.get("id") or item.get("slug") or "")
+                url_val = f"https://www.jiqizhixin.com/articles/{art_id}" if art_id else base_url
+            else:
+                raw_u = item.get("url") or item.get("link") or item.get("target_url")
+                if raw_u:
+                    url_val = str(raw_u)
                 else:
-                    url_val = base_url
+                    item_id = item.get("id") or item.get("slug")
+                    if item_id:
+                        url_val = urllib.parse.urljoin(base_url, f"articles/{item_id}")
+                    else:
+                        url_val = base_url
 
             summary = (
                 item.get("summary")
@@ -639,7 +694,10 @@ class RSSFetcher(BaseFetcher):
             pub_date = now
             raw_date = (
                 item.get("published_at")
+                or item.get("publish_time")
                 or item.get("created_at")
+                or item.get("GmtModified")
+                or item.get("updated_at")
                 or item.get("pubDate")
                 or item.get("date")
             )
@@ -649,6 +707,13 @@ class RSSFetcher(BaseFetcher):
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=UTC)
                     pub_date = dt.astimezone(UTC)
+                except Exception:
+                    pass
+            elif isinstance(raw_date, (int, float)):
+                # Unix timestamp (seconds or milliseconds)
+                try:
+                    ts = raw_date / 1000.0 if raw_date > 1e11 else raw_date
+                    pub_date = datetime.fromtimestamp(ts, tz=UTC)
                 except Exception:
                     pass
 
@@ -687,7 +752,7 @@ class RSSFetcher(BaseFetcher):
     def _extract_html_portal_entries(
         self, html_bytes: bytes, base_url: str
     ) -> list[dict]:
-        """Extract structured articles / repository cards directly from HTML explore portals."""
+        """Extract structured articles / repository cards directly from HTML explore portals (CPU-bound, runs off-thread)."""
         try:
             soup = BeautifulSoup(html_bytes, "html.parser")
         except Exception:
@@ -699,7 +764,7 @@ class RSSFetcher(BaseFetcher):
         two_weeks_ago = now - timedelta(days=14)
 
         # Decompose non-content elements
-        for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
+        for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form"]):
             tag.decompose()
 
         candidates: list[tuple[str, str, str, Any]] = []
@@ -751,11 +816,25 @@ class RSSFetcher(BaseFetcher):
 
         limit = min(int((self.source.config or {}).get("limit", 20)), 30)
 
+        # Disallowed file extensions and path fragments for portal articles
+        disallowed_exts = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".css", ".js", ".pdf", ".zip")
+        disallowed_paths = ("/tag/", "/category/", "/categories/", "/user/", "/users/", "/author/", "/search", "/page/", "/terms", "/privacy", "/about", "/contact")
+
         for text, href, summary, container in candidates:
             if len(entries) >= limit:
                 break
             full_url = urllib.parse.urljoin(base_url, href)
-            if full_url in seen_urls or full_url == base_url or len(full_url) < 10:
+            lower_url = full_url.lower()
+
+            # Canonicalization and junk filter
+            if (
+                full_url in seen_urls
+                or full_url == base_url
+                or len(full_url) < 12
+                or not full_url.startswith(("http://", "https://"))
+                or any(lower_url.endswith(ext) for ext in disallowed_exts)
+                or any(p in lower_url for p in disallowed_paths)
+            ):
                 continue
             seen_urls.add(full_url)
 
@@ -774,6 +853,7 @@ class RSSFetcher(BaseFetcher):
                         except Exception:
                             pass
 
+            # Strict 14-day freshness invariant
             if pub_date < two_weeks_ago:
                 continue
 
@@ -783,15 +863,17 @@ class RSSFetcher(BaseFetcher):
                 "region": (self.source.config or {}).get("region", "global"),
                 "country": (self.source.config or {}).get("country", "GLOBAL"),
                 "provenance_type": (self.source.config or {}).get(
-                    "provenance_type", "portal_extractor"
+                    "provenance_type", "html_portal"
                 ),
             }
 
             entries.append(
                 {
-                    "title": self._clean_html(text[:200]),
-                    "url": full_url,
-                    "content": self._clean_html(summary or text),
+                    "title": text.strip(),
+                    "url": full_url.strip(),
+                    "content": self._clean_html(summary.strip())
+                    if summary
+                    else text.strip(),
                     "published_at": pub_date,
                     "tags": [
                         self.source.category.value

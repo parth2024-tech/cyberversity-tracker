@@ -1498,8 +1498,15 @@
   <script src="/js/globe.js"></script>
   <script src="/js/palette.js"></script>
   <script>
-    // Register Service Worker for Mobile PWA
+    // Register Service Worker for Mobile PWA & Auto-Reload on Controller Change
     if ('serviceWorker' in navigator) {
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js', { scope: '/' })
           .then((reg) => console.log('[PWA] Service Worker registered:', reg.scope))
@@ -3898,40 +3905,49 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    function getAdminApiKey() {
-      return localStorage.getItem('aetherguard_admin_key') || '';
-    }
+    // Secure HttpOnly Administrative Session Management
+    try {
+      localStorage.removeItem('aetherguard_admin_key');
+    } catch (_) {}
 
-    function setAdminApiKey(key) {
-      if (key && key.trim()) {
-        localStorage.setItem('aetherguard_admin_key', key.trim());
-      } else {
-        localStorage.removeItem('aetherguard_admin_key');
-      }
-    }
+    async function promptConfigureAdminKey() {
+      // Check current session status
+      try {
+        const statusRes = await fetch('/api/auth/status');
+        const statusData = await statusRes.json();
+        if (statusData.authenticated) {
+          const doLogout = confirm("You are currently authenticated as an administrator.\n\nDo you want to log out and revoke this session?");
+          if (doLogout) {
+            await fetch('/api/auth/session', { method: 'DELETE' });
+            showToast("Admin session revoked.", "info");
+          }
+          return;
+        }
+      } catch (_) {}
 
-    function promptConfigureAdminKey() {
-      const current = getAdminApiKey();
-      const input = prompt("Enter your ADMIN_API_KEY (leave empty to clear):", current);
-      if (input !== null) {
-        setAdminApiKey(input);
-        showToast(input.trim() ? "Admin API key saved to local storage." : "Admin API key cleared.", "info");
+      const key = prompt("Enter your server ADMIN_API_KEY to authenticate:");
+      if (!key || !key.trim()) return;
+
+      try {
+        const res = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_key: key.trim() })
+        });
+        if (res.ok) {
+          showToast("✓ Authenticated successfully! Secure HttpOnly session active.", "success");
+        } else {
+          const err = await safeParseJsonResponse(res);
+          alert(`Authentication failed: ${err.detail || 'Invalid key'}`);
+        }
+      } catch (e) {
+        alert(`Authentication request error: ${e.message}`);
       }
     }
 
     function authenticatedFetch(url, options = {}) {
-      const adminKey = getAdminApiKey();
-      const opts = { ...options };
-      if (adminKey) {
-        opts.headers = opts.headers ? { ...opts.headers } : {};
-        if (opts.headers instanceof Headers) {
-          opts.headers.set('X-Admin-Key', adminKey);
-        } else if (Array.isArray(opts.headers)) {
-          opts.headers.push(['X-Admin-Key', adminKey]);
-        } else {
-          opts.headers['X-Admin-Key'] = adminKey;
-        }
-      }
+      // Browser automatically carries HttpOnly 'aetherguard_admin_session' cookie with credentials
+      const opts = { ...options, credentials: 'same-origin' };
       return fetch(url, opts);
     }
 
@@ -3939,8 +3955,22 @@
       if (res && res.status === 401) {
         const key = prompt("🔒 Administrative Authentication Required\n\nThis production operation requires an admin key.\nPlease enter your ADMIN_API_KEY:");
         if (key && key.trim()) {
-          setAdminApiKey(key.trim());
-          return true;
+          try {
+            const loginRes = await fetch('/api/auth/session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ admin_key: key.trim() })
+            });
+            if (loginRes.ok) {
+              showToast("✓ Admin session established. Retrying action...", "success");
+              return true;
+            } else {
+              const err = await safeParseJsonResponse(loginRes);
+              alert(`Authentication failed: ${err.detail || 'Invalid key'}`);
+            }
+          } catch (e) {
+            alert(`Authentication network error: ${e.message}`);
+          }
         }
       }
       return false;
@@ -3949,13 +3979,27 @@
     async function safeParseJsonResponse(res) {
       try {
         const contentType = res.headers ? (res.headers.get('content-type') || '') : '';
+        let payload;
         if (contentType.includes('application/json')) {
-          return await res.json();
+          payload = await res.json();
+        } else {
+          const rawText = await res.text();
+          payload = { detail: rawText || `Server returned HTTP ${res.status} (${res.statusText || 'Error'})` };
         }
-        const rawText = await res.text();
-        return { detail: rawText || `Server returned HTTP ${res.status} (${res.statusText || 'Error'})` };
+        if (!res.ok) {
+          if (typeof payload === 'object' && payload !== null) {
+            payload.ok = false;
+            payload.status = res.status;
+            if (!payload.detail) {
+              payload.detail = `Server returned HTTP ${res.status} (${res.statusText || 'Error'})`;
+            }
+          } else {
+            payload = { ok: false, status: res.status, detail: String(payload) };
+          }
+        }
+        return payload;
       } catch (err) {
-        return { detail: `Response parsing error: ${err.message}` };
+        return { ok: false, status: res.status || 0, detail: `Response parsing error: ${err.message}` };
       }
     }
 

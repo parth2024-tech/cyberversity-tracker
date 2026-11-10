@@ -225,6 +225,22 @@ class DatabaseManager:
             async with session.begin():
                 yield session
 
+    @asynccontextmanager
+    async def write_transaction(self) -> AsyncGenerator[AsyncSession, None]:
+        """
+        Explicit immediate write transaction preventing SQLITE_BUSY lock contention.
+        Acquires SQLite RESERVED write lock immediately at transaction start, eliminating upgrade races.
+        """
+        async with self.session_factory() as session:
+            try:
+                if self.url.startswith("sqlite"):
+                    await session.execute(text("BEGIN IMMEDIATE"))
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
     async def close(self) -> None:
         """Close the engine and all connections."""
         if self._engine:
@@ -398,13 +414,23 @@ class DatabaseManager:
             except Exception:
                 pass
 
-            # Zero-Daemon Search: SQLite FTS5 Full-Text Index & Database Triggers (Technique 9)
+            # Zero-Daemon Search: SQLite FTS5 Full-Text Index with Technical Tokenizer (unicode61 tokenchars '.-_+#')
             try:
                 async with self.engine.begin() as conn:
+                    # Check if existing entries_fts lacks the technical tokenchars tokenizer
+                    fts_sql_res = await conn.execute(
+                        text("SELECT sql FROM sqlite_master WHERE name = 'entries_fts'")
+                    )
+                    fts_sql_row = fts_sql_res.fetchone()
+                    if fts_sql_row and "tokenchars" not in (fts_sql_row[0] or ""):
+                        # Drop legacy table to upgrade to technical tokenizer
+                        await conn.execute(text("DROP TABLE IF EXISTS entries_fts"))
+
                     await conn.execute(
                         text(
                             "CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5("
-                            "title, summary, category, entry_id UNINDEXED"
+                            "title, summary, category, entry_id UNINDEXED, "
+                            "tokenize = \"unicode61 tokenchars '.-_+#'\""
                             ")"
                         )
                     )

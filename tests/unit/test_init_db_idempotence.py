@@ -90,3 +90,51 @@ async def test_init_db_called_thrice_preserves_exact_fts_parity(tmp_path):
         assert search_res == 5
 
     await mgr.close()
+
+
+@pytest.mark.asyncio
+async def test_fts5_technical_tokenchars_indexing(tmp_path):
+    """Verify FTS5 technical tokenizer indexes version tags, dots, and hyphens without loss."""
+    test_db = tmp_path / "test_technical_fts.db"
+    db_url = f"sqlite+aiosqlite:///{test_db}"
+    mgr = DatabaseManager(url=db_url)
+    await mgr.init_db()
+
+    source = Source(
+        name="Developer Infra",
+        category=Category.AI_MODELS,
+        type=SourceType.RSS,
+    )
+    async with mgr.session() as session:
+        src_repo = SQLAlchemySourceRepository(session)
+        await src_repo.add(source)
+        await session.commit()
+
+        entry_repo = SQLAlchemyEntryRepository(session)
+        entry = Entry(
+            source_id=source.id,
+            title="vLLM v0.6.3 Release with Chunked Prefill",
+            url="https://github.com/vllm-project/vllm/releases/tag/v0.6.3",
+            summary="llama.cpp now benchmarks parity with Qwen2.5-Coder-7B on Apple Silicon.",
+            content_hash="tech_token_hash_001",
+            category=Category.AI_MODELS,
+            published_at=datetime.now(UTC),
+        )
+        await entry_repo.add(entry)
+        await session.commit()
+
+        # 1. Search by exact version tag
+        results_v = await entry_repo.search_fts("v0.6.3", limit=5)
+        assert len(results_v) == 1
+        assert "vLLM" in results_v[0].title
+
+        # 2. Search by dotted runtime name
+        results_llama = await entry_repo.search_fts("llama.cpp", limit=5)
+        assert len(results_llama) == 1
+
+        # 3. Search by hyphenated model tag
+        results_qwen = await entry_repo.search_fts("Qwen2.5-Coder-7B", limit=5)
+        assert len(results_qwen) == 1
+
+    await mgr.close()
+

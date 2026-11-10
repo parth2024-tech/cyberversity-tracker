@@ -4,6 +4,7 @@ API routers export.
 
 from ai_security_monitor.presentation.api.routers.analysis import analysis_router
 from ai_security_monitor.presentation.api.routers.audio import audio_router
+from ai_security_monitor.presentation.api.routers.auth import auth_router
 from ai_security_monitor.presentation.api.routers.backup import backup_router
 from ai_security_monitor.presentation.api.routers.china import china_router
 from ai_security_monitor.presentation.api.routers.clusters import (
@@ -35,6 +36,7 @@ __all__ = [
     "triage_router",
     "newspaper_router",
     "audio_router",
+    "auth_router",
     "translation_router",
     "backup_router",
     "vault_router",
