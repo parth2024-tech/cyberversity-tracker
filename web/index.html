@@ -780,6 +780,13 @@
           <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
           <span>Restore All Soft-Purged Data (Un-delete)</span>
         </button>
+
+        <div class="pt-2 border-t border-white/[0.08] flex items-center justify-between text-[11px] font-mono text-slate-400">
+          <span class="flex items-center gap-1.5"><i data-lucide="key" class="w-3.5 h-3.5 text-amber-400"></i> Admin Authorization</span>
+          <button type="button" onclick="promptConfigureAdminKey()" class="text-sky-400 hover:text-sky-300 underline underline-offset-2">
+            Configure API Key
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3891,17 +3898,65 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    async function safeParseJsonResponse(res) {
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        try {
-          return await res.json();
-        } catch (_) {
-          return {};
+    function getAdminApiKey() {
+      return localStorage.getItem('aetherguard_admin_key') || '';
+    }
+
+    function setAdminApiKey(key) {
+      if (key && key.trim()) {
+        localStorage.setItem('aetherguard_admin_key', key.trim());
+      } else {
+        localStorage.removeItem('aetherguard_admin_key');
+      }
+    }
+
+    function promptConfigureAdminKey() {
+      const current = getAdminApiKey();
+      const input = prompt("Enter your ADMIN_API_KEY (leave empty to clear):", current);
+      if (input !== null) {
+        setAdminApiKey(input);
+        showToast(input.trim() ? "Admin API key saved to local storage." : "Admin API key cleared.", "info");
+      }
+    }
+
+    function authenticatedFetch(url, options = {}) {
+      const adminKey = getAdminApiKey();
+      const opts = { ...options };
+      if (adminKey) {
+        opts.headers = opts.headers ? { ...opts.headers } : {};
+        if (opts.headers instanceof Headers) {
+          opts.headers.set('X-Admin-Key', adminKey);
+        } else if (Array.isArray(opts.headers)) {
+          opts.headers.push(['X-Admin-Key', adminKey]);
+        } else {
+          opts.headers['X-Admin-Key'] = adminKey;
         }
       }
-      const rawText = await res.text();
-      return { detail: rawText || `Server returned HTTP ${res.status} (${res.statusText || 'Error'})` };
+      return fetch(url, opts);
+    }
+
+    async function handleAdminAuthChallenge(res) {
+      if (res && res.status === 401) {
+        const key = prompt("🔒 Administrative Authentication Required\n\nThis production operation requires an admin key.\nPlease enter your ADMIN_API_KEY:");
+        if (key && key.trim()) {
+          setAdminApiKey(key.trim());
+          return true;
+        }
+      }
+      return false;
+    }
+
+    async function safeParseJsonResponse(res) {
+      try {
+        const contentType = res.headers ? (res.headers.get('content-type') || '') : '';
+        if (contentType.includes('application/json')) {
+          return await res.json();
+        }
+        const rawText = await res.text();
+        return { detail: rawText || `Server returned HTTP ${res.status} (${res.statusText || 'Error'})` };
+      } catch (err) {
+        return { detail: `Response parsing error: ${err.message}` };
+      }
     }
 
     async function executeSelectedCleanup() {
@@ -3921,11 +3976,21 @@
 
       try {
         const ids = Array.from(selectedEntryIds);
-        const res = await fetch('/api/entries/batch-delete', {
+        let res = await authenticatedFetch('/api/entries/batch-delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entry_ids: ids, hard_delete: true })
         });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch('/api/entries/batch-delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entry_ids: ids, hard_delete: true })
+            });
+          }
+        }
         const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
@@ -3959,7 +4024,13 @@
       if (!confirmed) return;
 
       try {
-        const res = await fetch(`/api/entries/${id}?hard_delete=true`, { method: 'DELETE' });
+        let res = await authenticatedFetch(`/api/entries/${id}?hard_delete=true`, { method: 'DELETE' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch(`/api/entries/${id}?hard_delete=true`, { method: 'DELETE' });
+          }
+        }
         const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
@@ -4137,7 +4208,14 @@
       try {
         let catQuery = cats.map(c => `categories=${encodeURIComponent(c)}`).join('&');
         if (catQuery) catQuery = '&' + catQuery;
-        const res = await fetch(`/api/stats/purge?days=${selectedPurgeDays}&hard_delete=${hardDelete}&include_vaulted=${includeVault}${catQuery}`, { method: 'POST' });
+        const purgeUrl = `/api/stats/purge?days=${selectedPurgeDays}&hard_delete=${hardDelete}&include_vaulted=${includeVault}${catQuery}`;
+        let res = await authenticatedFetch(purgeUrl, { method: 'POST' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch(purgeUrl, { method: 'POST' });
+          }
+        }
         const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
@@ -4194,7 +4272,13 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
 
       try {
-        const res = await fetch('/api/stats/restore-purged', { method: 'POST' });
+        let res = await authenticatedFetch('/api/stats/restore-purged', { method: 'POST' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch('/api/stats/restore-purged', { method: 'POST' });
+          }
+        }
         const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
@@ -4343,8 +4427,14 @@
       }
       playBeep('alert');
       try {
-        const res = await fetch('/api/triage/push-all', { method: 'POST' });
-        const data = await res.json();
+        let res = await authenticatedFetch('/api/triage/push-all', { method: 'POST' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch('/api/triage/push-all', { method: 'POST' });
+          }
+        }
+        const data = await safeParseJsonResponse(res);
         const pushed = (data && typeof data.pushed_count === 'number') ? data.pushed_count : 0;
         showToast(`🚀 Pushed all ${pushed} queued items to live website!`, 'success');
         await fetchTriageStatus();
@@ -4373,8 +4463,14 @@
       }
       playBeep('alert');
       try {
-        const res = await fetch('/api/triage/prioritize-frontier?limit=25', { method: 'POST' });
-        const data = await res.json();
+        let res = await authenticatedFetch('/api/triage/prioritize-frontier?limit=25', { method: 'POST' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch('/api/triage/prioritize-frontier?limit=25', { method: 'POST' });
+          }
+        }
+        const data = await safeParseJsonResponse(res);
         showHUDToast({
           title: "Frontier Models Prioritized",
           message: data.message || `Promoted ${data.enqueued_count || 0} frontier foundation models to P0 priority.`,
@@ -4403,8 +4499,14 @@
       }
       playBeep('alert');
       try {
-        const res = await fetch('/api/triage/clear', { method: 'POST' });
-        const data = await res.json();
+        let res = await authenticatedFetch('/api/triage/clear', { method: 'POST' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch('/api/triage/clear', { method: 'POST' });
+          }
+        }
+        const data = await safeParseJsonResponse(res);
         showHUDToast({
           title: "Triage Backlog Flushed",
           message: data.message || `Flushed ${data.cleared_count || 0} entries from the triage queue.`,
@@ -4440,8 +4542,14 @@
       playBeep('alert');
 
       try {
-        const res = await fetch(`/api/triage/prioritize-frontier?limit=${limit}`, { method: 'POST' });
-        const data = await res.json();
+        let res = await authenticatedFetch(`/api/triage/prioritize-frontier?limit=${limit}`, { method: 'POST' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch(`/api/triage/prioritize-frontier?limit=${limit}`, { method: 'POST' });
+          }
+        }
+        const data = await safeParseJsonResponse(res);
         showHUDToast({
           title: "Autonomous AI Triage Dispatched",
           message: `Enqueued ${data.enqueued_count || 0} frontier AI models and research breakthroughs into priority queue.`,
@@ -4473,8 +4581,14 @@
     async function enqueueEntryForTriage(entryId) {
       playBeep('click');
       try {
-        const res = await fetch(`/api/triage/enqueue/${entryId}`, { method: 'POST' });
-        const data = await res.json();
+        let res = await authenticatedFetch(`/api/triage/enqueue/${entryId}`, { method: 'POST' });
+        if (res.status === 401) {
+          const authOk = await handleAdminAuthChallenge(res);
+          if (authOk) {
+            res = await authenticatedFetch(`/api/triage/enqueue/${entryId}`, { method: 'POST' });
+          }
+        }
+        const data = await safeParseJsonResponse(res);
         showHUDToast({
           title: data.status === 'already_queued' ? "Already Queued" : "Queued for AI Triage",
           message: data.message || "Entry enqueued for deep AI architecture triage.",

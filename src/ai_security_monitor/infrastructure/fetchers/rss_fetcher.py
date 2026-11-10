@@ -1,10 +1,14 @@
 # RSS/Atom feed fetcher implementation — top-tier, fault-tolerant.
 
+import json
 import re
-from datetime import UTC, datetime
+import urllib.parse
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import feedparser
 import httpx
+from bs4 import BeautifulSoup
 from dateutil import parser as dt_parser
 
 from ai_security_monitor.config.settings import settings
@@ -27,6 +31,24 @@ _AI_RELEVANCE_RE = re.compile(
     r"\b(ai|artificial intelligence|llm|llms|agent|agents|model|models|gpt|claude|gemini|deepseek|qwen|llama|mistral|transformer|transformers|diffusion|rag|vllm|sglang|ollama|deep learning|machine learning|neural|multimodal|inference|reasoning|benchmark|evals?)\b",
     re.IGNORECASE,
 )
+
+
+class _DuckResponse:
+    """Duck-typed response adapter wrapping curl_cffi or custom responses."""
+
+    def __init__(
+        self,
+        status_code: int,
+        content: bytes,
+        headers: dict[str, str] | None = None,
+    ):
+        self.status_code = status_code
+        self.content = content
+        self.headers = headers or {}
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP request failed with status {self.status_code}")
 
 
 class RSSFetcher(BaseFetcher):
@@ -56,7 +78,7 @@ class RSSFetcher(BaseFetcher):
             urls.extend(self.source.config["mirrors"])
 
         last_error: Exception | None = None
-        response: httpx.Response | None = None
+        response: Any = None
 
         stealth_headers = {
             "User-Agent": (
@@ -129,6 +151,36 @@ class RSSFetcher(BaseFetcher):
                 except FetchNotModifiedError:
                     raise
                 except Exception as req_err:
+                    # Attempt TLS impersonation fallback via curl_cffi for WAF / 403 / 429 challenges
+                    status_code = getattr(
+                        getattr(req_err, "response", None), "status_code", 0
+                    )
+                    if status_code in (403, 429, 503) or isinstance(
+                        req_err, (httpx.ConnectError, httpx.ConnectTimeout)
+                    ):
+                        try:
+                            from curl_cffi.requests import AsyncSession
+
+                            async with AsyncSession(impersonate="chrome131") as session:
+                                curl_resp = await session.get(
+                                    target_url,
+                                    timeout=min(float(self.timeout), 20.0),
+                                )
+                                if curl_resp.status_code == 200:
+                                    logger.info(
+                                        f"Bypassed WAF/403 block on {target_url} via Chrome TLS impersonation"
+                                    )
+                                    response = _DuckResponse(
+                                        curl_resp.status_code,
+                                        curl_resp.content,
+                                        dict(curl_resp.headers),
+                                    )
+                                    break
+                        except Exception as curl_err:
+                            logger.debug(
+                                f"curl_cffi fallback failed for {target_url}: {curl_err}"
+                            )
+
                     last_error = req_err
                     response = None
                     continue
@@ -154,21 +206,78 @@ class RSSFetcher(BaseFetcher):
                 f"Source {self.source.name!r} returned an empty response body."
             )
 
-        # ── Content-type guard ──────────────────────────────────────────────
-        # If the server returned an HTML page (SPA redirect, Cloudflare WAF,
-        # cookie-gate, etc.) there is no point trying to parse it as XML.
-        # Raise immediately so the caller records a proper error rather than
-        # silently reporting 0 entries + status: success.
+        # ── Content-type guard & Adaptive Ingestion Mesh ────────────────────
         ct_header = (
             response.headers.get("content-type", "").lower().split(";")[0].strip()
         )
         first_bytes = raw_bytes[:100].lower().replace(b" ", b"")
+
+        # ── JSON Feed / API endpoint support ────────────────────────────────
+        is_json_response = ct_header in ("application/json", "text/json") or (
+            first_bytes.startswith((b"{", b"["))
+        )
+        if is_json_response:
+            try:
+                parsed_json = json.loads(raw_bytes.decode("utf-8", errors="replace"))
+                json_entries = self._extract_json_entries(
+                    parsed_json, response.headers.get("url", self.source.url)
+                )
+                if json_entries:
+                    logger.info(
+                        f"Extracted {len(json_entries)} entries from JSON API for {self.source.name!r}"
+                    )
+                    return json_entries
+            except Exception as json_err:
+                logger.debug(f"JSON parsing failed for {self.source.name!r}: {json_err}")
+
+        # ── HTML Portal / SPA Auto-Discovery and DOM Extractor Fallback ─────
         is_html_response = ct_header in ("text/html", "application/xhtml+xml") or (
             first_bytes.startswith((b"<!doctype", b"<html"))
         )
         if is_html_response:
+            # 1. Attempt Auto-Discovery of live RSS/Atom feed from HTML <head>
+            try:
+                soup = BeautifulSoup(raw_bytes[:16384], "html.parser")
+                feed_link = None
+                for link in soup.find_all("link"):
+                    rel = link.get("rel")
+                    rel_str = " ".join(rel) if isinstance(rel, list) else str(rel or "")
+                    if "alternate" in rel_str.lower():
+                        t_str = str(link.get("type") or "").lower()
+                        if any(x in t_str for x in ("rss", "atom", "xml")):
+                            feed_link = link
+                            break
+
+                if feed_link and feed_link.get("href"):
+                    discovered_url = urllib.parse.urljoin(
+                        self.source.url, str(feed_link["href"])
+                    )
+                    if discovered_url != self.source.url:
+                        logger.info(
+                            f"Auto-discovered live feed URL {discovered_url!r} for {self.source.name!r}"
+                        )
+                        refetch_resp = await client.get(discovered_url)
+                        if refetch_resp.status_code == 200:
+                            feed = feedparser.parse(refetch_resp.content)
+                            discovered_entries = self._extract_entries(feed)
+                            if discovered_entries:
+                                if self.source.config is None:
+                                    self.source.config = {}
+                                self.source.config["discovered_feed_url"] = discovered_url
+                                return discovered_entries
+            except Exception as disco_err:
+                logger.debug(f"Feed auto-discovery failed for {self.source.name!r}: {disco_err}")
+
+            # 2. High-Speed HTML Portal Extractor Fallback (Trafilatura & DOM)
+            portal_entries = self._extract_html_portal_entries(raw_bytes, self.source.url)
+            if portal_entries:
+                logger.info(
+                    f"Extracted {len(portal_entries)} live entries from HTML explore portal for {self.source.name!r}"
+                )
+                return portal_entries
+
             raise RuntimeError(
-                f"Source {self.source.name!r} returned HTML instead of RSS/Atom "
+                f"Source {self.source.name!r} returned HTML instead of RSS/Atom with no extractable articles or RSS link "
                 f"(content-type: {ct_header}). Feed URL may be dead, behind a "
                 "login wall, or serving a JavaScript SPA."
             )
@@ -483,6 +592,217 @@ class RSSFetcher(BaseFetcher):
             if isinstance(raw.get("metadata"), dict)
             else {},
         )
+
+    def _extract_json_entries(self, data: Any, base_url: str) -> list[dict]:
+        """Extract entries from JSON API endpoints (e.g. jiqizhixin.com/api/v1/articles)."""
+        items: list[Any] = []
+        if isinstance(data, list):
+            items = data
+        elif isinstance(data, dict):
+            for k in ("items", "data", "articles", "entries", "posts", "models"):
+                val = data.get(k)
+                if isinstance(val, list):
+                    items = val
+                    break
+
+        entries: list[dict] = []
+        now = datetime.now(UTC)
+        two_weeks_ago = now - timedelta(days=14)
+        limit = min(int((self.source.config or {}).get("limit", 25)), 35)
+
+        for item in items:
+            if len(entries) >= limit:
+                break
+            if not isinstance(item, dict):
+                continue
+            title = item.get("title") or item.get("name") or item.get("headline") or ""
+            if not title or len(str(title).strip()) < 5:
+                continue
+
+            url_val = item.get("url") or item.get("link") or item.get("target_url")
+            if not url_val:
+                item_id = item.get("id") or item.get("slug")
+                if item_id:
+                    url_val = urllib.parse.urljoin(base_url, f"articles/{item_id}")
+                else:
+                    url_val = base_url
+
+            summary = (
+                item.get("summary")
+                or item.get("description")
+                or item.get("content")
+                or item.get("snippet")
+                or ""
+            )
+
+            # Date extraction
+            pub_date = now
+            raw_date = (
+                item.get("published_at")
+                or item.get("created_at")
+                or item.get("pubDate")
+                or item.get("date")
+            )
+            if raw_date and isinstance(raw_date, str):
+                try:
+                    dt = dt_parser.parse(raw_date, fuzzy=True)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=UTC)
+                    pub_date = dt.astimezone(UTC)
+                except Exception:
+                    pass
+
+            if pub_date < two_weeks_ago:
+                continue
+
+            entry_meta = {
+                "feed_title": self.source.name,
+                "feed_link": base_url,
+                "region": (self.source.config or {}).get("region", "global"),
+                "country": (self.source.config or {}).get("country", "GLOBAL"),
+                "provenance_type": (self.source.config or {}).get(
+                    "provenance_type", "json_api"
+                ),
+            }
+
+            entries.append(
+                {
+                    "title": str(title).strip(),
+                    "url": str(url_val).strip(),
+                    "content": self._clean_html(str(summary).strip())
+                    if summary
+                    else str(title).strip(),
+                    "published_at": pub_date,
+                    "tags": [
+                        self.source.category.value
+                        if hasattr(self.source.category, "value")
+                        else str(self.source.category)
+                    ],
+                    "metadata": entry_meta,
+                }
+            )
+
+        return entries
+
+    def _extract_html_portal_entries(
+        self, html_bytes: bytes, base_url: str
+    ) -> list[dict]:
+        """Extract structured articles / repository cards directly from HTML explore portals."""
+        try:
+            soup = BeautifulSoup(html_bytes, "html.parser")
+        except Exception:
+            return []
+
+        entries: list[dict] = []
+        seen_urls: set[str] = set()
+        now = datetime.now(UTC)
+        two_weeks_ago = now - timedelta(days=14)
+
+        # Decompose non-content elements
+        for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
+            tag.decompose()
+
+        candidates: list[tuple[str, str, str, Any]] = []
+        # Check standard article containers
+        for container in soup.select(
+            "article, .article-item, .news-item, .post-item, .explore-repo__list .item, .project-item, tr, li"
+        ):
+            a_tag = container.find("a", href=True)
+            if not a_tag:
+                continue
+            text = a_tag.get_text(strip=True)
+            if len(text) < 10:
+                heading = container.find(
+                    ["h1", "h2", "h3", "h4", ".title", ".name"]
+                )
+                if heading:
+                    text = heading.get_text(strip=True)
+            if len(text) >= 10:
+                summary_el = container.find(
+                    ["p", ".desc", ".description", ".summary", ".content"]
+                )
+                summary = summary_el.get_text(strip=True) if summary_el else ""
+                candidates.append((text, str(a_tag["href"]), summary, container))
+
+        # Fallback: scan all anchor tags with article-like paths
+        if not candidates:
+            for a_tag in soup.find_all("a", href=True):
+                text = a_tag.get_text(strip=True)
+                href_str = str(a_tag["href"])
+                if len(text) >= 12 and not href_str.startswith(("javascript:", "#", "mailto:")):
+                    if any(
+                        nav in text
+                        for nav in (
+                            "首页",
+                            "关于",
+                            "登录",
+                            "注册",
+                            "Home",
+                            "About",
+                            "Login",
+                            "Register",
+                            "Contact",
+                            "Privacy",
+                            "Terms",
+                        )
+                    ):
+                        continue
+                    candidates.append((text, href_str, "", None))
+
+        limit = min(int((self.source.config or {}).get("limit", 20)), 30)
+
+        for text, href, summary, container in candidates:
+            if len(entries) >= limit:
+                break
+            full_url = urllib.parse.urljoin(base_url, href)
+            if full_url in seen_urls or full_url == base_url or len(full_url) < 10:
+                continue
+            seen_urls.add(full_url)
+
+            # Date extraction
+            pub_date = now
+            if container:
+                time_tag = container.find(["time", ".date", ".time"])
+                if time_tag:
+                    raw_time = time_tag.get("datetime") or time_tag.get_text(strip=True)
+                    if raw_time:
+                        try:
+                            clean_dt = dt_parser.parse(raw_time, fuzzy=True)
+                            if clean_dt.tzinfo is None:
+                                clean_dt = clean_dt.replace(tzinfo=UTC)
+                            pub_date = clean_dt.astimezone(UTC)
+                        except Exception:
+                            pass
+
+            if pub_date < two_weeks_ago:
+                continue
+
+            entry_meta = {
+                "feed_title": self.source.name,
+                "feed_link": base_url,
+                "region": (self.source.config or {}).get("region", "global"),
+                "country": (self.source.config or {}).get("country", "GLOBAL"),
+                "provenance_type": (self.source.config or {}).get(
+                    "provenance_type", "portal_extractor"
+                ),
+            }
+
+            entries.append(
+                {
+                    "title": self._clean_html(text[:200]),
+                    "url": full_url,
+                    "content": self._clean_html(summary or text),
+                    "published_at": pub_date,
+                    "tags": [
+                        self.source.category.value
+                        if hasattr(self.source.category, "value")
+                        else str(self.source.category)
+                    ],
+                    "metadata": entry_meta,
+                }
+            )
+
+        return entries
 
     def _clean_html(self, text: str) -> str:
         """Rigorous content sanitization stripping all executable tags, handlers, and injection payloads."""
