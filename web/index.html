@@ -3891,6 +3891,19 @@
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    async function safeParseJsonResponse(res) {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        try {
+          return await res.json();
+        } catch (_) {
+          return {};
+        }
+      }
+      const rawText = await res.text();
+      return { detail: rawText || `Server returned HTTP ${res.status} (${res.statusText || 'Error'})` };
+    }
+
     async function executeSelectedCleanup() {
       if (selectedEntryIds.size === 0) {
         alert("No entries are currently selected. Click the checkbox on any feed card to select entries for cleanup.");
@@ -3913,7 +3926,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entry_ids: ids, hard_delete: true })
         });
-        const data = await res.json();
+        const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
           ids.forEach(id => {
@@ -3947,7 +3960,7 @@
 
       try {
         const res = await fetch(`/api/entries/${id}?hard_delete=true`, { method: 'DELETE' });
-        const data = await res.json();
+        const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
           selectedEntryIds.delete(id);
@@ -4125,7 +4138,7 @@
         let catQuery = cats.map(c => `categories=${encodeURIComponent(c)}`).join('&');
         if (catQuery) catQuery = '&' + catQuery;
         const res = await fetch(`/api/stats/purge?days=${selectedPurgeDays}&hard_delete=${hardDelete}&include_vaulted=${includeVault}${catQuery}`, { method: 'POST' });
-        const data = await res.json();
+        const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
           if (statusBox) {
@@ -4182,7 +4195,7 @@
 
       try {
         const res = await fetch('/api/stats/restore-purged', { method: 'POST' });
-        const data = await res.json();
+        const data = await safeParseJsonResponse(res);
         if (res.ok) {
           if (typeof playBeep === 'function') playBeep('alert');
           if (statusBox) {

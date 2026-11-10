@@ -5,6 +5,7 @@ Async SQLAlchemy with SQLite (aiosqlite) for zero-cost deployment.
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import (
@@ -26,6 +27,77 @@ def _ensure_seed_database(db_path: str) -> None:
     if dir_name:
         os.makedirs(dir_name, exist_ok=True)
     return
+
+
+def load_sqlite_vec_extension(raw_conn: Any) -> bool:
+    """Robustly load sqlite-vec extension into a raw sqlite3 connection, with fallback to shared object discovery."""
+    import glob
+    import logging
+    import os
+
+    logger = logging.getLogger(__name__)
+
+    conn: Any = raw_conn
+    while hasattr(conn, "_connection"):
+        conn = conn._connection
+
+    if not hasattr(conn, "enable_load_extension"):
+        return False
+
+    loaded = False
+    try:
+        conn.enable_load_extension(True)
+        try:
+            import sqlite_vec
+
+            sqlite_vec.load(conn)
+            loaded = True
+        except Exception:
+            pass
+
+        if not loaded:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            candidates = [
+                os.path.normpath(
+                    os.path.join(
+                        base_dir,
+                        "../../../../../.venv/lib/python3.12/site-packages/sqlite_vec/vec0.so",
+                    )
+                ),
+                *glob.glob(
+                    os.path.normpath(
+                        os.path.join(
+                            base_dir,
+                            "../../../../../.venv/lib/python*/site-packages/sqlite_vec/vec0.so",
+                        )
+                    )
+                ),
+                *glob.glob(
+                    "/home/thor/Desktop/ai-security-monitor/.venv/lib/python*/site-packages/sqlite_vec/vec0.so"
+                ),
+                *glob.glob(
+                    os.path.expanduser(
+                        "~/.venv/lib/python*/site-packages/sqlite_vec/vec0.so"
+                    )
+                ),
+            ]
+            for cand in candidates:
+                if os.path.exists(cand):
+                    try:
+                        conn.load_extension(cand)
+                        loaded = True
+                        break
+                    except Exception:
+                        pass
+    except Exception as exc:
+        logger.debug("Failed to enable extension loading for sqlite-vec: %s", exc)
+    finally:
+        try:
+            conn.enable_load_extension(False)
+        except Exception:
+            pass
+
+    return loaded
 
 
 class DatabaseManager:
@@ -131,18 +203,7 @@ class DatabaseManager:
                 cursor.close()
 
                 # Zero-Daemon In-Process Vector Memory: sqlite-vec extension (Pillar 1)
-                try:
-                    import sqlite_vec
-
-                    raw_conn = dbapi_connection
-                    while hasattr(raw_conn, "_connection"):
-                        raw_conn = raw_conn._connection
-                    if hasattr(raw_conn, "enable_load_extension"):
-                        raw_conn.enable_load_extension(True)
-                        sqlite_vec.load(raw_conn)
-                        raw_conn.enable_load_extension(False)
-                except Exception:
-                    pass
+                load_sqlite_vec_extension(dbapi_connection)
 
         return engine
 

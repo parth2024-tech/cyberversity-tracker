@@ -29,3 +29,9 @@ Always prioritize and balance broad, worldwide artificial intelligence news:
 - **Permissive Open-Source Only**: All models, libraries, runtimes, and dependencies must be free and open-source (Apache 2.0, MIT, BSD, CC0). Avoid commercial paywalls or non-commercial licensing traps.
 - **Local Silicon & Free-Tier First**: Architecture must rely entirely on local SLMs (via Ollama/llama.cpp such as `qwen2.5-coder:7b`/`3b`), generous free tiers (e.g., Groq free tier), direct public RPCs (e.g., Google GTX endpoint), or embedded in-process engines (e.g., Argos Translate).
 - **Zero Operational Cost Guarantee**: The system must run perpetually on local compute and free public infrastructure with zero monthly bills or credit card requirements.
+
+
+## Mandatory Task Time Estimation Law (Permanent System Invariant)
+- Whenever the user gives a task or prompt, the agent MUST ALWAYS start its response by explicitly stating the estimated time it will take to complete the task (e.g., `⏱️ **Estimated Time**: ~X minutes`).
+- This estimate must appear at the very beginning of the response before any other output or action details.
+

@@ -2,6 +2,7 @@
   "name": "ai-security-monitor",
   "version": "1.0.0",
   "description": "Enterprise-grade real-time AI security intelligence, zero-day threat monitoring, and autonomous LLM triage system.",
+  "validation_timeout_ms": 180000,
   "tech_stack": [
     "Python 3.12",
     "FastAPI (Async REST & WebSockets)",
@@ -17,7 +18,8 @@
     "Luxury dark aesthetic with obsidian palette and refined glassmorphism",
     "Strict user rule: Focus on broad global AI news (trending GitHub repos, developer tools, frontier models, research breakthroughs) and omit security unless explicitly asked",
     "Strict user rule: News must mostly be within 2 weeks old (maximum 14 days) — discard stale historical items",
-    "Strict user rule: 100% Free & Zero-Cost Architecture ($0/month Law) — never introduce paid APIs, subscriptions, commercial SaaS, or paywalled services; rely exclusively on local SLMs (Apache 2.0), generous free-tiers, direct public RPCs, and permissive open source"
+    "Strict user rule: 100% Free & Zero-Cost Architecture ($0/month Law) — never introduce paid APIs, subscriptions, commercial SaaS, or paywalled services; rely exclusively on local SLMs (Apache 2.0), generous free-tiers, direct public RPCs, and permissive open source",
+    "Always start every task response with an explicit estimated completion time (e.g., ⏱️ **Estimated Time**: ~X minutes)."
   ],
   "architecture_patterns": [
     "Domain-Driven Design (DDD) with clear boundary contexts",
@@ -57,7 +59,6 @@
       "production"
     ]
   },
-  "validation_timeout_ms": 180000,
   "sprint_focus": "Building the user onboarding flow with email verification and profile setup.",
   "sprint_skills": [
     "security-and-hardening",
@@ -73,13 +74,24 @@
     "Never store secrets in .env files committed to git",
     "Never use inline styles — always use Tailwind classes",
     "Never use `any` TypeScript type — always type explicitly",
-    "Never mix database queries into React components"
+    "Never mix database queries into React components",
+    "Never commit or push code without passing gitleaks protect --staged secret audit",
+    "Never rely on fragile regex linters when ast-grep (sg) AST rules can be enforced",
+    "Never output verbose unsolicited recaps, exhaustive changelogs, or repetitive summaries that waste tokens — mention ONLY the most critical points unless explicitly asked"
   ],
   "preferred_patterns": [
     "Use Zod for all schema validation",
     "Use Drizzle ORM for all database access",
     "Use server actions for mutations",
-    "Use Next.js Image component for all images"
+    "Use Next.js Image component for all images",
+    "Use gitleaks (gitleaks protect --staged) for zero secret leakage verification before committing or pushing",
+    "Use ast-grep (sg scan) for structural AST-level syntax rules rather than regex linters",
+    "Use just (justfile) for deterministic project verification and task runs",
+    "Use adr-tools (adr new) and D2 (d2) for all architectural decision records and C4 system diagrams",
+    "Use TypeSpec (tsp compile) for contract-first API development and OpenAPI 3.1 generation",
+    "Use vl-convert (vl-convert vl2svg) and Typst CeTZ for declarative standalone vector charts",
+    "Use Typst (typst compile) exclusively for any research paper or scientific document",
+    "Practice extreme token economy: keep responses concise, high-signal, and directly answer user requests without unprompted changelogs or filler"
   ],
   "agent_skills": {
     "directory": "/home/thor/skiils",

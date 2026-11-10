@@ -89,7 +89,9 @@ class NewspaperService:
         """Autonomously fetch live cutting-edge AI entries via NewspaperLiveFetcher."""
         return await self._live_fetcher.fetch_live_intelligence()
 
-    async def generate_edition(self, window_hours: int = 5) -> dict[str, Any]:
+    async def generate_edition(
+        self, window_hours: int = 5, force_pdf: bool = False
+    ) -> dict[str, Any]:
         """Compile an authentic, 100% AI-focused 10-page intelligence broadsheet dossier."""
         now = datetime.now(UTC)
         cutoff = now - timedelta(hours=max(5, window_hours))
@@ -435,9 +437,9 @@ class NewspaperService:
         )
 
         res_metrics = get_system_resource_metrics()
-        if (
+        if not force_pdf and (
             res_metrics.get("available_mb", 1000.0) < 70.0
-            or res_metrics.get("process_rss_mb", 0.0) > 420.0
+            or res_metrics.get("process_rss_mb", 0.0) > 1500.0
         ):
             logger.warning(
                 f"Skipping PDF compilation to preserve memory (available: {res_metrics.get('available_mb')}MB, RSS: {res_metrics.get('process_rss_mb')}MB)"

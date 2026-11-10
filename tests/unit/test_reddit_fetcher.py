@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -102,9 +102,10 @@ async def test_reddit_fetcher_fallback_on_429(reddit_source: Source):
     mock_resp_429 = MagicMock()
     mock_resp_429.status_code = 429
 
+    pub_date = (datetime.now(UTC) - timedelta(days=2)).strftime("%a, %d %b %Y %H:%M:%S GMT")
     mock_resp_rss = MagicMock()
     mock_resp_rss.status_code = 200
-    mock_resp_rss.text = """<?xml version="1.0" encoding="UTF-8"?>
+    mock_resp_rss.text = f"""<?xml version="1.0" encoding="UTF-8"?>
     <rss version="2.0">
       <channel>
         <title>Reddit Search</title>
@@ -112,7 +113,7 @@ async def test_reddit_fetcher_fallback_on_429(reddit_source: Source):
           <title>Llama 4 preview benchmarks on 8x H100 - Reddit</title>
           <link>https://www.reddit.com/r/LocalLLaMA/comments/xyz123/llama_4/</link>
           <description>Throughput tests on local clusters.</description>
-          <pubDate>Mon, 19 Oct 2026 12:00:00 GMT</pubDate>
+          <pubDate>{pub_date}</pubDate>
         </item>
       </channel>
     </rss>

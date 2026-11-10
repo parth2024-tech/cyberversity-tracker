@@ -162,11 +162,11 @@ class BackupService:
         uri = f"file:{p}?mode=ro" if readonly else str(p)
         conn = sqlite3.connect(uri, uri=readonly)
         try:
-            import sqlite_vec
+            from ai_security_monitor.infrastructure.database.connection import (
+                load_sqlite_vec_extension,
+            )
 
-            conn.enable_load_extension(True)
-            sqlite_vec.load(conn)
-            conn.enable_load_extension(False)
+            load_sqlite_vec_extension(conn)
         except Exception:
             pass
         return conn
