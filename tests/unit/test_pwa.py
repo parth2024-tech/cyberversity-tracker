@@ -31,4 +31,4 @@ async def test_pwa_manifest_and_sw_routes():
         assert resp_sw.status_code == 200
         assert "application/javascript" in resp_sw.headers.get("content-type", "")
         assert resp_sw.headers.get("service-worker-allowed") == "/"
-        assert "aetherguard-pwa-v2" in resp_sw.text
+        assert "aetherguard-pwa-v3" in resp_sw.text
