@@ -3914,8 +3914,8 @@
       // Check current session status
       try {
         const statusRes = await fetch('/api/auth/status');
-        const statusData = await statusRes.json();
-        if (statusData.authenticated) {
+        const statusData = await safeParseJsonResponse(statusRes);
+        if (statusData && statusData.authenticated) {
           const doLogout = confirm("You are currently authenticated as an administrator.\n\nDo you want to log out and revoke this session?");
           if (doLogout) {
             await fetch('/api/auth/session', { method: 'DELETE' });
@@ -3978,12 +3978,12 @@
 
     async function safeParseJsonResponse(res) {
       try {
-        const contentType = res.headers ? (res.headers.get('content-type') || '') : '';
+        if (!res) return { ok: false, status: 0, detail: 'No response received from server' };
+        const rawText = await res.text();
         let payload;
-        if (contentType.includes('application/json')) {
-          payload = await res.json();
-        } else {
-          const rawText = await res.text();
+        try {
+          payload = JSON.parse(rawText);
+        } catch (_) {
           payload = { detail: rawText || `Server returned HTTP ${res.status} (${res.statusText || 'Error'})` };
         }
         if (!res.ok) {
@@ -3999,7 +3999,7 @@
         }
         return payload;
       } catch (err) {
-        return { ok: false, status: res.status || 0, detail: `Response parsing error: ${err.message}` };
+        return { ok: false, status: res ? (res.status || 0) : 0, detail: `Response reading error: ${err.message}` };
       }
     }
 
@@ -4200,7 +4200,8 @@
         if (catQuery) catQuery = '&' + catQuery;
         const res = await fetch(`/api/stats/retention?days=${selectedPurgeDays}&include_vaulted=${includeVault}${catQuery}`);
         if (!res.ok) return;
-        const data = await res.json();
+        const data = await safeParseJsonResponse(res);
+        if (!data || data.ok === false) return;
         const activeEl = document.getElementById('purge-modal-active-count');
         const vaultEl = document.getElementById('purge-modal-vault-count');
         const candEl = document.getElementById('purge-modal-candidates-count');
@@ -4363,7 +4364,8 @@
     async function fetchTriageStatus() {
       try {
         const res = await fetch('/api/triage/queue');
-        const data = await res.json();
+        const data = await safeParseJsonResponse(res);
+        if (!data || data.ok === false) return;
         _lastTriageData = data;
         updateTriageStatus(data);
         renderTriageModal(data);

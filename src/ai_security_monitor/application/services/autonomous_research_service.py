@@ -138,7 +138,7 @@ class AutonomousResearchService:
         self,
         max_freshness_days: int = 14,
         wall_clock_timeout: float = 25.0,
-        rrf_k: int = 60,
+        rrf_k: int = 20,
     ) -> None:
         self.max_freshness_days = min(max(1, max_freshness_days), 14)
         self.wall_clock_timeout = wall_clock_timeout
@@ -545,10 +545,26 @@ class AutonomousResearchService:
             "velocity": ranked_velocity,
         }
 
+        # Determine query intent: technical queries heavily favor exact token matching (FTS5)
+        is_technical = bool(
+            re.search(
+                r"(\bv\d+\.\d+|\b[a-zA-Z0-9_\-\.]{2,}\.cpp|\b(vllm|sglang|ollama|llama|qwen|deepseek|mistral|triton|cuda|onnx|gguf|awq)\b|[#\+\-_\.])",
+                query,
+                re.IGNORECASE,
+            )
+        )
+        channel_weights = {
+            "fts": 0.75 if is_technical else 0.30,
+            "semantic": 0.25 if is_technical else 0.70,
+            "entity": 0.50 if is_technical else 0.40,
+            "velocity": 0.20,
+        }
+
         for channel, id_list in channel_ranks.items():
+            w = channel_weights.get(channel, 1.0)
             for rank_idx, eid in enumerate(id_list, 1):
-                # RRF: 1.0 / (k + rank)
-                contribution = 1.0 / (self.rrf_k + rank_idx)
+                # Intent-Weighted RRF: w / (k + rank)
+                contribution = w / (self.rrf_k + rank_idx)
                 rrf_scores[eid] = rrf_scores.get(eid, 0.0) + contribution
 
         # Filter strictly by 14-day freshness window

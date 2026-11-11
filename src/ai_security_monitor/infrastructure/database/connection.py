@@ -174,6 +174,8 @@ class DatabaseManager:
 
             @event.listens_for(engine.sync_engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
+                # Disable pysqlite automatic transactions so SQLAlchemy explicitly controls BEGIN IMMEDIATE
+                dbapi_connection.isolation_level = None
                 cursor = dbapi_connection.cursor()
                 cursor.execute("PRAGMA foreign_keys=ON")
                 cursor.execute("PRAGMA journal_mode=WAL")
@@ -204,6 +206,11 @@ class DatabaseManager:
 
                 # Zero-Daemon In-Process Vector Memory: sqlite-vec extension (Pillar 1)
                 load_sqlite_vec_extension(dbapi_connection)
+
+            @event.listens_for(engine.sync_engine, "begin")
+            def do_begin(conn):
+                # Acquire SQLite RESERVED lock immediately, eliminating lock upgrade races across async workers
+                conn.exec_driver_sql("BEGIN IMMEDIATE")
 
         return engine
 
@@ -422,9 +429,14 @@ class DatabaseManager:
                         text("SELECT sql FROM sqlite_master WHERE name = 'entries_fts'")
                     )
                     fts_sql_row = fts_sql_res.fetchone()
+                    needs_fts_rebuild = False
                     if fts_sql_row and "tokenchars" not in (fts_sql_row[0] or ""):
                         # Drop legacy table to upgrade to technical tokenizer
+                        await conn.execute(text("DROP TRIGGER IF EXISTS entries_ai"))
+                        await conn.execute(text("DROP TRIGGER IF EXISTS entries_au"))
+                        await conn.execute(text("DROP TRIGGER IF EXISTS entries_ad"))
                         await conn.execute(text("DROP TABLE IF EXISTS entries_fts"))
+                        needs_fts_rebuild = True
 
                     await conn.execute(
                         text(
@@ -464,6 +476,42 @@ class DatabaseManager:
                             "END;"
                         )
                     )
+                    # Foreign key cascade deletion triggers ensuring zero orphan rows or constraint failures
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS analysis_evidence_ad AFTER DELETE ON entry_analysis BEGIN "
+                            "DELETE FROM analysis_evidence WHERE analysis_id = old.id; "
+                            "END;"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS analysis_outcome_ad AFTER DELETE ON entry_analysis BEGIN "
+                            "DELETE FROM analysis_outcome WHERE analysis_id = old.id; "
+                            "END;"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_analysis_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM entry_analysis WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_entities_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM entry_entities WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
+                    await conn.execute(
+                        text(
+                            "CREATE TRIGGER IF NOT EXISTS entries_council_ad AFTER DELETE ON entries BEGIN "
+                            "DELETE FROM council_reviews WHERE entry_id = old.id; "
+                            "END;"
+                        )
+                    )
                     await conn.execute(
                         text(
                             "CREATE TRIGGER IF NOT EXISTS entries_receipts_ad AFTER DELETE ON entries BEGIN "
@@ -471,14 +519,14 @@ class DatabaseManager:
                             "END;"
                         )
                     )
-                    # Backfill existing entries into FTS5 index only if FTS table is completely empty but entries exist
+                    # Backfill existing entries into FTS5 index if rebuild needed or FTS table is empty
                     fts_count_res = await conn.execute(
                         text("SELECT count(*) FROM entries_fts")
                     )
                     entries_count_res = await conn.execute(
                         text("SELECT count(*) FROM entries WHERE is_purged = 0")
                     )
-                    if (fts_count_res.scalar() or 0) == 0 and (entries_count_res.scalar() or 0) > 0:
+                    if needs_fts_rebuild or ((fts_count_res.scalar() or 0) == 0 and (entries_count_res.scalar() or 0) > 0):
                         await conn.execute(
                             text(
                                 "INSERT INTO entries_fts(entry_id, title, summary, category) "
@@ -486,6 +534,7 @@ class DatabaseManager:
                                 "WHERE is_purged = 0"
                             )
                         )
+                        await conn.execute(text("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')"))
             except Exception:
                 pass
 

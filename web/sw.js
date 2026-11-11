@@ -3,7 +3,7 @@
  * Provides offline caching, App Shell resiliency, and background fetch support.
  */
 
-const CACHE_NAME = 'aetherguard-pwa-v2';
+const CACHE_NAME = 'aetherguard-pwa-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',

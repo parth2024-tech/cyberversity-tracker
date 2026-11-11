@@ -9,7 +9,6 @@ from typing import Any
 
 import feedparser
 import httpx
-from bs4 import BeautifulSoup
 from dateutil import parser as dt_parser
 
 from ai_security_monitor.config.settings import settings
@@ -605,16 +604,17 @@ class RSSFetcher(BaseFetcher):
         )
 
     def _sync_find_feed_link_in_head(self, html_prefix: bytes) -> str | None:
-        """Find live alternate RSS/Atom feed links in HTML head (synchronous, run off-thread)."""
+        """Find live alternate RSS/Atom feed links in HTML head using high-speed Lexbor C-parser."""
         try:
-            soup = BeautifulSoup(html_prefix, "html.parser")
-            for link in soup.find_all("link"):
-                rel = link.get("rel")
-                rel_str = " ".join(rel) if isinstance(rel, list) else str(rel or "")
+            from selectolax.lexbor import LexborHTMLParser
+
+            parser = LexborHTMLParser(html_prefix.decode("utf-8", errors="ignore"))
+            for link in parser.css("head link, link"):
+                rel_str = str(link.attributes.get("rel") or "")
                 if "alternate" in rel_str.lower():
-                    t_str = str(link.get("type") or "").lower()
+                    t_str = str(link.attributes.get("type") or "").lower()
                     if any(x in t_str for x in ("rss", "atom", "xml")):
-                        href = link.get("href")
+                        href = link.attributes.get("href")
                         if href:
                             return str(href)
         except Exception:
@@ -752,9 +752,12 @@ class RSSFetcher(BaseFetcher):
     def _extract_html_portal_entries(
         self, html_bytes: bytes, base_url: str
     ) -> list[dict]:
-        """Extract structured articles / repository cards directly from HTML explore portals (CPU-bound, runs off-thread)."""
+        """Extract structured articles / repository cards directly from HTML explore portals using high-speed Lexbor C-parser."""
         try:
-            soup = BeautifulSoup(html_bytes, "html.parser")
+            from selectolax.lexbor import LexborHTMLParser
+
+            html_text = html_bytes.decode("utf-8", errors="ignore")
+            parser = LexborHTMLParser(html_text)
         except Exception:
             return []
 
@@ -764,36 +767,38 @@ class RSSFetcher(BaseFetcher):
         two_weeks_ago = now - timedelta(days=14)
 
         # Decompose non-content elements
-        for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form"]):
+        for tag in parser.css("script, style, nav, footer, header, aside, form"):
             tag.decompose()
 
         candidates: list[tuple[str, str, str, Any]] = []
         # Check standard article containers
-        for container in soup.select(
+        for container in parser.css(
             "article, .article-item, .news-item, .post-item, .explore-repo__list .item, .project-item, tr, li"
         ):
-            a_tag = container.find("a", href=True)
+            a_tag = container.css_first("a[href]")
             if not a_tag:
                 continue
-            text = a_tag.get_text(strip=True)
+            text = a_tag.text(strip=True)
             if len(text) < 10:
-                heading = container.find(
-                    ["h1", "h2", "h3", "h4", ".title", ".name"]
+                heading = container.css_first(
+                    "h1, h2, h3, h4, .title, .name"
                 )
                 if heading:
-                    text = heading.get_text(strip=True)
+                    text = heading.text(strip=True)
             if len(text) >= 10:
-                summary_el = container.find(
-                    ["p", ".desc", ".description", ".summary", ".content"]
+                summary_el = container.css_first(
+                    "p, .desc, .description, .summary, .content"
                 )
-                summary = summary_el.get_text(strip=True) if summary_el else ""
-                candidates.append((text, str(a_tag["href"]), summary, container))
+                summary = summary_el.text(strip=True) if summary_el else ""
+                href_val = a_tag.attributes.get("href", "")
+                if href_val:
+                    candidates.append((text, href_val, summary, container))
 
         # Fallback: scan all anchor tags with article-like paths
         if not candidates:
-            for a_tag in soup.find_all("a", href=True):
-                text = a_tag.get_text(strip=True)
-                href_str = str(a_tag["href"])
+            for a_tag in parser.css("a[href]"):
+                text = a_tag.text(strip=True)
+                href_str = str(a_tag.attributes.get("href") or "")
                 if len(text) >= 12 and not href_str.startswith(("javascript:", "#", "mailto:")):
                     if any(
                         nav in text
@@ -841,9 +846,9 @@ class RSSFetcher(BaseFetcher):
             # Date extraction
             pub_date = now
             if container:
-                time_tag = container.find(["time", ".date", ".time"])
+                time_tag = container.css_first("time, .date, .time")
                 if time_tag:
-                    raw_time = time_tag.get("datetime") or time_tag.get_text(strip=True)
+                    raw_time = time_tag.attributes.get("datetime") or time_tag.text(strip=True)
                     if raw_time:
                         try:
                             clean_dt = dt_parser.parse(raw_time, fuzzy=True)

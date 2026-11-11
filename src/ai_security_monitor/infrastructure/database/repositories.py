@@ -49,9 +49,8 @@ from ai_security_monitor.domain.repositories import (
 )
 from ai_security_monitor.domain.watchlist import WatchlistRule
 from ai_security_monitor.infrastructure.database.models import (
-    AnalysisModel as AnalysisModelDB,
-)
-from ai_security_monitor.infrastructure.database.models import (
+    AnalysisEvidenceModel,
+    AnalysisOutcomeModel,
     CouncilReviewModel,
     DigestModel,
     EntryEntityModel,
@@ -60,6 +59,9 @@ from ai_security_monitor.infrastructure.database.models import (
     ReceiptModel,
     SourceModel,
     WatchlistRuleModel,
+)
+from ai_security_monitor.infrastructure.database.models import (
+    AnalysisModel as AnalysisModelDB,
 )
 
 
@@ -235,7 +237,15 @@ class SQLAlchemyEntryRepository(EntryRepository):
         tokens = [t.strip('"\';') for t in raw_tokens if len(t.strip('"\';')) > 0]
         if not tokens:
             return []
-        safe_q = " ".join(f'"{t}"' for t in tokens)
+        quoted_terms = []
+        for t in tokens:
+            escaped_t = t.replace('"', '""')
+            clean_t = escaped_t.rstrip(".-_+#")
+            if clean_t:
+                quoted_terms.append(f'"{clean_t}"*')
+            else:
+                quoted_terms.append(f'"{escaped_t}"*')
+        safe_q = " ".join(quoted_terms)
 
         try:
             sql = text(
@@ -293,8 +303,45 @@ class SQLAlchemyEntryRepository(EntryRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
-    async def delete(self, entry_id: UUID, hard_delete: bool = True) -> bool:
+    async def _cascade_delete_dependencies(self, entry_ids_or_subquery: Any) -> None:
+        """Cascade delete all dependent child rows (analysis evidence/outcomes, analyses, entities, reviews, receipts) in foreign-key order."""
         from sqlalchemy import delete as sa_delete
+
+        analysis_subquery = select(AnalysisModelDB.id).where(
+            AnalysisModelDB.entry_id.in_(entry_ids_or_subquery)
+        )
+        await self._session.execute(
+            sa_delete(AnalysisEvidenceModel)
+            .where(AnalysisEvidenceModel.analysis_id.in_(analysis_subquery))
+            .execution_options(synchronize_session=False)
+        )
+        await self._session.execute(
+            sa_delete(AnalysisOutcomeModel)
+            .where(AnalysisOutcomeModel.analysis_id.in_(analysis_subquery))
+            .execution_options(synchronize_session=False)
+        )
+        await self._session.execute(
+            sa_delete(AnalysisModelDB)
+            .where(AnalysisModelDB.entry_id.in_(entry_ids_or_subquery))
+            .execution_options(synchronize_session=False)
+        )
+        await self._session.execute(
+            sa_delete(EntryEntityModel)
+            .where(EntryEntityModel.entry_id.in_(entry_ids_or_subquery))
+            .execution_options(synchronize_session=False)
+        )
+        await self._session.execute(
+            sa_delete(CouncilReviewModel)
+            .where(CouncilReviewModel.entry_id.in_(entry_ids_or_subquery))
+            .execution_options(synchronize_session=False)
+        )
+        await self._session.execute(
+            sa_delete(ReceiptModel)
+            .where(ReceiptModel.entry_id.in_(entry_ids_or_subquery))
+            .execution_options(synchronize_session=False)
+        )
+
+    async def delete(self, entry_id: UUID, hard_delete: bool = True) -> bool:
         from sqlalchemy import update as sa_update
 
         entry_id_str = _uuid_to_str(entry_id)
@@ -306,11 +353,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             return False
 
         if hard_delete:
-            await self._session.execute(
-                sa_delete(AnalysisModelDB)
-                .where(AnalysisModelDB.entry_id == entry_id_str)
-                .execution_options(synchronize_session=False)
-            )
+            await self._cascade_delete_dependencies([entry_id_str])
             await self._session.delete(model)
         else:
             await self._session.execute(
@@ -332,11 +375,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         id_strs = [_uuid_to_str(eid) for eid in entry_ids]
         if hard_delete:
-            await self._session.execute(
-                sa_delete(AnalysisModelDB)
-                .where(AnalysisModelDB.entry_id.in_(id_strs))
-                .execution_options(synchronize_session=False)
-            )
+            await self._cascade_delete_dependencies(id_strs)
             del_result = await self._session.execute(
                 sa_delete(EntryModel)
                 .where(EntryModel.id.in_(id_strs))
@@ -436,11 +475,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
 
         if hard_delete:
             subquery = select(EntryModel.id).where(expired_cond)
-            await self._session.execute(
-                sa_delete(AnalysisModelDB)
-                .where(AnalysisModelDB.entry_id.in_(subquery))
-                .execution_options(synchronize_session=False)
-            )
+            await self._cascade_delete_dependencies(subquery)
             del_result = await self._session.execute(
                 sa_delete(EntryModel)
                 .where(expired_cond)
@@ -473,11 +508,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             ),
         )
         subquery = select(EntryModel.id).where(hard_cond)
-        await self._session.execute(
-            sa_delete(AnalysisModelDB)
-            .where(AnalysisModelDB.entry_id.in_(subquery))
-            .execution_options(synchronize_session=False)
-        )
+        await self._cascade_delete_dependencies(subquery)
         del_result = await self._session.execute(
             sa_delete(EntryModel)
             .where(hard_cond)
