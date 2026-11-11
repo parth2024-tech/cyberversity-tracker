@@ -332,7 +332,7 @@ async def query_serialized_entries(
                     since=since,
                     region=region if region != "all" else None,
                     country=country if country != "all" else None,
-                    max_freshness_days=14,
+                    max_age_days=None,
                 )
                 if hybrid_results:
                     return hybrid_results

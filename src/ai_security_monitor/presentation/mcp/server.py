@@ -46,6 +46,10 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
                     "type": "string",
                     "description": "Optional search term for Intent-Weighted RRF hybrid search (exact token BM25 + semantic vector matching).",
                 },
+                "max_age_days": {
+                    "type": "integer",
+                    "description": "Optional maximum age in days (default: null to search entire history/vault; pass 14 for fresh news only).",
+                },
             },
         },
     },
@@ -328,6 +332,8 @@ class MCPServer:
                 limit = min(int(args.get("limit", 15)), 50)
                 category = args.get("category")
                 search_query = args.get("query") or args.get("search")
+                max_age_val = args.get("max_age_days")
+                max_age_days = int(max_age_val) if max_age_val is not None else None
 
                 if search_query:
                     from ai_security_monitor.infrastructure.database.unit_of_work import (
@@ -339,7 +345,7 @@ class MCPServer:
                             query=str(search_query),
                             limit=limit,
                             category=str(category) if category else None,
-                            max_freshness_days=14,
+                            max_age_days=max_age_days,
                         )
                         entries = [
                             {

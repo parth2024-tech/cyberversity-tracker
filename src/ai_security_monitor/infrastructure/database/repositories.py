@@ -8,6 +8,7 @@ from __future__ import annotations
 import builtins
 import json
 import logging
+import math
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -300,13 +301,16 @@ class SQLAlchemyEntryRepository(EntryRepository):
         since: datetime | None = None,
         region: str | None = None,
         country: str | None = None,
-        max_freshness_days: int = 14,
+        max_age_days: int | None = None,
+        max_freshness_days: int | None = None,
     ) -> builtins.list[Entry]:
         """Hybrid search combining SQLite FTS5 lexical BM25 and vector semantic search with Intent-Weighted RRF.
 
         - Exact technical queries (version tags, runtimes, repo names, libraries) prioritize FTS5 with a lexical floor boost.
         - Conceptual/thematic queries prioritize semantic vector cosine search.
-        - Enforces strict <= 14 days freshness cutoff (and active non-purged entries).
+        - max_age_days: optional age filter in days (None allows searching all historical vault entries; 14 for automated feeds).
+        - Applies continuous Exponential Time-Decay RRF boost:
+          RRF_final(d) = RRF(d) * (1 + 0.15 * exp(-lambda * delta_t_days))
         """
         def _to_category(cat: Category | str | None) -> Category | None:
             if isinstance(cat, Category):
@@ -321,6 +325,8 @@ class SQLAlchemyEntryRepository(EntryRepository):
         cat_filter = _to_category(category)
         cats_filter = [_to_category(c) for c in categories] if categories else None
         valid_cats = [c for c in cats_filter if c is not None] if cats_filter else None
+
+        effective_max_age = max_age_days if max_age_days is not None else max_freshness_days
 
         if not query or not query.strip():
             return await self.list(
@@ -343,8 +349,12 @@ class SQLAlchemyEntryRepository(EntryRepository):
             )
         )
 
-        cutoff = datetime.now(UTC) - timedelta(days=max_freshness_days)
-        cutoff_naive = cutoff.replace(tzinfo=None)
+        cutoff = (
+            datetime.now(UTC) - timedelta(days=effective_max_age)
+            if effective_max_age is not None
+            else None
+        )
+        cutoff_naive = cutoff.replace(tzinfo=None) if cutoff else None
 
         since_aware = since if (since and since.tzinfo is not None) else (since.replace(tzinfo=UTC) if since else None)
         since_naive = since.replace(tzinfo=None) if since else None
@@ -356,16 +366,21 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 return False
 
             e_pub = e.published_at
-            if e_pub.tzinfo is None:
-                if e_pub < cutoff_naive:
-                    return False
-                if since_naive and e_pub < since_naive:
-                    return False
-            else:
-                if e_pub < cutoff:
-                    return False
-                if since_aware and e_pub < since_aware:
-                    return False
+            if cutoff and cutoff_naive:
+                if e_pub.tzinfo is None:
+                    if e_pub < cutoff_naive:
+                        return False
+                else:
+                    if e_pub < cutoff:
+                        return False
+
+            if since:
+                if e_pub.tzinfo is None:
+                    if since_naive and e_pub < since_naive:
+                        return False
+                else:
+                    if since_aware and e_pub < since_aware:
+                        return False
 
             if category:
                 cat_val = category.value if hasattr(category, "value") else str(category)
@@ -454,18 +469,16 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 if query_vec is None:
                     query_vec = embedding_service.embed_text(clean_query)
 
-                recent_models_stmt = (
-                    select(EntryModel)
-                    .where(
-                        EntryModel.is_purged.is_(False),
+                recent_models_stmt = select(EntryModel).where(EntryModel.is_purged.is_(False))
+                if cutoff and cutoff_naive:
+                    recent_models_stmt = recent_models_stmt.where(
                         or_(
                             EntryModel.published_at >= cutoff,
                             EntryModel.published_at >= cutoff_naive,
-                        ),
+                        )
                     )
-                    .order_by(desc(EntryModel.published_at))
-                    .limit(60)
-                )
+                recent_models_stmt = recent_models_stmt.order_by(desc(EntryModel.published_at)).limit(60)
+
                 recent_res = await self._session.execute(recent_models_stmt)
                 recent_entries = [self._model_to_entity(m) for m in recent_res.scalars().all()]
                 scored_fallbacks: list[tuple[float, Entry]] = []
@@ -499,7 +512,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
             )
 
         # ------------------------------------------------------------------
-        # Leg 3: Intent-Weighted Reciprocal Rank Fusion (RRF) with Floor Boost
+        # Leg 3: Intent-Weighted Reciprocal Rank Fusion (RRF) with Floor Boost & Time Decay
         # ------------------------------------------------------------------
         w_fts = 0.75 if is_technical else 0.35
         w_sem = 0.25 if is_technical else 0.65
@@ -515,14 +528,24 @@ class SQLAlchemyEntryRepository(EntryRepository):
             contrib = w_sem / (k + rank_idx)
             rrf_scores[eid] = rrf_scores.get(eid, 0.0) + contrib
 
-        scored_candidates = [
-            (rrf_scores.get(eid, 0.0), candidate_map[eid])
-            for eid in candidate_map
-            if eid in rrf_scores
-        ]
+        now_utc = datetime.now(UTC)
+        time_decay_lambda = 0.1  # ~7-day half life
+
+        scored_candidates: list[tuple[float, Entry]] = []
         for eid, entry in candidate_map.items():
-            if eid not in rrf_scores:
-                scored_candidates.append((0.0, entry))
+            base_score = rrf_scores.get(eid, 0.0)
+            if base_score > 0.0 and entry.published_at:
+                e_pub_aware = (
+                    entry.published_at
+                    if entry.published_at.tzinfo is not None
+                    else entry.published_at.replace(tzinfo=UTC)
+                )
+                delta_days = max(0.0, (now_utc - e_pub_aware).total_seconds() / 86400.0)
+                decay_boost = 1.0 + 0.15 * math.exp(-time_decay_lambda * delta_days)
+                final_score = base_score * decay_boost
+            else:
+                final_score = base_score
+            scored_candidates.append((final_score, entry))
 
         scored_candidates.sort(key=lambda x: x[0], reverse=True)
         return [item[1] for item in scored_candidates[offset : offset + limit]]
@@ -664,7 +687,6 @@ class SQLAlchemyEntryRepository(EntryRepository):
             return False
 
         if hard_delete:
-            await self._cascade_delete_dependencies([entry_id_str])
             await self._session.delete(model)
         else:
             await self._session.execute(
@@ -690,7 +712,6 @@ class SQLAlchemyEntryRepository(EntryRepository):
         for i in range(0, len(id_strs), chunk_size):
             chunk = id_strs[i : i + chunk_size]
             if hard_delete:
-                await self._cascade_delete_dependencies(chunk)
                 del_result = await self._session.execute(
                     sa_delete(EntryModel)
                     .where(EntryModel.id.in_(chunk))
@@ -789,8 +810,6 @@ class SQLAlchemyEntryRepository(EntryRepository):
         expired_cond = and_(*conds)
 
         if hard_delete:
-            subquery = select(EntryModel.id).where(expired_cond).scalar_subquery()
-            await self._cascade_delete_dependencies(subquery)
             del_result = await self._session.execute(
                 sa_delete(EntryModel)
                 .where(expired_cond)
@@ -822,8 +841,6 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 EntryModel.purged_at < cutoff_naive,
             ),
         )
-        subquery = select(EntryModel.id).where(hard_cond).scalar_subquery()
-        await self._cascade_delete_dependencies(subquery)
         del_result = await self._session.execute(
             sa_delete(EntryModel)
             .where(hard_cond)

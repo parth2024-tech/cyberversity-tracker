@@ -430,8 +430,8 @@ class DatabaseManager:
                     )
                     fts_sql_row = fts_sql_res.fetchone()
                     needs_fts_rebuild = False
-                    if fts_sql_row and "tokenchars" not in (fts_sql_row[0] or ""):
-                        # Drop legacy table to upgrade to technical tokenizer
+                    if fts_sql_row and ("tokenchars" not in (fts_sql_row[0] or "") or "content=" in (fts_sql_row[0] or "")):
+                        # Drop legacy or external-content table to upgrade to standalone technical tokenizer
                         await conn.execute(text("DROP TRIGGER IF EXISTS entries_ai"))
                         await conn.execute(text("DROP TRIGGER IF EXISTS entries_au"))
                         await conn.execute(text("DROP TRIGGER IF EXISTS entries_ad"))

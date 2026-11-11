@@ -133,9 +133,17 @@ class EntryRepository(ABC):
         since: datetime | None = None,
         region: str | None = None,
         country: str | None = None,
-        max_freshness_days: int = 14,
+        max_age_days: int | None = None,
+        max_freshness_days: int | None = None,
     ) -> builtins.list[Entry]:
-        """Perform hybrid search combining FTS5 lexical BM25 and semantic vector search using Intent-Weighted RRF."""
+        """Perform hybrid search combining FTS5 lexical BM25 and semantic vector search using Intent-Weighted RRF.
+
+        - Exact technical queries (version tags, runtimes, repo names) prioritize FTS5 with a lexical floor boost.
+        - Conceptual queries prioritize semantic vector cosine search.
+        - max_age_days: optional age cutoff in days (None for all historical/vault entries; 14 for automated feeds).
+        - Applies continuous Exponential Time-Decay RRF boost:
+          RRF_final(d) = RRF(d) * (1 + 0.15 * exp(-lambda * delta_t_days))
+        """
         return []
 
     @abstractmethod

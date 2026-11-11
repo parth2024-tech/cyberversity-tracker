@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ai_security_monitor.config.settings import settings
 from ai_security_monitor.core.health import router as health_router
@@ -211,7 +212,7 @@ def create_app() -> FastAPI:
     # Global JSON Exception Boundary: Prevents raw text/plain 500 error leaks to PWA and MCP clients
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> Response:
-        if isinstance(exc, HTTPException):
+        if isinstance(exc, (HTTPException, StarletteHTTPException)):
             return await http_exception_handler(request, exc)
         if isinstance(exc, RequestValidationError):
             return await request_validation_exception_handler(request, exc)
@@ -226,14 +227,22 @@ def create_app() -> FastAPI:
             exc,
             exc_info=True,
         )
+
+        content: dict[str, Any] = {
+            "ok": False,
+            "detail": (
+                "An internal server error occurred. Reference correlation_id in logs."
+                if settings.is_production
+                else f"Internal server error: {exc}"
+            ),
+            "correlation_id": corr_id,
+        }
+        if not settings.is_production:
+            content["type"] = type(exc).__name__
+
         return JSONResponse(
             status_code=500,
-            content={
-                "ok": False,
-                "detail": "An internal server error occurred. Please try again or check server logs.",
-                "type": type(exc).__name__,
-                "correlation_id": corr_id,
-            },
+            content=content,
             headers={
                 "X-Correlation-ID": corr_id,
                 "X-Content-Type-Options": "nosniff",

@@ -90,14 +90,20 @@ async def test_search_hybrid_technical_lexical_floor_boost(tmp_path):
         await entry_repo.add(entry_c)
         await session.commit()
 
-        # 1. Search technical query: "vLLM v0.6.3"
+        # 1. Search technical query: "vLLM v0.6.3" with default max_age_days=None (allows historical/vault)
         results = await entry_repo.search_hybrid("vLLM v0.6.3", limit=10)
-        assert len(results) >= 1
+        assert len(results) >= 2
+        # Entry A (1 day old) ranks strictly above Entry C (20 days old) due to exponential recency decay boost
         assert results[0].id == entry_a.id
-        # Entry C is > 14 days old and must be excluded by the 14-day freshness window
-        assert all(r.id != entry_c.id for r in results)
+        assert any(r.id == entry_c.id for r in results)
 
-        # 2. Search by category filter
+        # 2. Search with explicit max_age_days=14 (automated feed mode)
+        fresh_results = await entry_repo.search_hybrid("vLLM v0.6.3", limit=10, max_age_days=14)
+        assert len(fresh_results) >= 1
+        assert fresh_results[0].id == entry_a.id
+        assert all(r.id != entry_c.id for r in fresh_results)
+
+        # 3. Search by category filter
         cat_results = await entry_repo.search_hybrid(
             "vLLM", limit=10, category=Category.AI_RESEARCH
         )
@@ -263,11 +269,14 @@ async def test_before_delete_and_subquery_cascade_purge(tmp_path):
 
 
 def test_global_json_500_exception_handler():
-    """Verify unhandled 500 exceptions return structured JSON rather than raw text/plain."""
+    """Verify unhandled 500 exceptions return structured JSON without leaking internals in production."""
     from unittest.mock import patch
+
+    from ai_security_monitor.config.settings import settings
 
     app = create_app()
 
+    # 1. Development mode: includes type for local debugging
     with patch("ai_security_monitor.presentation.api.routers.entries.SqlAlchemyUnitOfWork") as mock_uow:
         mock_uow.side_effect = RuntimeError("Synthetic test explosion for fault boundary verification")
         client = TestClient(app, raise_server_exceptions=False)
@@ -279,8 +288,28 @@ def test_global_json_500_exception_handler():
         assert data["ok"] is False
         assert data["type"] == "RuntimeError"
         assert "correlation_id" in data
-        assert "detail" in data
         assert resp.headers.get("X-Correlation-ID") == data["correlation_id"]
+
+    # 2. Production mode: sanitizes detail and omits type
+    with patch.object(settings, "environment", "production"), patch(
+        "ai_security_monitor.presentation.api.routers.entries.SqlAlchemyUnitOfWork"
+    ) as mock_uow:
+        mock_uow.side_effect = RuntimeError("Secret table column SQL syntax failure")
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.get("/api/entries")
+
+        assert resp.status_code == 500
+        assert resp.headers.get("content-type", "").startswith("application/json")
+        data = resp.json()
+        assert data["ok"] is False
+        assert "type" not in data
+        assert data["detail"] == "An internal server error occurred. Reference correlation_id in logs."
+        assert "correlation_id" in data
+
+    # 3. Standard HTTPException (e.g. 404) passes through unmasked
+    client = TestClient(app, raise_server_exceptions=False)
+    resp_404 = client.get("/api/nonexistent-route-not-found")
+    assert resp_404.status_code == 404
 
 
 @pytest.mark.asyncio
