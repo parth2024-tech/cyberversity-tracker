@@ -323,18 +323,19 @@ async def query_serialized_entries(
                 and not watchlist_only
                 and not important_only
             ):
-                fts_results = await uow.entries.search_fts(search, limit=limit * 2)
-                if fts_results:
-                    if cat_enum:
-                        fts_results = [e for e in fts_results if e.category == cat_enum]
-                    if region and region != "all":
-                        fts_results = [
-                            e
-                            for e in fts_results
-                            if (e.metadata or {}).get("region") == region
-                        ]
-                    if fts_results:
-                        return fts_results[:limit]
+                hybrid_results = await uow.entries.search_hybrid(
+                    query=search,
+                    limit=limit,
+                    offset=offset,
+                    category=cat_enum,
+                    categories=categories_filter,
+                    since=since,
+                    region=region if region != "all" else None,
+                    country=country if country != "all" else None,
+                    max_freshness_days=14,
+                )
+                if hybrid_results:
+                    return hybrid_results
             return await uow.entries.list(filters=filters, pagination=pagination)
 
     async def _count_entries():

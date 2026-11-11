@@ -6,6 +6,8 @@ Implements the domain repository interfaces.
 from __future__ import annotations
 
 import builtins
+import json
+import logging
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -53,6 +55,7 @@ from ai_security_monitor.infrastructure.database.models import (
     AnalysisOutcomeModel,
     CouncilReviewModel,
     DigestModel,
+    DocumentModel,
     EntryEntityModel,
     EntryModel,
     FetchLogModel,
@@ -63,6 +66,8 @@ from ai_security_monitor.infrastructure.database.models import (
 from ai_security_monitor.infrastructure.database.models import (
     AnalysisModel as AnalysisModelDB,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _uuid_to_str(uuid_val: UUID) -> str:
@@ -285,6 +290,243 @@ class SQLAlchemyEntryRepository(EntryRepository):
             models_res = await self._session.execute(stmt)
             return [self._model_to_entity(m) for m in models_res.scalars().all()]
 
+    async def search_hybrid(
+        self,
+        query: str,
+        limit: int = 50,
+        offset: int = 0,
+        category: Category | str | None = None,
+        categories: builtins.list[Category] | builtins.list[str] | None = None,
+        since: datetime | None = None,
+        region: str | None = None,
+        country: str | None = None,
+        max_freshness_days: int = 14,
+    ) -> builtins.list[Entry]:
+        """Hybrid search combining SQLite FTS5 lexical BM25 and vector semantic search with Intent-Weighted RRF.
+
+        - Exact technical queries (version tags, runtimes, repo names, libraries) prioritize FTS5 with a lexical floor boost.
+        - Conceptual/thematic queries prioritize semantic vector cosine search.
+        - Enforces strict <= 14 days freshness cutoff (and active non-purged entries).
+        """
+        def _to_category(cat: Category | str | None) -> Category | None:
+            if isinstance(cat, Category):
+                return cat
+            if isinstance(cat, str):
+                try:
+                    return Category(cat)
+                except (ValueError, KeyError):
+                    return None
+            return None
+
+        cat_filter = _to_category(category)
+        cats_filter = [_to_category(c) for c in categories] if categories else None
+        valid_cats = [c for c in cats_filter if c is not None] if cats_filter else None
+
+        if not query or not query.strip():
+            return await self.list(
+                filters=EntryFilters(
+                    category=cat_filter,
+                    categories=valid_cats,
+                    since=since,
+                    region=region,
+                    country=country,
+                ),
+                pagination=PaginationParams(limit=limit, offset=offset),
+            )
+
+        clean_query = query.strip()
+        is_technical = bool(
+            re.search(
+                r"(\bv\d+\.\d+|\b[a-zA-Z0-9_\-\.]{2,}\.cpp|\b(vllm|sglang|ollama|llama|qwen|deepseek|mistral|triton|cuda|onnx|gguf|awq)\b|[#\+\-_\.])",
+                clean_query,
+                re.IGNORECASE,
+            )
+        )
+
+        cutoff = datetime.now(UTC) - timedelta(days=max_freshness_days)
+        cutoff_naive = cutoff.replace(tzinfo=None)
+
+        since_aware = since if (since and since.tzinfo is not None) else (since.replace(tzinfo=UTC) if since else None)
+        since_naive = since.replace(tzinfo=None) if since else None
+
+        def _passes_filters(e: Entry) -> bool:
+            if getattr(e, "is_purged", False):
+                return False
+            if not e.published_at:
+                return False
+
+            e_pub = e.published_at
+            if e_pub.tzinfo is None:
+                if e_pub < cutoff_naive:
+                    return False
+                if since_naive and e_pub < since_naive:
+                    return False
+            else:
+                if e_pub < cutoff:
+                    return False
+                if since_aware and e_pub < since_aware:
+                    return False
+
+            if category:
+                cat_val = category.value if hasattr(category, "value") else str(category)
+                e_cat_val = e.category.value if hasattr(e.category, "value") else str(e.category)
+                if e_cat_val != cat_val:
+                    return False
+
+            if categories:
+                cat_vals = {c.value if hasattr(c, "value") else str(c) for c in categories}
+                e_cat_val = e.category.value if hasattr(e.category, "value") else str(e.category)
+                if e_cat_val not in cat_vals:
+                    return False
+
+            meta = e.metadata or {}
+            if region and region != "all":
+                if meta.get("region") != region:
+                    return False
+            if country and country != "all":
+                if meta.get("country") != country:
+                    return False
+            return True
+
+        candidate_map: dict[UUID, Entry] = {}
+        ranked_fts: list[UUID] = []
+        ranked_sem: list[UUID] = []
+
+        # ------------------------------------------------------------------
+        # Leg 1: SQLite FTS5 BM25 Lexical Search
+        # ------------------------------------------------------------------
+        try:
+            fts_fetch_limit = max((limit + offset) * 3, 60)
+            fts_results = await self.search_fts(clean_query, limit=fts_fetch_limit)
+            for fts_e in fts_results:
+                if _passes_filters(fts_e):
+                    if fts_e.id not in candidate_map:
+                        candidate_map[fts_e.id] = fts_e
+                    if fts_e.id not in ranked_fts:
+                        ranked_fts.append(fts_e.id)
+        except Exception as fts_err:
+            logger.debug("search_fts error in search_hybrid: %s", fts_err)
+
+        # ------------------------------------------------------------------
+        # Leg 2: Semantic Vector Search (sqlite-vec entries_vec KNN + Cosine fallback)
+        # ------------------------------------------------------------------
+        query_vec: list[float] | None = None
+        try:
+            from ai_security_monitor.infrastructure.analyzers.embedding_service import (
+                embedding_service,
+            )
+
+            query_vec = embedding_service.embed_text(clean_query)
+            vec_json = json.dumps(query_vec)
+            knn_sql = text(
+                "SELECT entry_id, distance FROM entries_vec "
+                "WHERE embedding MATCH :vec "
+                "ORDER BY distance LIMIT :k"
+            )
+            knn_limit = max((limit + offset) * 3, 60)
+            res = await self._session.execute(knn_sql, {"vec": vec_json, "k": knn_limit})
+            rows = res.fetchall()
+            for row in rows:
+                try:
+                    raw_id = str(row[0])
+                    eid = UUID(hex=raw_id.replace("-", ""))
+                    if eid in candidate_map:
+                        if eid not in ranked_sem and _passes_filters(candidate_map[eid]):
+                            ranked_sem.append(eid)
+                    else:
+                        cand_entry = await self.get(eid)
+                        if cand_entry and _passes_filters(cand_entry):
+                            candidate_map[cand_entry.id] = cand_entry
+                            if cand_entry.id not in ranked_sem:
+                                ranked_sem.append(cand_entry.id)
+                except Exception:
+                    continue
+        except Exception as vec_err:
+            logger.debug("entries_vec KNN unavailable in search_hybrid: %s", vec_err)
+
+        # In-memory cosine similarity fallback across recent entries if semantic leg has few results
+        if len(ranked_sem) < max(limit, 10):
+            try:
+                from ai_security_monitor.infrastructure.analyzers.embedding_service import (
+                    embedding_service,
+                )
+
+                if query_vec is None:
+                    query_vec = embedding_service.embed_text(clean_query)
+
+                recent_models_stmt = (
+                    select(EntryModel)
+                    .where(
+                        EntryModel.is_purged.is_(False),
+                        or_(
+                            EntryModel.published_at >= cutoff,
+                            EntryModel.published_at >= cutoff_naive,
+                        ),
+                    )
+                    .order_by(desc(EntryModel.published_at))
+                    .limit(60)
+                )
+                recent_res = await self._session.execute(recent_models_stmt)
+                recent_entries = [self._model_to_entity(m) for m in recent_res.scalars().all()]
+                scored_fallbacks: list[tuple[float, Entry]] = []
+                for re_e in recent_entries:
+                    if _passes_filters(re_e) and re_e.id not in ranked_sem:
+                        candidate_map[re_e.id] = re_e
+                        txt = f"{re_e.title or ''} {re_e.summary or ''}".strip()
+                        if txt:
+                            r_vec = embedding_service.embed_text(txt)
+                            sim = embedding_service.cosine_similarity(query_vec, r_vec)
+                            scored_fallbacks.append((sim, re_e))
+                scored_fallbacks.sort(key=lambda x: x[0], reverse=True)
+                for _, fb_entry in scored_fallbacks:
+                    if fb_entry.id not in ranked_sem:
+                        ranked_sem.append(fb_entry.id)
+            except Exception as fb_err:
+                logger.debug("Semantic fallback error in search_hybrid: %s", fb_err)
+
+        # If neither channel returned candidates, fallback to text ILIKE via standard list
+        if not candidate_map:
+            return await self.list(
+                filters=EntryFilters(
+                    category=cat_filter,
+                    categories=valid_cats,
+                    since=since or cutoff,
+                    search=clean_query,
+                    region=region,
+                    country=country,
+                ),
+                pagination=PaginationParams(limit=limit, offset=offset),
+            )
+
+        # ------------------------------------------------------------------
+        # Leg 3: Intent-Weighted Reciprocal Rank Fusion (RRF) with Floor Boost
+        # ------------------------------------------------------------------
+        w_fts = 0.75 if is_technical else 0.35
+        w_sem = 0.25 if is_technical else 0.65
+        floor_boost = 0.02 if is_technical else 0.0
+        k = 20
+
+        rrf_scores: dict[UUID, float] = {}
+        for rank_idx, eid in enumerate(ranked_fts, 1):
+            contrib = (w_fts / (k + rank_idx)) + floor_boost
+            rrf_scores[eid] = rrf_scores.get(eid, 0.0) + contrib
+
+        for rank_idx, eid in enumerate(ranked_sem, 1):
+            contrib = w_sem / (k + rank_idx)
+            rrf_scores[eid] = rrf_scores.get(eid, 0.0) + contrib
+
+        scored_candidates = [
+            (rrf_scores.get(eid, 0.0), candidate_map[eid])
+            for eid in candidate_map
+            if eid in rrf_scores
+        ]
+        for eid, entry in candidate_map.items():
+            if eid not in rrf_scores:
+                scored_candidates.append((0.0, entry))
+
+        scored_candidates.sort(key=lambda x: x[0], reverse=True)
+        return [item[1] for item in scored_candidates[offset : offset + limit]]
+
     async def update(self, entry: Entry) -> Entry:
         stmt = select(EntryModel).where(EntryModel.id == _uuid_to_str(entry.id))
         result = await self._session.execute(stmt)
@@ -304,42 +546,111 @@ class SQLAlchemyEntryRepository(EntryRepository):
         return self._model_to_entity(model)
 
     async def _cascade_delete_dependencies(self, entry_ids_or_subquery: Any) -> None:
-        """Cascade delete all dependent child rows (analysis evidence/outcomes, analyses, entities, reviews, receipts) in foreign-key order."""
-        from sqlalchemy import delete as sa_delete
+        """Cascade delete all dependent child rows (analysis evidence/outcomes, analyses, entities, reviews, receipts, documents) in foreign-key order.
 
-        analysis_subquery = select(AnalysisModelDB.id).where(
-            AnalysisModelDB.entry_id.in_(entry_ids_or_subquery)
-        )
-        await self._session.execute(
-            sa_delete(AnalysisEvidenceModel)
-            .where(AnalysisEvidenceModel.analysis_id.in_(analysis_subquery))
-            .execution_options(synchronize_session=False)
-        )
-        await self._session.execute(
-            sa_delete(AnalysisOutcomeModel)
-            .where(AnalysisOutcomeModel.analysis_id.in_(analysis_subquery))
-            .execution_options(synchronize_session=False)
-        )
-        await self._session.execute(
-            sa_delete(AnalysisModelDB)
-            .where(AnalysisModelDB.entry_id.in_(entry_ids_or_subquery))
-            .execution_options(synchronize_session=False)
-        )
-        await self._session.execute(
-            sa_delete(EntryEntityModel)
-            .where(EntryEntityModel.entry_id.in_(entry_ids_or_subquery))
-            .execution_options(synchronize_session=False)
-        )
-        await self._session.execute(
-            sa_delete(CouncilReviewModel)
-            .where(CouncilReviewModel.entry_id.in_(entry_ids_or_subquery))
-            .execution_options(synchronize_session=False)
-        )
-        await self._session.execute(
-            sa_delete(ReceiptModel)
-            .where(ReceiptModel.entry_id.in_(entry_ids_or_subquery))
-            .execution_options(synchronize_session=False)
-        )
+        Zero-parameter subqueries execute completely inside the database engine without hitting SQLITE_MAX_VARIABLE_NUMBER limits.
+        Python collections are batched in safe chunks of 500 to guarantee variable limit immunity.
+        """
+        from sqlalchemy import delete as sa_delete
+        from sqlalchemy import update as sa_update
+        from sqlalchemy.sql import Select
+
+        # Case 1: Pure subquery execution (zero parameters, unlimited bulk deletes)
+        if isinstance(entry_ids_or_subquery, Select) or hasattr(entry_ids_or_subquery, "scalar_subquery"):
+            target_subq = (
+                entry_ids_or_subquery.scalar_subquery()
+                if hasattr(entry_ids_or_subquery, "scalar_subquery")
+                else entry_ids_or_subquery
+            )
+            analysis_subquery = (
+                select(AnalysisModelDB.id)
+                .where(AnalysisModelDB.entry_id.in_(target_subq))
+                .scalar_subquery()
+            )
+            await self._session.execute(
+                sa_delete(AnalysisEvidenceModel)
+                .where(AnalysisEvidenceModel.analysis_id.in_(analysis_subquery))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(AnalysisOutcomeModel)
+                .where(AnalysisOutcomeModel.analysis_id.in_(analysis_subquery))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(AnalysisModelDB)
+                .where(AnalysisModelDB.entry_id.in_(target_subq))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(EntryEntityModel)
+                .where(EntryEntityModel.entry_id.in_(target_subq))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(CouncilReviewModel)
+                .where(CouncilReviewModel.entry_id.in_(target_subq))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(ReceiptModel)
+                .where(ReceiptModel.entry_id.in_(target_subq))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_update(DocumentModel)
+                .where(DocumentModel.entry_id.in_(target_subq))
+                .values(entry_id=None)
+                .execution_options(synchronize_session=False)
+            )
+            return
+
+        # Case 2: In-memory collection of IDs - batched in safe chunks of 500
+        id_list = list(entry_ids_or_subquery)
+        chunk_size = 500
+        for i in range(0, len(id_list), chunk_size):
+            chunk = id_list[i : i + chunk_size]
+            analysis_subquery = (
+                select(AnalysisModelDB.id)
+                .where(AnalysisModelDB.entry_id.in_(chunk))
+                .scalar_subquery()
+            )
+            await self._session.execute(
+                sa_delete(AnalysisEvidenceModel)
+                .where(AnalysisEvidenceModel.analysis_id.in_(analysis_subquery))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(AnalysisOutcomeModel)
+                .where(AnalysisOutcomeModel.analysis_id.in_(analysis_subquery))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(AnalysisModelDB)
+                .where(AnalysisModelDB.entry_id.in_(chunk))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(EntryEntityModel)
+                .where(EntryEntityModel.entry_id.in_(chunk))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(CouncilReviewModel)
+                .where(CouncilReviewModel.entry_id.in_(chunk))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_delete(ReceiptModel)
+                .where(ReceiptModel.entry_id.in_(chunk))
+                .execution_options(synchronize_session=False)
+            )
+            await self._session.execute(
+                sa_update(DocumentModel)
+                .where(DocumentModel.entry_id.in_(chunk))
+                .values(entry_id=None)
+                .execution_options(synchronize_session=False)
+            )
 
     async def delete(self, entry_id: UUID, hard_delete: bool = True) -> bool:
         from sqlalchemy import update as sa_update
@@ -374,24 +685,28 @@ class SQLAlchemyEntryRepository(EntryRepository):
         from sqlalchemy import update as sa_update
 
         id_strs = [_uuid_to_str(eid) for eid in entry_ids]
-        if hard_delete:
-            await self._cascade_delete_dependencies(id_strs)
-            del_result = await self._session.execute(
-                sa_delete(EntryModel)
-                .where(EntryModel.id.in_(id_strs))
-                .execution_options(synchronize_session=False)
-            )
-            self._session.expire_all()
-            return getattr(del_result, "rowcount", 0) or 0
-        else:
-            upd_result = await self._session.execute(
-                sa_update(EntryModel)
-                .where(EntryModel.id.in_(id_strs))
-                .values(is_purged=True, purged_at=datetime.now(UTC))
-                .execution_options(synchronize_session=False)
-            )
-            self._session.expire_all()
-            return getattr(upd_result, "rowcount", 0) or 0
+        chunk_size = 500
+        total_affected = 0
+        for i in range(0, len(id_strs), chunk_size):
+            chunk = id_strs[i : i + chunk_size]
+            if hard_delete:
+                await self._cascade_delete_dependencies(chunk)
+                del_result = await self._session.execute(
+                    sa_delete(EntryModel)
+                    .where(EntryModel.id.in_(chunk))
+                    .execution_options(synchronize_session=False)
+                )
+                total_affected += getattr(del_result, "rowcount", 0) or 0
+            else:
+                upd_result = await self._session.execute(
+                    sa_update(EntryModel)
+                    .where(EntryModel.id.in_(chunk))
+                    .values(is_purged=True, purged_at=datetime.now(UTC))
+                    .execution_options(synchronize_session=False)
+                )
+                total_affected += getattr(upd_result, "rowcount", 0) or 0
+        self._session.expire_all()
+        return total_affected
 
     async def get_unanalyzed(
         self,
@@ -474,7 +789,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
         expired_cond = and_(*conds)
 
         if hard_delete:
-            subquery = select(EntryModel.id).where(expired_cond)
+            subquery = select(EntryModel.id).where(expired_cond).scalar_subquery()
             await self._cascade_delete_dependencies(subquery)
             del_result = await self._session.execute(
                 sa_delete(EntryModel)
@@ -507,7 +822,7 @@ class SQLAlchemyEntryRepository(EntryRepository):
                 EntryModel.purged_at < cutoff_naive,
             ),
         )
-        subquery = select(EntryModel.id).where(hard_cond)
+        subquery = select(EntryModel.id).where(hard_cond).scalar_subquery()
         await self._cascade_delete_dependencies(subquery)
         del_result = await self._session.execute(
             sa_delete(EntryModel)

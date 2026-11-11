@@ -450,6 +450,14 @@ class DatabaseManager:
                     await conn.execute(text("DROP TRIGGER IF EXISTS entries_ai"))
                     await conn.execute(text("DROP TRIGGER IF EXISTS entries_au"))
                     await conn.execute(text("DROP TRIGGER IF EXISTS entries_ad"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_cascade_bd"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS analysis_cascade_bd"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS analysis_evidence_ad"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS analysis_outcome_ad"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_analysis_ad"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_entities_ad"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_council_ad"))
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_receipts_ad"))
 
                     await conn.execute(
                         text(
@@ -462,13 +470,6 @@ class DatabaseManager:
                     )
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER entries_ad AFTER DELETE ON entries BEGIN "
-                            "DELETE FROM entries_fts WHERE entry_id = old.id; "
-                            "END;"
-                        )
-                    )
-                    await conn.execute(
-                        text(
                             "CREATE TRIGGER entries_au AFTER UPDATE ON entries BEGIN "
                             "DELETE FROM entries_fts WHERE entry_id = old.id; "
                             "INSERT INTO entries_fts(entry_id, title, summary, category) "
@@ -476,46 +477,26 @@ class DatabaseManager:
                             "END;"
                         )
                     )
-                    # Foreign key cascade deletion triggers ensuring zero orphan rows or constraint failures
+                    # BEFORE DELETE cascade triggers: Purge all child rows before parent FK constraint validation
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS analysis_evidence_ad AFTER DELETE ON entry_analysis BEGIN "
+                            "CREATE TRIGGER IF NOT EXISTS analysis_cascade_bd BEFORE DELETE ON entry_analysis BEGIN "
                             "DELETE FROM analysis_evidence WHERE analysis_id = old.id; "
-                            "END;"
-                        )
-                    )
-                    await conn.execute(
-                        text(
-                            "CREATE TRIGGER IF NOT EXISTS analysis_outcome_ad AFTER DELETE ON entry_analysis BEGIN "
                             "DELETE FROM analysis_outcome WHERE analysis_id = old.id; "
                             "END;"
                         )
                     )
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_analysis_ad AFTER DELETE ON entries BEGIN "
+                            "CREATE TRIGGER IF NOT EXISTS entries_cascade_bd BEFORE DELETE ON entries BEGIN "
+                            "DELETE FROM analysis_evidence WHERE analysis_id IN (SELECT id FROM entry_analysis WHERE entry_id = old.id); "
+                            "DELETE FROM analysis_outcome WHERE analysis_id IN (SELECT id FROM entry_analysis WHERE entry_id = old.id); "
                             "DELETE FROM entry_analysis WHERE entry_id = old.id; "
-                            "END;"
-                        )
-                    )
-                    await conn.execute(
-                        text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_entities_ad AFTER DELETE ON entries BEGIN "
                             "DELETE FROM entry_entities WHERE entry_id = old.id; "
-                            "END;"
-                        )
-                    )
-                    await conn.execute(
-                        text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_council_ad AFTER DELETE ON entries BEGIN "
                             "DELETE FROM council_reviews WHERE entry_id = old.id; "
-                            "END;"
-                        )
-                    )
-                    await conn.execute(
-                        text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_receipts_ad AFTER DELETE ON entries BEGIN "
                             "DELETE FROM llm_receipts WHERE entry_id = old.id; "
+                            "UPDATE documents SET entry_id = NULL WHERE entry_id = old.id; "
+                            "DELETE FROM entries_fts WHERE entry_id = old.id; "
                             "END;"
                         )
                     )
@@ -549,9 +530,10 @@ class DatabaseManager:
                             ")"
                         )
                     )
+                    await conn.execute(text("DROP TRIGGER IF EXISTS entries_vec_ad"))
                     await conn.execute(
                         text(
-                            "CREATE TRIGGER IF NOT EXISTS entries_vec_ad AFTER DELETE ON entries BEGIN "
+                            "CREATE TRIGGER IF NOT EXISTS entries_vec_bd BEFORE DELETE ON entries BEGIN "
                             "DELETE FROM entries_vec WHERE entry_id = old.id; "
                             "END;"
                         )

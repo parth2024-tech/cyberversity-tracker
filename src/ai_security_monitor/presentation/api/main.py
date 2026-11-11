@@ -7,10 +7,15 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -202,6 +207,38 @@ def create_app() -> FastAPI:
     # Attach rate limiter
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+    # Global JSON Exception Boundary: Prevents raw text/plain 500 error leaks to PWA and MCP clients
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception) -> Response:
+        if isinstance(exc, HTTPException):
+            return await http_exception_handler(request, exc)
+        if isinstance(exc, RequestValidationError):
+            return await request_validation_exception_handler(request, exc)
+
+        import uuid
+        corr_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())[:8]
+        logger.error(
+            "Unhandled application exception [corr_id=%s] on %s %s: %s",
+            corr_id,
+            request.method,
+            request.url.path,
+            exc,
+            exc_info=True,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "detail": "An internal server error occurred. Please try again or check server logs.",
+                "type": type(exc).__name__,
+                "correlation_id": corr_id,
+            },
+            headers={
+                "X-Correlation-ID": corr_id,
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
     # CORS
     app.add_middleware(

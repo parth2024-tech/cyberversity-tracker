@@ -123,6 +123,21 @@ class EntryRepository(ABC):
         """Perform full-text search with BM25 ranking."""
         return []
 
+    async def search_hybrid(
+        self,
+        query: str,
+        limit: int = 50,
+        offset: int = 0,
+        category: Category | str | None = None,
+        categories: builtins.list[Category] | builtins.list[str] | None = None,
+        since: datetime | None = None,
+        region: str | None = None,
+        country: str | None = None,
+        max_freshness_days: int = 14,
+    ) -> builtins.list[Entry]:
+        """Perform hybrid search combining FTS5 lexical BM25 and semantic vector search using Intent-Weighted RRF."""
+        return []
+
     @abstractmethod
     async def get_unanalyzed(
         self,

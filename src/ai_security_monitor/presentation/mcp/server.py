@@ -42,6 +42,10 @@ TOOLS_REGISTRY: list[dict[str, Any]] = [
                     "type": "string",
                     "description": "Optional category filter: 'github_trending', 'arxiv_research', 'frontier_models', 'sovereign_ai', 'developer_tools'",
                 },
+                "query": {
+                    "type": "string",
+                    "description": "Optional search term for Intent-Weighted RRF hybrid search (exact token BM25 + semantic vector matching).",
+                },
             },
         },
     },
@@ -323,6 +327,36 @@ class MCPServer:
             elif name == "get_worldwide_ai_news":
                 limit = min(int(args.get("limit", 15)), 50)
                 category = args.get("category")
+                search_query = args.get("query") or args.get("search")
+
+                if search_query:
+                    from ai_security_monitor.infrastructure.database.unit_of_work import (
+                        SqlAlchemyUnitOfWork,
+                    )
+
+                    async with SqlAlchemyUnitOfWork() as uow:
+                        hybrid_results = await uow.entries.search_hybrid(
+                            query=str(search_query),
+                            limit=limit,
+                            category=str(category) if category else None,
+                            max_freshness_days=14,
+                        )
+                        entries = [
+                            {
+                                "id": str(e.id),
+                                "title": e.title,
+                                "url": e.url,
+                                "summary": e.summary,
+                                "category": str(e.category.value if hasattr(e.category, "value") else e.category),
+                                "published_at": e.published_at.isoformat()
+                                if e.published_at
+                                else None,
+                                "tags": e.tags,
+                            }
+                            for e in hybrid_results
+                        ]
+                        return json.dumps(entries, indent=2)
+
                 async with db_manager.session() as session:
                     from sqlalchemy import select
 
